@@ -97,5 +97,5 @@ jobs:
             echo "Expo projesi henüz bağlanmadı (setup çalıştırılmadı); atlanıyor."
             exit 0
           fi
-          npx eas-cli update --branch production \
+          npx eas-cli update --channel production \
             --message "${{ github.sha }}" --platform ios --non-interactive
