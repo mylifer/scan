@@ -14,7 +14,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.19.1
+## 1.20.0
+- **Aylık bütçe:** Ayarlar → Takip → Aylık Bütçe. Ana sayfanın özet kartında (aylık görünüm) çubuk ve "₺X kaldı" / "₺X aşıldı" görünür; %80'den sonra turuncu, aşılınca kırmızı. Çubuğa dokunarak bütçe değiştirilebilir. Bu cihazda saklanır, kurulum gerektirmez
+
+## 1.19.1 — `ebbee16`
 - İç düzenleme: ana sayfa kodu küçük parçalara ayrıldı (özet kartı, dönem seçici, dışa aktarma, kategoriler, fiş satırı). Görünüm ve davranış aynı
 
 ## 1.19.0 — `e04361f`

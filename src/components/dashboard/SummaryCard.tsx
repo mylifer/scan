@@ -1,4 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+
+import { budgetStatus } from '../../lib/budgetMath';
 
 import { formatTL } from '../../lib/format';
 import { tabular, type Theme, type as t, useTheme } from '../../lib/theme';
@@ -11,10 +13,13 @@ interface Props {
   kdv: number;
   count: number;
   compare: Compare;
+  /** Aylık görünümde bütçe (yoksa null) */
+  budget?: number | null;
+  onBudgetPress?: () => void;
 }
 
 /** Dönemin toplam gideri, fiş sayısı, geçen ayla karşılaştırma, KDV alacağı ve KDV hariç tutar. */
-export function SummaryCard({ total, kdv, count, compare }: Props) {
+export function SummaryCard({ total, kdv, count, compare, budget, onBudgetPress }: Props) {
   const theme = useTheme();
   return (
     <View style={[styles.summary, { backgroundColor: theme.card }]}>
@@ -31,6 +36,7 @@ export function SummaryCard({ total, kdv, count, compare }: Props) {
           </Text>
         )}
       </Text>
+      {budget ? <BudgetBar spent={total} budget={budget} theme={theme} onPress={onBudgetPress} /> : null}
       <View style={[styles.hr, { backgroundColor: theme.separator }]} />
       <View style={styles.stats}>
         <Stat label="KDV Alacağı" value={formatTL(kdv)} color={theme.green} theme={theme} />
@@ -38,6 +44,28 @@ export function SummaryCard({ total, kdv, count, compare }: Props) {
         <Stat label="KDV Hariç" value={formatTL(total - kdv)} color={theme.label} theme={theme} />
       </View>
     </View>
+  );
+}
+
+function BudgetBar({ spent, budget, theme, onPress }: { spent: number; budget: number; theme: Theme; onPress?: () => void }) {
+  const s = budgetStatus(spent, budget);
+  const color = s.level === 'over' ? theme.red : s.level === 'warning' ? theme.orange : theme.green;
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Aylık bütçe ${formatTL(budget)}, yüzde ${Math.round(s.ratio * 100)} kullanıldı`}
+      style={({ pressed }) => [styles.budget, { opacity: pressed ? 0.6 : 1 }]}>
+      <View style={[styles.track, { backgroundColor: theme.tertiaryFill }]}>
+        <View style={{ width: `${Math.min(100, s.ratio * 100)}%`, backgroundColor: color, borderRadius: 4 }} />
+      </View>
+      <Text style={[t.footnote, tabular, { color: theme.secondaryLabel }]}>
+        Bütçe {formatTL(budget)} ·{' '}
+        <Text style={{ color: s.level === 'ok' ? theme.secondaryLabel : color, fontWeight: s.level === 'ok' ? '400' : '600' }}>
+          {s.level === 'over' ? `${formatTL(s.over)} aşıldı` : `${formatTL(s.remaining)} kaldı`}
+        </Text>
+      </Text>
+    </Pressable>
   );
 }
 
@@ -58,4 +86,6 @@ const styles = StyleSheet.create({
   hr: { height: StyleSheet.hairlineWidth, marginVertical: 12 },
   vr: { width: StyleSheet.hairlineWidth, marginHorizontal: 16 },
   stats: { flexDirection: 'row' },
+  budget: { marginTop: 12, gap: 6 },
+  track: { height: 8, borderRadius: 4, overflow: 'hidden', flexDirection: 'row' },
 });

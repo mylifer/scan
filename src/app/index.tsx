@@ -25,6 +25,7 @@ import { periodRange } from '../lib/period';
 import { formatRunAt } from '../lib/schedule';
 import { matchesReceipt } from '../lib/search';
 import { SORT_OPTIONS, type SortKey, sortReceipts } from '../lib/sort';
+import { useMonthlyBudget } from '../lib/budget';
 import { categoryMeta, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 import { compareWithPreviousMonth } from '../lib/trend';
@@ -42,6 +43,7 @@ export default function DashboardScreen() {
     useMonthlySummary();
   const { drafts, processor } = useDrafts();
   const updateAvailable = useWebUpdateAvailable();
+  const budget = useMonthlyBudget();
   // Yeni kategoriler için veritabanı kurulumu (003) yapılmadıysa üstte hatırlat
   const [needsCategorySetup, setNeedsCategorySetup] = useState(false);
   useEffect(() => {
@@ -195,6 +197,8 @@ export default function DashboardScreen() {
               kdv={s?.toplamKdv ?? 0}
               count={s?.fisSayisi ?? 0}
               compare={isMonth ? compareWithPreviousMonth(trend, offset, s?.toplamGider ?? 0) : null}
+              budget={isMonth ? budget : null}
+              onBudgetPress={() => router.push('/budget')}
             />
 
             {(drafts.length > 0 || processor.running) && (

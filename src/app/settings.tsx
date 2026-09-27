@@ -8,10 +8,11 @@ import { useAuth } from '../hooks/useAuth';
 import { confirmDestructive } from '../lib/actionSheet';
 import { showAlert } from '../lib/alert';
 import { errorMessage } from '../lib/errors';
-import { formatBytes } from '../lib/format';
+import { formatBytes, formatTL } from '../lib/format';
 import { haptics } from '../lib/haptics';
 import { tabular, type as t, useTheme } from '../lib/theme';
 import { VERSION_LABEL } from '../lib/version';
+import { useMonthlyBudget } from '../lib/budget';
 import { buildReceiptsWorkbook, exportFilename, shareXlsx } from '../services/export/exportReceipts';
 import { clearCache } from '../lib/offlineCache';
 import { supabase } from '../services/supabase/client';
@@ -30,6 +31,7 @@ export default function SettingsScreen() {
   const [exporting, setExporting] = useState(false);
   const email = session?.user.email ?? '';
   const vision = safeVision();
+  const budget = useMonthlyBudget();
 
   useEffect(() => {
     countReceipts().then(setCount).catch(() => setCount(null));
@@ -65,6 +67,16 @@ export default function SettingsScreen() {
           <Text style={[t.subhead, { color: theme.secondaryLabel }]}>Supabase hesabı</Text>
         </View>
       </View>
+
+      <ListSection header="Takip">
+        <ListRow
+          title="Aylık Bütçe"
+          value={budget ? formatTL(budget) : 'Yok'}
+          icon={{ sf: 'chart.pie.fill', ion: 'pie-chart', color: theme.orange }}
+          onPress={() => router.push('/budget')}
+          chevron
+        />
+      </ListSection>
 
       <ListSection header="Veriler" footer="Fotoğraflar Supabase'in ücretsiz 1 GB alanında saklanır. Arşiv fotoğrafları sıkıştırılarak (~50–120 KB) kaydedilir.">
         <ListRow title="Fiş Sayısı" value={count === null ? '—' : String(count)} icon={{ sf: 'doc.text.fill', ion: 'document-text', color: theme.blue }} />
