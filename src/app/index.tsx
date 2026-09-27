@@ -33,6 +33,9 @@ export default function DashboardScreen() {
     useMonthlySummary();
   const { drafts, processor } = useDrafts();
   const [visible, setVisible] = useState(PAGE);
+  // Yenileme göstergesi yalnızca kullanıcı aşağı çektiğinde görünür; arka plan yenilemeleri
+  // (ekrana her dönüşte) göstergeyi tetiklerse iOS sayfayı aşağı kaydırıp geri çıkarır.
+  const [pulling, setPulling] = useState(false);
   const isMonth = period.mode === 'month';
   const offset = isMonth ? period.offset : 0;
 
@@ -82,7 +85,16 @@ export default function DashboardScreen() {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ paddingTop: 8, paddingBottom: toolbarHeight }}
-        refreshControl={<RefreshControl refreshing={loading && !!s} onRefresh={refresh} />}>
+        refreshControl={
+          <RefreshControl
+            refreshing={pulling}
+            onRefresh={async () => {
+              setPulling(true);
+              await refresh();
+              setPulling(false);
+            }}
+          />
+        }>
         <View style={styles.controls}>
           <SegmentedControl
             values={['Aylık', 'Tüm Zamanlar']}
