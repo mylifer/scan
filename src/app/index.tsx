@@ -13,13 +13,14 @@ import { Toolbar, useToolbarHeight } from '../components/ui/Toolbar';
 import { useAuth } from '../hooks/useAuth';
 import { useDrafts } from '../hooks/useDrafts';
 import { useMonthlySummary } from '../hooks/useMonthlySummary';
-import { confirmDestructive, showActionSheet } from '../lib/actionSheet';
+import { showActionSheet } from '../lib/actionSheet';
 import { showAlert } from '../lib/alert';
-import { formatTL } from '../lib/format';
+import { formatTL, monthRange } from '../lib/format';
 import { haptics } from '../lib/haptics';
 import { formatRunAt } from '../lib/schedule';
 import { categoryMeta, tabular, type Theme, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
+import { buildReceiptsWorkbook, exportFilename, shareXlsx } from '../services/export/exportReceipts';
 import { supabase } from '../services/supabase/client';
 import type { ReceiptRecord } from '../types/receipt';
 
@@ -36,6 +37,7 @@ export default function DashboardScreen() {
   // Yenileme göstergesi yalnızca kullanıcı aşağı çektiğinde görünür; arka plan yenilemeleri
   // (ekrana her dönüşte) göstergeyi tetiklerse iOS sayfayı aşağı kaydırıp geri çıkarır.
   const [pulling, setPulling] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const isMonth = period.mode === 'month';
   const offset = isMonth ? period.offset : 0;
 
@@ -61,8 +63,18 @@ export default function DashboardScreen() {
     }
   }
 
-  function askDelete(r: ReceiptRecord) {
-    confirmDestructive(r.firma_adi, `${shortDate(r.tarih)} · ${formatTL(r.toplam_tutar)}`, 'Fişi Sil', () => deleteReceipt(r));
+  async function exportExcel() {
+    if (!s || exporting) return;
+    setExporting(true);
+    try {
+      const range = isMonth ? monthRange(offset) : undefined;
+      await shareXlsx(buildReceiptsWorkbook(s, capitalize(label)), exportFilename(range));
+      haptics.success();
+    } catch (e) {
+      showAlert('Dışa aktarılamadı', (e as Error).message);
+    } finally {
+      setExporting(false);
+    }
   }
 
   const total = s?.kategoriToplamlari.reduce((a, k) => a + k.toplam, 0) ?? 0;
@@ -155,6 +167,18 @@ export default function DashboardScreen() {
             ) : (
               s && (
                 <>
+                  <ListSection footer="Muhasebecinize e-posta, WhatsApp ya da Dosyalar ile gönderebilirsiniz.">
+                    <ListRow
+                      title="Excel'e Aktar"
+                      subtitle={`${capitalize(label)} · ${s.fisSayisi} fiş`}
+                      icon={{ sf: 'tablecells.fill', ion: 'grid', color: theme.green }}
+                      onPress={exportExcel}
+                      disabled={exporting}
+                      accessory={exporting ? <ActivityIndicator /> : undefined}
+                      chevron={!exporting}
+                    />
+                  </ListSection>
+
                   <ListSection header="KDV Dağılımı">
                     <ListRow title="%1" value={formatTL(s.kdv1)} />
                     <ListRow title="%10" value={formatTL(s.kdv10)} />
@@ -180,7 +204,7 @@ export default function DashboardScreen() {
                     {[
                       ...s.fisler.slice(0, visible).map((r) => (
                         <SwipeToDelete key={r.id} onDelete={() => deleteReceipt(r)} theme={theme}>
-                          <ReceiptRow receipt={r} theme={theme} onPress={() => askDelete(r)} />
+                          <ReceiptRow receipt={r} theme={theme} onPress={() => router.push({ pathname: '/receipt/[id]', params: { id: r.id } })} />
                         </SwipeToDelete>
                       )),
                       ...(s.fisler.length > visible
@@ -244,6 +268,7 @@ function ReceiptRow({ receipt: r, theme, onPress, isLast }: { receipt: ReceiptRe
       subtitle={`${shortDate(r.tarih)} · KDV ${formatTL(r.toplam_kdv)}`}
       value={formatTL(r.toplam_tutar)}
       valueColor={theme.label}
+      chevron
       onPress={onPress}
       isLast={isLast}
     />

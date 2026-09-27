@@ -1,6 +1,14 @@
 export const KATEGORILER = ['akaryakıt', 'restoran', 'market', 'teknoloji', 'ofis gideri'] as const;
 export type Kategori = (typeof KATEGORILER)[number];
 
+export const KATEGORI_ETIKETLERI: Record<Kategori, string> = {
+  akaryakıt: 'Akaryakıt',
+  restoran: 'Restoran',
+  market: 'Market',
+  teknoloji: 'Teknoloji',
+  'ofis gideri': 'Ofis Gideri',
+};
+
 /** Görüntü okuma servisinin döndürdüğü, form üzerinde düzenlenen fiş verisi. */
 export interface ReceiptData {
   firmaAdi: string;

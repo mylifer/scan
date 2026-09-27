@@ -138,6 +138,48 @@ export async function getSummary(range?: { from: string; to: string }): Promise<
   };
 }
 
+export async function getReceipt(id: string): Promise<ReceiptRecord> {
+  const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single();
+  if (error) throw new Error(error.message);
+  return toRecord(data);
+}
+
+/** Kaydedilmiş fişin bilgilerini günceller (görsel değişmez). */
+export async function updateReceipt(id: string, data: ReceiptData): Promise<ReceiptRecord> {
+  const tarih = trDateToIso(data.tarih);
+  if (!tarih) throw new Error('Tarih GG.AA.YYYY biçiminde olmalı.');
+  const { data: row, error } = await supabase
+    .from(TABLE)
+    .update({
+      firma_adi: data.firmaAdi.trim(),
+      tarih,
+      toplam_tutar: round2(data.toplamTutar),
+      kdv_yuzde1: round2(data.kdvYuzde1),
+      kdv_yuzde10: round2(data.kdvYuzde10),
+      kdv_yuzde20: round2(data.kdvYuzde20),
+      kategori: data.kategori,
+    })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw new Error(`Güncellenemedi: ${error.message}`);
+  return toRecord(row);
+}
+
+/** Kayıttaki (DB) fişi forma uygun ReceiptData'ya çevirir. */
+export function recordToData(r: ReceiptRecord): ReceiptData {
+  const [y, m, d] = r.tarih.split('-');
+  return {
+    firmaAdi: r.firma_adi,
+    tarih: `${d}.${m}.${y}`,
+    toplamTutar: r.toplam_tutar,
+    kdvYuzde1: r.kdv_yuzde1,
+    kdvYuzde10: r.kdv_yuzde10,
+    kdvYuzde20: r.kdv_yuzde20,
+    kategori: r.kategori,
+  };
+}
+
 /** Fişi ve (varsa) Storage'daki görselini siler. */
 export async function deleteReceipt(receipt: ReceiptRecord): Promise<void> {
   const { error } = await supabase.from(TABLE).delete().eq('id', receipt.id);

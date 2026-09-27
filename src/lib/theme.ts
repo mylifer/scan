@@ -1,6 +1,6 @@
 import { Platform, type TextStyle, useColorScheme } from 'react-native';
 
-import type { Kategori } from '../types/receipt';
+import { type Kategori, KATEGORI_ETIKETLERI as L } from '../types/receipt';
 
 /** iOS sistem renkleri (UIKit semantic colors), açık ve koyu mod. */
 const light = {
@@ -89,9 +89,9 @@ export interface SymbolSpec {
 }
 
 export const categoryMeta: Record<Kategori, SymbolSpec & { color: keyof Theme; label: string }> = {
-  akaryakıt: { sf: 'fuelpump.fill', ion: 'speedometer', color: 'orange', label: 'Akaryakıt' },
-  restoran: { sf: 'fork.knife', ion: 'restaurant', color: 'pink', label: 'Restoran' },
-  market: { sf: 'cart.fill', ion: 'cart', color: 'green', label: 'Market' },
-  teknoloji: { sf: 'laptopcomputer', ion: 'laptop', color: 'indigo', label: 'Teknoloji' },
-  'ofis gideri': { sf: 'paperclip', ion: 'attach', color: 'teal', label: 'Ofis Gideri' },
+  akaryakıt: { sf: 'fuelpump.fill', ion: 'speedometer', color: 'orange', label: L['akaryakıt'] },
+  restoran: { sf: 'fork.knife', ion: 'restaurant', color: 'pink', label: L['restoran'] },
+  market: { sf: 'cart.fill', ion: 'cart', color: 'green', label: L['market'] },
+  teknoloji: { sf: 'laptopcomputer', ion: 'laptop', color: 'indigo', label: L['teknoloji'] },
+  'ofis gideri': { sf: 'paperclip', ion: 'attach', color: 'teal', label: L['ofis gideri'] },
 };

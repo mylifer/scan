@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../components/ui/Button';
-import { IconTile } from '../components/ui/IconTile';
+import { Image } from 'expo-image';
 import { showAlert } from '../lib/alert';
 import { haptics } from '../lib/haptics';
 import { fontFamily, type as t, useTheme } from '../lib/theme';
@@ -45,7 +45,7 @@ export default function LoginScreen() {
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 64, paddingBottom: insets.bottom + 24 }]}
         keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
-          <IconTile sf="doc.text.viewfinder" ion="scan" color={theme.blue} size={76} />
+          <Image source={require('../../assets/icon.png')} style={styles.appIcon} />
           <Text style={[t.largeTitle, { color: theme.label, marginTop: 20 }]}>Fiş Tarayıcı</Text>
           <Text style={[t.body, { color: theme.secondaryLabel, textAlign: 'center' }]}>
             Fişlerinizi tarayın, giderlerinizi ve KDV alacağınızı takip edin.
@@ -92,6 +92,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, gap: 28, maxWidth: 480, width: '100%', alignSelf: 'center' },
   hero: { alignItems: 'center', gap: 8, marginBottom: 8 },
+  appIcon: { width: 88, height: 88, borderRadius: 20 },
   card: { borderRadius: 12, overflow: 'hidden' },
   input: { height: 50, paddingHorizontal: 16, fontFamily, ...Platform.select({ web: { outlineWidth: 0 } }) },
   separator: { height: StyleSheet.hairlineWidth, marginLeft: 16 },
