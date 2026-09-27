@@ -213,7 +213,12 @@ export default function BatchScreen() {
             <Text style={[t.footnote, styles.gridHeader, { color: theme.secondaryLabel }]}>TASLAKLAR · {drafts.length}</Text>
             <View style={styles.grid}>
               {drafts.map((d) => (
-                <Pressable key={d.id} onPress={() => openDraft(d)} style={({ pressed }) => [styles.tile, { backgroundColor: theme.fill, opacity: pressed ? 0.7 : 1 }]}>
+                <Pressable
+                  key={d.id}
+                  onPress={() => openDraft(d)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Taslak fiş: ${DRAFT_STATUS_LABEL[d.status]}`}
+                  style={({ pressed }) => [styles.tile, { backgroundColor: theme.fill, opacity: pressed ? 0.7 : 1 }]}>
                   {urls[d.image_path] ? (
                     <Image source={{ uri: urls[d.image_path] }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
                   ) : (
@@ -268,6 +273,14 @@ export default function BatchScreen() {
 function statusText(d: ReceiptDraft) {
   return { pending: 'Taranmayı bekliyor', scheduled: 'Planlı', processing: 'Taranıyor', ready: 'Hazır', failed: 'Okunamadı' }[d.status];
 }
+
+const DRAFT_STATUS_LABEL: Record<ReceiptDraft['status'], string> = {
+  pending: 'taranmayı bekliyor',
+  scheduled: 'planlandı',
+  processing: 'taranıyor',
+  ready: 'incelemeye hazır',
+  failed: 'okunamadı',
+};
 
 function StatusBadge({ draft, theme }: { draft: ReceiptDraft; theme: Theme }) {
   if (draft.status === 'pending') return null;

@@ -14,7 +14,11 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.21.0
+## 1.21.1
+- Toplu taramada indirilen geçici fotoğraflar işlendikten sonra temizlenir (bellek ve telefon alanı)
+- Ekran okuyucu (VoiceOver) için taslak kutucuklarına, kamera ve grafik düğmelerine açıklamalar eklendi
+
+## 1.21.0 — `ea9dc4d`
 - **Aylara göre gruplama:** Yıllık ve Tüm Zamanlar görünümünde (tarihe göre sıralıyken) fişler ay başlıkları altında listelenir: "Eylül 2026 · 12 fiş · ₺8.450"
 
 ## 1.20.0 — `dfbb458`

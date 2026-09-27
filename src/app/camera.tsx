@@ -104,7 +104,7 @@ export default function CameraScreen() {
       />
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#000', opacity: flash }]} />
 
-      <Pressable style={StyleSheet.absoluteFill} onPress={focusAt}>
+      <Pressable style={StyleSheet.absoluteFill} onPress={focusAt} accessibilityLabel="Netlemek için dokunun">
         <View style={styles.guideWrap} pointerEvents="none">
           <View style={styles.guide}>
             {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
@@ -159,7 +159,7 @@ export default function CameraScreen() {
         </Pressable>
         <View style={styles.side}>
           {batch && (
-            <Pressable onPress={() => router.back()} hitSlop={10} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
+            <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button" style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
               <Text style={[t.headline, { color: '#FFD60A' }]}>Bitti</Text>
             </Pressable>
           )}

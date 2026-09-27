@@ -45,7 +45,7 @@ export function TrendChart({ data, currentOffset, onOpenMonth }: Props) {
           </View>
         </View>
         {onOpenMonth && point.offset !== currentOffset && (
-          <Pressable onPress={() => onOpenMonth(point.offset)} hitSlop={10} style={({ pressed }) => [styles.open, { opacity: pressed ? 0.5 : 1 }]}>
+          <Pressable onPress={() => onOpenMonth(point.offset)} hitSlop={10} accessibilityRole="button" style={({ pressed }) => [styles.open, { opacity: pressed ? 0.5 : 1 }]}>
             <Text style={[t.subhead, { color: theme.blue }]}>Bu aya git</Text>
             <Icon sf="chevron.right" ion="chevron-forward" size={12} color={theme.blue} weight="semibold" />
           </Pressable>

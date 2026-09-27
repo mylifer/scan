@@ -21,6 +21,19 @@ export async function downloadToLocal(path: string): Promise<string> {
   return file.uri;
 }
 
+/** downloadToLocal ile indirilen geçici dosyayı bırakır (web: blob URL, iPhone: önbellek dosyası). */
+export function releaseLocal(uri: string): void {
+  try {
+    if (uri.startsWith('blob:')) URL.revokeObjectURL(uri);
+    else if (Platform.OS !== 'web') {
+      const f = new File(uri);
+      if (f.exists) f.delete();
+    }
+  } catch {
+    // temizlik başarısızsa önemli değil
+  }
+}
+
 /** Storage'daki bir dosyanın baytları (ZIP paketlemek için). */
 export async function downloadBytes(path: string): Promise<Uint8Array> {
   if (Platform.OS === 'web') {

@@ -17,6 +17,7 @@ import { useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 import { DRAFT_WIDTH, prepareArchiveImage } from '../services/image/prepareReceiptImages';
 import { deleteDraft, downloadDraftImage, draftImageUrls, listDrafts } from '../services/supabase/draftsRepository';
+import { releaseLocal } from '../services/supabase/storageFiles';
 import { saveReceipt } from '../services/supabase/receiptsRepository';
 import type { ReceiptDraft } from '../types/receipt';
 
@@ -80,7 +81,7 @@ export default function BatchReviewScreen() {
       const data = fromFormValues(values);
       if (!(await confirmIfDuplicate(data))) return;
       const local = await downloadDraftImage(current.image_path);
-      const archiveUri = await prepareArchiveImage(local, DRAFT_WIDTH);
+      const archiveUri = await prepareArchiveImage(local, DRAFT_WIDTH).finally(() => releaseLocal(local));
       await saveReceipt(data, archiveUri);
       await deleteDraft(current);
       haptics.success();
