@@ -14,7 +14,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.9.0
+## 1.10.0
+- **Yeni sürüm bildirimi (web / Ana Ekran):** iPhone eski sürümü önbellekte tutuyorsa ana sayfanın üstünde "Yeni sürüm hazır" satırı çıkar; dokununca güncellenir
+
+## 1.9.0 — `3373880`
 - **Excel'de "Aylar" sayfası:** Fişler birden çok aya yayılıyorsa (yıllık / tüm zamanlar) ay ay fiş sayısı, toplam, %1/%10/%20 KDV ve KDV hariç tutar; muhasebeci aylık KDV beyannamesini doğrudan buradan okuyabilir
 - **"Taslak Olarak Sakla":** Tek fiş taramasında Gemini yoğun ya da kota doluysa fotoğraf kaybolmaz; tek dokunuşla taslaklara eklenir, sonra Toplu Tarama'dan taranır
 - README güncellendi: güncel özellikler, Expo Go, geri dönüş ve güvenlik önerileri

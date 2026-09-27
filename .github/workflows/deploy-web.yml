@@ -59,6 +59,8 @@ jobs:
       - name: Kod denetimi (lint)
         run: npx expo lint
       - run: npx expo export --platform web --output-dir dist
+      - name: Sürüm dosyası (uygulama yeni sürümü buradan anlar)
+        run: echo "{\"commit\":\"$EXPO_PUBLIC_APP_VERSION\"}" > dist/version.json
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

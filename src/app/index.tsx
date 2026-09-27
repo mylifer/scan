@@ -24,6 +24,7 @@ import { formatRunAt } from '../lib/schedule';
 import { categoryMeta, tabular, type Theme, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 import { VERSION_LABEL } from '../lib/version';
+import { reloadApp, useWebUpdateAvailable } from '../lib/webUpdate';
 import { buildAccountingPackage } from '../services/export/exportPackage';
 import { buildReceiptsWorkbook, exportFilename, shareXlsx, shareZip } from '../services/export/exportReceipts';
 import type { Kategori, ReceiptRecord } from '../types/receipt';
@@ -36,6 +37,7 @@ export default function DashboardScreen() {
   const { summary: s, trend, loading, error, refresh, remove, period, label, showMonthly, showYearly, showAll, prev, next, goToMonth } =
     useMonthlySummary();
   const { drafts, processor } = useDrafts();
+  const updateAvailable = useWebUpdateAvailable();
   const [visible, setVisible] = useState(PAGE);
   // Yenileme göstergesi yalnızca kullanıcı aşağı çektiğinde görünür; arka plan yenilemeleri
   // (ekrana her dönüşte) göstergeyi tetiklerse iOS sayfayı aşağı kaydırıp geri çıkarır.
@@ -162,6 +164,18 @@ export default function DashboardScreen() {
             </View>
           )}
         </View>
+
+        {updateAvailable && (
+          <ListSection>
+            <ListRow
+              title="Yeni sürüm hazır"
+              subtitle="Güncellemek için dokunun"
+              icon={{ sf: 'arrow.down.circle.fill', ion: 'arrow-down-circle', color: theme.blue }}
+              onPress={reloadApp}
+              chevron
+            />
+          </ListSection>
+        )}
 
         {error && (
           <ListSection>
