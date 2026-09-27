@@ -9,7 +9,7 @@ import { HeaderTextButton } from '../components/ui/HeaderButton';
 import { ListRow, ListSection } from '../components/ui/List';
 import { showAlert } from '../lib/alert';
 import { confirmIfDuplicate } from '../lib/confirmDuplicate';
-import { monthRange } from '../lib/format';
+import { capitalizeTr, monthRange } from '../lib/format';
 import { haptics } from '../lib/haptics';
 import { getPendingPhoto } from '../lib/pendingPhoto';
 import { type as t, useTheme } from '../lib/theme';
@@ -179,7 +179,7 @@ export default function ReviewScreen() {
 function monthLabelOf(iso: string) {
   const [y, m] = iso.split('-').map(Number);
   const label = new Date(y, m - 1, 1).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
-  return label.charAt(0).toLocaleUpperCase('tr-TR') + label.slice(1);
+  return capitalizeTr(label);
 }
 
 function providerName() {

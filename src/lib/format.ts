@@ -126,3 +126,14 @@ export function formatBytes(bytes: number): string {
   if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(1).replace('.', ',')} MB`;
   return `${(bytes / 1024 ** 3).toFixed(2).replace('.', ',')} GB`;
 }
+
+/** "eylül 2026" → "Eylül 2026" (Türkçe büyük harf: i → İ) */
+export function capitalizeTr(s: string): string {
+  return s.charAt(0).toLocaleUpperCase('tr-TR') + s.slice(1);
+}
+
+/** "2026-09-14" → "14 Eyl 2026" */
+export function shortTrDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
+}

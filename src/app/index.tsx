@@ -1,35 +1,35 @@
-import { errorMessage } from '../lib/errors';
-import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import { router, Stack } from 'expo-router';
-import { cloneElement, type ReactElement, useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
 
-import { HeaderIconButton } from '../components/ui/HeaderButton';
-import { Icon } from '../components/ui/Icon';
-import { EmptyState } from '../components/ui/EmptyState';
+import { CategorySection } from '../components/dashboard/CategorySection';
+import { ExportSection } from '../components/dashboard/ExportSection';
+import { PeriodPicker } from '../components/dashboard/PeriodPicker';
+import { ReceiptRow, SwipeToDelete } from '../components/dashboard/ReceiptRow';
+import { SummaryCard } from '../components/dashboard/SummaryCard';
+import { TrendChart } from '../components/TrendChart';
 import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
+import { HeaderIconButton } from '../components/ui/HeaderButton';
 import { ListRow, ListSection } from '../components/ui/List';
 import { SearchField } from '../components/ui/SearchField';
-import { TrendChart } from '../components/TrendChart';
 import { Toolbar, useToolbarHeight } from '../components/ui/Toolbar';
 import { useDrafts } from '../hooks/useDrafts';
 import { useMonthlySummary } from '../hooks/useMonthlySummary';
-import { showAlert } from '../lib/alert';
-import { formatTL } from '../lib/format';
 import { showActionSheet } from '../lib/actionSheet';
+import { showAlert } from '../lib/alert';
+import { errorMessage } from '../lib/errors';
+import { formatTL } from '../lib/format';
 import { haptics } from '../lib/haptics';
 import { periodRange } from '../lib/period';
+import { formatRunAt } from '../lib/schedule';
 import { matchesReceipt } from '../lib/search';
 import { SORT_OPTIONS, type SortKey, sortReceipts } from '../lib/sort';
-import { formatRunAt } from '../lib/schedule';
-import { compareWithPreviousMonth } from '../lib/trend';
-import { categoryMeta, tabular, type Theme, type as t, useTheme } from '../lib/theme';
+import { categoryMeta, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
+import { compareWithPreviousMonth } from '../lib/trend';
 import { VERSION_LABEL } from '../lib/version';
 import { reloadApp, useWebUpdateAvailable } from '../lib/webUpdate';
-import { buildAccountingPackage } from '../services/export/exportPackage';
-import { buildReceiptsWorkbook, exportFilename, shareXlsx, shareZip } from '../services/export/exportReceipts';
 import { categoriesReady } from '../services/supabase/schema';
 import type { Kategori, ReceiptRecord } from '../types/receipt';
 
@@ -52,8 +52,6 @@ export default function DashboardScreen() {
   // Yenileme göstergesi yalnızca kullanıcı aşağı çektiğinde görünür; arka plan yenilemeleri
   // (ekrana her dönüşte) göstergeyi tetiklerse iOS sayfayı aşağı kaydırıp geri çıkarır.
   const [pulling, setPulling] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const [packing, setPacking] = useState<{ done: number; total: number } | null>(null);
   const isMonth = period.mode === 'month';
   const offset = period.mode === 'all' ? 0 : period.offset;
   const range = periodRange(period);
@@ -97,36 +95,6 @@ export default function DashboardScreen() {
       showAlert('Silinemedi', errorMessage(e));
     }
   }
-
-  async function exportPackage() {
-    if (!s || packing) return;
-    setPacking({ done: 0, total: 0 });
-    try {
-      const { bytes, failed } = await buildAccountingPackage(s, capitalize(label), exportFilename(range), (done, total) => setPacking({ done, total }));
-      await shareZip(bytes, exportFilename(range, 'zip'));
-      if (failed) showToast(`${failed} fotoğraf indirilemedi; paket onlarsız oluşturuldu`, 'error', 4000);
-      else haptics.success();
-    } catch (e) {
-      showAlert('Paket oluşturulamadı', errorMessage(e));
-    } finally {
-      setPacking(null);
-    }
-  }
-
-  async function exportExcel() {
-    if (!s || exporting) return;
-    setExporting(true);
-    try {
-      await shareXlsx(buildReceiptsWorkbook(s, capitalize(label)), exportFilename(range));
-      haptics.success();
-    } catch (e) {
-      showAlert('Dışa aktarılamadı', errorMessage(e));
-    } finally {
-      setExporting(false);
-    }
-  }
-
-  const total = s?.kategoriToplamlari.reduce((a, k) => a + k.toplam, 0) ?? 0;
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
@@ -174,24 +142,13 @@ export default function DashboardScreen() {
             }}
           />
         }>
-        <View style={styles.controls}>
-          <SegmentedControl
-            values={['Aylık', 'Yıllık', 'Tüm Zamanlar']}
-            selectedIndex={period.mode === 'month' ? 0 : period.mode === 'year' ? 1 : 2}
-            onChange={(e) => {
-              haptics.select();
-              [showMonthly, showYearly, showAll][e.nativeEvent.selectedSegmentIndex]?.();
-            }}
-            appearance={theme.dark ? 'dark' : 'light'}
-          />
-          {range && (
-            <View style={styles.monthRow}>
-              <ChevronButton dir="left" onPress={prev} theme={theme} label={isMonth ? 'Önceki ay' : 'Önceki yıl'} />
-              <Text style={[t.headline, { color: theme.label }]}>{capitalize(label)}</Text>
-              <ChevronButton dir="right" onPress={next} disabled={offset === 0} theme={theme} label={isMonth ? 'Sonraki ay' : 'Sonraki yıl'} />
-            </View>
-          )}
-        </View>
+        <PeriodPicker
+          period={period}
+          label={label}
+          onMode={(mode) => ({ month: showMonthly, year: showYearly, all: showAll })[mode]()}
+          onPrev={prev}
+          onNext={next}
+        />
 
         {updateAvailable && (
           <ListSection>
@@ -234,7 +191,6 @@ export default function DashboardScreen() {
         ) : (
           <>
             <SummaryCard
-              theme={theme}
               total={s?.toplamGider ?? 0}
               kdv={s?.toplamKdv ?? 0}
               count={s?.fisSayisi ?? 0}
@@ -269,32 +225,7 @@ export default function DashboardScreen() {
             ) : (
               s && (
                 <>
-                  <ListSection footer="Muhasebecinize e-posta, WhatsApp ya da Dosyalar ile gönderebilirsiniz.">
-                    <ListRow
-                      title="Excel'e Aktar"
-                      subtitle={`${capitalize(label)} · ${s.fisSayisi} fiş`}
-                      icon={{ sf: 'tablecells.fill', ion: 'grid', color: theme.green }}
-                      onPress={exportExcel}
-                      disabled={exporting}
-                      accessory={exporting ? <ActivityIndicator /> : undefined}
-                      chevron={!exporting}
-                    />
-                    <ListRow
-                      title="Muhasebe Paketi (ZIP)"
-                      subtitle={
-                        packing
-                          ? packing.total
-                            ? `Fotoğraflar indiriliyor ${packing.done}/${packing.total}`
-                            : 'Hazırlanıyor…'
-                          : `Excel + ${s.fisler.filter((r) => r.image_path).length} fiş fotoğrafı`
-                      }
-                      icon={{ sf: 'archivebox.fill', ion: 'archive', color: theme.orange }}
-                      onPress={exportPackage}
-                      disabled={!!packing}
-                      accessory={packing ? <ActivityIndicator /> : undefined}
-                      chevron={!packing}
-                    />
-                  </ListSection>
+                  <ExportSection summary={s} label={label} range={range} />
 
                   {trend && trend.some((p) => p.total > 0) && (
                     <ListSection header="Son 12 Ay">
@@ -313,29 +244,7 @@ export default function DashboardScreen() {
                     <ListRow title="%20" value={formatTL(s.kdv20)} />
                   </ListSection>
 
-                  <ListSection header="Kategoriler">
-                    <CategoryBar items={s.kategoriToplamlari} theme={theme} />
-                    {s.kategoriToplamlari.map((k) => {
-                      const meta = categoryMeta[k.kategori];
-                      return (
-                        <ListRow
-                          key={k.kategori}
-                          icon={{ sf: meta.sf, ion: meta.ion, color: theme[meta.color] as string }}
-                          title={meta.label}
-                          value={`${formatTL(k.toplam)}  ·  %${total ? Math.round((k.toplam / total) * 100) : 0}`}
-                          onPress={() => {
-                            haptics.select();
-                            setCategory((c) => (c === k.kategori ? null : k.kategori));
-                          }}
-                          accessory={
-                            <View style={{ width: 18, alignItems: 'flex-end' }}>
-                              {category === k.kategori && <Icon sf="checkmark" ion="checkmark" size={16} color={theme.blue} weight="semibold" />}
-                            </View>
-                          }
-                        />
-                      );
-                    })}
-                  </ListSection>
+                  <CategorySection items={s.kategoriToplamlari} selected={category} onSelect={setCategory} />
 
                   {Platform.OS !== 'ios' && (
                     <View style={{ marginHorizontal: 16, marginBottom: 12 }}>
@@ -378,8 +287,8 @@ export default function DashboardScreen() {
                           ]
                         : []),
                       ...filtered.slice(0, visible).map((r) => (
-                        <SwipeToDelete key={r.id} onDelete={() => deleteReceipt(r)} theme={theme}>
-                          <ReceiptRow receipt={r} theme={theme} onPress={() => router.push({ pathname: '/receipt/[id]', params: { id: r.id } })} />
+                        <SwipeToDelete key={r.id} onDelete={() => deleteReceipt(r)}>
+                          <ReceiptRow receipt={r} onPress={() => router.push({ pathname: '/receipt/[id]', params: { id: r.id } })} />
                         </SwipeToDelete>
                       )),
                       ...(filtered.length > visible
@@ -414,134 +323,8 @@ export default function DashboardScreen() {
   );
 }
 
-type Compare = ReturnType<typeof compareWithPreviousMonth>;
-
-function SummaryCard({ theme, total, kdv, count, compare }: { theme: Theme; total: number; kdv: number; count: number; compare: Compare }) {
-  return (
-    <View style={[styles.summary, { backgroundColor: theme.card }]}>
-      <Text style={[t.footnote, { color: theme.secondaryLabel, fontWeight: '600' }]}>TOPLAM GİDER</Text>
-      <Text style={[styles.bigNumber, tabular, { color: theme.label }]} adjustsFontSizeToFit numberOfLines={1}>
-        {formatTL(total)}
-      </Text>
-      <Text style={[t.subhead, { color: theme.secondaryLabel }]}>
-        {count} fiş
-        {compare && ` · Geçen ay ${formatTL(compare.previousTotal)}`}
-        {compare?.changePct != null && compare.changePct !== 0 && (
-          <Text style={{ color: compare.changePct > 0 ? theme.orange : theme.green }}>
-            {` (%${Math.abs(compare.changePct)} ${compare.changePct > 0 ? 'fazla' : 'az'})`}
-          </Text>
-        )}
-      </Text>
-      <View style={[styles.hr, { backgroundColor: theme.separator }]} />
-      <View style={styles.stats}>
-        <Stat label="KDV Alacağı" value={formatTL(kdv)} color={theme.green} theme={theme} />
-        <View style={[styles.vr, { backgroundColor: theme.separator }]} />
-        <Stat label="KDV Hariç" value={formatTL(total - kdv)} color={theme.label} theme={theme} />
-      </View>
-    </View>
-  );
-}
-
-function Stat({ label, value, color, theme }: { label: string; value: string; color: string; theme: Theme }) {
-  return (
-    <View style={{ flex: 1, gap: 2 }}>
-      <Text style={[t.footnote, { color: theme.secondaryLabel }]}>{label}</Text>
-      <Text style={[t.title3, tabular, { color }]} adjustsFontSizeToFit numberOfLines={1}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
-function ReceiptRow({ receipt: r, theme, onPress, isLast }: { receipt: ReceiptRecord; theme: Theme; onPress: () => void; isLast?: boolean }) {
-  const meta = categoryMeta[r.kategori] ?? categoryMeta['diğer'];
-  return (
-    <ListRow
-      icon={{ sf: meta.sf, ion: meta.ion, color: theme[meta.color] as string }}
-      title={r.firma_adi}
-      subtitle={`${shortDate(r.tarih)} · KDV ${formatTL(r.toplam_kdv)}`}
-      value={formatTL(r.toplam_tutar)}
-      valueColor={theme.label}
-      chevron
-      onPress={onPress}
-      isLast={isLast}
-    />
-  );
-}
-
-/** Sola kaydırınca kırmızı "Sil" düğmesi (iOS listeleri gibi) */
-function SwipeToDelete({ children, onDelete, theme, isLast }: { children: ReactElement<{ isLast?: boolean }>; onDelete: () => void; theme: Theme; isLast?: boolean }) {
-  return (
-    <ReanimatedSwipeable
-      friction={1.5}
-      rightThreshold={40}
-      overshootRight={false}
-      renderRightActions={() => (
-        <Pressable onPress={onDelete} style={[styles.swipeDelete, { backgroundColor: theme.red }]} accessibilityLabel="Sil">
-          <Icon sf="trash.fill" ion="trash" size={20} color="#fff" />
-          <Text style={styles.swipeText}>Sil</Text>
-        </Pressable>
-      )}>
-      <View style={{ backgroundColor: theme.card }}>{cloneElement(children, { isLast })}</View>
-    </ReanimatedSwipeable>
-  );
-}
-
-/** Depolama göstergesi gibi, kategorilerin payını gösteren tek şerit */
-function CategoryBar({ items, theme }: { items: { kategori: ReceiptRecord['kategori']; toplam: number }[]; theme: Theme; isLast?: boolean }) {
-  return (
-    <View style={styles.barWrap}>
-      <View style={[styles.bar, { backgroundColor: theme.tertiaryFill }]}>
-        {items.map((k) => (
-          <View key={k.kategori} style={{ flex: k.toplam, backgroundColor: theme[categoryMeta[k.kategori].color] as string }} />
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function ChevronButton({ dir, onPress, disabled, theme, label }: { dir: 'left' | 'right'; onPress: () => void; disabled?: boolean; theme: Theme; label: string }) {
-  return (
-    <Pressable
-      onPress={() => {
-        haptics.select();
-        onPress();
-      }}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      hitSlop={12}
-      style={({ pressed }) => ({ opacity: disabled ? 0.25 : pressed ? 0.5 : 1, padding: 6 })}>
-      <Icon sf={`chevron.${dir}`} ion={dir === 'left' ? 'chevron-back' : 'chevron-forward'} size={18} color={theme.blue} weight="semibold" />
-    </Pressable>
-  );
-}
-
-function shortDate(iso: string) {
-  const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
 function formatSavedAt(ms: number) {
   const d = new Date(ms);
   const time = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
   return d.toDateString() === new Date().toDateString() ? `bugün ${time}` : `${d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })} ${time}`;
 }
-
-function capitalize(s: string) {
-  return s.charAt(0).toLocaleUpperCase('tr-TR') + s.slice(1);
-}
-
-const styles = StyleSheet.create({
-  controls: { marginHorizontal: 16, marginBottom: 16, gap: 12 },
-  monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  summary: { marginHorizontal: 16, marginBottom: 28, borderRadius: 12, padding: 16, gap: 2 },
-  bigNumber: { fontSize: 40, lineHeight: 46, fontWeight: '700', letterSpacing: -0.5 },
-  hr: { height: StyleSheet.hairlineWidth, marginVertical: 12 },
-  vr: { width: StyleSheet.hairlineWidth, marginHorizontal: 16 },
-  stats: { flexDirection: 'row' },
-  barWrap: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12 },
-  bar: { height: 12, borderRadius: 6, overflow: 'hidden', flexDirection: 'row', gap: 2 },
-  swipeDelete: { width: 84, alignItems: 'center', justifyContent: 'center', gap: 2 },
-  swipeText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-});

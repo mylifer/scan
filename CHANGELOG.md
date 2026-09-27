@@ -14,6 +14,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.19.1
+- İç düzenleme: ana sayfa kodu küçük parçalara ayrıldı (özet kartı, dönem seçici, dışa aktarma, kategoriler, fiş satırı). Görünüm ve davranış aynı
+
 ## 1.19.0 — `e04361f`
 - **Kota dolunca planla:** Toplu tarama Gemini kotası/yoğunluğu yüzünden durursa Toplu Tarama ekranında nedeni ve "Kalan N Fişi Planla" düğmesi çıkar; önerilen saat günlük hakkın yenilendiği saattir
 
