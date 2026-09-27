@@ -16,8 +16,9 @@ import { Toolbar, useToolbarHeight } from '../components/ui/Toolbar';
 import { useDrafts } from '../hooks/useDrafts';
 import { useMonthlySummary } from '../hooks/useMonthlySummary';
 import { showAlert } from '../lib/alert';
-import { formatTL, monthRange } from '../lib/format';
+import { formatTL } from '../lib/format';
 import { haptics } from '../lib/haptics';
+import { periodRange } from '../lib/period';
 import { matchesReceipt } from '../lib/search';
 import { formatRunAt } from '../lib/schedule';
 import { categoryMeta, tabular, type Theme, type as t, useTheme } from '../lib/theme';
@@ -32,7 +33,7 @@ const PAGE = 25;
 export default function DashboardScreen() {
   const theme = useTheme();
   const toolbarHeight = useToolbarHeight();
-  const { summary: s, trend, loading, error, refresh, remove, period, label, showMonthly, showAll, prevMonth, nextMonth, goToMonth } =
+  const { summary: s, trend, loading, error, refresh, remove, period, label, showMonthly, showYearly, showAll, prev, next, goToMonth } =
     useMonthlySummary();
   const { drafts, processor } = useDrafts();
   const [visible, setVisible] = useState(PAGE);
@@ -42,7 +43,8 @@ export default function DashboardScreen() {
   const [exporting, setExporting] = useState(false);
   const [packing, setPacking] = useState<{ done: number; total: number } | null>(null);
   const isMonth = period.mode === 'month';
-  const offset = isMonth ? period.offset : 0;
+  const offset = period.mode === 'all' ? 0 : period.offset;
+  const range = periodRange(period);
 
   // Dönem değişince listeyi baştan göster (React'in önerdiği: efekt yerine render sırasında)
   const [query, setQuery] = useState('');
@@ -74,7 +76,6 @@ export default function DashboardScreen() {
     if (!s || packing) return;
     setPacking({ done: 0, total: 0 });
     try {
-      const range = isMonth ? monthRange(offset) : undefined;
       const { bytes, failed } = await buildAccountingPackage(s, capitalize(label), exportFilename(range), (done, total) => setPacking({ done, total }));
       await shareZip(bytes, exportFilename(range, 'zip'));
       if (failed) showToast(`${failed} fotoğraf indirilemedi; paket onlarsız oluşturuldu`, 'error', 4000);
@@ -90,7 +91,6 @@ export default function DashboardScreen() {
     if (!s || exporting) return;
     setExporting(true);
     try {
-      const range = isMonth ? monthRange(offset) : undefined;
       await shareXlsx(buildReceiptsWorkbook(s, capitalize(label)), exportFilename(range));
       haptics.success();
     } catch (e) {
@@ -146,20 +146,19 @@ export default function DashboardScreen() {
         }>
         <View style={styles.controls}>
           <SegmentedControl
-            values={['Aylık', 'Tüm Zamanlar']}
-            selectedIndex={isMonth ? 0 : 1}
+            values={['Aylık', 'Yıllık', 'Tüm Zamanlar']}
+            selectedIndex={period.mode === 'month' ? 0 : period.mode === 'year' ? 1 : 2}
             onChange={(e) => {
               haptics.select();
-              if (e.nativeEvent.selectedSegmentIndex === 0) showMonthly();
-              else showAll();
+              [showMonthly, showYearly, showAll][e.nativeEvent.selectedSegmentIndex]?.();
             }}
             appearance={theme.dark ? 'dark' : 'light'}
           />
-          {isMonth && (
+          {range && (
             <View style={styles.monthRow}>
-              <ChevronButton dir="left" onPress={prevMonth} theme={theme} />
+              <ChevronButton dir="left" onPress={prev} theme={theme} label={isMonth ? 'Önceki ay' : 'Önceki yıl'} />
               <Text style={[t.headline, { color: theme.label }]}>{capitalize(label)}</Text>
-              <ChevronButton dir="right" onPress={nextMonth} disabled={offset === 0} theme={theme} />
+              <ChevronButton dir="right" onPress={next} disabled={offset === 0} theme={theme} label={isMonth ? 'Sonraki ay' : 'Sonraki yıl'} />
             </View>
           )}
         </View>
@@ -199,7 +198,7 @@ export default function DashboardScreen() {
               <EmptyState
                 icon={{ sf: 'doc.text.viewfinder', ion: 'scan-outline' }}
                 title="Fiş Yok"
-                message={isMonth ? 'Bu ay tarihli bir fiş bulunmuyor. Taramak için aşağıdaki düğmeyi kullanın.' : 'Henüz hiç fiş kaydetmediniz.'}
+                message={range ? `${isMonth ? 'Bu ay' : 'Bu yıl'} tarihli bir fiş bulunmuyor. Taramak için aşağıdaki düğmeyi kullanın.` : 'Henüz hiç fiş kaydetmediniz.'}
               />
             ) : (
               s && (
@@ -234,10 +233,10 @@ export default function DashboardScreen() {
                   {trend && trend.some((p) => p.total > 0) && (
                     <ListSection header="Son 12 Ay">
                       <TrendChart
-                        key={`${isMonth ? offset : 'all'}`}
+                        key={`${period.mode}${offset}`}
                         data={trend}
                         currentOffset={isMonth ? offset : null}
-                        onOpenMonth={isMonth ? goToMonth : undefined}
+                        onOpenMonth={goToMonth}
                       />
                     </ListSection>
                   )}
@@ -400,7 +399,7 @@ function CategoryBar({ items, theme }: { items: { kategori: ReceiptRecord['kateg
   );
 }
 
-function ChevronButton({ dir, onPress, disabled, theme }: { dir: 'left' | 'right'; onPress: () => void; disabled?: boolean; theme: Theme }) {
+function ChevronButton({ dir, onPress, disabled, theme, label }: { dir: 'left' | 'right'; onPress: () => void; disabled?: boolean; theme: Theme; label: string }) {
   return (
     <Pressable
       onPress={() => {
@@ -408,6 +407,8 @@ function ChevronButton({ dir, onPress, disabled, theme }: { dir: 'left' | 'right
         onPress();
       }}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
       hitSlop={12}
       style={({ pressed }) => ({ opacity: disabled ? 0.25 : pressed ? 0.5 : 1, padding: 6 })}>
       <Icon sf={`chevron.${dir}`} ion={dir === 'left' ? 'chevron-back' : 'chevron-forward'} size={18} color={theme.blue} weight="semibold" />

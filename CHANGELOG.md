@@ -14,7 +14,12 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.7.0
+## 1.8.0
+- **Yıllık görünüm:** Ana sayfada Aylık / Yıllık / Tüm Zamanlar. Yıllar arasında oklarla gezilebilir; Excel ve Muhasebe Paketi o yılın fişleriyle "Fisler_2026.xlsx" gibi adlandırılır (yıllık gelir vergisi beyannamesi için)
+- Görünümler arası geçişte seçili zaman korunur (2025 yılındayken "Aylık"a basınca Aralık 2025 açılır)
+- Grafikte "Bu aya git" artık her görünümde çalışır
+
+## 1.7.0 — `20ef4f7`
 - **Toplu çekimde bekleme yok:** Fotoğraflar arka planda sırayla yükleniyor; kameradan hemen sonraki fişe geçebilirsiniz. Toplu Tarama ekranında "N fotoğraf yükleniyor…" satırı görünür
 - **Taslak menüsü:** Bir taslağa dokununca: Fotoğrafı Görüntüle, (hatalıysa) Tekrar Tara, Taslağı Sil
 - **Tüm Taslakları Sil** düğmesi (onay sorarak)

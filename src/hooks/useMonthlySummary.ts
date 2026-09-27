@@ -2,13 +2,12 @@ import { errorMessage } from '../lib/errors';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
-import { monthRange } from '../lib/format';
+import { type Period, periodLabel, periodRange, stepPeriod, switchMode } from '../lib/period';
 import type { MonthPoint } from '../lib/trend';
 import { deleteReceipt, getMonthlyTotals, getSummary, type PeriodSummary } from '../services/supabase/receiptsRepository';
 import type { ReceiptRecord } from '../types/receipt';
 
-/** Aylık görünümde offset 0 = bu ay, -1 = geçen ay; ya da tüm zamanlar. */
-export type Period = { mode: 'month'; offset: number } | { mode: 'all' };
+export type { Period } from '../lib/period';
 
 export function useMonthlySummary() {
   const [period, setPeriod] = useState<Period>({ mode: 'month', offset: 0 });
@@ -22,7 +21,7 @@ export function useMonthlySummary() {
     setError(null);
     try {
       const [s, t] = await Promise.all([
-        getSummary(period.mode === 'month' ? monthRange(period.offset) : undefined),
+        getSummary(periodRange(period)),
         // Grafik kritik değil: alınamazsa özet yine gösterilsin
         getMonthlyTotals(12).catch(() => null),
       ]);
@@ -50,7 +49,6 @@ export function useMonthlySummary() {
     [refresh],
   );
 
-  const offset = period.mode === 'month' ? period.offset : 0;
   return {
     summary,
     trend,
@@ -59,11 +57,12 @@ export function useMonthlySummary() {
     refresh,
     remove,
     period,
-    label: period.mode === 'month' ? monthRange(period.offset).label : 'Tüm zamanlar',
-    showMonthly: () => setPeriod({ mode: 'month', offset }),
-    showAll: () => setPeriod({ mode: 'all' }),
+    label: periodLabel(period),
+    showMonthly: () => setPeriod((p) => switchMode(p, 'month')),
+    showYearly: () => setPeriod((p) => switchMode(p, 'year')),
+    showAll: () => setPeriod((p) => switchMode(p, 'all')),
     goToMonth: (o: number) => setPeriod({ mode: 'month', offset: Math.min(0, o) }),
-    prevMonth: () => setPeriod({ mode: 'month', offset: offset - 1 }),
-    nextMonth: () => setPeriod({ mode: 'month', offset: Math.min(0, offset + 1) }),
+    prev: () => setPeriod((p) => stepPeriod(p, -1)),
+    next: () => setPeriod((p) => stepPeriod(p, 1)),
   };
 }

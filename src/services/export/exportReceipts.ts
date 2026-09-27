@@ -39,7 +39,7 @@ async function shareFile(bytes: Uint8Array, filename: string, mimeType: string, 
 }
 
 /** "Fisler_2026-09.xlsx" / "Fisler_Tum_Zamanlar.xlsx" (ext: "zip" için paket adı) */
-export function exportFilename(range?: { from: string }, ext: 'xlsx' | 'zip' = 'xlsx'): string {
-  const base = range ? `Fisler_${range.from.slice(0, 7)}` : 'Fisler_Tum_Zamanlar';
+export function exportFilename(range?: { fileTag: string }, ext: 'xlsx' | 'zip' = 'xlsx'): string {
+  const base = range ? `Fisler_${range.fileTag}` : 'Fisler_Tum_Zamanlar';
   return ext === 'zip' ? `${base.replace('Fisler', 'Muhasebe_Paketi')}.zip` : `${base}.xlsx`;
 }
