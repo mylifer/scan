@@ -14,7 +14,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.21.1
+## 1.21.1 — `d25cb05`
 - Toplu taramada indirilen geçici fotoğraflar işlendikten sonra temizlenir (bellek ve telefon alanı)
 - Ekran okuyucu (VoiceOver) için taslak kutucuklarına, kamera ve grafik düğmelerine açıklamalar eklendi
 
