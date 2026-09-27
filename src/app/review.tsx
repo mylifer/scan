@@ -2,7 +2,7 @@ import { Redirect, router, Stack } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 
-import { EMPTY_FORM, fromFormValues, ReceiptForm, type ReceiptFormValues, toFormValues, validateForm } from '../components/ReceiptForm';
+import { emptyForm, fromFormValues, ReceiptForm, type ReceiptFormValues, toFormValues, validateForm } from '../components/ReceiptForm';
 import { ReceiptPhoto } from '../components/ReceiptPhoto';
 import { HeaderTextButton } from '../components/ui/HeaderButton';
 import { ListRow, ListSection } from '../components/ui/List';
@@ -23,7 +23,7 @@ export default function ReviewScreen() {
   const photo = getPendingPhoto();
   const [phase, setPhase] = useState<Phase>('analyzing');
   const [error, setError] = useState<string | null>(null);
-  const [values, setValues] = useState<ReceiptFormValues>(EMPTY_FORM);
+  const [values, setValues] = useState<ReceiptFormValues>(emptyForm);
   const [saving, setSaving] = useState(false);
   const archiveUri = useRef<string | undefined>(undefined);
   const abortRef = useRef<AbortController | null>(null);
@@ -32,8 +32,6 @@ export default function ReviewScreen() {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-    setPhase('analyzing');
-    setError(null);
     try {
       if (!photo) return;
       const images = await prepareReceiptImages(photo.uri, photo.width || 3000);
@@ -52,6 +50,8 @@ export default function ReviewScreen() {
   }, [photo]);
 
   useEffect(() => {
+    // analyze asenkron: durum yalnızca AI yanıtı geldikten sonra (await sonrası) güncellenir
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     analyze();
     return () => abortRef.current?.abort();
   }, [analyze]);
@@ -112,7 +112,15 @@ export default function ReviewScreen() {
         {phase === 'error' && (
           <ListSection footer={error ?? undefined}>
             <ListRow title="Fiş okunamadı" icon={{ sf: 'exclamationmark.triangle.fill', ion: 'warning', color: theme.orange }} />
-            <ListRow title="Tekrar Dene" tone="action" onPress={analyze} />
+            <ListRow
+              title="Tekrar Dene"
+              tone="action"
+              onPress={() => {
+                setPhase('analyzing');
+                setError(null);
+                analyze();
+              }}
+            />
             <ListRow title="Bilgileri Elle Gir" tone="action" onPress={() => setPhase('ready')} />
           </ListSection>
         )}

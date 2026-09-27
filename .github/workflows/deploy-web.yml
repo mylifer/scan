@@ -52,7 +52,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx tsc --noEmit
+      - name: Tür denetimi
+        run: npx tsc --noEmit
+      - name: Testler
+        run: npm test
+      - name: Kod denetimi (lint)
+        run: npx expo lint
       - run: npx expo export --platform web --output-dir dist
       - uses: actions/upload-pages-artifact@v3
         with:

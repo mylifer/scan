@@ -30,8 +30,8 @@ export default function CameraScreen() {
   const [autofocus, setAutofocus] = useState<'on' | 'off'>('on');
   const [focusPoint, setFocusPoint] = useState<{ x: number; y: number } | null>(null);
   const [shots, setShots] = useState<string[]>([]);
-  const focusAnim = useRef(new Animated.Value(0)).current;
-  const flash = useRef(new Animated.Value(0)).current;
+  const [focusAnim] = useState(() => new Animated.Value(0));
+  const [flash] = useState(() => new Animated.Value(0));
 
   if (!permission) return <View style={styles.black} />;
 

@@ -1,6 +1,6 @@
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import { router, Stack } from 'expo-router';
-import { cloneElement, type ReactElement, useEffect, useState } from 'react';
+import { cloneElement, type ReactElement, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 
@@ -42,7 +42,12 @@ export default function DashboardScreen() {
   const isMonth = period.mode === 'month';
   const offset = isMonth ? period.offset : 0;
 
-  useEffect(() => setVisible(PAGE), [label]);
+  // Dönem değişince listeyi baştan göster (React'in önerdiği: efekt yerine render sırasında)
+  const [shownLabel, setShownLabel] = useState(label);
+  if (shownLabel !== label) {
+    setShownLabel(label);
+    setVisible(PAGE);
+  }
 
   const readyDrafts = drafts.filter((d) => d.status === 'ready').length;
   const nextScheduled = drafts.find((d) => d.status === 'scheduled' && d.scheduled_for)?.scheduled_for;

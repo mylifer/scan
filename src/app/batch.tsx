@@ -2,7 +2,7 @@ import { BlurView } from 'expo-blur';
 import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AddPhotoButtons, type PickedPhoto } from '../components/AddPhotoButtons';
@@ -30,16 +30,20 @@ export default function BatchScreen() {
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
 
-  const scannable = useMemo(() => drafts.filter(isScannable), [drafts, processor.running]);
+  // isScannable, kuyruğun çalışıp çalışmadığına da bakar; her render'da hesaplanır (ucuz)
+  const scannable = drafts.filter(isScannable);
   const ready = drafts.filter((d) => d.status === 'ready');
   const scheduled = drafts.filter((d) => d.status === 'scheduled');
   const toolbarRows = (ready.length ? 1 : 0) + (scannable.length ? 1 : 0);
   const toolbarHeight = useToolbarHeight(Math.max(toolbarRows, 1));
 
-  // Yeni eklenen taslakların önizleme bağlantılarını al
+  // Yeni eklenen taslakların önizleme bağlantılarını (her yol için bir kez) al
+  const requested = useRef(new Set<string>());
   useEffect(() => {
-    const missing = drafts.map((d) => d.image_path).filter((p) => !urls[p]);
-    if (missing.length) draftImageUrls(missing).then((m) => setUrls((u) => ({ ...u, ...m })));
+    const missing = drafts.map((d) => d.image_path).filter((p) => !requested.current.has(p));
+    if (!missing.length) return;
+    missing.forEach((p) => requested.current.add(p));
+    draftImageUrls(missing).then((m) => setUrls((u) => ({ ...u, ...m })));
   }, [drafts]);
 
   if (notSetUp) return <SetupNeeded onCheck={refresh} />;

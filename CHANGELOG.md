@@ -14,7 +14,13 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.0.1
+## 1.0.2
+- 34 otomatik test (tutar/tarih okuma, AI yanıtı çözümleme, form doğrulama, Excel, planlama)
+- Kod denetimi (lint) ve testler her yayından önce çalışır; hata varsa yayın yapılmaz
+- Gece yarısını geçince elle girilen fişin tarihinin dün kalması düzeltildi
+- React uyarıları giderildi (animasyon ve durum yönetimi)
+
+## 1.0.1 — `905e2f5`
 - Sürüm numarası uygulamada görünür (ör. "Sürüm 1.0.1 (a1b2c3d)")
 - Yayın iş akışlarına **geri dönüş** (ref) seçeneği
 - Bu sürüm geçmişi dosyası
