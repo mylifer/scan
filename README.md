@@ -7,7 +7,10 @@ Türkiye'deki POS fişlerini kamerayla okuyup gider ve KDV takibi yapan Expo (Re
 - **Düzenlenebilir form:** Okunan değerleri kontrol edip düzeltme, kaydetmeden önce doğrulama (TOPLAM/TOPKDV karışıklığı kontrolü)
 - **Supabase:** E-posta ile giriş, `receipts` tablosu (RLS açık), sıkıştırılmış fiş görselleri (~50–120 KB)
 - **Toplu tarama:** Arka arkaya çekim / galeriden çoklu seçim → taslaklar Supabase'de saklanır → topluca veya planlanan saatte taranır → tek tek kontrol edilip kaydedilir (`supabase/migrations/002_receipt_drafts.sql` gerekir)
-- **Dashboard:** Bu ayki toplam gider, KDV alacağı (%1 / %10 / %20), kategori dağılımı, son fişler
+- **Ana sayfa:** Aylık / Yıllık / Tüm Zamanlar; toplam gider, KDV alacağı (%1 / %10 / %20), son 12 ay grafiği, kategori dağılımı, arama ve kategori filtresi, kaydırarak silme
+- **Fiş detayı:** Düzenleme, tam ekran yakınlaştırılabilir fotoğraf, mükerrer fiş ve şüpheli KDV uyarıları
+- **Dışa aktarma:** Excel (.xlsx) ve Muhasebe Paketi (Excel + tüm fotoğraflar, ZIP)
+- **Ayarlar:** Hesap, depolama kullanımı, yapay zekâ modeli, sürüm bilgisi
 
 ## iPhone'da kullanım (web sürümü)
 
@@ -18,11 +21,17 @@ Yayın için GitHub repo ayarlarında şunlar gerekir:
 - **Settings → Secrets and variables → Actions** altında `GEMINI_API_KEY` secret'ı
 - **Settings → Pages → Source: GitHub Actions**
 
-## iPhone uygulaması (TestFlight)
+## iPhone uygulaması (Expo Go, ücretsiz)
 
-`.github/workflows/ios.yml` EAS Build ile uygulamayı derleyip TestFlight'a gönderir; kod değişiklikleri
-EAS Update ile telefona anında gelir. Gerekli secret'lar: `EXPO_TOKEN`, `GEMINI_API_KEY`, `ASC_API_KEY_P8`,
-`ASC_KEY_ID`, `ASC_ISSUER_ID`, `APPLE_TEAM_ID`. İlk kurulumda workflow'u `setup`, sonra `build` ile çalıştırın.
+Uygulama App Store'daki ücretsiz **Expo Go** içinde çalışır. Her güncellemede `.github/workflows/ios.yml`
+EAS Update ile yeni sürümü yayınlar; telefonda uygulamayı kapatıp açmak yeterlidir.
+Açma bağlantısı: `exp://u.expo.dev/e4446685-6bd2-4e1c-b0d0-cb1c025e1905?channel-name=production`
+Gerekli secret'lar: `EXPO_TOKEN`, `GEMINI_API_KEY`.
+
+## Sürümler ve geri dönüş
+
+Her sürüm ve commit kodu [CHANGELOG.md](CHANGELOG.md) içindedir. Eski bir sürüme dönmek için Actions'ta
+iş akışını **ref** kutusuna commit kodunu yazarak çalıştırın (ayrıntılar CHANGELOG'da).
 
 ## Kurulum (geliştirici)
 
@@ -75,10 +84,15 @@ Yeni bir sağlayıcı eklemek için `VisionService` arayüzünü uygulayan bir s
 
 ## ⚠️ Güvenlik notu
 
-`EXPO_PUBLIC_*` değişkenleri uygulama paketine gömülür. Uygulamayı açan biri API anahtarını çıkarabilir.
-Kişisel kullanım için kabul edilebilir, ama uygulamayı başkalarıyla paylaşacaksanız AI çağrısını bir
-**Supabase Edge Function** üzerinden yapın. Bu durumda yeni bir `EdgeFunctionVisionAdapter` yazmanız yeterli,
-uygulamanın geri kalanı değişmez. Google AI Studio'da anahtarınıza kota ve uygulama kısıtlaması tanımlamanız da önerilir.
+Veritabanı ve fotoğraflar satır düzeyinde güvenlikle (RLS) korunur: her kullanıcı yalnızca kendi fişlerini görür.
+Açık kalan iki nokta ve yapılması önerilenler:
+
+1. **Yeni hesap açılışını kapatın.** Uygulamayı yalnızca siz kullanıyorsanız: Supabase → Authentication →
+   Sign In / Providers → **Allow new users to sign up** kapalı. Böylece başkaları hesap açıp depolamanızı kullanamaz.
+2. **Gemini anahtarı uygulama paketindedir** (`EXPO_PUBLIC_*` değişkenleri pakete gömülür). Web sürümünü açan
+   biri anahtarı çıkarıp ücretsiz kotanızı tüketebilir; ücretsiz planda para kaybı olmaz. Faturalandırmayı
+   açarsanız AI çağrısını bir **Supabase Edge Function** üzerinden yapın (yeni bir `VisionService` adaptörü
+   yeterli) ve Google AI Studio'da harcama sınırı koyun.
 
 ## Depolama (Supabase Free Plan)
 
@@ -87,4 +101,4 @@ uygulamanın geri kalanı değişmez. Google AI Studio'da anahtarınıza kota ve
 | AI'a gönderilen | 1600px genişlik | %75 | Saklanmaz |
 | Arşiv (Storage) | 900px genişlik | %45 | ~50–120 KB |
 
-1 GB'lık free plan kotasına yaklaşık 10.000 fiş sığar. Bucket, dosya başına 500 KB sınırıyla ve yalnızca JPEG kabul edecek şekilde yapılandırılmıştır.
+1 GB'lık free plan kotasına yaklaşık 10.000 fiş sığar. Bucket, dosya başına 1 MB sınırıyla (taslaklar AI için daha yüksek çözünürlükte tutulur, kaydedilince silinir) ve yalnızca JPEG kabul edecek şekilde yapılandırılmıştır.
