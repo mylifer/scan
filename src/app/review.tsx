@@ -47,6 +47,7 @@ export default function ReviewScreen() {
   const [error, setError] = useState<string | null>(null);
   const [values, setValues] = useState<ReceiptFormValues>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const archiveUri = useRef<string | undefined>(undefined);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -79,16 +80,20 @@ export default function ReviewScreen() {
   async function handleSave() {
     const errors = validateForm(values);
     if (errors.length) {
+      setSaveError(errors.join('\n'));
       showAlert('Lütfen kontrol edin', errors.join('\n'));
       return;
     }
+    setSaveError(null);
     setSaving(true);
     try {
       const { imageWarning } = await saveReceipt(fromFormValues(values), archiveUri.current);
       if (imageWarning) showAlert('Fiş kaydedildi', imageWarning);
-      router.back();
+      router.replace('/');
     } catch (e) {
-      showAlert('Kaydedilemedi', (e as Error).message);
+      const message = (e as Error).message ?? String(e);
+      setSaveError(message);
+      showAlert('Kaydedilemedi', message);
     } finally {
       setSaving(false);
     }
@@ -143,6 +148,11 @@ export default function ReviewScreen() {
         {phase === 'ready' && (
           <>
             <ReceiptForm values={values} onChange={setValues} />
+            {saveError && (
+              <View style={styles.saveError}>
+                <Text style={styles.saveErrorText}>⚠️ {saveError}</Text>
+              </View>
+            )}
             <PrimaryButton title="Kaydet" onPress={handleSave} loading={saving} />
             <PrimaryButton
               title="Yeniden çek"
@@ -181,4 +191,6 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 15, color: colors.text, fontWeight: '600' },
   errorDetail: { fontSize: 12, color: colors.muted },
   row: { flexDirection: 'row', gap: 10 },
+  saveError: { backgroundColor: '#FEF2F2', borderRadius: 12, padding: 12 },
+  saveErrorText: { color: colors.danger, fontSize: 14, fontWeight: '600' },
 });
