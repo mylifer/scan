@@ -14,7 +14,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.14.0
+## 1.14.0 — `d99fe38`
 - **Giyim kategorisi** (kıyafet, ayakkabı, iş kıyafeti). Kurulum kodu güncellendi (`004_giyim_category.sql`): 1.13.0 kurulumunu yapmış olsanız da olmasanız da ana sayfadaki "Yeni kategorileri etkinleştir" adımını bir kez yapmanız yeterli
 
 ## 1.13.0 — `eb517e6`
