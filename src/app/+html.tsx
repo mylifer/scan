@@ -13,12 +13,20 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Fiş Tarayıcı" />
-        <meta name="theme-color" content="#F4F6FB" />
+        <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
         <link rel="apple-touch-icon" href="/scan/apple-touch-icon.png" />
         <link rel="manifest" href="/scan/manifest.json" />
         <title>Fiş Tarayıcı</title>
         <ScrollViewStyleReset />
-        <style dangerouslySetInnerHTML={{ __html: 'body{background-color:#F4F6FB;}' }} />
+        <style
+          dangerouslySetInnerHTML={{
+            __html:
+              'body{background-color:#F2F2F7;-webkit-tap-highlight-color:transparent}' +
+              '@media (prefers-color-scheme: dark){body{background-color:#000}}' +
+              '*{scrollbar-width:none}*::-webkit-scrollbar{display:none}',
+          }}
+        />
       </head>
       <body>{children}</body>
     </html>

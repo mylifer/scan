@@ -6,7 +6,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.adba.fistarayici",
@@ -30,8 +30,8 @@
       "output": "static",
       "name": "Fiş Tarayıcı",
       "shortName": "Fiş Tarayıcı",
-      "themeColor": "#F4F6FB",
-      "backgroundColor": "#F4F6FB"
+      "themeColor": "#F2F2F7",
+      "backgroundColor": "#F2F2F7"
     },
     "plugins": [
       "expo-router",
@@ -50,7 +50,9 @@
           "cameraPermission": false,
           "microphonePermission": false
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker",
+      "expo-image"
     ],
     "experiments": {
       "baseUrl": "/scan"

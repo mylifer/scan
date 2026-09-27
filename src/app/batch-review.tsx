@@ -1,46 +1,30 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
-import { PrimaryButton } from '../components/PrimaryButton';
-import {
-  fromFormValues,
-  ReceiptForm,
-  type ReceiptFormValues,
-  toFormValues,
-  validateForm,
-} from '../components/ReceiptForm';
-import { confirmAction, showAlert } from '../lib/alert';
-import { colors } from '../lib/theme';
+import { fromFormValues, ReceiptForm, type ReceiptFormValues, toFormValues, validateForm } from '../components/ReceiptForm';
+import { ReceiptPhoto } from '../components/ReceiptPhoto';
+import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
+import { HeaderTextButton } from '../components/ui/HeaderButton';
+import { ListRow, ListSection } from '../components/ui/List';
+import { confirmDestructive } from '../lib/actionSheet';
+import { showAlert } from '../lib/alert';
+import { haptics } from '../lib/haptics';
+import { useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 import { DRAFT_WIDTH, prepareArchiveImage } from '../services/image/prepareReceiptImages';
-import {
-  deleteDraft,
-  downloadDraftImage,
-  draftImageUrls,
-  listDrafts,
-} from '../services/supabase/draftsRepository';
+import { deleteDraft, downloadDraftImage, draftImageUrls, listDrafts } from '../services/supabase/draftsRepository';
 import { saveReceipt } from '../services/supabase/receiptsRepository';
 import type { ReceiptDraft } from '../types/receipt';
 
 /** Taranmış taslakları sırayla gösterir: kontrol et, düzelt, kaydet, sonrakine geç. */
 export default function BatchReviewScreen() {
-  const insets = useSafeAreaInsets();
+  const theme = useTheme();
   const [queue, setQueue] = useState<ReceiptDraft[] | null>(null);
+  const [total, setTotal] = useState(0);
   const [values, setValues] = useState<ReceiptFormValues | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(0);
 
@@ -48,7 +32,6 @@ export default function BatchReviewScreen() {
 
   const show = useCallback(async (d: ReceiptDraft | undefined) => {
     setImageUrl(null);
-    setZoom(false);
     if (!d?.result) {
       setValues(null);
       return;
@@ -64,6 +47,7 @@ export default function BatchReviewScreen() {
         .then((all) => {
           const ready = all.filter((d) => d.status === 'ready' && d.result);
           setQueue(ready);
+          setTotal(ready.length);
           show(ready[0]);
         })
         .catch((e) => showAlert('Taslaklar alınamadı', (e as Error).message));
@@ -85,6 +69,7 @@ export default function BatchReviewScreen() {
     if (!current || !values) return;
     const errors = validateForm(values);
     if (errors.length) {
+      haptics.error();
       showAlert('Lütfen kontrol edin', errors.join('\n'));
       return;
     }
@@ -94,10 +79,12 @@ export default function BatchReviewScreen() {
       const archiveUri = await prepareArchiveImage(local, DRAFT_WIDTH);
       await saveReceipt(fromFormValues(values), archiveUri);
       await deleteDraft(current);
-      const total = saved + 1;
-      setSaved(total);
-      next(total);
+      haptics.success();
+      const count = saved + 1;
+      setSaved(count);
+      next(count);
     } catch (e) {
+      haptics.error();
       showAlert('Kaydedilemedi', (e as Error).message);
     } finally {
       setSaving(false);
@@ -106,89 +93,47 @@ export default function BatchReviewScreen() {
 
   function discard() {
     if (!current) return;
-    confirmAction('Taslağı sil', 'Bu fiş kaydedilmeden silinecek.', 'Sil', async () => {
+    confirmDestructive('Taslağı Sil', 'Bu fiş kaydedilmeden silinecek.', 'Taslağı Sil', async () => {
       await deleteDraft(current);
       next(saved);
     });
   }
 
-  if (!queue) {
-    return <ActivityIndicator color={colors.primary} style={{ marginTop: 60 }} />;
-  }
+  if (!queue) return <ActivityIndicator style={{ marginTop: 120 }} />;
 
   if (!current || !values) {
     return (
-      <View style={styles.empty}>
-        <Text style={{ fontSize: 48 }}>✅</Text>
-        <Text style={styles.emptyTitle}>İncelenecek fiş kalmadı</Text>
-        <PrimaryButton title="Geri dön" onPress={() => router.back()} style={{ alignSelf: 'stretch' }} />
+      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: theme.background }}>
+        <EmptyState icon={{ sf: 'checkmark.circle', ion: 'checkmark-circle-outline' }} title="Hepsi Tamam" message="İncelenecek fiş kalmadı." />
+        <View style={{ paddingHorizontal: 20 }}>
+          <Button title="Geri Dön" variant="gray" onPress={() => router.back()} />
+        </View>
       </View>
     );
   }
 
+  const position = total - queue.length + 1;
+
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <Stack.Screen
+        options={{
+          title: `${position} / ${total}`,
+          headerRight: () => (saving ? <ActivityIndicator /> : <HeaderTextButton title="Kaydet" bold onPress={save} />),
+        }}
+      />
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
-        keyboardShouldPersistTaps="handled">
-        <Text style={styles.counter}>
-          {saved + 1}. fiş · kalan {queue.length}
-        </Text>
-
-        <Pressable onPress={() => setZoom((z) => !z)} style={[styles.imageWrap, zoom && { height: 520 }]}>
-          {imageUrl ? (
-            <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="contain" />
-          ) : (
-            <ActivityIndicator color={colors.muted} />
-          )}
-          <Text style={styles.zoomHint}>{zoom ? 'Küçültmek için dokunun' : 'Büyütmek için dokunun'}</Text>
-        </Pressable>
-
+        contentInsetAdjustmentBehavior="automatic"
+        keyboardDismissMode="interactive"
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingTop: 16, paddingBottom: 40 }}>
+        <ReceiptPhoto uri={imageUrl} />
         <ReceiptForm values={values} onChange={setValues} />
-
-        <PrimaryButton title={queue.length > 1 ? 'Kaydet ve sonraki' : 'Kaydet'} onPress={save} loading={saving} />
-        <View style={styles.row}>
-          <PrimaryButton
-            title="Atla"
-            variant="secondary"
-            onPress={() => next(saved)}
-            disabled={saving}
-            style={{ flex: 1 }}
-          />
-          <PrimaryButton title="🗑️  Sil" variant="secondary" onPress={discard} disabled={saving} style={{ flex: 1 }} />
-        </View>
+        <ListSection>
+          <ListRow title={queue.length > 1 ? 'Atla, Sonrakine Geç' : 'Atla'} tone="action" onPress={() => next(saved)} disabled={saving} />
+          <ListRow title="Taslağı Sil" tone="destructive" onPress={discard} disabled={saving} />
+        </ListSection>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  content: { padding: 16, gap: 14 },
-  counter: { fontSize: 14, color: colors.muted, fontWeight: '700', textAlign: 'center' },
-  imageWrap: {
-    height: 220,
-    borderRadius: 16,
-    backgroundColor: '#0F172A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  image: { width: '100%', height: '100%' },
-  zoomHint: {
-    position: 'absolute',
-    bottom: 8,
-    color: '#fff',
-    fontSize: 12,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
-  row: { flexDirection: 'row', gap: 10 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
-  emptyTitle: { fontSize: 20, fontWeight: '800', color: colors.text },
-});

@@ -1,91 +1,98 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PrimaryButton } from '../components/PrimaryButton';
+import { Button } from '../components/ui/Button';
+import { IconTile } from '../components/ui/IconTile';
 import { showAlert } from '../lib/alert';
-import { colors } from '../lib/theme';
+import { haptics } from '../lib/haptics';
+import { fontFamily, type as t, useTheme } from '../lib/theme';
 import { supabase } from '../services/supabase/client';
 
 export default function LoginScreen() {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState<'signin' | 'signup' | null>(null);
 
   async function submit(mode: 'signin' | 'signup') {
     if (!email.trim() || password.length < 6) {
+      haptics.error();
       showAlert('Eksik bilgi', 'Geçerli bir e-posta ve en az 6 karakterli bir şifre girin.');
       return;
     }
     setBusy(mode);
     const credentials = { email: email.trim(), password };
     const { data, error } =
-      mode === 'signin'
-        ? await supabase.auth.signInWithPassword(credentials)
-        : await supabase.auth.signUp(credentials);
+      mode === 'signin' ? await supabase.auth.signInWithPassword(credentials) : await supabase.auth.signUp(credentials);
     setBusy(null);
     if (error) {
-      showAlert('Hata', error.message);
+      haptics.error();
+      showAlert(mode === 'signin' ? 'Giriş yapılamadı' : 'Hesap oluşturulamadı', error.message);
     } else if (mode === 'signup' && !data.session) {
-      showAlert('E-postanızı kontrol edin', 'Hesabınızı doğrulamak için gönderilen bağlantıya tıklayın.');
+      showAlert('E-postanızı kontrol edin', 'Hesabınızı doğrulamak için gönderilen bağlantıya dokunun.');
+    } else {
+      haptics.success();
     }
   }
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
-        <Text style={styles.logo}>🧾</Text>
-        <Text style={styles.title}>Fiş Tarayıcı</Text>
-        <Text style={styles.subtitle}>Gider ve KDV takibi</Text>
+  const inputStyle = [t.body, styles.input, { color: theme.label }];
 
-        <View style={styles.form}>
+  return (
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 64, paddingBottom: insets.bottom + 24 }]}
+        keyboardShouldPersistTaps="handled">
+        <View style={styles.hero}>
+          <IconTile sf="doc.text.viewfinder" ion="scan" color={theme.blue} size={76} />
+          <Text style={[t.largeTitle, { color: theme.label, marginTop: 20 }]}>Fiş Tarayıcı</Text>
+          <Text style={[t.body, { color: theme.secondaryLabel, textAlign: 'center' }]}>
+            Fişlerinizi tarayın, giderlerinizi ve KDV alacağınızı takip edin.
+          </Text>
+        </View>
+
+        <View style={[styles.card, { backgroundColor: theme.card }]}>
           <TextInput
-            style={styles.input}
+            style={inputStyle}
             placeholder="E-posta"
-            placeholderTextColor={colors.muted}
+            placeholderTextColor={theme.tertiaryLabel}
             autoCapitalize="none"
             autoComplete="email"
+            textContentType="emailAddress"
             keyboardType="email-address"
+            returnKeyType="next"
             value={email}
             onChangeText={setEmail}
           />
+          <View style={[styles.separator, { backgroundColor: theme.separator }]} />
           <TextInput
-            style={styles.input}
+            style={inputStyle}
             placeholder="Şifre"
-            placeholderTextColor={colors.muted}
+            placeholderTextColor={theme.tertiaryLabel}
             secureTextEntry
             autoComplete="password"
+            textContentType="password"
+            returnKeyType="go"
+            onSubmitEditing={() => submit('signin')}
             value={password}
             onChangeText={setPassword}
           />
-          <PrimaryButton title="Giriş yap" onPress={() => submit('signin')} loading={busy === 'signin'} />
-          <PrimaryButton
-            title="Hesap oluştur"
-            variant="secondary"
-            onPress={() => submit('signup')}
-            loading={busy === 'signup'}
-          />
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+        <View style={{ gap: 8 }}>
+          <Button title="Giriş Yap" onPress={() => submit('signin')} loading={busy === 'signin'} disabled={busy === 'signup'} />
+          <Button title="Hesap Oluştur" variant="plain" onPress={() => submit('signup')} loading={busy === 'signup'} disabled={busy === 'signin'} />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  container: { flex: 1, justifyContent: 'center', padding: 24 },
-  logo: { fontSize: 56, textAlign: 'center' },
-  title: { fontSize: 30, fontWeight: '800', color: colors.text, textAlign: 'center', marginTop: 8 },
-  subtitle: { fontSize: 15, color: colors.muted, textAlign: 'center', marginBottom: 32 },
-  form: { gap: 12 },
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    height: 52,
-    fontSize: 16,
-    color: colors.text,
-  },
+  content: { paddingHorizontal: 20, gap: 28, maxWidth: 480, width: '100%', alignSelf: 'center' },
+  hero: { alignItems: 'center', gap: 8, marginBottom: 8 },
+  card: { borderRadius: 12, overflow: 'hidden' },
+  input: { height: 50, paddingHorizontal: 16, fontFamily, ...Platform.select({ web: { outlineWidth: 0 } }) },
+  separator: { height: StyleSheet.hairlineWidth, marginLeft: 16 },
 });

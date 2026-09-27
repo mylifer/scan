@@ -1,22 +1,97 @@
-export const colors = {
-  bg: '#F4F6FB',
-  card: '#FFFFFF',
-  text: '#0F172A',
-  muted: '#64748B',
-  border: '#E2E8F0',
-  primary: '#2563EB',
-  primaryDark: '#1E3A8A',
-  success: '#059669',
-  successBg: '#ECFDF5',
-  danger: '#DC2626',
-  heroFrom: '#1E3A8A',
-  heroTo: '#2563EB',
+import { Platform, type TextStyle, useColorScheme } from 'react-native';
+
+import type { Kategori } from '../types/receipt';
+
+/** iOS sistem renkleri (UIKit semantic colors), açık ve koyu mod. */
+const light = {
+  dark: false,
+  background: '#F2F2F7', // systemGroupedBackground
+  card: '#FFFFFF', // secondarySystemGroupedBackground
+  cardElevated: '#F2F2F7', // tertiarySystemGroupedBackground
+  label: '#000000',
+  secondaryLabel: 'rgba(60,60,67,0.6)',
+  tertiaryLabel: 'rgba(60,60,67,0.3)',
+  separator: 'rgba(60,60,67,0.29)',
+  fill: 'rgba(120,120,128,0.2)',
+  tertiaryFill: 'rgba(118,118,128,0.12)',
+  highlight: '#D1D1D6', // satır basılı durumu
+  blue: '#007AFF',
+  green: '#34C759',
+  red: '#FF3B30',
+  orange: '#FF9500',
+  yellow: '#FFCC00',
+  purple: '#AF52DE',
+  indigo: '#5856D6',
+  teal: '#30B0C7',
+  pink: '#FF2D55',
+  gray: '#8E8E93',
 };
 
-export const kategoriMeta: Record<string, { emoji: string; color: string }> = {
-  akaryakıt: { emoji: '⛽', color: '#F59E0B' },
-  restoran: { emoji: '🍽️', color: '#EF4444' },
-  market: { emoji: '🛒', color: '#10B981' },
-  teknoloji: { emoji: '💻', color: '#6366F1' },
-  'ofis gideri': { emoji: '🗂️', color: '#0EA5E9' },
+const dark: typeof light = {
+  dark: true,
+  background: '#000000',
+  card: '#1C1C1E',
+  cardElevated: '#2C2C2E',
+  label: '#FFFFFF',
+  secondaryLabel: 'rgba(235,235,245,0.6)',
+  tertiaryLabel: 'rgba(235,235,245,0.3)',
+  separator: 'rgba(84,84,88,0.6)',
+  fill: 'rgba(120,120,128,0.36)',
+  tertiaryFill: 'rgba(118,118,128,0.24)',
+  highlight: '#3A3A3C',
+  blue: '#0A84FF',
+  green: '#30D158',
+  red: '#FF453A',
+  orange: '#FF9F0A',
+  yellow: '#FFD60A',
+  purple: '#BF5AF2',
+  indigo: '#5E5CE6',
+  teal: '#40C8E0',
+  pink: '#FF375F',
+  gray: '#8E8E93',
+};
+
+export type Theme = typeof light;
+
+export function useTheme(): Theme {
+  return useColorScheme() === 'dark' ? dark : light;
+}
+
+/** iOS Dynamic Type "Large" (varsayılan) boyutları. */
+export const type = {
+  largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: '700', letterSpacing: 0.37 },
+  title1: { fontSize: 28, lineHeight: 34, fontWeight: '700', letterSpacing: 0.36 },
+  title2: { fontSize: 22, lineHeight: 28, fontWeight: '700', letterSpacing: 0.35 },
+  title3: { fontSize: 20, lineHeight: 25, fontWeight: '600', letterSpacing: 0.38 },
+  headline: { fontSize: 17, lineHeight: 22, fontWeight: '600', letterSpacing: -0.41 },
+  body: { fontSize: 17, lineHeight: 22, fontWeight: '400', letterSpacing: -0.41 },
+  callout: { fontSize: 16, lineHeight: 21, fontWeight: '400', letterSpacing: -0.32 },
+  subhead: { fontSize: 15, lineHeight: 20, fontWeight: '400', letterSpacing: -0.24 },
+  footnote: { fontSize: 13, lineHeight: 18, fontWeight: '400', letterSpacing: -0.08 },
+  caption1: { fontSize: 12, lineHeight: 16, fontWeight: '400', letterSpacing: 0 },
+  caption2: { fontSize: 11, lineHeight: 13, fontWeight: '400', letterSpacing: 0.07 },
+} satisfies Record<string, TextStyle>;
+
+/** Tutarlarda rakamlar hizalı dursun */
+export const tabular: TextStyle = { fontVariant: ['tabular-nums'] };
+
+/** Web'de SF Pro yoksa en yakın sistem yazı tipi */
+export const fontFamily = Platform.select({
+  web: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif',
+  default: undefined,
+});
+
+export interface SymbolSpec {
+  /** SF Symbol adı (iOS) */
+  sf: string;
+  /** Ionicons adı (web/Android yedeği) */
+  ion: string;
+}
+
+export const categoryMeta: Record<Kategori, SymbolSpec & { color: keyof Theme; label: string }> = {
+  akaryakıt: { sf: 'fuelpump.fill', ion: 'speedometer', color: 'orange', label: 'Akaryakıt' },
+  restoran: { sf: 'fork.knife', ion: 'restaurant', color: 'pink', label: 'Restoran' },
+  market: { sf: 'cart.fill', ion: 'cart', color: 'green', label: 'Market' },
+  teknoloji: { sf: 'laptopcomputer', ion: 'laptop', color: 'indigo', label: 'Teknoloji' },
+  'ofis gideri': { sf: 'paperclip', ion: 'attach', color: 'teal', label: 'Ofis Gideri' },
 };

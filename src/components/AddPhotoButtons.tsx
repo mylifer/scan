@@ -1,9 +1,9 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
 
+import { useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
-import { PrimaryButton } from './PrimaryButton';
+import { ListRow, ListSection } from './ui/List';
 
 export interface PickedPhoto {
   uri: string;
@@ -15,11 +15,10 @@ interface Props {
   disabled?: boolean;
 }
 
-/**
- * Native: "Fotoğraf çek" kamerayı toplu modda açar (her çekim orada taslağa eklenir);
- * "Galeriden" birden fazla fotoğraf seçtirir.
- */
+/** Native: "Fotoğraf Çek" kamerayı toplu modda açar; "Galeriden Seç" çoklu seçim yaptırır. */
 export function AddPhotoButtons({ onPicked, disabled }: Props) {
+  const theme = useTheme();
+
   async function pickFromGallery() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -32,28 +31,26 @@ export function AddPhotoButtons({ onPicked, disabled }: Props) {
       selectionLimit: 50,
       quality: 1,
     });
-    if (!result.canceled && result.assets.length) {
-      onPicked(result.assets.map((a) => ({ uri: a.uri, width: a.width })));
-    }
+    if (!result.canceled && result.assets.length) onPicked(result.assets.map((a) => ({ uri: a.uri, width: a.width })));
   }
 
   return (
-    <View style={styles.row}>
-      <PrimaryButton
-        title="📷  Fotoğraf çek"
+    <ListSection footer="Her fotoğraf anında taslak olarak kaydedilir; uygulamayı kapatsanız da kaybolmaz.">
+      <ListRow
+        title="Fotoğraf Çek"
+        subtitle="Arka arkaya çekebilirsiniz"
+        icon={{ sf: 'camera.fill', ion: 'camera', color: theme.blue }}
         onPress={() => router.push({ pathname: '/camera', params: { mode: 'batch' } })}
         disabled={disabled}
-        style={{ flex: 1 }}
+        chevron
       />
-      <PrimaryButton
-        title="🖼️  Galeriden"
-        variant="secondary"
+      <ListRow
+        title="Galeriden Seç"
+        icon={{ sf: 'photo.on.rectangle.angled', ion: 'images', color: theme.green }}
         onPress={pickFromGallery}
         disabled={disabled}
-        style={{ flex: 1 }}
+        chevron
       />
-    </View>
+    </ListSection>
   );
 }
-
-const styles = StyleSheet.create({ row: { flexDirection: 'row', gap: 10 } });

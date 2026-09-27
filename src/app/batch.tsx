@@ -1,16 +1,23 @@
+import { BlurView } from 'expo-blur';
 import * as Clipboard from 'expo-clipboard';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AddPhotoButtons, type PickedPhoto } from '../components/AddPhotoButtons';
-import { PrimaryButton } from '../components/PrimaryButton';
+import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Icon } from '../components/ui/Icon';
+import { ListRow, ListSection } from '../components/ui/List';
+import { Toolbar, useToolbarHeight } from '../components/ui/Toolbar';
 import { useDrafts } from '../hooks/useDrafts';
-import { confirmAction, showAlert } from '../lib/alert';
-import { DRAFTS_SETUP_SQL, SUPABASE_SQL_EDITOR_URL } from '../lib/setupSql';
+import { confirmDestructive, showActionSheet } from '../lib/actionSheet';
+import { showAlert } from '../lib/alert';
+import { haptics } from '../lib/haptics';
 import { formatRunAt, nextRunAt, RECOMMENDED_HOUR, SCHEDULE_HOURS } from '../lib/schedule';
-import { colors } from '../lib/theme';
+import { DRAFTS_SETUP_SQL, SUPABASE_SQL_EDITOR_URL } from '../lib/setupSql';
+import { type Theme, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 import { isScannable } from '../services/drafts/draftProcessor';
 import { prepareDraftImage } from '../services/image/prepareReceiptImages';
@@ -18,22 +25,24 @@ import { addDraft, deleteDraft, draftImageUrls, scheduleDrafts } from '../servic
 import type { ReceiptDraft } from '../types/receipt';
 
 export default function BatchScreen() {
-  const insets = useSafeAreaInsets();
+  const theme = useTheme();
   const { drafts, loading, notSetUp, error, processor, refresh, run } = useDrafts();
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
-  const [showSchedule, setShowSchedule] = useState(false);
-  const [hour, setHour] = useState<number>(RECOMMENDED_HOUR);
 
   const scannable = useMemo(() => drafts.filter(isScannable), [drafts, processor.running]);
   const ready = drafts.filter((d) => d.status === 'ready');
   const scheduled = drafts.filter((d) => d.status === 'scheduled');
+  const toolbarRows = (ready.length ? 1 : 0) + (scannable.length ? 1 : 0);
+  const toolbarHeight = useToolbarHeight(Math.max(toolbarRows, 1));
 
   // Yeni eklenen taslakların önizleme bağlantılarını al
   useEffect(() => {
     const missing = drafts.map((d) => d.image_path).filter((p) => !urls[p]);
     if (missing.length) draftImageUrls(missing).then((m) => setUrls((u) => ({ ...u, ...m })));
   }, [drafts]);
+
+  if (notSetUp) return <SetupNeeded onCheck={refresh} />;
 
   async function addPhotos(photos: PickedPhoto[]) {
     setUploading({ done: 0, total: photos.length });
@@ -49,151 +58,182 @@ export default function BatchScreen() {
     }
     setUploading(null);
     if (failed) showToast(`${failed} fotoğraf eklenemedi`, 'error');
+    else haptics.success();
   }
 
-  function remove(d: ReceiptDraft) {
-    confirmAction('Taslağı sil', 'Bu fotoğraf taslaklardan silinecek.', 'Sil', async () => {
-      try {
-        await deleteDraft(d);
-        refresh();
-      } catch (e) {
-        showAlert('Silinemedi', (e as Error).message);
-      }
+  function openDraft(d: ReceiptDraft) {
+    if (d.status === 'processing') return;
+    haptics.tap();
+    confirmDestructive(
+      d.result?.firmaAdi ?? statusText(d),
+      d.status === 'failed' && d.error ? d.error : 'Bu fotoğraf taslaklardan silinecek.',
+      'Taslağı Sil',
+      async () => {
+        try {
+          await deleteDraft(d);
+          refresh();
+        } catch (e) {
+          showAlert('Silinemedi', (e as Error).message);
+        }
+      },
+    );
+  }
+
+  function pickSchedule() {
+    showActionSheet({
+      title: 'Ne zaman taransın?',
+      message: 'Fiyatlar saate göre değişmez; önerilen saatte (ABD’de gece) sunucular genellikle daha sakindir.',
+      options: SCHEDULE_HOURS.map((h) => {
+        const at = nextRunAt(h);
+        return {
+          label: `${formatRunAt(at.toISOString())}${h === RECOMMENDED_HOUR ? '  (önerilen)' : ''}`,
+          onPress: async () => {
+            await scheduleDrafts(
+              scannable.map((d) => d.id),
+              at,
+            );
+            await refresh();
+            showToast(`${scannable.length} fiş ${formatRunAt(at.toISOString())} için planlandı`, 'info', 3500);
+          },
+        };
+      }),
     });
-  }
-
-  async function schedule() {
-    const at = nextRunAt(hour);
-    await scheduleDrafts(
-      scannable.map((d) => d.id),
-      at,
-    );
-    setShowSchedule(false);
-    await refresh();
-    showToast(`${scannable.length} fiş ${formatRunAt(at.toISOString())} için planlandı`, 'info', 3500);
-  }
-
-  async function unschedule() {
-    await scheduleDrafts(
-      scheduled.map((d) => d.id),
-      null,
-    );
-    refresh();
-  }
-
-  if (notSetUp) {
-    return <SetupNeeded onCheck={refresh} />;
   }
 
   const busy = processor.running || !!uploading;
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 180 }]}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingTop: 8, paddingBottom: toolbarHeight }}>
         <AddPhotoButtons onPicked={addPhotos} disabled={!!uploading} />
 
-        {uploading && (
-          <Progress label={`Fotoğraflar kaydediliyor ${uploading.done}/${uploading.total}`} value={uploading.done / uploading.total} />
+        {(uploading || processor.running) && (
+          <ListSection>
+            <ProgressRow
+              theme={theme}
+              label={uploading ? `Fotoğraflar kaydediliyor ${uploading.done}/${uploading.total}` : `Taranıyor ${processor.done}/${processor.total}`}
+              value={uploading ? uploading.done / uploading.total : processor.done / Math.max(processor.total, 1)}
+            />
+          </ListSection>
         )}
-        {processor.running && (
-          <Progress label={`Taranıyor ${processor.done}/${processor.total}`} value={processor.done / processor.total} />
+
+        {error && (
+          <ListSection>
+            <ListRow title="Taslaklar alınamadı" subtitle={error} icon={{ sf: 'wifi.exclamationmark', ion: 'cloud-offline', color: theme.orange }} onPress={refresh} />
+          </ListSection>
         )}
-        {error && <Text style={{ color: colors.danger }}>{error}</Text>}
 
         {scheduled.length > 0 && (
-          <View style={styles.info}>
-            <Text style={styles.infoText}>
-              ⏰ {scheduled.length} fiş {formatRunAt(scheduled[0].scheduled_for!)} için planlı. O saatten sonra uygulamayı
-              açtığınızda otomatik taranır.
-            </Text>
-            <Pressable onPress={unschedule} hitSlop={8}>
-              <Text style={styles.link}>Planı iptal et</Text>
-            </Pressable>
-          </View>
+          <ListSection footer="O saatten sonra uygulamayı ilk açtığınızda tarama kendiliğinden başlar.">
+            <ListRow
+              title={`${formatRunAt(scheduled[0].scheduled_for!)} için planlı`}
+              subtitle={`${scheduled.length} fiş`}
+              icon={{ sf: 'clock.fill', ion: 'time', color: theme.purple }}
+            />
+            <ListRow
+              title="Planı İptal Et"
+              tone="destructive"
+              onPress={async () => {
+                await scheduleDrafts(
+                  scheduled.map((d) => d.id),
+                  null,
+                );
+                refresh();
+              }}
+            />
+          </ListSection>
         )}
 
         {loading ? (
-          <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
+          <ActivityIndicator style={{ marginTop: 40 }} />
         ) : drafts.length === 0 ? (
-          <View style={[styles.center, { paddingVertical: 40 }]}>
-            <Text style={{ fontSize: 48 }}>📚</Text>
-            <Text style={styles.title}>Taslak yok</Text>
-            <Text style={styles.muted}>
-              Fişlerin fotoğraflarını arka arkaya çekin. Hepsi taslak olarak saklanır; istediğiniz zaman topluca taratırsınız.
-            </Text>
-          </View>
+          <EmptyState
+            icon={{ sf: 'square.stack.3d.up', ion: 'layers-outline' }}
+            title="Taslak Yok"
+            message="Fişlerin fotoğraflarını arka arkaya çekin; istediğiniz zaman topluca taratın."
+          />
         ) : (
-          <View style={styles.grid}>
-            {drafts.map((d) => (
-              <View key={d.id} style={styles.tile}>
-                {urls[d.image_path] ? (
-                  <Image source={{ uri: urls[d.image_path] }} style={styles.thumb} />
-                ) : (
-                  <View style={[styles.thumb, styles.center]}>
-                    <ActivityIndicator color={colors.muted} />
-                  </View>
-                )}
-                <StatusBadge draft={d} />
-                {d.status !== 'processing' && (
-                  <Pressable onPress={() => remove(d)} style={styles.remove} hitSlop={6} accessibilityLabel="Taslağı sil">
-                    <Text style={styles.removeText}>✕</Text>
-                  </Pressable>
-                )}
-              </View>
-            ))}
+          <View style={{ marginBottom: 28 }}>
+            <Text style={[t.footnote, styles.gridHeader, { color: theme.secondaryLabel }]}>TASLAKLAR · {drafts.length}</Text>
+            <View style={styles.grid}>
+              {drafts.map((d) => (
+                <Pressable key={d.id} onPress={() => openDraft(d)} style={({ pressed }) => [styles.tile, { backgroundColor: theme.fill, opacity: pressed ? 0.7 : 1 }]}>
+                  {urls[d.image_path] ? (
+                    <Image source={{ uri: urls[d.image_path] }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
+                  ) : (
+                    <ActivityIndicator style={{ flex: 1 }} />
+                  )}
+                  <StatusBadge draft={d} theme={theme} />
+                </Pressable>
+              ))}
+            </View>
           </View>
         )}
       </ScrollView>
 
-      {(showSchedule || ready.length > 0 || scannable.length > 0) && (
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-        {showSchedule ? (
-          <View style={{ gap: 10 }}>
-            <Text style={styles.footerTitle}>Hangi saatte taransın? (Türkiye saati)</Text>
-            <View style={styles.chips}>
-              {SCHEDULE_HOURS.map((h) => (
-                <Pressable key={h} onPress={() => setHour(h)} style={[styles.chip, hour === h && styles.chipActive]}>
-                  <Text style={[styles.chipText, hour === h && { color: '#fff' }]}>
-                    {String(h).padStart(2, '0')}:00{h === RECOMMENDED_HOUR ? ' ★' : ''}
-                  </Text>
-                </Pressable>
-              ))}
+      {toolbarRows > 0 && (
+        <Toolbar>
+          {ready.length > 0 && (
+            <Button
+              title={`İncele ve Kaydet (${ready.length})`}
+              icon={{ sf: 'checkmark.circle.fill', ion: 'checkmark-circle' }}
+              onPress={() => router.push('/batch-review')}
+              disabled={processor.running}
+            />
+          )}
+          {scannable.length > 0 && (
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button
+                title={`Şimdi Tara (${scannable.length})`}
+                icon={{ sf: 'text.viewfinder', ion: 'scan' }}
+                variant={ready.length ? 'tinted' : 'filled'}
+                onPress={() => run(scannable)}
+                loading={processor.running}
+                disabled={busy}
+                style={{ flex: 1 }}
+              />
+              <Button title="Planla" icon={{ sf: 'clock', ion: 'time-outline' }} variant="gray" onPress={pickSchedule} disabled={busy} />
             </View>
-            <Text style={styles.muted}>★ ABD'de gece olduğu için sunucular genellikle daha sakin.</Text>
-            <View style={styles.row}>
-              <PrimaryButton title="Vazgeç" variant="secondary" onPress={() => setShowSchedule(false)} style={{ flex: 1 }} />
-              <PrimaryButton title={`Planla (${scannable.length})`} onPress={schedule} style={{ flex: 1 }} />
-            </View>
-          </View>
-        ) : (
-          <View style={{ gap: 10 }}>
-            {ready.length > 0 && (
-              <PrimaryButton title={`✅  İncele ve kaydet (${ready.length})`} onPress={() => router.push('/batch-review')} disabled={processor.running} />
-            )}
-            {scannable.length > 0 && (
-              <View style={styles.row}>
-                <PrimaryButton
-                  title={`🔍  Şimdi tara (${scannable.length})`}
-                  variant={ready.length ? 'secondary' : 'primary'}
-                  onPress={() => run(scannable)}
-                  loading={processor.running}
-                  disabled={busy}
-                  style={{ flex: 1.3 }}
-                />
-                <PrimaryButton title="⏰  Sonra" variant="secondary" onPress={() => setShowSchedule(true)} disabled={busy} style={{ flex: 1 }} />
-              </View>
-            )}
-          </View>
-        )}
-      </View>
+          )}
+        </Toolbar>
       )}
     </View>
   );
 }
 
-/** receipt_drafts tablosu yoksa: SQL'i kopyala → Supabase'i aç → çalıştır → tekrar kontrol et */
+function statusText(d: ReceiptDraft) {
+  return { pending: 'Taranmayı bekliyor', scheduled: 'Planlı', processing: 'Taranıyor', ready: 'Hazır', failed: 'Okunamadı' }[d.status];
+}
+
+function StatusBadge({ draft, theme }: { draft: ReceiptDraft; theme: Theme }) {
+  if (draft.status === 'pending') return null;
+  const spec = {
+    scheduled: { sf: 'clock.fill', ion: 'time', color: theme.purple },
+    ready: { sf: 'checkmark.circle.fill', ion: 'checkmark-circle', color: theme.green },
+    failed: { sf: 'exclamationmark.circle.fill', ion: 'alert-circle', color: theme.red },
+    processing: null,
+  }[draft.status];
+  return (
+    <BlurView intensity={60} tint="dark" style={styles.badge}>
+      {spec ? <Icon sf={spec.sf} ion={spec.ion} size={18} color={spec.color} /> : <ActivityIndicator size="small" color="#fff" />}
+    </BlurView>
+  );
+}
+
+function ProgressRow({ label, value, theme, isLast }: { label: string; value: number; theme: Theme; isLast?: boolean }) {
+  return (
+    <View style={{ padding: 16, gap: 10 }}>
+      <Text style={[t.body, { color: theme.label }]}>{label}</Text>
+      <View style={[styles.track, { backgroundColor: theme.tertiaryFill }]}>
+        <View style={[styles.fill, { width: `${Math.round(value * 100)}%`, backgroundColor: theme.blue }]} />
+      </View>
+    </View>
+  );
+}
+
+/** receipt_drafts tablosu yoksa: kodu kopyala → Supabase'i aç → çalıştır → kontrol et */
 function SetupNeeded({ onCheck }: { onCheck: () => Promise<unknown> }) {
-  const insets = useSafeAreaInsets();
+  const theme = useTheme();
   const [showCode, setShowCode] = useState(false);
   const [checking, setChecking] = useState(false);
 
@@ -203,167 +243,74 @@ function SetupNeeded({ onCheck }: { onCheck: () => Promise<unknown> }) {
       showToast('Kod kopyalandı');
     } catch {
       setShowCode(true);
-      showToast('Otomatik kopyalanamadı; kodu aşağıdan seçip kopyalayın', 'info', 4000);
+      showToast('Kopyalanamadı; kodu aşağıdan seçin', 'info', 4000);
     }
   }
 
-  async function check() {
-    setChecking(true);
-    await onCheck();
-    setChecking(false);
-  }
-
   return (
-    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}>
-      <View style={[styles.center, { paddingTop: 8 }]}>
-        <Text style={{ fontSize: 44 }}>🛠️</Text>
-        <Text style={styles.title}>Tek seferlik kurulum</Text>
-        <Text style={styles.muted}>
-          Toplu tarama, taslakları saklamak için Supabase'de yeni bir tabloya ihtiyaç duyuyor. 1 dakikanızı alır.
-        </Text>
-      </View>
-
-      <Step n={1} text="Kurulum kodunu kopyalayın">
-        <PrimaryButton title="📋  Kodu kopyala" onPress={copy} />
-      </Step>
-      <Step n={2} text="Supabase'i açın (giriş yapmanız istenebilir)">
-        <PrimaryButton title="↗  Supabase SQL ekranını aç" variant="secondary" onPress={() => Linking.openURL(SUPABASE_SQL_EDITOR_URL)} />
-      </Step>
-      <Step n={3} text='Boş alana yapıştırın ve sağ alttaki "Run" düğmesine basın. Uyarı çıkarsa "Run this query" deyin. "Success" yazısını görmelisiniz.' />
-      <Step n={4} text="Uygulamaya dönüp kontrol edin">
-        <PrimaryButton title="✓  Kurulumu kontrol et" onPress={check} loading={checking} />
-      </Step>
-
-      <Pressable onPress={() => setShowCode((v) => !v)} hitSlop={8}>
-        <Text style={[styles.link, { textAlign: 'center' }]}>{showCode ? 'Kodu gizle' : 'Kodu göster'}</Text>
-      </Pressable>
+    <ScrollView style={{ backgroundColor: theme.background }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 40 }}>
+      <EmptyState
+        icon={{ sf: 'wrench.and.screwdriver.fill', ion: 'construct' }}
+        title="Tek Seferlik Kurulum"
+        message="Toplu tarama, taslakları saklamak için Supabase'de yeni bir tabloya ihtiyaç duyuyor."
+      />
+      <ListSection header="Adımlar" footer='Kodu SQL ekranına yapıştırıp "Run" düğmesine basın. "Success" yazısını görünce kurulumu kontrol edin.'>
+        <ListRow title="1. Kurulum Kodunu Kopyala" icon={{ sf: 'doc.on.doc.fill', ion: 'copy', color: theme.blue }} onPress={copy} />
+        <ListRow
+          title="2. Supabase SQL Ekranını Aç"
+          icon={{ sf: 'arrow.up.right.square.fill', ion: 'open', color: theme.green }}
+          onPress={() => Linking.openURL(SUPABASE_SQL_EDITOR_URL)}
+        />
+        <ListRow title={showCode ? 'Kodu Gizle' : 'Kodu Göster'} tone="action" onPress={() => setShowCode((v) => !v)} />
+      </ListSection>
       {showCode && (
         <TextInput
           value={DRAFTS_SETUP_SQL}
           multiline
           editable={false}
           selectTextOnFocus
-          style={styles.code}
+          style={[styles.code, { backgroundColor: theme.card, color: theme.label }]}
         />
       )}
+      <View style={{ paddingHorizontal: 16 }}>
+        <Button
+          title="Kurulumu Kontrol Et"
+          loading={checking}
+          onPress={async () => {
+            setChecking(true);
+            await onCheck();
+            setChecking(false);
+          }}
+        />
+      </View>
     </ScrollView>
   );
 }
 
-function Step({ n, text, children }: { n: number; text: string; children?: ReactNode }) {
-  return (
-    <View style={styles.step}>
-      <View style={styles.stepHead}>
-        <View style={styles.stepNum}>
-          <Text style={styles.stepNumText}>{n}</Text>
-        </View>
-        <Text style={styles.stepText}>{text}</Text>
-      </View>
-      {children}
-    </View>
-  );
-}
-
-function StatusBadge({ draft }: { draft: ReceiptDraft }) {
-  const map = {
-    pending: { text: 'Bekliyor', bg: '#E2E8F0', fg: colors.text },
-    scheduled: { text: '⏰ Planlı', bg: '#EDE9FE', fg: '#5B21B6' },
-    processing: { text: 'Taranıyor…', bg: '#DBEAFE', fg: colors.primaryDark },
-    ready: { text: '✓ Hazır', bg: colors.successBg, fg: colors.success },
-    failed: { text: 'Hata', bg: '#FEE2E2', fg: colors.danger },
-  } as const;
-  const m = map[draft.status];
-  return (
-    <View style={[styles.badge, { backgroundColor: m.bg }]}>
-      <Text style={[styles.badgeText, { color: m.fg }]} numberOfLines={1}>
-        {draft.status === 'ready' && draft.result?.firmaAdi ? draft.result.firmaAdi : m.text}
-      </Text>
-    </View>
-  );
-}
-
-function Progress({ label, value }: { label: string; value: number }) {
-  return (
-    <View style={{ gap: 6 }}>
-      <Text style={styles.progressLabel}>{label}</Text>
-      <View style={styles.track}>
-        <View style={[styles.fill, { width: `${Math.round(value * 100)}%` }]} />
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  content: { padding: 16, gap: 14 },
-  center: { alignItems: 'center', justifyContent: 'center', gap: 8 },
-  title: { fontSize: 20, fontWeight: '800', color: colors.text },
-  muted: { fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 20 },
-  info: { backgroundColor: '#F5F3FF', borderRadius: 14, padding: 12, gap: 6 },
-  infoText: { color: '#5B21B6', fontSize: 14, lineHeight: 20 },
-  link: { color: colors.primary, fontWeight: '700', fontSize: 14 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  tile: { width: '31%', aspectRatio: 0.62, borderRadius: 12, overflow: 'hidden', backgroundColor: '#E2E8F0' },
-  thumb: { width: '100%', height: '100%' },
-  badge: { position: 'absolute', left: 6, right: 6, bottom: 6, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 4 },
-  badgeText: { fontSize: 11, fontWeight: '700', textAlign: 'center' },
-  remove: {
+  gridHeader: { marginLeft: 32, marginBottom: 7 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 2, marginHorizontal: 16, borderRadius: 12, overflow: 'hidden' },
+  tile: { width: '32.9%', aspectRatio: 0.75, overflow: 'hidden' },
+  badge: {
     position: 'absolute',
-    top: 6,
     right: 6,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    bottom: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  removeText: { color: '#fff', fontSize: 12, fontWeight: '800' },
-  progressLabel: { fontSize: 14, fontWeight: '600', color: colors.text },
-  track: { height: 8, borderRadius: 4, backgroundColor: '#E2E8F0', overflow: 'hidden' },
-  fill: { height: 8, borderRadius: 4, backgroundColor: colors.primary },
-  footer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: 16,
-    backgroundColor: colors.bg,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  footerTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
-  row: { flexDirection: 'row', gap: 10 },
-  chips: { flexDirection: 'row', gap: 8 },
-  chip: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-  },
-  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { fontWeight: '700', color: colors.text },
-  step: { backgroundColor: colors.card, borderRadius: 16, padding: 14, gap: 12, borderWidth: 1, borderColor: colors.border },
-  stepHead: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  stepNum: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepNumText: { color: '#fff', fontWeight: '800' },
-  stepText: { flex: 1, fontSize: 15, color: colors.text, lineHeight: 21, fontWeight: '600' },
+  track: { height: 4, borderRadius: 2, overflow: 'hidden' },
+  fill: { height: 4, borderRadius: 2 },
   code: {
-    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
+    fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }),
     fontSize: 11,
-    backgroundColor: '#0F172A',
-    color: '#E2E8F0',
     borderRadius: 12,
     padding: 12,
     height: 260,
+    marginHorizontal: 16,
+    marginBottom: 28,
   },
 });

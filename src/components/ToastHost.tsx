@@ -1,19 +1,18 @@
+import { BlurView } from 'expo-blur';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors } from '../lib/theme';
+import { haptics } from '../lib/haptics';
+import { type as t, useTheme } from '../lib/theme';
 import { subscribeToast, type ToastMessage } from '../lib/toast';
+import { Icon } from './ui/Icon';
 
 const useNativeDriver = Platform.OS !== 'web';
 
-const palette = {
-  success: { bg: '#064E3B', icon: '✅' },
-  info: { bg: colors.text, icon: 'ℹ️' },
-  error: { bg: '#7F1D1D', icon: '⚠️' },
-};
-
+/** Dynamic Island bildirimlerini andıran, üstten inip kaybolan kapsül. */
 export function ToastHost() {
+  const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const anim = useRef(new Animated.Value(0)).current;
@@ -21,24 +20,31 @@ export function ToastHost() {
 
   const hide = () => {
     if (timer.current) clearTimeout(timer.current);
-    Animated.timing(anim, { toValue: 0, duration: 200, useNativeDriver }).start(() => setToast(null));
+    Animated.timing(anim, { toValue: 0, duration: 220, useNativeDriver }).start(() => setToast(null));
   };
 
   useEffect(
     () =>
-      subscribeToast((t) => {
+      subscribeToast((next) => {
         if (timer.current) clearTimeout(timer.current);
-        setToast(t);
+        setToast(next);
+        if (next.type === 'success') haptics.success();
+        else if (next.type === 'error') haptics.error();
         anim.setValue(0);
-        Animated.spring(anim, { toValue: 1, useNativeDriver, friction: 8 }).start();
-        timer.current = setTimeout(hide, t.duration);
+        Animated.spring(anim, { toValue: 1, useNativeDriver, damping: 18, stiffness: 220 }).start();
+        timer.current = setTimeout(hide, next.duration);
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
   if (!toast) return null;
-  const { bg, icon } = palette[toast.type];
+  const icon =
+    toast.type === 'success'
+      ? { sf: 'checkmark.circle.fill', ion: 'checkmark-circle', color: theme.green }
+      : toast.type === 'error'
+        ? { sf: 'exclamationmark.triangle.fill', ion: 'warning', color: theme.orange }
+        : { sf: 'info.circle.fill', ion: 'information-circle', color: theme.blue };
 
   return (
     <Animated.View
@@ -46,14 +52,22 @@ export function ToastHost() {
       style={[
         styles.wrap,
         {
-          top: insets.top + 8,
+          top: insets.top + 6,
           opacity: anim,
-          transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [-40, 0] }) }],
+          transform: [
+            { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [-30, 0] }) },
+            { scale: anim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) },
+          ],
         },
       ]}>
-      <Pressable onPress={hide} style={[styles.toast, { backgroundColor: bg }]}>
-        <Text style={styles.icon}>{icon}</Text>
-        <Text style={styles.text}>{toast.text}</Text>
+      <Pressable onPress={hide} style={[styles.shadow, { shadowOpacity: theme.dark ? 0 : 0.15 }]}>
+        <BlurView
+          intensity={90}
+          tint={theme.dark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
+          style={[styles.pill, { borderColor: theme.separator }]}>
+          <Icon sf={icon.sf} ion={icon.ion} size={20} color={icon.color} />
+          <Text style={[t.subhead, { color: theme.label, fontWeight: '600', flexShrink: 1 }]}>{toast.text}</Text>
+        </BlurView>
       </Pressable>
     </Animated.View>
   );
@@ -61,20 +75,16 @@ export function ToastHost() {
 
 const styles = StyleSheet.create({
   wrap: { position: 'absolute', left: 16, right: 16, zIndex: 1000, alignItems: 'center' },
-  toast: {
+  shadow: { shadowColor: '#000', shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 8, borderRadius: 999 },
+  pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 16,
+    gap: 8,
+    paddingHorizontal: 18,
     paddingVertical: 12,
-    borderRadius: 14,
-    maxWidth: 480,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
+    borderRadius: 999,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    maxWidth: 440,
   },
-  icon: { fontSize: 16 },
-  text: { color: '#fff', fontSize: 15, fontWeight: '600', flexShrink: 1 },
 });

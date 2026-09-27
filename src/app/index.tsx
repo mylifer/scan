@@ -1,247 +1,292 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import SegmentedControl from '@react-native-segmented-control/segmented-control';
+import { router, Stack } from 'expo-router';
+import { cloneElement, type ReactElement, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 
+import { HeaderIconButton } from '../components/ui/HeaderButton';
+import { Icon } from '../components/ui/Icon';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Button } from '../components/ui/Button';
+import { ListRow, ListSection } from '../components/ui/List';
+import { Toolbar, useToolbarHeight } from '../components/ui/Toolbar';
+import { useAuth } from '../hooks/useAuth';
 import { useDrafts } from '../hooks/useDrafts';
 import { useMonthlySummary } from '../hooks/useMonthlySummary';
-import { confirmAction, showAlert } from '../lib/alert';
+import { confirmDestructive, showActionSheet } from '../lib/actionSheet';
+import { showAlert } from '../lib/alert';
+import { formatTL } from '../lib/format';
+import { haptics } from '../lib/haptics';
 import { formatRunAt } from '../lib/schedule';
+import { categoryMeta, tabular, type Theme, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
-import { formatTL, isoToTrDate } from '../lib/format';
-import { colors, kategoriMeta } from '../lib/theme';
 import { supabase } from '../services/supabase/client';
 import type { ReceiptRecord } from '../types/receipt';
 
-const PAGE = 20;
+const PAGE = 25;
 
 export default function DashboardScreen() {
-  const insets = useSafeAreaInsets();
-  const { summary, loading, error, refresh, remove, period, label, showMonthly, showAll, prevMonth, nextMonth } =
+  const theme = useTheme();
+  const { session } = useAuth();
+  const toolbarHeight = useToolbarHeight();
+  const { summary: s, loading, error, refresh, remove, period, label, showMonthly, showAll, prevMonth, nextMonth } =
     useMonthlySummary();
-  const s = summary;
+  const { drafts, processor } = useDrafts();
+  const [visible, setVisible] = useState(PAGE);
   const isMonth = period.mode === 'month';
   const offset = isMonth ? period.offset : 0;
-  const [visible, setVisible] = useState(PAGE);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const { drafts, processor } = useDrafts();
+
+  useEffect(() => setVisible(PAGE), [label]);
+
   const readyDrafts = drafts.filter((d) => d.status === 'ready').length;
   const nextScheduled = drafts.find((d) => d.status === 'scheduled' && d.scheduled_for)?.scheduled_for;
 
-  // Dönem değişince listeyi baştan göster
-  useEffect(() => setVisible(PAGE), [label]);
-
-  function confirmDelete(r: ReceiptRecord) {
-    confirmAction(
-      'Fişi sil',
-      `${r.firma_adi} · ${isoToTrDate(r.tarih)} · ${formatTL(r.toplam_tutar)}\n\nBu fiş kalıcı olarak silinecek.`,
-      'Sil',
-      async () => {
-        setDeletingId(r.id);
-        try {
-          await remove(r);
-          showToast('Fiş silindi', 'info');
-        } catch (e) {
-          showAlert('Silinemedi', (e as Error).message);
-        } finally {
-          setDeletingId(null);
-        }
-      },
-    );
+  function openAccount() {
+    showActionSheet({
+      title: session?.user.email ?? undefined,
+      options: [{ label: 'Çıkış Yap', destructive: true, onPress: () => supabase.auth.signOut() }],
+    });
   }
-  const maxKategori = Math.max(1, ...(s?.kategoriToplamlari.map((k) => k.toplam) ?? [1]));
 
-  function confirmSignOut() {
-    confirmAction('Çıkış yap', 'Hesabınızdan çıkmak istiyor musunuz?', 'Çıkış yap', () => supabase.auth.signOut());
+  async function deleteReceipt(r: ReceiptRecord) {
+    try {
+      await remove(r);
+      haptics.success();
+      showToast('Fiş silindi', 'info');
+    } catch (e) {
+      showAlert('Silinemedi', (e as Error).message);
+    }
   }
+
+  function askDelete(r: ReceiptRecord) {
+    confirmDestructive(r.firma_adi, `${shortDate(r.tarih)} · ${formatTL(r.toplam_tutar)}`, 'Fişi Sil', () => deleteReceipt(r));
+  }
+
+  const total = s?.kategoriToplamlari.reduce((a, k) => a + k.toplam, 0) ?? 0;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <Stack.Screen
+        options={{
+          headerLeft: () => <HeaderIconButton icon={{ sf: 'person.crop.circle', ion: 'person-circle-outline' }} onPress={openAccount} label="Hesap" />,
+          headerRight: () => (
+            <HeaderIconButton
+              icon={{ sf: 'square.stack.3d.up', ion: 'layers-outline' }}
+              onPress={() => router.push('/batch')}
+              badge={readyDrafts || undefined}
+              label="Toplu tarama"
+            />
+          ),
+        }}
+      />
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 110 }]}
-        refreshControl={<RefreshControl refreshing={loading && !!summary} onRefresh={refresh} />}>
-        <View style={styles.header}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.overline}>Gider Özeti</Text>
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{ paddingTop: 8, paddingBottom: toolbarHeight }}
+        refreshControl={<RefreshControl refreshing={loading && !!s} onRefresh={refresh} />}>
+        <View style={styles.controls}>
+          <SegmentedControl
+            values={['Aylık', 'Tüm Zamanlar']}
+            selectedIndex={isMonth ? 0 : 1}
+            onChange={(e) => {
+              haptics.select();
+              if (e.nativeEvent.selectedSegmentIndex === 0) showMonthly();
+              else showAll();
+            }}
+            appearance={theme.dark ? 'dark' : 'light'}
+          />
+          {isMonth && (
             <View style={styles.monthRow}>
-              {isMonth && (
-                <Pressable onPress={prevMonth} hitSlop={10} style={styles.monthArrow}>
-                  <Text style={styles.monthArrowText}>‹</Text>
-                </Pressable>
-              )}
-              <Text style={styles.month}>{capitalize(label)}</Text>
-              {isMonth && (
-                <Pressable
-                  onPress={nextMonth}
-                  disabled={offset === 0}
-                  hitSlop={10}
-                  style={[styles.monthArrow, offset === 0 && { opacity: 0.25 }]}>
-                  <Text style={styles.monthArrowText}>›</Text>
-                </Pressable>
-              )}
+              <ChevronButton dir="left" onPress={prevMonth} theme={theme} />
+              <Text style={[t.headline, { color: theme.label }]}>{capitalize(label)}</Text>
+              <ChevronButton dir="right" onPress={nextMonth} disabled={offset === 0} theme={theme} />
             </View>
-          </View>
-          <Pressable onPress={confirmSignOut} style={styles.avatar} hitSlop={8}>
-            <Text style={{ fontSize: 18 }}>👤</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.segment}>
-          <Pressable onPress={showMonthly} style={[styles.segmentItem, isMonth && styles.segmentActive]}>
-            <Text style={[styles.segmentText, isMonth && styles.segmentTextActive]}>Aylık</Text>
-          </Pressable>
-          <Pressable onPress={showAll} style={[styles.segmentItem, !isMonth && styles.segmentActive]}>
-            <Text style={[styles.segmentText, !isMonth && styles.segmentTextActive]}>Tüm zamanlar</Text>
-          </Pressable>
+          )}
         </View>
 
         {error && (
-          <Pressable onPress={refresh} style={styles.error}>
-            <Text style={styles.errorText}>Veriler alınamadı: {error}</Text>
-            <Text style={[styles.errorText, { fontWeight: '700' }]}>Tekrar denemek için dokunun</Text>
-          </Pressable>
+          <ListSection>
+            <ListRow title="Veriler alınamadı" subtitle={error} icon={{ sf: 'wifi.exclamationmark', ion: 'cloud-offline', color: theme.orange }} onPress={refresh} chevron />
+          </ListSection>
         )}
 
-        {(drafts.length > 0 || processor.running) && (
-          <Pressable onPress={() => router.push('/batch')} style={styles.draftBanner}>
-            <Text style={{ fontSize: 22 }}>📚</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.draftTitle}>
-                {processor.running ? `Taranıyor ${processor.done}/${processor.total}` : `${drafts.length} taslak fiş`}
-              </Text>
-              <Text style={styles.draftSub}>
-                {readyDrafts
-                  ? `${readyDrafts} fiş incelemeye hazır`
-                  : nextScheduled
-                    ? `⏰ ${formatRunAt(nextScheduled)} için planlı`
-                    : 'Toplu taramaya dokunun'}
-              </Text>
-            </View>
-            <Text style={styles.draftChevron}>›</Text>
-          </Pressable>
-        )}
+        {!s && loading ? (
+          <ActivityIndicator style={{ marginTop: 48 }} />
+        ) : (
+          <>
+            <SummaryCard theme={theme} total={s?.toplamGider ?? 0} kdv={s?.toplamKdv ?? 0} count={s?.fisSayisi ?? 0} />
 
-        <LinearGradient colors={[colors.heroFrom, colors.heroTo]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-          <Text style={styles.heroLabel}>{!isMonth ? 'Tüm zamanlardaki toplam gider' : offset === 0 ? 'Bu ayki toplam gider' : `${capitalize(label)} toplam gideri`}</Text>
-          <Text style={styles.heroValue} adjustsFontSizeToFit numberOfLines={1}>
-            {s ? formatTL(s.toplamGider) : '—'}
-          </Text>
-          <View style={styles.heroFooter}>
-            <View style={styles.pill}>
-              <Text style={styles.pillText}>🧾 {s?.fisSayisi ?? 0} fiş</Text>
-            </View>
-            <View style={styles.pill}>
-              <Text style={styles.pillText}>KDV hariç {s ? formatTL(s.toplamGider - s.toplamKdv) : '—'}</Text>
-            </View>
-          </View>
-        </LinearGradient>
-
-        <View style={styles.card}>
-          <View style={styles.kdvHeader}>
-            <View>
-              <Text style={styles.cardLabel}>Toplam KDV alacağı</Text>
-              <Text style={styles.kdvValue}>{s ? formatTL(s.toplamKdv) : '—'}</Text>
-            </View>
-            <View style={styles.kdvBadge}>
-              <Text style={{ fontSize: 22 }}>💰</Text>
-            </View>
-          </View>
-          <View style={styles.kdvRow}>
-            <KdvCell label="%1" value={s?.kdv1} />
-            <KdvCell label="%10" value={s?.kdv10} />
-            <KdvCell label="%20" value={s?.kdv20} />
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Kategorilere göre</Text>
-          {s && s.kategoriToplamlari.length === 0 && <Text style={styles.empty}>Bu dönemde fiş yok.</Text>}
-          {s?.kategoriToplamlari.map(({ kategori, toplam }) => {
-            const meta = kategoriMeta[kategori] ?? { emoji: '•', color: colors.primary };
-            return (
-              <View key={kategori} style={{ gap: 6 }}>
-                <View style={styles.catRow}>
-                  <Text style={styles.catName}>
-                    {meta.emoji} {capitalize(kategori)}
-                  </Text>
-                  <Text style={styles.catValue}>{formatTL(toplam)}</Text>
-                </View>
-                <View style={styles.barTrack}>
-                  <View style={[styles.barFill, { width: `${(toplam / maxKategori) * 100}%`, backgroundColor: meta.color }]} />
-                </View>
-              </View>
-            );
-          })}
-        </View>
-
-        {!!s?.fisler.length && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Fişler ({s.fisler.length})</Text>
-            {s.fisler.slice(0, visible).map((r, i) => (
-              <View key={r.id} style={[styles.receiptRow, i > 0 && styles.divider]}>
-                <View style={[styles.receiptIcon, { backgroundColor: `${kategoriMeta[r.kategori]?.color ?? colors.primary}1A` }]}>
-                  <Text>{kategoriMeta[r.kategori]?.emoji ?? '🧾'}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.receiptName} numberOfLines={1}>
-                    {r.firma_adi}
-                  </Text>
-                  <Text style={styles.receiptMeta}>
-                    {isoToTrDate(r.tarih)} · KDV {formatTL(r.toplam_kdv)}
-                  </Text>
-                </View>
-                <Text style={styles.receiptAmount}>{formatTL(r.toplam_tutar)}</Text>
-                <Pressable
-                  onPress={() => confirmDelete(r)}
-                  disabled={deletingId === r.id}
-                  hitSlop={8}
-                  style={styles.deleteBtn}
-                  accessibilityLabel="Fişi sil">
-                  {deletingId === r.id ? (
-                    <ActivityIndicator size="small" color={colors.danger} />
-                  ) : (
-                    <Text style={styles.deleteText}>🗑️</Text>
-                  )}
-                </Pressable>
-              </View>
-            ))}
-            {s.fisler.length > visible && (
-              <Pressable onPress={() => setVisible((v) => v + PAGE)} style={styles.moreBtn}>
-                <Text style={styles.moreText}>Daha fazla göster ({s.fisler.length - visible})</Text>
-              </Pressable>
+            {(drafts.length > 0 || processor.running) && (
+              <ListSection>
+                <ListRow
+                  icon={{ sf: 'square.stack.3d.up.fill', ion: 'layers', color: theme.purple }}
+                  title={processor.running ? `Taranıyor ${processor.done}/${processor.total}` : 'Taslaklar'}
+                  subtitle={
+                    readyDrafts
+                      ? `${readyDrafts} fiş incelemeye hazır`
+                      : nextScheduled
+                        ? `${formatRunAt(nextScheduled)} için planlı`
+                        : 'Taranmayı bekliyor'
+                  }
+                  value={String(drafts.length)}
+                  chevron
+                  onPress={() => router.push('/batch')}
+                />
+              </ListSection>
             )}
-          </View>
+
+            {s && s.fisSayisi === 0 ? (
+              <EmptyState
+                icon={{ sf: 'doc.text.viewfinder', ion: 'scan-outline' }}
+                title="Fiş Yok"
+                message={isMonth ? 'Bu ay tarihli bir fiş bulunmuyor. Taramak için aşağıdaki düğmeyi kullanın.' : 'Henüz hiç fiş kaydetmediniz.'}
+              />
+            ) : (
+              s && (
+                <>
+                  <ListSection header="KDV Dağılımı">
+                    <ListRow title="%1" value={formatTL(s.kdv1)} />
+                    <ListRow title="%10" value={formatTL(s.kdv10)} />
+                    <ListRow title="%20" value={formatTL(s.kdv20)} />
+                  </ListSection>
+
+                  <ListSection header="Kategoriler">
+                    <CategoryBar items={s.kategoriToplamlari} theme={theme} />
+                    {s.kategoriToplamlari.map((k) => {
+                      const meta = categoryMeta[k.kategori];
+                      return (
+                        <ListRow
+                          key={k.kategori}
+                          icon={{ sf: meta.sf, ion: meta.ion, color: theme[meta.color] as string }}
+                          title={meta.label}
+                          value={`${formatTL(k.toplam)}  ·  %${total ? Math.round((k.toplam / total) * 100) : 0}`}
+                        />
+                      );
+                    })}
+                  </ListSection>
+
+                  <ListSection header={`Fişler · ${s.fisler.length}`}>
+                    {[
+                      ...s.fisler.slice(0, visible).map((r) => (
+                        <SwipeToDelete key={r.id} onDelete={() => deleteReceipt(r)} theme={theme}>
+                          <ReceiptRow receipt={r} theme={theme} onPress={() => askDelete(r)} />
+                        </SwipeToDelete>
+                      )),
+                      ...(s.fisler.length > visible
+                        ? [<ListRow key="more" title={`${s.fisler.length - visible} fiş daha göster`} tone="action" onPress={() => setVisible((v) => v + PAGE)} />]
+                        : []),
+                    ]}
+                  </ListSection>
+                </>
+              )
+            )}
+          </>
         )}
 
-        <Text style={styles.version}>Sürüm {(process.env.EXPO_PUBLIC_APP_VERSION ?? 'geliştirme').slice(0, 7)}</Text>
+        <Text style={[t.caption1, { color: theme.tertiaryLabel, textAlign: 'center' }]}>
+          Sürüm {(process.env.EXPO_PUBLIC_APP_VERSION ?? 'geliştirme').slice(0, 7)}
+        </Text>
       </ScrollView>
 
-      <View style={[styles.fabWrap, { bottom: insets.bottom + 20 }]}>
-        <Pressable
-          onPress={() => router.push('/camera')}
-          style={({ pressed }) => [styles.fab, { flex: 1 }, pressed && { transform: [{ scale: 0.97 }] }]}>
-          <Text style={styles.fabText}>📷  Fiş Tara</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => router.push('/batch')}
-          style={({ pressed }) => [styles.fab, styles.fabSecondary, pressed && { transform: [{ scale: 0.97 }] }]}>
-          <Text style={[styles.fabText, { color: colors.text }]}>📚  Toplu</Text>
-        </Pressable>
+      <Toolbar>
+        <Button title="Fiş Tara" icon={{ sf: 'camera.fill', ion: 'camera' }} onPress={() => router.push('/camera')} />
+      </Toolbar>
+    </View>
+  );
+}
+
+function SummaryCard({ theme, total, kdv, count }: { theme: Theme; total: number; kdv: number; count: number }) {
+  return (
+    <View style={[styles.summary, { backgroundColor: theme.card }]}>
+      <Text style={[t.footnote, { color: theme.secondaryLabel, fontWeight: '600' }]}>TOPLAM GİDER</Text>
+      <Text style={[styles.bigNumber, tabular, { color: theme.label }]} adjustsFontSizeToFit numberOfLines={1}>
+        {formatTL(total)}
+      </Text>
+      <Text style={[t.subhead, { color: theme.secondaryLabel }]}>{count} fiş</Text>
+      <View style={[styles.hr, { backgroundColor: theme.separator }]} />
+      <View style={styles.stats}>
+        <Stat label="KDV Alacağı" value={formatTL(kdv)} color={theme.green} theme={theme} />
+        <View style={[styles.vr, { backgroundColor: theme.separator }]} />
+        <Stat label="KDV Hariç" value={formatTL(total - kdv)} color={theme.label} theme={theme} />
       </View>
     </View>
   );
 }
 
-function KdvCell({ label, value }: { label: string; value?: number }) {
+function Stat({ label, value, color, theme }: { label: string; value: string; color: string; theme: Theme }) {
   return (
-    <View style={styles.kdvCell}>
-      <Text style={styles.kdvCellLabel}>{label}</Text>
-      <Text style={styles.kdvCellValue} numberOfLines={1} adjustsFontSizeToFit>
-        {value === undefined ? '—' : formatTL(value)}
+    <View style={{ flex: 1, gap: 2 }}>
+      <Text style={[t.footnote, { color: theme.secondaryLabel }]}>{label}</Text>
+      <Text style={[t.title3, tabular, { color }]} adjustsFontSizeToFit numberOfLines={1}>
+        {value}
       </Text>
     </View>
   );
+}
+
+function ReceiptRow({ receipt: r, theme, onPress, isLast }: { receipt: ReceiptRecord; theme: Theme; onPress: () => void; isLast?: boolean }) {
+  const meta = categoryMeta[r.kategori] ?? categoryMeta['ofis gideri'];
+  return (
+    <ListRow
+      icon={{ sf: meta.sf, ion: meta.ion, color: theme[meta.color] as string }}
+      title={r.firma_adi}
+      subtitle={`${shortDate(r.tarih)} · KDV ${formatTL(r.toplam_kdv)}`}
+      value={formatTL(r.toplam_tutar)}
+      valueColor={theme.label}
+      onPress={onPress}
+      isLast={isLast}
+    />
+  );
+}
+
+/** Sola kaydırınca kırmızı "Sil" düğmesi (iOS listeleri gibi) */
+function SwipeToDelete({ children, onDelete, theme, isLast }: { children: ReactElement<{ isLast?: boolean }>; onDelete: () => void; theme: Theme; isLast?: boolean }) {
+  return (
+    <ReanimatedSwipeable
+      friction={1.5}
+      rightThreshold={40}
+      overshootRight={false}
+      renderRightActions={() => (
+        <Pressable onPress={onDelete} style={[styles.swipeDelete, { backgroundColor: theme.red }]} accessibilityLabel="Sil">
+          <Icon sf="trash.fill" ion="trash" size={20} color="#fff" />
+          <Text style={styles.swipeText}>Sil</Text>
+        </Pressable>
+      )}>
+      <View style={{ backgroundColor: theme.card }}>{cloneElement(children, { isLast })}</View>
+    </ReanimatedSwipeable>
+  );
+}
+
+/** Depolama göstergesi gibi, kategorilerin payını gösteren tek şerit */
+function CategoryBar({ items, theme }: { items: { kategori: ReceiptRecord['kategori']; toplam: number }[]; theme: Theme; isLast?: boolean }) {
+  return (
+    <View style={styles.barWrap}>
+      <View style={[styles.bar, { backgroundColor: theme.tertiaryFill }]}>
+        {items.map((k) => (
+          <View key={k.kategori} style={{ flex: k.toplam, backgroundColor: theme[categoryMeta[k.kategori].color] as string }} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function ChevronButton({ dir, onPress, disabled, theme }: { dir: 'left' | 'right'; onPress: () => void; disabled?: boolean; theme: Theme }) {
+  return (
+    <Pressable
+      onPress={() => {
+        haptics.select();
+        onPress();
+      }}
+      disabled={disabled}
+      hitSlop={12}
+      style={({ pressed }) => ({ opacity: disabled ? 0.25 : pressed ? 0.5 : 1, padding: 6 })}>
+      <Icon sf={`chevron.${dir}`} ion={dir === 'left' ? 'chevron-back' : 'chevron-forward'} size={18} color={theme.blue} weight="semibold" />
+    </Pressable>
+  );
+}
+
+function shortDate(iso: string) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function capitalize(s: string) {
@@ -249,126 +294,15 @@ function capitalize(s: string) {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 16, gap: 14 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  overline: { fontSize: 13, color: colors.muted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8 },
-  month: { fontSize: 24, fontWeight: '800', color: colors.text },
-  monthRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  monthArrow: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  monthArrowText: { fontSize: 20, fontWeight: '700', color: colors.text, marginTop: -2 },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: colors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  error: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 12, gap: 2 },
-  errorText: { color: colors.danger, fontSize: 13 },
-  hero: { borderRadius: 24, padding: 22, gap: 6 },
-  heroLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 15, fontWeight: '600' },
-  heroValue: { color: '#fff', fontSize: 40, fontWeight: '800', letterSpacing: -0.5 },
-  heroFooter: { flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' },
-  pill: { backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
-  pillText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: 18,
-    gap: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cardLabel: { fontSize: 14, color: colors.muted, fontWeight: '600' },
-  cardTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
-  kdvHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  kdvValue: { fontSize: 30, fontWeight: '800', color: colors.success, marginTop: 2 },
-  kdvBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: colors.successBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  kdvRow: { flexDirection: 'row', gap: 8 },
-  kdvCell: { flex: 1, backgroundColor: colors.bg, borderRadius: 12, padding: 10, gap: 2 },
-  kdvCellLabel: { fontSize: 12, color: colors.muted, fontWeight: '700' },
-  kdvCellValue: { fontSize: 14, color: colors.text, fontWeight: '700' },
-  empty: { color: colors.muted, fontSize: 14 },
-  catRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  catName: { fontSize: 14, color: colors.text, fontWeight: '600' },
-  catValue: { fontSize: 14, color: colors.text, fontWeight: '700' },
-  barTrack: { height: 8, borderRadius: 4, backgroundColor: colors.bg, overflow: 'hidden' },
-  barFill: { height: 8, borderRadius: 4 },
-  receiptRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 2 },
-  divider: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12 },
-  receiptIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  receiptName: { fontSize: 15, fontWeight: '600', color: colors.text },
-  receiptMeta: { fontSize: 12, color: colors.muted, marginTop: 2 },
-  receiptAmount: { fontSize: 15, fontWeight: '700', color: colors.text },
-  segment: { flexDirection: 'row', backgroundColor: '#E2E8F0', borderRadius: 12, padding: 3 },
-  segmentItem: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
-  segmentActive: {
-    backgroundColor: colors.card,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-  },
-  segmentText: { fontSize: 14, fontWeight: '600', color: colors.muted },
-  segmentTextActive: { color: colors.text },
-  deleteBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#FEF2F2',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deleteText: { fontSize: 15 },
-  moreBtn: { paddingVertical: 10, alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.border },
-  moreText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
-  version: { textAlign: 'center', color: colors.muted, fontSize: 12, marginTop: 4 },
-  fabWrap: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', gap: 10 },
-  fabSecondary: { backgroundColor: colors.card, paddingHorizontal: 20, borderWidth: 1, borderColor: colors.border },
-  draftBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#F5F3FF',
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#DDD6FE',
-  },
-  draftTitle: { fontSize: 15, fontWeight: '700', color: '#4C1D95' },
-  draftSub: { fontSize: 13, color: '#6D28D9', marginTop: 2 },
-  draftChevron: { fontSize: 24, color: '#6D28D9', fontWeight: '700' },
-  fab: {
-    height: 58,
-    borderRadius: 18,
-    backgroundColor: colors.text,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
-  },
-  fabText: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  controls: { marginHorizontal: 16, marginBottom: 16, gap: 12 },
+  monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  summary: { marginHorizontal: 16, marginBottom: 28, borderRadius: 12, padding: 16, gap: 2 },
+  bigNumber: { fontSize: 40, lineHeight: 46, fontWeight: '700', letterSpacing: -0.5 },
+  hr: { height: StyleSheet.hairlineWidth, marginVertical: 12 },
+  vr: { width: StyleSheet.hairlineWidth, marginHorizontal: 16 },
+  stats: { flexDirection: 'row' },
+  barWrap: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12 },
+  bar: { height: 12, borderRadius: 6, overflow: 'hidden', flexDirection: 'row', gap: 2 },
+  swipeDelete: { width: 84, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  swipeText: { color: '#fff', fontSize: 13, fontWeight: '600' },
 });

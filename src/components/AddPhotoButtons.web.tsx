@@ -1,7 +1,7 @@
 import { useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
 
-import { PrimaryButton } from './PrimaryButton';
+import { useTheme } from '../lib/theme';
+import { ListRow, ListSection } from './ui/List';
 
 export interface PickedPhoto {
   uri: string;
@@ -13,11 +13,9 @@ interface Props {
   disabled?: boolean;
 }
 
-/**
- * Web (iPhone Safari): "Fotoğraf çek" her dokunuşta telefonun kamerasını açar;
- * "Galeriden seç" birden fazla fotoğraf seçtirir.
- */
+/** Web (iPhone Safari): "Fotoğraf Çek" her dokunuşta kamerayı açar; "Galeriden Seç" çoklu seçim yaptırır. */
 export function AddPhotoButtons({ onPicked, disabled }: Props) {
+  const theme = useTheme();
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
 
@@ -25,47 +23,37 @@ export function AddPhotoButtons({ onPicked, disabled }: Props) {
     const files = Array.from(input.files ?? []);
     input.value = ''; // aynı dosyayı tekrar seçebilmek için
     if (!files.length) return;
-    const photos = await Promise.all(
-      files.map(async (f) => {
-        const uri = URL.createObjectURL(f);
-        return { uri, width: await imageWidth(uri) };
-      }),
+    onPicked(
+      await Promise.all(
+        files.map(async (f) => {
+          const uri = URL.createObjectURL(f);
+          return { uri, width: await imageWidth(uri) };
+        }),
+      ),
     );
-    onPicked(photos);
   }
 
   return (
-    <View style={styles.row}>
-      <PrimaryButton
-        title="📷  Fotoğraf çek"
-        onPress={() => cameraRef.current?.click()}
-        disabled={disabled}
-        style={{ flex: 1 }}
-      />
-      <PrimaryButton
-        title="🖼️  Galeriden"
-        variant="secondary"
-        onPress={() => galleryRef.current?.click()}
-        disabled={disabled}
-        style={{ flex: 1 }}
-      />
-      <input
-        ref={cameraRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        style={{ display: 'none' }}
-        onChange={(e) => handle(e.currentTarget)}
-      />
-      <input
-        ref={galleryRef}
-        type="file"
-        accept="image/*"
-        multiple
-        style={{ display: 'none' }}
-        onChange={(e) => handle(e.currentTarget)}
-      />
-    </View>
+    <>
+      <ListSection footer="Her fotoğraf anında taslak olarak kaydedilir; uygulamayı kapatsanız da kaybolmaz.">
+        <ListRow
+          title="Fotoğraf Çek"
+          icon={{ sf: 'camera.fill', ion: 'camera', color: theme.blue }}
+          onPress={() => cameraRef.current?.click()}
+          disabled={disabled}
+          chevron
+        />
+        <ListRow
+          title="Galeriden Seç"
+          icon={{ sf: 'photo.on.rectangle.angled', ion: 'images', color: theme.green }}
+          onPress={() => galleryRef.current?.click()}
+          disabled={disabled}
+          chevron
+        />
+      </ListSection>
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={(e) => handle(e.currentTarget)} />
+      <input ref={galleryRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => handle(e.currentTarget)} />
+    </>
   );
 }
 
@@ -77,5 +65,3 @@ function imageWidth(uri: string): Promise<number> {
     img.src = uri;
   });
 }
-
-const styles = StyleSheet.create({ row: { flexDirection: 'row', gap: 10 } });
