@@ -29,6 +29,8 @@ export class ClaudeVisionAdapter implements VisionService {
           'content-type': 'application/json',
           'x-api-key': this.apiKey,
           'anthropic-version': '2023-06-01',
+          // Web sürümünde tarayıcıdan doğrudan çağrıya izin verir
+          'anthropic-dangerous-direct-browser-access': 'true',
         },
         body: JSON.stringify({
           model: this.model,

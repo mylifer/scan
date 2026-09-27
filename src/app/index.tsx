@@ -1,9 +1,10 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useMonthlySummary } from '../hooks/useMonthlySummary';
+import { confirmAction } from '../lib/alert';
 import { formatTL, isoToTrDate } from '../lib/format';
 import { colors, kategoriMeta } from '../lib/theme';
 import { supabase } from '../services/supabase/client';
@@ -15,10 +16,7 @@ export default function DashboardScreen() {
   const maxKategori = Math.max(1, ...(s?.kategoriToplamlari.map((k) => k.toplam) ?? [1]));
 
   function confirmSignOut() {
-    Alert.alert('Çıkış yap', 'Hesabınızdan çıkmak istiyor musunuz?', [
-      { text: 'Vazgeç', style: 'cancel' },
-      { text: 'Çıkış yap', style: 'destructive', onPress: () => supabase.auth.signOut() },
-    ]);
+    confirmAction('Çıkış yap', 'Hesabınızdan çıkmak istiyor musunuz?', 'Çıkış yap', () => supabase.auth.signOut());
   }
 
   return (

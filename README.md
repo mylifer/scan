@@ -8,7 +8,16 @@ Türkiye'deki POS fişlerini kamerayla okuyup gider ve KDV takibi yapan Expo (Re
 - **Supabase:** E-posta ile giriş, `receipts` tablosu (RLS açık), sıkıştırılmış fiş görselleri (~50–120 KB)
 - **Dashboard:** Bu ayki toplam gider, KDV alacağı (%1 / %10 / %20), kategori dağılımı, son fişler
 
-## Kurulum
+## iPhone'da kullanım (web sürümü)
+
+Uygulama her güncellemede otomatik olarak **https://mylifer.github.io/scan/** adresinde yayınlanır.
+iPhone'da Safari ile açıp Paylaş → **Ana Ekrana Ekle** diyerek uygulama gibi kullanabilirsiniz.
+Yayın için GitHub repo ayarlarında şunlar gerekir:
+
+- **Settings → Secrets and variables → Actions** altında `SUPABASE_PUBLISHABLE_KEY` ve `GEMINI_API_KEY` secret'ları
+- **Settings → Pages → Source: GitHub Actions**
+
+## Kurulum (geliştirici)
 
 ### 1. Supabase
 

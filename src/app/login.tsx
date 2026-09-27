@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '../components/PrimaryButton';
+import { showAlert } from '../lib/alert';
 import { colors } from '../lib/theme';
 import { supabase } from '../services/supabase/client';
 
@@ -13,7 +14,7 @@ export default function LoginScreen() {
 
   async function submit(mode: 'signin' | 'signup') {
     if (!email.trim() || password.length < 6) {
-      Alert.alert('Eksik bilgi', 'Geçerli bir e-posta ve en az 6 karakterli bir şifre girin.');
+      showAlert('Eksik bilgi', 'Geçerli bir e-posta ve en az 6 karakterli bir şifre girin.');
       return;
     }
     setBusy(mode);
@@ -24,9 +25,9 @@ export default function LoginScreen() {
         : await supabase.auth.signUp(credentials);
     setBusy(null);
     if (error) {
-      Alert.alert('Hata', error.message);
+      showAlert('Hata', error.message);
     } else if (mode === 'signup' && !data.session) {
-      Alert.alert('E-postanızı kontrol edin', 'Hesabınızı doğrulamak için gönderilen bağlantıya tıklayın.');
+      showAlert('E-postanızı kontrol edin', 'Hesabınızı doğrulamak için gönderilen bağlantıya tıklayın.');
     }
   }
 

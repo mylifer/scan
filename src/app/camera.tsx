@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '../components/PrimaryButton';
+import { setPendingPhoto } from '../lib/pendingPhoto';
 import { colors } from '../lib/theme';
 
 const FOCUS_RING = 72;
@@ -64,7 +65,8 @@ export default function CameraScreen() {
     setCapturing(true);
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 1, shutterSound: false });
-      router.replace({ pathname: '/review', params: { uri: photo.uri, width: String(photo.width) } });
+      setPendingPhoto({ uri: photo.uri, width: photo.width });
+      router.replace('/review');
     } catch (e) {
       setCapturing(false);
       console.warn('Fotoğraf çekilemedi', e);

@@ -22,7 +22,12 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "static",
+      "name": "Fiş Tarayıcı",
+      "shortName": "Fiş Tarayıcı",
+      "themeColor": "#F4F6FB",
+      "backgroundColor": "#F4F6FB"
     },
     "plugins": [
       "expo-router",
@@ -34,6 +39,9 @@
           "recordAudioAndroid": false
         }
       ]
-    ]
+    ],
+    "experiments": {
+      "baseUrl": "/scan"
+    }
   }
 }

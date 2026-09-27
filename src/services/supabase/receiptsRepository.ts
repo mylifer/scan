@@ -1,4 +1,5 @@
 import { File } from 'expo-file-system';
+import { Platform } from 'react-native';
 
 import { round2, trDateToIso } from '../../lib/format';
 import type { Kategori, ReceiptData, ReceiptRecord } from '../../types/receipt';
@@ -54,7 +55,8 @@ export async function saveReceipt(data: ReceiptData, archiveUri?: string): Promi
 }
 
 async function uploadReceiptImage(userId: string, uri: string): Promise<string> {
-  const bytes = await new File(uri).arrayBuffer();
+  const bytes =
+    Platform.OS === 'web' ? await (await fetch(uri)).arrayBuffer() : await new File(uri).arrayBuffer();
   const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
   const { error } = await supabase.storage
     .from(RECEIPT_IMAGES_BUCKET)

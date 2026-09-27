@@ -1,8 +1,7 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -21,7 +20,9 @@ import {
   toFormValues,
   validateForm,
 } from '../components/ReceiptForm';
+import { showAlert } from '../lib/alert';
 import { todayTr } from '../lib/format';
+import { getPendingPhoto } from '../lib/pendingPhoto';
 import { colors } from '../lib/theme';
 import { prepareReceiptImages } from '../services/image/prepareReceiptImages';
 import { saveReceipt } from '../services/supabase/receiptsRepository';
@@ -41,7 +42,7 @@ const EMPTY_FORM: ReceiptFormValues = {
 
 export default function ReviewScreen() {
   const insets = useSafeAreaInsets();
-  const { uri, width } = useLocalSearchParams<{ uri: string; width: string }>();
+  const photo = getPendingPhoto();
   const [phase, setPhase] = useState<Phase>('analyzing');
   const [error, setError] = useState<string | null>(null);
   const [values, setValues] = useState<ReceiptFormValues>(EMPTY_FORM);
@@ -56,7 +57,8 @@ export default function ReviewScreen() {
     setPhase('analyzing');
     setError(null);
     try {
-      const images = await prepareReceiptImages(uri, Number(width) || 3000);
+      if (!photo) return;
+      const images = await prepareReceiptImages(photo.uri, photo.width || 3000);
       archiveUri.current = images.archiveUri;
       const data = await getVisionService().analyzeReceipt(images.ai, controller.signal);
       if (controller.signal.aborted) return;
@@ -67,7 +69,7 @@ export default function ReviewScreen() {
       setError((e as Error).message);
       setPhase('error');
     }
-  }, [uri, width]);
+  }, [photo]);
 
   useEffect(() => {
     analyze();
@@ -77,20 +79,23 @@ export default function ReviewScreen() {
   async function handleSave() {
     const errors = validateForm(values);
     if (errors.length) {
-      Alert.alert('Lütfen kontrol edin', errors.join('\n'));
+      showAlert('Lütfen kontrol edin', errors.join('\n'));
       return;
     }
     setSaving(true);
     try {
       const { imageWarning } = await saveReceipt(fromFormValues(values), archiveUri.current);
-      if (imageWarning) Alert.alert('Fiş kaydedildi', imageWarning);
+      if (imageWarning) showAlert('Fiş kaydedildi', imageWarning);
       router.back();
     } catch (e) {
-      Alert.alert('Kaydedilemedi', (e as Error).message);
+      showAlert('Kaydedilemedi', (e as Error).message);
     } finally {
       setSaving(false);
     }
   }
+
+  // Sayfa yenilendiyse fotoğraf bellekte kalmaz; ana sayfaya dön
+  if (!photo) return <Redirect href="/" />;
 
   return (
     <KeyboardAvoidingView
@@ -101,7 +106,7 @@ export default function ReviewScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         keyboardShouldPersistTaps="handled">
         <View style={styles.previewRow}>
-          <Image source={{ uri }} style={styles.thumb} />
+          <Image source={{ uri: photo.uri }} style={styles.thumb} />
           <View style={{ flex: 1, justifyContent: 'center' }}>
             {phase === 'analyzing' && (
               <View style={styles.status}>
