@@ -7,7 +7,6 @@ import { learnedCategoryFor } from '../../lib/search';
 import { buildMonthlySeries, type MonthPoint } from '../../lib/trend';
 import type { Kategori, ReceiptData, ReceiptRecord } from '../../types/receipt';
 import { supabase } from './client';
-import { hasDetailColumns } from './schema';
 
 const TABLE = 'receipts';
 export const RECEIPT_IMAGES_BUCKET = 'receipt-images';
@@ -45,7 +44,6 @@ export async function saveReceipt(data: ReceiptData, archiveUri?: string): Promi
       kdv_yuzde20: round2(data.kdvYuzde20),
       kategori: data.kategori,
       image_path: imagePath,
-      ...(await detailColumns(data)),
     })
     .select()
     .single();
@@ -167,13 +165,7 @@ export async function getMonthlyTotals(months = 12): Promise<MonthPoint[]> {
 export async function findPossibleDuplicates(data: ReceiptData, excludeId?: string): Promise<ReceiptRecord[]> {
   const tarih = trDateToIso(data.tarih);
   if (!tarih) return [];
-  const sameDateAmount = `and(tarih.eq.${tarih},toplam_tutar.eq.${round2(data.toplamTutar)})`;
-  // Aynı satıcı + aynı fiş no = aynı fiş (tutar yanlış okunmuş olsa bile)
-  const fisNo = data.fisNo?.trim();
-  const vergiNo = data.vergiNo?.replace(/\D/g, '');
-  const sameReceipt =
-    fisNo && vergiNo && (await hasDetailColumns()) ? `,and(vergi_no.eq.${vergiNo},fis_no.eq.${postgrestQuote(fisNo)})` : '';
-  let query = supabase.from(TABLE).select('*').or(sameDateAmount + sameReceipt).limit(3);
+  let query = supabase.from(TABLE).select('*').eq('tarih', tarih).eq('toplam_tutar', round2(data.toplamTutar)).limit(3);
   if (excludeId) query = query.neq('id', excludeId);
   const { data: rows, error } = await query;
   if (error) return []; // kontrol başarısızsa kaydı engelleme
@@ -198,11 +190,6 @@ export async function applyLearnedCategory(data: ReceiptData): Promise<{ data: R
   } catch {
     return { data, learned: false };
   }
-}
-
-/** PostgREST or() filtresinde virgül/parantez içerebilecek değeri tırnaklar */
-function postgrestQuote(value: string): string {
-  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
 /** Tüm zamanlardaki fiş sayısı (satırları indirmeden). */
@@ -269,7 +256,6 @@ export async function updateReceipt(id: string, data: ReceiptData): Promise<Rece
       kdv_yuzde10: round2(data.kdvYuzde10),
       kdv_yuzde20: round2(data.kdvYuzde20),
       kategori: data.kategori,
-      ...(await detailColumns(data)),
     })
     .eq('id', id)
     .select()
@@ -279,17 +265,6 @@ export async function updateReceipt(id: string, data: ReceiptData): Promise<Rece
 }
 
 /** Kayıttaki (DB) fişi forma uygun ReceiptData'ya çevirir. */
-/** 005 kurulumu yapıldıysa fiş no / vergi no / ödeme / not sütunları (yoksa hiç gönderilmez) */
-async function detailColumns(data: ReceiptData) {
-  if (!(await hasDetailColumns())) return {};
-  return {
-    fis_no: data.fisNo?.trim() || null,
-    vergi_no: data.vergiNo?.replace(/\D/g, '') || null,
-    odeme: data.odeme ?? null,
-    notlar: data.notlar?.trim() || null,
-  };
-}
-
 export function recordToData(r: ReceiptRecord): ReceiptData {
   const [y, m, d] = r.tarih.split('-');
   return {
@@ -300,10 +275,6 @@ export function recordToData(r: ReceiptRecord): ReceiptData {
     kdvYuzde10: r.kdv_yuzde10,
     kdvYuzde20: r.kdv_yuzde20,
     kategori: r.kategori,
-    fisNo: r.fis_no ?? '',
-    vergiNo: r.vergi_no ?? '',
-    odeme: r.odeme ?? null,
-    notlar: r.notlar ?? '',
   };
 }
 
@@ -331,9 +302,5 @@ function toRecord(row: Record<string, unknown>): ReceiptRecord {
     toplam_kdv: Number(row.toplam_kdv ?? 0),
     kategori: row.kategori as Kategori,
     image_path: (row.image_path as string | null) ?? null,
-    fis_no: (row.fis_no as string | null) ?? null,
-    vergi_no: (row.vergi_no as string | null) ?? null,
-    odeme: (row.odeme as ReceiptRecord['odeme']) ?? null,
-    notlar: (row.notlar as string | null) ?? null,
   };
 }

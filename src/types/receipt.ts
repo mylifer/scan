@@ -1,4 +1,4 @@
-/** Sıra, kategori seçicide ve Gemini şemasında kullanılır. Yeni kategori: yeni bir migration ekleyip SCHEMA_SETUP_SQL'i güncelleyin. */
+/** Sıra, kategori seçicide ve Gemini şemasında kullanılır. Yeni kategori: yeni bir migration ekleyip CATEGORIES_SETUP_SQL'i güncelleyin. */
 export const KATEGORILER = [
   'akaryakıt',
   'restoran',
@@ -35,10 +35,6 @@ export const KATEGORI_ETIKETLERI: Record<Kategori, string> = {
   diğer: 'Diğer',
 };
 
-export const ODEME_SEKILLERI = ['kart', 'nakit', 'diğer'] as const;
-export type OdemeSekli = (typeof ODEME_SEKILLERI)[number];
-export const ODEME_ETIKETLERI: Record<OdemeSekli, string> = { kart: 'Kart', nakit: 'Nakit', diğer: 'Diğer' };
-
 /** Görüntü okuma servisinin döndürdüğü, form üzerinde düzenlenen fiş verisi. */
 export interface ReceiptData {
   firmaAdi: string;
@@ -49,12 +45,6 @@ export interface ReceiptData {
   kdvYuzde10: number;
   kdvYuzde20: number;
   kategori: Kategori;
-  /** Fiş numarası ("FİŞ NO") */
-  fisNo?: string;
-  /** Satıcının vergi no (VKN, 10 hane) ya da TCKN (11 hane) */
-  vergiNo?: string;
-  odeme?: OdemeSekli | null;
-  notlar?: string;
 }
 
 /** Supabase'deki kayıt (receipts tablosu). */
@@ -71,11 +61,6 @@ export interface ReceiptRecord {
   toplam_kdv: number;
   kategori: Kategori;
   image_path: string | null;
-  /** 005 kurulumundan önce bu alanlar veritabanında yoktur (null) */
-  fis_no?: string | null;
-  vergi_no?: string | null;
-  odeme?: OdemeSekli | null;
-  notlar?: string | null;
 }
 
 export type DraftStatus = 'pending' | 'scheduled' | 'processing' | 'ready' | 'failed';

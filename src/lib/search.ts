@@ -14,14 +14,10 @@ export function normalizeForSearch(text: string): string {
 }
 
 /** Firma adında ya da tutarda (ör. "337" → ₺337,30) arar. Boş sorgu her şeyle eşleşir. */
-export function matchesReceipt(r: Pick<ReceiptRecord, 'firma_adi' | 'toplam_tutar' | 'notlar' | 'vergi_no' | 'fis_no'>, query: string): boolean {
+export function matchesReceipt(r: Pick<ReceiptRecord, 'firma_adi' | 'toplam_tutar'>, query: string): boolean {
   const q = normalizeForSearch(query);
   if (!q) return true;
   if (normalizeForSearch(r.firma_adi).includes(q)) return true;
-  if (r.notlar && normalizeForSearch(r.notlar).includes(q)) return true;
-  // Vergi no ya da fiş no ile arama (en az 4 rakam)
-  const numeric = q.replace(/\D/g, '');
-  if (numeric.length >= 4 && numeric === q.replace(/\s/g, '') && ((r.vergi_no ?? '').includes(numeric) || (r.fis_no ?? '').includes(numeric))) return true;
   // Tutar araması: "337", "337,3", "337.30", "1.500" gibi girdiler
   const digits = q.replace(/\s/g, '');
   if (/^[\d.,]+$/.test(digits)) {

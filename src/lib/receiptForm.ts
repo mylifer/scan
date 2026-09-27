@@ -1,5 +1,5 @@
 import { amountToInput, normalizeTrDate, parseAmount, todayTr, trDateToIso } from './format';
-import type { OdemeSekli, ReceiptData } from '../types/receipt';
+import type { ReceiptData } from '../types/receipt';
 
 /** Formda tutarlar metin olarak tutulur ki kullanıcı "12,5" gibi ara değerler yazabilsin. */
 export interface ReceiptFormValues {
@@ -10,10 +10,6 @@ export interface ReceiptFormValues {
   kdvYuzde10: string;
   kdvYuzde20: string;
   kategori: ReceiptData['kategori'];
-  fisNo: string;
-  vergiNo: string;
-  odeme: OdemeSekli | '';
-  notlar: string;
 }
 
 export function toFormValues(d: ReceiptData): ReceiptFormValues {
@@ -25,10 +21,6 @@ export function toFormValues(d: ReceiptData): ReceiptFormValues {
     kdvYuzde10: amountToInput(d.kdvYuzde10),
     kdvYuzde20: amountToInput(d.kdvYuzde20),
     kategori: d.kategori,
-    fisNo: d.fisNo ?? '',
-    vergiNo: d.vergiNo ?? '',
-    odeme: d.odeme ?? '',
-    notlar: d.notlar ?? '',
   };
 }
 
@@ -41,10 +33,6 @@ export const emptyForm = (): ReceiptFormValues => ({
   kdvYuzde10: '0,00',
   kdvYuzde20: '0,00',
   kategori: 'ofis gideri',
-  fisNo: '',
-  vergiNo: '',
-  odeme: '',
-  notlar: '',
 });
 
 export function fromFormValues(v: ReceiptFormValues): ReceiptData {
@@ -56,10 +44,6 @@ export function fromFormValues(v: ReceiptFormValues): ReceiptData {
     kdvYuzde10: parseAmount(v.kdvYuzde10),
     kdvYuzde20: parseAmount(v.kdvYuzde20),
     kategori: v.kategori,
-    fisNo: v.fisNo.trim(),
-    vergiNo: v.vergiNo.replace(/\D/g, ''),
-    odeme: v.odeme || null,
-    notlar: v.notlar.trim(),
   };
 }
 
@@ -70,10 +54,6 @@ export function validateForm(v: ReceiptFormValues): string[] {
   if (!d.firmaAdi) errors.push('Firma adı boş olamaz.');
   if (!normalizeTrDate(v.tarih)) errors.push('Tarih GG.AA.YYYY biçiminde olmalı.');
   if (d.toplamTutar <= 0) errors.push('Toplam tutar 0’dan büyük olmalı.');
-  if (d.vergiNo && d.vergiNo.length !== 10 && d.vergiNo.length !== 11) {
-    errors.push('Vergi no 10 haneli (VKN) ya da 11 haneli (TCKN) olmalı.');
-  }
-  if ((d.notlar ?? '').length > 500) errors.push('Not en fazla 500 karakter olabilir.');
   if (d.kdvYuzde1 + d.kdvYuzde10 + d.kdvYuzde20 > d.toplamTutar) {
     errors.push('Toplam KDV, toplam tutardan büyük olamaz. TOPLAM ile TOPKDV karışmış olabilir.');
   }
