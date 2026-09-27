@@ -5,10 +5,15 @@ import { parseReceiptJson } from './parseReceiptJson';
 import { RECEIPT_JSON_SCHEMA, RECEIPT_SYSTEM_PROMPT, RECEIPT_USER_PROMPT } from './receiptPrompt';
 import { type ReceiptImage, type VisionService, VisionServiceError } from './VisionService';
 
-export const DEFAULT_GEMINI_MODEL = 'gemini-flash-latest';
+/**
+ * En yeni model (gemini-flash-latest) ücretsiz planda sık sık "yoğun" (503) hatası veriyor.
+ * Eylül 2026 ölçümünde bu modeller hem doğru okudu hem de erişilebilir kaldı.
+ * Her modelin ayrı ücretsiz kotası olduğu için zincir günlük kapasiteyi de artırır.
+ */
+export const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
 
 /** Seçilen model yoğunsa sırayla denenecek yedek modeller. */
-const FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-flash-lite-latest'];
+const FALLBACK_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest'];
 
 /** Geçici hatalar: aşırı yoğunluk (503), kota/hız sınırı (429), sunucu hatası (500) */
 const TRANSIENT_STATUS = new Set([429, 500, 502, 503, 504]);
@@ -22,8 +27,8 @@ export class GeminiVisionAdapter implements VisionService {
     if (!apiKey) throw new VisionServiceError('EXPO_PUBLIC_GEMINI_API_KEY tanımlı değil.');
     this.client = new GoogleGenAI({
       apiKey,
-      // Her model için geçici hatalarda kısa beklemelerle 3 deneme
-      httpOptions: { retryOptions: { attempts: 3, initialDelay: 1, maxDelay: 4 } },
+      // Her model için geçici hatalarda 1 tekrar; sonra hızlıca sıradaki modele geçilir
+      httpOptions: { retryOptions: { attempts: 2, initialDelay: 1, maxDelay: 2 } },
     });
     this.models = [...new Set([model, ...FALLBACK_MODELS])];
   }

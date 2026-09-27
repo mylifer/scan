@@ -3,7 +3,7 @@
 Türkiye'deki POS fişlerini kamerayla okuyup gider ve KDV takibi yapan Expo (React Native) uygulaması.
 
 - **Kamera:** Tam ekran, dokunarak netleme, flaş, fiş hizalama çerçevesi
-- **Yapay zekâ ile okuma:** Varsayılan Gemini (`gemini-flash-latest`). Claude'a geçmek için `.env` dosyasında tek satırı değiştirmeniz yeterli
+- **Yapay zekâ ile okuma:** Varsayılan Gemini (`gemini-2.5-flash`, yoğunlukta yedek modellere geçer). Claude'a geçmek için `.env` dosyasında tek satırı değiştirmeniz yeterli
 - **Düzenlenebilir form:** Okunan değerleri kontrol edip düzeltme, kaydetmeden önce doğrulama (TOPLAM/TOPKDV karışıklığı kontrolü)
 - **Supabase:** E-posta ile giriş, `receipts` tablosu (RLS açık), sıkıştırılmış fiş görselleri (~50–120 KB)
 - **Dashboard:** Bu ayki toplam gider, KDV alacağı (%1 / %10 / %20), kategori dağılımı, son fişler
