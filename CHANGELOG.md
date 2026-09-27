@@ -14,7 +14,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.24.0
+## 1.24.0 — `6e88335`
 - Fiş no, vergi no, ödeme şekli ve not alanları (1.22.0) isteğiniz üzerine kaldırıldı; form, Excel ve mükerrer kontrolü 1.21.1'deki hâline döndü. KDV hatırlatıcısı ve diğer özellikler duruyor
 - 1.22.0'daki veritabanı güncellemesini yaptıysanız bir şey yapmanıza gerek yok; eklenen boş sütunlar zararsızdır
 
