@@ -3,21 +3,21 @@ import { router } from 'expo-router';
 import { SetupSteps } from '../components/SetupSteps';
 import { showAlert } from '../lib/alert';
 import { haptics } from '../lib/haptics';
-import { CATEGORIES_SETUP_SQL } from '../lib/setupSql';
+import { SCHEMA_SETUP_SQL } from '../lib/setupSql';
 import { showToast } from '../lib/toast';
-import { categoriesReady } from '../services/supabase/schema';
+import { schemaReady } from '../services/supabase/schema';
 
-export default function SetupCategoriesScreen() {
+export default function SetupDatabaseScreen() {
   return (
     <SetupSteps
-      sql={CATEGORIES_SETUP_SQL}
-      message="Ulaşım, Araç Bakım, Konaklama, İletişim, Faturalar, Kargo, Giyim ve Diğer kategorilerini kullanabilmek için veritabanında küçük bir güncelleme gerekiyor. Mevcut fişleriniz etkilenmez."
+      sql={SCHEMA_SETUP_SQL}
+      message="Fiş no, satıcının vergi numarası, ödeme şekli, not alanı ve tüm yeni kategoriler (Ulaşım, Faturalar, Giyim…) için veritabanında küçük bir güncelleme gerekiyor. Mevcut fişleriniz etkilenmez."
       onCheck={async () => {
-        const ready = await categoriesReady();
+        const ready = await schemaReady();
         if (ready) {
           haptics.success();
           router.back();
-          showToast('Yeni kategoriler etkin');
+          showToast('Veritabanı güncel');
         } else {
           haptics.error();
           showAlert(

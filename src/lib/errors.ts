@@ -22,7 +22,7 @@ export function errorMessage(e: unknown): string {
     return 'Fotoğraf çok büyük. Daha yakından ya da daha düşük çözünürlükte çekmeyi deneyin.';
   }
   if (/receipts_kategori_check/.test(lower)) {
-    return 'Bu kategori henüz etkin değil. Ana sayfadaki "Yeni kategorileri etkinleştir" adımını bir kez yapın ya da eski kategorilerden birini seçin.';
+    return 'Bu kategori henüz etkin değil. Ana sayfadaki "Veritabanını güncelle" adımını bir kez yapın ya da eski kategorilerden birini seçin.';
   }
   if (/invalid login credentials/.test(lower)) return 'E-posta ya da şifre hatalı.';
   if (/user already registered/.test(lower)) return 'Bu e-posta ile zaten bir hesap var. Giriş yapmayı deneyin.';

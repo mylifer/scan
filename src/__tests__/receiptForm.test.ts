@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 
 import { emptyForm, formWarnings, fromFormValues, toFormValues, validateForm } from '../lib/receiptForm';
 
-const ok = { firmaAdi: 'A101', tarih: '14.09.2026', toplamTutar: 120, kdvYuzde1: 0, kdvYuzde10: 0, kdvYuzde20: 20, kategori: 'market' as const };
+const ok = { firmaAdi: 'A101', tarih: '14.09.2026', toplamTutar: 120, kdvYuzde1: 0, kdvYuzde10: 0, kdvYuzde20: 20, kategori: 'market' as const, fisNo: '0042', vergiNo: '6220529513', odeme: 'kart' as const, notlar: 'Müşteri toplantısı' };
 
 describe('form', () => {
   it('gidiş-dönüş dönüşümü veriyi korur', () => assert.deepEqual(fromFormValues(toFormValues(ok)), ok));
@@ -16,6 +16,10 @@ describe('form', () => {
   it('KDV toplamı tutarı aşarsa (TOPLAM/TOPKDV karışması) uyarır', () => {
     const errors = validateForm({ ...toFormValues(ok), toplamTutar: '20,00', kdvYuzde20: '120,00' });
     assert.ok(errors.some((e) => e.includes('TOPKDV')));
+  });
+  it('vergi no uzunluğunu denetler', () => {
+    assert.ok(validateForm({ ...toFormValues(ok), vergiNo: '12345' }).some((e) => e.includes('Vergi no')));
+    assert.deepEqual(validateForm({ ...toFormValues(ok), vergiNo: '' }), []);
   });
   it('bozuk tarihi yakalar', () => assert.ok(validateForm({ ...toFormValues(ok), tarih: '32.13.2026' }).some((e) => e.includes('Tarih'))));
 });

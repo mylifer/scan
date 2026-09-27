@@ -31,7 +31,7 @@ import { showToast } from '../lib/toast';
 import { compareWithPreviousMonth } from '../lib/trend';
 import { VERSION_LABEL } from '../lib/version';
 import { reloadApp, useWebUpdateAvailable } from '../lib/webUpdate';
-import { categoriesReady } from '../services/supabase/schema';
+import { schemaReady } from '../services/supabase/schema';
 import type { Kategori, ReceiptRecord } from '../types/receipt';
 
 const PAGE = 25;
@@ -44,11 +44,11 @@ export default function DashboardScreen() {
   const { drafts, processor } = useDrafts();
   const updateAvailable = useWebUpdateAvailable();
   const budget = useMonthlyBudget();
-  // Yeni kategoriler için veritabanı kurulumu (003) yapılmadıysa üstte hatırlat
-  const [needsCategorySetup, setNeedsCategorySetup] = useState(false);
+  // Veritabanı güncellemesi (005) yapılmadıysa üstte hatırlat
+  const [needsDbSetup, setNeedsDbSetup] = useState(false);
   useEffect(() => {
     if (!s) return;
-    categoriesReady().then((ready) => setNeedsCategorySetup(ready === false));
+    schemaReady().then((ready) => setNeedsDbSetup(ready === false));
   }, [s]);
   const [visible, setVisible] = useState(PAGE);
   // Yenileme göstergesi yalnızca kullanıcı aşağı çektiğinde görünür; arka plan yenilemeleri
@@ -216,13 +216,13 @@ export default function DashboardScreen() {
           </ListSection>
         )}
 
-        {needsCategorySetup && (
+        {needsDbSetup && (
           <ListSection>
             <ListRow
-              title="Yeni kategorileri etkinleştir"
-              subtitle="Ulaşım, Faturalar, Giyim ve fazlası"
-              icon={{ sf: 'tag.fill', ion: 'pricetag', color: theme.purple }}
-              onPress={() => router.push('/setup-categories')}
+              title="Veritabanını güncelle"
+              subtitle="Fiş no, vergi no, ödeme şekli, not · 1 dk"
+              icon={{ sf: 'arrow.triangle.2.circlepath.circle.fill', ion: 'sync-circle', color: theme.purple }}
+              onPress={() => router.push('/setup-database')}
               chevron
             />
           </ListSection>

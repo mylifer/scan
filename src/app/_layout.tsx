@@ -32,7 +32,7 @@ function RootNavigator() {
         <Stack.Screen name="camera" options={{ headerShown: false, animation: 'fade', presentation: 'fullScreenModal' }} />
         <Stack.Screen name="review" options={{ title: 'Fişi Kontrol Et' }} />
         <Stack.Screen name="manual" options={{ title: 'Elle Fiş Ekle', presentation: 'modal' }} />
-        <Stack.Screen name="setup-categories" options={{ title: 'Yeni Kategoriler' }} />
+        <Stack.Screen name="setup-database" options={{ title: 'Veritabanı Güncellemesi' }} />
         <Stack.Screen name="budget" options={{ title: 'Aylık Bütçe', presentation: 'modal' }} />
         <Stack.Screen name="batch" options={{ title: 'Toplu Tarama', ...largeTitle }} />
         <Stack.Screen name="batch-review" options={{ title: 'İncele' }} />

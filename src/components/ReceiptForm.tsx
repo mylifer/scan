@@ -6,7 +6,8 @@ import { formatTL, normalizeTrDate, parseAmount, round2, todayTr } from '../lib/
 import { formWarnings, type ReceiptFormValues } from '../lib/receiptForm';
 import { haptics } from '../lib/haptics';
 import { categoryMeta, fontFamily, tabular, type as t, useTheme } from '../lib/theme';
-import { KATEGORILER } from '../types/receipt';
+import { useDetailFields } from '../hooks/useDetailFields';
+import { KATEGORILER, ODEME_ETIKETLERI, ODEME_SEKILLERI } from '../types/receipt';
 import { Icon } from './ui/Icon';
 import { FieldRow, ListRow, ListSection } from './ui/List';
 
@@ -23,6 +24,24 @@ export function ReceiptForm({ values, onChange }: Props) {
   const toplamKdv = round2(parseAmount(values.kdvYuzde1) + parseAmount(values.kdvYuzde10) + parseAmount(values.kdvYuzde20));
   const kdvTooHigh = toplamKdv > parseAmount(values.toplamTutar) && parseAmount(values.toplamTutar) > 0;
   const meta = categoryMeta[values.kategori];
+
+  const details = useDetailFields();
+
+  function pickPayment() {
+    showActionSheet({
+      title: 'Ödeme Şekli',
+      options: [
+        ...ODEME_SEKILLERI.map((o) => ({
+          label: ODEME_ETIKETLERI[o],
+          onPress: () => {
+            haptics.select();
+            set('odeme', o);
+          },
+        })),
+        { label: 'Belirtilmedi', onPress: () => set('odeme', '') },
+      ],
+    });
+  }
 
   function pickCategory() {
     showActionSheet({
@@ -92,6 +111,34 @@ export function ReceiptForm({ values, onChange }: Props) {
           <AmountInput value={values.kdvYuzde20} onChangeText={(v) => set('kdvYuzde20', v)} />
         </FieldRow>
       </ListSection>
+
+      {details && (
+        <ListSection header="Ayrıntılar" footer="Muhasebe kaydı için fişteki satıcı vergi numarası (VKN/TCKN) ve fiş numarası. Boş bırakılabilir.">
+          <FieldRow label="Fiş No">
+            <Input value={values.fisNo} onChangeText={(v) => set('fisNo', v)} placeholder="ör. 0042" autoCapitalize="characters" />
+          </FieldRow>
+          <FieldRow label="Vergi No">
+            <Input
+              value={values.vergiNo}
+              onChangeText={(v) => set('vergiNo', v.replace(/\D/g, '').slice(0, 11))}
+              placeholder="10 ya da 11 hane"
+              keyboardType="number-pad"
+              style={tabular}
+            />
+          </FieldRow>
+          <ListRow title="Ödeme" value={values.odeme ? ODEME_ETIKETLERI[values.odeme] : 'Belirtilmedi'} chevron onPress={pickPayment} />
+          <View style={styles.noteWrap}>
+            <TextInput
+              value={values.notlar}
+              onChangeText={(v) => set('notlar', v.slice(0, 500))}
+              placeholder="Not (ör. müşteri toplantısı)"
+              placeholderTextColor={theme.tertiaryLabel}
+              multiline
+              style={[t.body, styles.note, { color: theme.label }]}
+            />
+          </View>
+        </ListSection>
+      )}
     </>
   );
 }
@@ -146,5 +193,7 @@ function DateField({ value, onChange }: { value: string; onChange: (v: string) =
 const styles = StyleSheet.create({
   input: { textAlign: 'right', paddingVertical: 11, minWidth: 120, width: '100%', fontFamily, ...Platform.select({ web: { outlineWidth: 0 } }) },
   footer: { marginHorizontal: 16, marginTop: 7 },
+  noteWrap: { paddingHorizontal: 16, paddingVertical: 6 },
+  note: { minHeight: 64, textAlignVertical: 'top', paddingVertical: 6, fontFamily, ...Platform.select({ web: { outlineWidth: 0 } }) },
   warning: { flexDirection: 'row', gap: 10, marginHorizontal: 16, marginBottom: 20, padding: 12, borderRadius: 12 },
 });

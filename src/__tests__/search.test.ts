@@ -25,6 +25,15 @@ describe('arama', () => {
   it('eşleşmeyeni eler', () => assert.ok(!matchesReceipt(migros, 'shell')));
 });
 
+describe('ayrıntılarda arama', () => {
+  const r = { firma_adi: 'OPET', toplam_tutar: 1500, notlar: 'Ankara müşteri ziyareti', vergi_no: '6220529513', fis_no: '0042' };
+  it('notta, vergi noda ve fiş noda arar', () => {
+    assert.ok(matchesReceipt(r, 'ziyaret'));
+    assert.ok(matchesReceipt(r, '62205'));
+    assert.ok(!matchesReceipt(r, '9999'));
+  });
+});
+
 describe('firma kategorisi hafızası', () => {
   it('firmKey şirket eklerini atar', () => {
     assert.equal(firmKey('MİGROS TİCARET A.Ş.'), 'migros');

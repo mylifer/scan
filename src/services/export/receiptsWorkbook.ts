@@ -1,6 +1,6 @@
 import { round2 } from '../../lib/format';
 import { buildXlsx, type Row } from '../../lib/xlsx';
-import { KATEGORI_ETIKETLERI, type ReceiptRecord } from '../../types/receipt';
+import { KATEGORI_ETIKETLERI, ODEME_ETIKETLERI, type ReceiptRecord } from '../../types/receipt';
 
 /** getSummary'nin döndürdüğü özetin, Excel için gereken kısmı (saf veri; React Native bağımlılığı yok) */
 export interface WorkbookInput {
@@ -20,7 +20,10 @@ export interface WorkbookInput {
  */
 export function buildReceiptsWorkbook(summary: WorkbookInput, periodLabel: string): Uint8Array {
   const fisler = [...summary.fisler].sort((a, b) => a.tarih.localeCompare(b.tarih) || a.created_at.localeCompare(b.created_at));
-  const header: Row = ['Tarih', 'Firma', 'Kategori', 'Toplam', 'KDV %1', 'KDV %10', 'KDV %20', 'Toplam KDV', 'KDV Hariç'].map((v) => ({ v, s: 'header' as const }));
+  // Ayrıntı sütunları (fiş no, vergi no…) formüllü sütunların sağına eklenir ki formüller kaymasın
+  const header: Row = ['Tarih', 'Firma', 'Kategori', 'Toplam', 'KDV %1', 'KDV %10', 'KDV %20', 'Toplam KDV', 'KDV Hariç', 'Vergi No', 'Fiş No', 'Ödeme', 'Not'].map(
+    (v) => ({ v, s: 'header' as const }),
+  );
 
   const rows: Row[] = [header];
   fisler.forEach((r, i) => {
@@ -36,6 +39,10 @@ export function buildReceiptsWorkbook(summary: WorkbookInput, periodLabel: strin
       { v: r.kdv_yuzde20, s: 'money' },
       { v: kdv, f: `E${n}+F${n}+G${n}`, s: 'money' },
       { v: round2(r.toplam_tutar - kdv), f: `D${n}-H${n}`, s: 'money' },
+      r.vergi_no ?? '',
+      r.fis_no ?? '',
+      r.odeme ? ODEME_ETIKETLERI[r.odeme] : '',
+      r.notlar ?? '',
     ]);
   });
 
@@ -79,7 +86,7 @@ export function buildReceiptsWorkbook(summary: WorkbookInput, periodLabel: strin
 
   const months = monthlyRows(fisler);
   return buildXlsx([
-    { name: 'Fişler', rows, widths: [12, 34, 14, 14, 12, 12, 12, 14, 14], freezeRows: 1 },
+    { name: 'Fişler', rows, widths: [12, 34, 14, 14, 12, 12, 12, 14, 14, 14, 12, 10, 30], freezeRows: 1 },
     { name: 'Özet', rows: ozet, widths: [22, 16, 10] },
     ...(months ? [{ name: 'Aylar', rows: months, widths: [16, 8, 14, 12, 12, 12, 14, 14], freezeRows: 1 }] : []),
   ]);

@@ -1,5 +1,5 @@
 import { normalizeTrDate, parseAmount, todayTr } from '../../lib/format';
-import { KATEGORILER, type Kategori, type ReceiptData } from '../../types/receipt';
+import { KATEGORILER, type Kategori, type OdemeSekli, type ReceiptData } from '../../types/receipt';
 import { VisionServiceError } from './VisionService';
 
 /**
@@ -18,7 +18,35 @@ export function parseReceiptJson(raw: string): ReceiptData {
     kdvYuzde10: parseAmount(obj.kdvYuzde10),
     kdvYuzde20: parseAmount(obj.kdvYuzde20),
     kategori: normalizeKategori(obj.kategori),
+    fisNo: normalizeFisNo(obj.fisNo),
+    vergiNo: normalizeVergiNo(obj.vergiNo),
+    odeme: normalizeOdeme(obj.odeme),
   };
+}
+
+/** "0042", "No: 0042" → "0042" (en fazla 30 karakter) */
+export function normalizeFisNo(value: unknown): string {
+  if (typeof value !== 'string' && typeof value !== 'number') return '';
+  const raw = String(value).trim();
+  // Büyük İ/Ş'yi de yakalamak için önek Türkçe küçük harfe çevrilmiş metinde aranır
+  const prefix = raw.toLocaleLowerCase('tr-TR').match(/^(fi[sş]\s*)?(no|numaras[ıi])?\s*[:.]?\s*/)?.[0].length ?? 0;
+  return raw.slice(prefix).trim().slice(0, 30);
+}
+
+/** Yalnızca 10 (VKN) ya da 11 (TCKN) haneli numaralar kabul edilir; aksi hâlde boş. */
+export function normalizeVergiNo(value: unknown): string {
+  if (typeof value !== 'string' && typeof value !== 'number') return '';
+  const digits = String(value).replace(/\D/g, '');
+  return digits.length === 10 || digits.length === 11 ? digits : '';
+}
+
+function normalizeOdeme(value: unknown): OdemeSekli | null {
+  if (typeof value !== 'string') return null;
+  const v = value.toLocaleLowerCase('tr-TR');
+  if (/kart|kredi|banka|temass|pos/.test(v)) return 'kart';
+  if (/nakit|peşin|cash/.test(v)) return 'nakit';
+  if (/diğer|havale|eft|çek/.test(v)) return 'diğer';
+  return null;
 }
 
 function extractJsonObject(raw: string): Record<string, unknown> {

@@ -14,6 +14,11 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.22.0
+- **Fiş ayrıntıları:** Satıcının vergi numarası (VKN/TCKN), fiş numarası ve ödeme şekli (Kart/Nakit) artık yapay zekâ tarafından fişten okunur ve kaydedilir; isteğe bağlı not alanı eklendi. Hepsi Excel'e yeni sütunlar olarak (muhasebe kaydı için), paylaşılan fiş metnine ve aramaya dahil
+- **Daha iyi mükerrer kontrolü:** Aynı satıcı vergi no + aynı fiş no, tutar yanlış okunmuş olsa bile aynı fiş olarak uyarılır
+- Tek seferlik veritabanı güncellemesi gerekir: ana sayfadaki "Veritabanını güncelle" satırı (`supabase/migrations/005_receipt_details.sql`; önceki kategori kurulumlarını da içerir). Güncelleme yapılana kadar yeni alanlar gizli kalır, uygulama eskisi gibi çalışır
+
 ## 1.21.1 — `d25cb05`
 - Toplu taramada indirilen geçici fotoğraflar işlendikten sonra temizlenir (bellek ve telefon alanı)
 - Ekran okuyucu (VoiceOver) için taslak kutucuklarına, kamera ve grafik düğmelerine açıklamalar eklendi
