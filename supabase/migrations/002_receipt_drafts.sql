@@ -38,3 +38,6 @@ create policy "drafts_delete_own" on public.receipt_drafts
 
 -- Taslak görselleri AI'ın okuyabilmesi için daha yüksek çözünürlükte tutulur (kaydedilince silinir)
 update storage.buckets set file_size_limit = 1048576 where id = 'receipt-images';
+
+-- API'nin yeni tabloyu hemen tanıması için
+notify pgrst, 'reload schema';

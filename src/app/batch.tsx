@@ -1,12 +1,13 @@
 import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Image, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AddPhotoButtons, type PickedPhoto } from '../components/AddPhotoButtons';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { useDrafts } from '../hooks/useDrafts';
 import { confirmAction, showAlert } from '../lib/alert';
+import { DRAFTS_SETUP_SQL, SUPABASE_SQL_EDITOR_URL } from '../lib/setupSql';
 import { formatRunAt, nextRunAt, RECOMMENDED_HOUR, SCHEDULE_HOURS } from '../lib/schedule';
 import { colors } from '../lib/theme';
 import { showToast } from '../lib/toast';
@@ -80,15 +81,7 @@ export default function BatchScreen() {
   }
 
   if (notSetUp) {
-    return (
-      <View style={[styles.center, { padding: 24 }]}>
-        <Text style={{ fontSize: 48 }}>🛠️</Text>
-        <Text style={styles.title}>Kurulum gerekli</Text>
-        <Text style={styles.muted}>
-          Toplu tarama için Supabase'de tek seferlik bir ayar yapılması gerekiyor. Talimatlar size ayrıca iletildi.
-        </Text>
-      </View>
-    );
+    return <SetupNeeded onCheck={refresh} />;
   }
 
   const busy = processor.running || !!uploading;
@@ -197,6 +190,80 @@ export default function BatchScreen() {
   );
 }
 
+/** receipt_drafts tablosu yoksa: SQL'i kopyala → Supabase'i aç → çalıştır → tekrar kontrol et */
+function SetupNeeded({ onCheck }: { onCheck: () => Promise<unknown> }) {
+  const insets = useSafeAreaInsets();
+  const [showCode, setShowCode] = useState(false);
+  const [checking, setChecking] = useState(false);
+
+  async function copy() {
+    try {
+      if (Platform.OS !== 'web' || !navigator.clipboard) throw new Error();
+      await navigator.clipboard.writeText(DRAFTS_SETUP_SQL);
+      showToast('Kod kopyalandı');
+    } catch {
+      setShowCode(true);
+      showToast('Otomatik kopyalanamadı; kodu aşağıdan seçip kopyalayın', 'info', 4000);
+    }
+  }
+
+  async function check() {
+    setChecking(true);
+    await onCheck();
+    setChecking(false);
+  }
+
+  return (
+    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}>
+      <View style={[styles.center, { paddingTop: 8 }]}>
+        <Text style={{ fontSize: 44 }}>🛠️</Text>
+        <Text style={styles.title}>Tek seferlik kurulum</Text>
+        <Text style={styles.muted}>
+          Toplu tarama, taslakları saklamak için Supabase'de yeni bir tabloya ihtiyaç duyuyor. 1 dakikanızı alır.
+        </Text>
+      </View>
+
+      <Step n={1} text="Kurulum kodunu kopyalayın">
+        <PrimaryButton title="📋  Kodu kopyala" onPress={copy} />
+      </Step>
+      <Step n={2} text="Supabase'i açın (giriş yapmanız istenebilir)">
+        <PrimaryButton title="↗  Supabase SQL ekranını aç" variant="secondary" onPress={() => Linking.openURL(SUPABASE_SQL_EDITOR_URL)} />
+      </Step>
+      <Step n={3} text='Boş alana yapıştırın ve sağ alttaki "Run" düğmesine basın. Uyarı çıkarsa "Run this query" deyin. "Success" yazısını görmelisiniz.' />
+      <Step n={4} text="Uygulamaya dönüp kontrol edin">
+        <PrimaryButton title="✓  Kurulumu kontrol et" onPress={check} loading={checking} />
+      </Step>
+
+      <Pressable onPress={() => setShowCode((v) => !v)} hitSlop={8}>
+        <Text style={[styles.link, { textAlign: 'center' }]}>{showCode ? 'Kodu gizle' : 'Kodu göster'}</Text>
+      </Pressable>
+      {showCode && (
+        <TextInput
+          value={DRAFTS_SETUP_SQL}
+          multiline
+          editable={false}
+          selectTextOnFocus
+          style={styles.code}
+        />
+      )}
+    </ScrollView>
+  );
+}
+
+function Step({ n, text, children }: { n: number; text: string; children?: ReactNode }) {
+  return (
+    <View style={styles.step}>
+      <View style={styles.stepHead}>
+        <View style={styles.stepNum}>
+          <Text style={styles.stepNumText}>{n}</Text>
+        </View>
+        <Text style={styles.stepText}>{text}</Text>
+      </View>
+      {children}
+    </View>
+  );
+}
+
 function StatusBadge({ draft }: { draft: ReceiptDraft }) {
   const map = {
     pending: { text: 'Bekliyor', bg: '#E2E8F0', fg: colors.text },
@@ -278,4 +345,25 @@ const styles = StyleSheet.create({
   },
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipText: { fontWeight: '700', color: colors.text },
+  step: { backgroundColor: colors.card, borderRadius: 16, padding: 14, gap: 12, borderWidth: 1, borderColor: colors.border },
+  stepHead: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  stepNum: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepNumText: { color: '#fff', fontWeight: '800' },
+  stepText: { flex: 1, fontSize: 15, color: colors.text, lineHeight: 21, fontWeight: '600' },
+  code: {
+    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
+    fontSize: 11,
+    backgroundColor: '#0F172A',
+    color: '#E2E8F0',
+    borderRadius: 12,
+    padding: 12,
+    height: 260,
+  },
 });
