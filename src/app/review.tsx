@@ -21,7 +21,7 @@ import {
   validateForm,
 } from '../components/ReceiptForm';
 import { showAlert } from '../lib/alert';
-import { todayTr } from '../lib/format';
+import { isoToTrDate, monthRange, todayTr } from '../lib/format';
 import { getPendingPhoto } from '../lib/pendingPhoto';
 import { colors } from '../lib/theme';
 import { prepareReceiptImages } from '../services/image/prepareReceiptImages';
@@ -87,8 +87,15 @@ export default function ReviewScreen() {
     setSaveError(null);
     setSaving(true);
     try {
-      const { imageWarning } = await saveReceipt(fromFormValues(values), archiveUri.current);
-      if (imageWarning) showAlert('Fiş kaydedildi', imageWarning);
+      const { record, imageWarning } = await saveReceipt(fromFormValues(values), archiveUri.current);
+      const { from, to } = monthRange(0);
+      const notes = [
+        record.tarih < from || record.tarih >= to
+          ? `Fiş tarihi ${isoToTrDate(record.tarih)} olduğu için o ayın özetinde görünür. Ana sayfada ‹ okuyla önceki aylara geçebilirsiniz.`
+          : '',
+        imageWarning ?? '',
+      ].filter(Boolean);
+      showAlert('✅ Fiş kaydedildi', notes.join('\n\n') || undefined);
       router.replace('/');
     } catch (e) {
       const message = (e as Error).message ?? String(e);

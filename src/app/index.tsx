@@ -11,7 +11,7 @@ import { supabase } from '../services/supabase/client';
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
-  const { summary, loading, error, refresh, monthLabel } = useMonthlySummary();
+  const { summary, recent, loading, error, refresh, offset, monthLabel, prevMonth, nextMonth } = useMonthlySummary();
   const s = summary;
   const maxKategori = Math.max(1, ...(s?.kategoriToplamlari.map((k) => k.toplam) ?? [1]));
 
@@ -25,9 +25,21 @@ export default function DashboardScreen() {
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 110 }]}
         refreshControl={<RefreshControl refreshing={loading && !!summary} onRefresh={refresh} />}>
         <View style={styles.header}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.overline}>Gider Özeti</Text>
-            <Text style={styles.month}>{capitalize(monthLabel)}</Text>
+            <View style={styles.monthRow}>
+              <Pressable onPress={prevMonth} hitSlop={10} style={styles.monthArrow}>
+                <Text style={styles.monthArrowText}>‹</Text>
+              </Pressable>
+              <Text style={styles.month}>{capitalize(monthLabel)}</Text>
+              <Pressable
+                onPress={nextMonth}
+                disabled={offset === 0}
+                hitSlop={10}
+                style={[styles.monthArrow, offset === 0 && { opacity: 0.25 }]}>
+                <Text style={styles.monthArrowText}>›</Text>
+              </Pressable>
+            </View>
           </View>
           <Pressable onPress={confirmSignOut} style={styles.avatar} hitSlop={8}>
             <Text style={{ fontSize: 18 }}>👤</Text>
@@ -42,7 +54,7 @@ export default function DashboardScreen() {
         )}
 
         <LinearGradient colors={[colors.heroFrom, colors.heroTo]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-          <Text style={styles.heroLabel}>Bu ayki toplam gider</Text>
+          <Text style={styles.heroLabel}>{offset === 0 ? 'Bu ayki toplam gider' : `${capitalize(monthLabel)} toplam gideri`}</Text>
           <Text style={styles.heroValue} adjustsFontSizeToFit numberOfLines={1}>
             {s ? formatTL(s.toplamGider) : '—'}
           </Text>
@@ -75,7 +87,7 @@ export default function DashboardScreen() {
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Kategorilere göre</Text>
-          {s && s.kategoriToplamlari.length === 0 && <Text style={styles.empty}>Bu ay henüz fiş yok.</Text>}
+          {s && s.kategoriToplamlari.length === 0 && <Text style={styles.empty}>Bu ay tarihli fiş yok.</Text>}
           {s?.kategoriToplamlari.map(({ kategori, toplam }) => {
             const meta = kategoriMeta[kategori] ?? { emoji: '•', color: colors.primary };
             return (
@@ -94,10 +106,10 @@ export default function DashboardScreen() {
           })}
         </View>
 
-        {!!s?.sonFisler.length && (
+        {recent.length > 0 && (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Son fişler</Text>
-            {s.sonFisler.map((r, i) => (
+            <Text style={styles.cardTitle}>Son eklenen fişler</Text>
+            {recent.map((r, i) => (
               <View key={r.id} style={[styles.receiptRow, i > 0 && styles.divider]}>
                 <View style={[styles.receiptIcon, { backgroundColor: `${kategoriMeta[r.kategori]?.color ?? colors.primary}1A` }]}>
                   <Text>{kategoriMeta[r.kategori]?.emoji ?? '🧾'}</Text>
@@ -147,7 +159,19 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 16, gap: 14 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   overline: { fontSize: 13, color: colors.muted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8 },
-  month: { fontSize: 26, fontWeight: '800', color: colors.text },
+  month: { fontSize: 24, fontWeight: '800', color: colors.text },
+  monthRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  monthArrow: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  monthArrowText: { fontSize: 20, fontWeight: '700', color: colors.text, marginTop: -2 },
   avatar: {
     width: 42,
     height: 42,

@@ -74,15 +74,19 @@ export function todayTr(): string {
   return `${pad(now.getDate())}.${pad(now.getMonth() + 1)}.${now.getFullYear()}`;
 }
 
-/** Bu ayın [ilk gün, sonraki ayın ilk günü) aralığı, YYYY-MM-DD */
-export function currentMonthRange(now = new Date()): { from: string; to: string; label: string } {
-  const y = now.getFullYear();
-  const m = now.getMonth();
+/**
+ * Bugünden `offset` ay önceki/sonraki ayın [ilk gün, sonraki ayın ilk günü) aralığı, YYYY-MM-DD.
+ * offset 0 = bu ay, -1 = geçen ay.
+ */
+export function monthRange(offset = 0, now = new Date()): { from: string; to: string; label: string } {
+  const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const y = start.getFullYear();
+  const m = start.getMonth();
   const next = new Date(y, m + 1, 1);
   return {
     from: `${y}-${pad(m + 1)}-01`,
     to: `${next.getFullYear()}-${pad(next.getMonth() + 1)}-01`,
-    label: now.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }),
+    label: start.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }),
   };
 }
 

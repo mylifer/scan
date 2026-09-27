@@ -78,7 +78,17 @@ export interface MonthlySummary {
   kdv20: number;
   fisSayisi: number;
   kategoriToplamlari: { kategori: Kategori; toplam: number }[];
-  sonFisler: ReceiptRecord[];
+}
+
+/** Fiş tarihinden bağımsız olarak en son eklenen fişler. */
+export async function getRecentReceipts(limit = 5): Promise<ReceiptRecord[]> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(toRecord);
 }
 
 /** [from, to) aralığındaki (YYYY-MM-DD) fişleri özetler. */
@@ -88,8 +98,7 @@ export async function getSummary(from: string, to: string): Promise<MonthlySumma
     .select('*')
     .gte('tarih', from)
     .lt('tarih', to)
-    .order('tarih', { ascending: false })
-    .order('created_at', { ascending: false });
+    .order('tarih', { ascending: false });
   if (error) throw new Error(error.message);
 
   const rows = (data ?? []).map(toRecord);
@@ -116,7 +125,6 @@ export async function getSummary(from: string, to: string): Promise<MonthlySumma
     kategoriToplamlari: [...byKategori.entries()]
       .map(([kategori, toplam]) => ({ kategori, toplam: round2(toplam) }))
       .sort((a, b) => b.toplam - a.toplam),
-    sonFisler: rows.slice(0, 5),
   };
 }
 
