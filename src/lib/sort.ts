@@ -27,3 +27,28 @@ export function sortReceipts<T extends Sortable>(rows: T[], key: SortKey): T[] {
       return out.sort((a, b) => byDate(b, a));
   }
 }
+
+export interface MonthGroup<T> {
+  /** "2026-09" */
+  key: string;
+  /** "Eylül 2026" */
+  label: string;
+  items: T[];
+}
+
+const AYLAR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+
+/** Sıralı listeyi (tarihe göre) ardışık aylara böler; sıra korunur. */
+export function groupByMonth<T extends Pick<ReceiptRecord, 'tarih'>>(rows: T[]): MonthGroup<T>[] {
+  const groups: MonthGroup<T>[] = [];
+  for (const r of rows) {
+    const key = r.tarih.slice(0, 7);
+    let g = groups[groups.length - 1];
+    if (!g || g.key !== key) {
+      g = { key, label: `${AYLAR[Number(key.slice(5)) - 1]} ${key.slice(0, 4)}`, items: [] };
+      groups.push(g);
+    }
+    g.items.push(r);
+  }
+  return groups;
+}

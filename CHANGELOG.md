@@ -14,7 +14,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.20.0
+## 1.21.0
+- **Aylara göre gruplama:** Yıllık ve Tüm Zamanlar görünümünde (tarihe göre sıralıyken) fişler ay başlıkları altında listelenir: "Eylül 2026 · 12 fiş · ₺8.450"
+
+## 1.20.0 — `dfbb458`
 - **Aylık bütçe:** Ayarlar → Takip → Aylık Bütçe. Ana sayfanın özet kartında (aylık görünüm) çubuk ve "₺X kaldı" / "₺X aşıldı" görünür; %80'den sonra turuncu, aşılınca kırmızı. Çubuğa dokunarak bütçe değiştirilebilir. Bu cihazda saklanır, kurulum gerektirmez
 
 ## 1.19.1 — `ebbee16`

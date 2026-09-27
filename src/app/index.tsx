@@ -24,7 +24,7 @@ import { haptics } from '../lib/haptics';
 import { periodRange } from '../lib/period';
 import { formatRunAt } from '../lib/schedule';
 import { matchesReceipt } from '../lib/search';
-import { SORT_OPTIONS, type SortKey, sortReceipts } from '../lib/sort';
+import { groupByMonth, SORT_OPTIONS, type SortKey, sortReceipts } from '../lib/sort';
 import { useMonthlyBudget } from '../lib/budget';
 import { categoryMeta, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
@@ -97,6 +97,58 @@ export default function DashboardScreen() {
       showAlert('Silinemedi', errorMessage(e));
     }
   }
+
+  const shown = filtered.slice(0, visible);
+  // Yıllık / tüm zamanlar görünümünde, tarihe göre sıralıyken fişleri aylara ayır
+  const grouped = period.mode !== 'month' && (sort === 'newest' || sort === 'oldest') ? groupByMonth(shown) : null;
+  const monthTotals = new Map<string, { count: number; total: number }>();
+  if (grouped) {
+    for (const r of filtered) {
+      const key = r.tarih.slice(0, 7);
+      const m = monthTotals.get(key) ?? { count: 0, total: 0 };
+      m.count += 1;
+      m.total += r.toplam_tutar;
+      monthTotals.set(key, m);
+    }
+  }
+  const categoryFooter = category
+    ? `Yalnızca ${categoryMeta[category].label} kategorisi gösteriliyor. Kategoriye tekrar dokunarak filtreyi kaldırabilirsiniz.`
+    : undefined;
+  const controlRows = [
+    ...(filtering
+      ? [
+          <ListRow
+            key="clear"
+            title="Filtreyi Temizle"
+            tone="action"
+            icon={{ sf: 'line.3.horizontal.decrease.circle.fill', ion: 'filter-circle', color: theme.blue }}
+            onPress={() => {
+              setQuery('');
+              setCategory(null);
+            }}
+          />,
+        ]
+      : []),
+    ...(filtering && filtered.length === 0 ? [<ListRow key="none" title="Eşleşen fiş yok" disabled />] : []),
+    ...(filtering && filtered.length === 0 && period.mode !== 'all'
+      ? [
+          <ListRow
+            key="all"
+            title="Tüm Zamanlarda Ara"
+            tone="action"
+            icon={{ sf: 'magnifyingglass.circle.fill', ion: 'search-circle', color: theme.blue }}
+            onPress={showAll}
+          />,
+        ]
+      : []),
+  ];
+  const receiptRow = (r: ReceiptRecord) => (
+    <SwipeToDelete key={r.id} onDelete={() => deleteReceipt(r)}>
+      <ReceiptRow receipt={r} onPress={() => router.push({ pathname: '/receipt/[id]', params: { id: r.id } })} />
+    </SwipeToDelete>
+  );
+  const moreRow =
+    filtered.length > visible ? <ListRow key="more" title={`${filtered.length - visible} fiş daha göster`} tone="action" onPress={() => setVisible((v) => v + PAGE)} /> : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
@@ -262,44 +314,19 @@ export default function DashboardScreen() {
                         ? { label: SORT_OPTIONS.find((o) => o.key === sort)!.label, onPress: chooseSort, accessibilityLabel: 'Sıralamayı değiştir' }
                         : undefined
                     }
-                    footer={category ? `Yalnızca ${categoryMeta[category].label} kategorisi gösteriliyor. Kategoriye tekrar dokunarak filtreyi kaldırabilirsiniz.` : undefined}>
-                    {[
-                      ...(filtering
-                        ? [
-                            <ListRow
-                              key="clear"
-                              title="Filtreyi Temizle"
-                              tone="action"
-                              icon={{ sf: 'line.3.horizontal.decrease.circle.fill', ion: 'filter-circle', color: theme.blue }}
-                              onPress={() => {
-                                setQuery('');
-                                setCategory(null);
-                              }}
-                            />,
-                          ]
-                        : []),
-                      ...(filtering && filtered.length === 0 ? [<ListRow key="none" title="Eşleşen fiş yok" disabled />] : []),
-                      ...(filtering && filtered.length === 0 && period.mode !== 'all'
-                        ? [
-                            <ListRow
-                              key="all"
-                              title="Tüm Zamanlarda Ara"
-                              tone="action"
-                              icon={{ sf: 'magnifyingglass.circle.fill', ion: 'search-circle', color: theme.blue }}
-                              onPress={showAll}
-                            />,
-                          ]
-                        : []),
-                      ...filtered.slice(0, visible).map((r) => (
-                        <SwipeToDelete key={r.id} onDelete={() => deleteReceipt(r)}>
-                          <ReceiptRow receipt={r} onPress={() => router.push({ pathname: '/receipt/[id]', params: { id: r.id } })} />
-                        </SwipeToDelete>
-                      )),
-                      ...(filtered.length > visible
-                        ? [<ListRow key="more" title={`${filtered.length - visible} fiş daha göster`} tone="action" onPress={() => setVisible((v) => v + PAGE)} />]
-                        : []),
-                    ]}
+                    style={grouped && controlRows.length === 0 ? { marginBottom: 12 } : undefined}
+                    footer={grouped ? undefined : categoryFooter}>
+                    {[...controlRows, ...(grouped ? [] : shown.map(receiptRow)), ...(!grouped && moreRow ? [moreRow] : [])]}
                   </ListSection>
+                  {grouped?.map((g, i) => {
+                    const m = monthTotals.get(g.key);
+                    const last = i === grouped.length - 1;
+                    return (
+                      <ListSection key={g.key} header={`${g.label} · ${m?.count ?? g.items.length} fiş · ${formatTL(m?.total ?? 0)}`} footer={last ? categoryFooter : undefined}>
+                        {[...g.items.map(receiptRow), ...(last && moreRow ? [moreRow] : [])]}
+                      </ListSection>
+                    );
+                  })}
                 </>
               )
             )}

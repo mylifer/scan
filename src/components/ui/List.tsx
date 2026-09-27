@@ -30,9 +30,11 @@ export function ListSection({ header, headerAction, footer, children, style }: S
           )}
         </View>
       )}
-      <View style={[styles.card, { backgroundColor: theme.card }]}>
-        {rows.map((row, i) => cloneElement(row, { key: row.key ?? i, isLast: i === rows.length - 1 }))}
-      </View>
+      {rows.length > 0 && (
+        <View style={[styles.card, { backgroundColor: theme.card }]}>
+          {rows.map((row, i) => cloneElement(row, { key: row.key ?? i, isLast: i === rows.length - 1 }))}
+        </View>
+      )}
       {typeof footer === 'string' ? (
         <Text style={[t.footnote, styles.footer, { color: theme.secondaryLabel }]}>{footer}</Text>
       ) : (
