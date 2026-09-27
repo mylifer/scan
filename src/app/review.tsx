@@ -21,8 +21,9 @@ import {
   validateForm,
 } from '../components/ReceiptForm';
 import { showAlert } from '../lib/alert';
-import { isoToTrDate, monthRange, todayTr } from '../lib/format';
+import { monthRange, todayTr } from '../lib/format';
 import { getPendingPhoto } from '../lib/pendingPhoto';
+import { showToast } from '../lib/toast';
 import { colors } from '../lib/theme';
 import { prepareReceiptImages } from '../services/image/prepareReceiptImages';
 import { saveReceipt } from '../services/supabase/receiptsRepository';
@@ -88,15 +89,14 @@ export default function ReviewScreen() {
     setSaving(true);
     try {
       const { record, imageWarning } = await saveReceipt(fromFormValues(values), archiveUri.current);
-      const { from, to } = monthRange(0);
-      const notes = [
-        record.tarih < from || record.tarih >= to
-          ? `Fiş tarihi ${isoToTrDate(record.tarih)} olduğu için o ayın özetinde görünür. Ana sayfada ‹ okuyla önceki aylara geçebilirsiniz.`
-          : '',
-        imageWarning ?? '',
-      ].filter(Boolean);
-      showAlert('✅ Fiş kaydedildi', notes.join('\n\n') || undefined);
       router.replace('/');
+      if (imageWarning) {
+        showToast('Fiş kaydedildi, ancak fotoğrafı yüklenemedi', 'info', 4000);
+      } else {
+        const { from, to } = monthRange(0);
+        const otherMonth = record.tarih < from || record.tarih >= to;
+        showToast(otherMonth ? `Fiş kaydedildi · ${monthLabelOf(record.tarih)}` : 'Fiş kaydedildi');
+      }
     } catch (e) {
       const message = (e as Error).message ?? String(e);
       setSaveError(message);
@@ -172,6 +172,13 @@ export default function ReviewScreen() {
       </ScrollView>
     </KeyboardAvoidingView>
   );
+}
+
+/** "2026-08-28" → "Ağustos 2026" */
+function monthLabelOf(iso: string) {
+  const [y, m] = iso.split('-').map(Number);
+  const label = new Date(y, m - 1, 1).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+  return label.charAt(0).toLocaleUpperCase('tr-TR') + label.slice(1);
 }
 
 function getProviderName() {

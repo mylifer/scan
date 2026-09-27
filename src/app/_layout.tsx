@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { ToastHost } from '../components/ToastHost';
 import { AuthProvider, useAuth } from '../hooks/useAuth';
 import { colors } from '../lib/theme';
 
@@ -44,6 +45,7 @@ export default function RootLayout() {
       <AuthProvider>
         <StatusBar style="dark" />
         <RootNavigator />
+        <ToastHost />
       </AuthProvider>
     </SafeAreaProvider>
   );

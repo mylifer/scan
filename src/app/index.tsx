@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useMonthlySummary } from '../hooks/useMonthlySummary';
 import { confirmAction, showAlert } from '../lib/alert';
+import { showToast } from '../lib/toast';
 import { formatTL, isoToTrDate } from '../lib/format';
 import { colors, kategoriMeta } from '../lib/theme';
 import { supabase } from '../services/supabase/client';
@@ -35,6 +36,7 @@ export default function DashboardScreen() {
         setDeletingId(r.id);
         try {
           await remove(r);
+          showToast('Fiş silindi', 'info');
         } catch (e) {
           showAlert('Silinemedi', (e as Error).message);
         } finally {
