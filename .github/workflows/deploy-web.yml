@@ -20,17 +20,15 @@ jobs:
     runs-on: ubuntu-latest
     env:
       EXPO_PUBLIC_SUPABASE_URL: https://fzhagwcysltvpcgdfrnl.supabase.co
-      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      # Publishable key herkese açık olacak şekilde tasarlanmıştır; güvenliği RLS kuralları sağlar
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_7gu66leZ4qgYJPcOpcsh7g_yss8NOyN
       EXPO_PUBLIC_VISION_PROVIDER: gemini
       EXPO_PUBLIC_GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
     steps:
       - name: Anahtarları kontrol et
         run: |
-          missing=""
-          [ -z "$EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ] && missing="$missing SUPABASE_PUBLISHABLE_KEY"
-          [ -z "$EXPO_PUBLIC_GEMINI_API_KEY" ] && missing="$missing GEMINI_API_KEY"
-          if [ -n "$missing" ]; then
-            echo "::error::GitHub > Settings > Secrets and variables > Actions altında eksik secret:$missing"
+          if [ -z "$EXPO_PUBLIC_GEMINI_API_KEY" ]; then
+            echo "::error::GitHub > Settings > Secrets and variables > Actions altına GEMINI_API_KEY secret'ını ekleyin"
             exit 1
           fi
       - uses: actions/checkout@v4

@@ -14,7 +14,7 @@ Uygulama her güncellemede otomatik olarak **https://mylifer.github.io/scan/** a
 iPhone'da Safari ile açıp Paylaş → **Ana Ekrana Ekle** diyerek uygulama gibi kullanabilirsiniz.
 Yayın için GitHub repo ayarlarında şunlar gerekir:
 
-- **Settings → Secrets and variables → Actions** altında `SUPABASE_PUBLISHABLE_KEY` ve `GEMINI_API_KEY` secret'ları
+- **Settings → Secrets and variables → Actions** altında `GEMINI_API_KEY` secret'ı
 - **Settings → Pages → Source: GitHub Actions**
 
 ## Kurulum (geliştirici)
