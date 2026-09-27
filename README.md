@@ -18,6 +18,12 @@ Yayın için GitHub repo ayarlarında şunlar gerekir:
 - **Settings → Secrets and variables → Actions** altında `GEMINI_API_KEY` secret'ı
 - **Settings → Pages → Source: GitHub Actions**
 
+## iPhone uygulaması (TestFlight)
+
+`.github/workflows/ios.yml` EAS Build ile uygulamayı derleyip TestFlight'a gönderir; kod değişiklikleri
+EAS Update ile telefona anında gelir. Gerekli secret'lar: `EXPO_TOKEN`, `GEMINI_API_KEY`, `ASC_API_KEY_P8`,
+`ASC_KEY_ID`, `ASC_ISSUER_ID`, `APPLE_TEAM_ID`. İlk kurulumda workflow'u `setup`, sonra `build` ile çalıştırın.
+
 ## Kurulum (geliştirici)
 
 ### 1. Supabase

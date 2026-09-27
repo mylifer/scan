@@ -9,7 +9,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.adba.fistarayici"
+      "bundleIdentifier": "com.adba.fistarayici",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.adba.fistarayici",
@@ -38,10 +41,21 @@
           "microphonePermission": false,
           "recordAudioAndroid": false
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Galerideki fiş fotoğraflarını seçebilmek için fotoğraflarınıza erişim gerekiyor.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {
       "baseUrl": "/scan"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }

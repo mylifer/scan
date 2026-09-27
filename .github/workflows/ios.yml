@@ -1,0 +1,99 @@
+# iPhone uygulaması (EAS Build + TestFlight + EAS Update)
+#
+# Gerekli GitHub secret'ları: EXPO_TOKEN, GEMINI_API_KEY,
+#   ASC_API_KEY_P8 (App Store Connect .p8 dosyasının içeriği), ASC_KEY_ID, ASC_ISSUER_ID, APPLE_TEAM_ID
+#
+# - "setup": Expo projesini oluşturur/bağlar ve app.json'a proje kimliğini yazıp commit'ler (bir kez)
+# - "build": yeni iPhone sürümü derler ve TestFlight'a gönderir (native değişikliklerde)
+# - push: JS değişikliklerini EAS Update ile telefona anında gönderir (build gerektirmez)
+name: iPhone uygulaması
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'setup | build'
+        required: true
+        default: build
+        type: choice
+        options: [setup, build]
+  push:
+    branches: [claude/pos-receipt-scanner-app-tk3b0z]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-${{ github.event_name }}
+  cancel-in-progress: false
+
+env:
+  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+  HAS_EXPO: ${{ secrets.EXPO_TOKEN != '' }}
+  EXPO_PUBLIC_SUPABASE_URL: https://fzhagwcysltvpcgdfrnl.supabase.co
+  EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_7gu66leZ4qgYJPcOpcsh7g_yss8NOyN
+  EXPO_PUBLIC_VISION_PROVIDER: gemini
+  EXPO_PUBLIC_GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  EXPO_PUBLIC_APP_VERSION: ${{ github.sha }}
+
+jobs:
+  ios:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Expo anahtarı yoksa atla
+        if: env.HAS_EXPO != 'true'
+        run: echo "EXPO_TOKEN tanımlı değil; iPhone adımları atlanıyor."
+
+      - uses: actions/checkout@v4
+        if: env.HAS_EXPO == 'true'
+      - uses: actions/setup-node@v4
+        if: env.HAS_EXPO == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - if: env.HAS_EXPO == 'true'
+        run: npm ci
+
+      # ---------- setup: Expo projesini bağla (bir kez) ----------
+      - name: Expo projesini oluştur ve bağla
+        if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'setup'
+        run: |
+          npx eas-cli init --non-interactive --force
+          npx eas-cli update:configure --platform ios --non-interactive
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add app.json
+          git diff --cached --quiet || git commit -m "Expo proje kimliğini ekle [skip ci]"
+          git push
+
+      # ---------- build: TestFlight'a yeni sürüm ----------
+      - name: App Store Connect anahtarını hazırla
+        if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'build'
+        run: |
+          printf '%s' "${{ secrets.ASC_API_KEY_P8 }}" > "$RUNNER_TEMP/asc.p8"
+          echo "EXPO_ASC_API_KEY_PATH=$RUNNER_TEMP/asc.p8" >> "$GITHUB_ENV"
+          echo "EXPO_ASC_KEY_ID=${{ secrets.ASC_KEY_ID }}" >> "$GITHUB_ENV"
+          echo "EXPO_ASC_ISSUER_ID=${{ secrets.ASC_ISSUER_ID }}" >> "$GITHUB_ENV"
+          echo "EXPO_APPLE_TEAM_ID=${{ secrets.APPLE_TEAM_ID }}" >> "$GITHUB_ENV"
+          echo "EXPO_APPLE_TEAM_TYPE=INDIVIDUAL" >> "$GITHUB_ENV"
+      - name: Gizli anahtarları EAS'e aktar
+        if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'build'
+        run: |
+          npx eas-cli env:set --name EXPO_PUBLIC_GEMINI_API_KEY --value "$EXPO_PUBLIC_GEMINI_API_KEY" \
+            --environment production --visibility sensitive --non-interactive
+          npx eas-cli env:set --name EXPO_PUBLIC_APP_VERSION --value "$EXPO_PUBLIC_APP_VERSION" \
+            --environment production --visibility plaintext --non-interactive
+      - name: Derle ve TestFlight'a gönder
+        if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'build'
+        run: npx eas-cli build --platform ios --profile production --non-interactive --auto-submit
+
+      # ---------- push: kod güncellemesini telefona gönder ----------
+      - name: Güncellemeyi yayınla (EAS Update)
+        if: env.HAS_EXPO == 'true' && github.event_name == 'push' && hashFiles('app.json') != ''
+        run: |
+          if ! grep -q '"projectId"' app.json; then
+            echo "Expo projesi henüz bağlanmadı (setup çalıştırılmadı); atlanıyor."
+            exit 0
+          fi
+          npx eas-cli update --channel production --environment production \
+            --message "${{ github.sha }}" --platform ios --non-interactive

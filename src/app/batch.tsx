@@ -1,3 +1,4 @@
+import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -198,8 +199,7 @@ function SetupNeeded({ onCheck }: { onCheck: () => Promise<unknown> }) {
 
   async function copy() {
     try {
-      if (Platform.OS !== 'web' || !navigator.clipboard) throw new Error();
-      await navigator.clipboard.writeText(DRAFTS_SETUP_SQL);
+      if (!(await Clipboard.setStringAsync(DRAFTS_SETUP_SQL))) throw new Error();
       showToast('Kod kopyalandı');
     } catch {
       setShowCode(true);
