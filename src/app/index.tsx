@@ -349,7 +349,16 @@ export default function DashboardScreen() {
       </ScrollView>
 
       <Toolbar>
-        <Button title="Fiş Tara" icon={{ sf: 'camera.fill', ion: 'camera' }} onPress={() => router.push('/camera')} />
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <Button
+            title="Elle"
+            variant="gray"
+            icon={{ sf: 'square.and.pencil', ion: 'create-outline' }}
+            onPress={() => router.push('/manual')}
+            style={{ paddingHorizontal: 18 }}
+          />
+          <Button title="Fiş Tara" icon={{ sf: 'camera.fill', ion: 'camera' }} onPress={() => router.push('/camera')} style={{ flex: 1 }} />
+        </View>
       </Toolbar>
     </View>
   );

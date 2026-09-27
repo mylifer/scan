@@ -31,6 +31,7 @@ function RootNavigator() {
         <Stack.Screen name="index" options={{ title: 'Giderler', ...largeTitle }} />
         <Stack.Screen name="camera" options={{ headerShown: false, animation: 'fade', presentation: 'fullScreenModal' }} />
         <Stack.Screen name="review" options={{ title: 'Fişi Kontrol Et' }} />
+        <Stack.Screen name="manual" options={{ title: 'Elle Fiş Ekle', presentation: 'modal' }} />
         <Stack.Screen name="batch" options={{ title: 'Toplu Tarama', ...largeTitle }} />
         <Stack.Screen name="batch-review" options={{ title: 'İncele' }} />
         <Stack.Screen name="receipt/[id]" options={{ title: 'Fiş' }} />

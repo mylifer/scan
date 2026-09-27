@@ -14,7 +14,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.11.0
+## 1.12.0
+- **Elle fiş ekleme:** Ana sayfanın altındaki "Elle" düğmesiyle fotoğrafsız fiş eklenebilir (e-posta ile gelen e-Arşiv faturaları, kaybolan fişler). Aynı fiş uyarısı burada da çalışır
+
+## 1.11.0 — `a8b966d`
 - **Geçen ayla karşılaştırma:** Aylık özet kartında "Geçen ay ₺X"; geçmiş aylarda ayrıca "%12 fazla / az" (bu ay bitmediği için yüzde gösterilmez)
 - **Tüm Zamanlarda Ara:** Arama o ayda sonuç bulamazsa tek dokunuşla tüm fişlerde arar
 
