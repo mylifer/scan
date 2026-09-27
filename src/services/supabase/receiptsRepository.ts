@@ -70,7 +70,7 @@ export async function getReceiptImageUrl(path: string, expiresInSec = 300): Prom
   return data?.signedUrl ?? null;
 }
 
-export interface MonthlySummary {
+export interface PeriodSummary {
   toplamGider: number;
   toplamKdv: number;
   kdv1: number;
@@ -78,30 +78,31 @@ export interface MonthlySummary {
   kdv20: number;
   fisSayisi: number;
   kategoriToplamlari: { kategori: Kategori; toplam: number }[];
+  /** Dönemdeki tüm fişler; fiş tarihine, sonra eklenme zamanına göre yeniden eskiye */
+  fisler: ReceiptRecord[];
 }
 
-/** Fiş tarihinden bağımsız olarak en son eklenen fişler. */
-export async function getRecentReceipts(limit = 5): Promise<ReceiptRecord[]> {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(limit);
-  if (error) throw new Error(error.message);
-  return (data ?? []).map(toRecord);
-}
+/** Supabase tek istekte en fazla 1000 satır döndürür; daha fazlası sayfalanarak alınır. */
+const PAGE_SIZE = 1000;
 
-/** [from, to) aralığındaki (YYYY-MM-DD) fişleri özetler. */
-export async function getSummary(from: string, to: string): Promise<MonthlySummary> {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select('*')
-    .gte('tarih', from)
-    .lt('tarih', to)
-    .order('tarih', { ascending: false });
-  if (error) throw new Error(error.message);
+/**
+ * Seçilen dönemi özetler. `range` verilmezse tüm zamanlar.
+ * range: [from, to) aralığı, YYYY-MM-DD
+ */
+export async function getSummary(range?: { from: string; to: string }): Promise<PeriodSummary> {
+  const rows: ReceiptRecord[] = [];
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    let query = supabase.from(TABLE).select('*');
+    if (range) query = query.gte('tarih', range.from).lt('tarih', range.to);
+    const { data, error } = await query
+      .order('tarih', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1);
+    if (error) throw new Error(error.message);
+    rows.push(...(data ?? []).map(toRecord));
+    if (!data || data.length < PAGE_SIZE) break;
+  }
 
-  const rows = (data ?? []).map(toRecord);
   const byKategori = new Map<Kategori, number>();
   let toplamGider = 0;
   let kdv1 = 0;
@@ -125,7 +126,18 @@ export async function getSummary(from: string, to: string): Promise<MonthlySumma
     kategoriToplamlari: [...byKategori.entries()]
       .map(([kategori, toplam]) => ({ kategori, toplam: round2(toplam) }))
       .sort((a, b) => b.toplam - a.toplam),
+    fisler: rows,
   };
+}
+
+/** Fişi ve (varsa) Storage'daki görselini siler. */
+export async function deleteReceipt(receipt: ReceiptRecord): Promise<void> {
+  const { error } = await supabase.from(TABLE).delete().eq('id', receipt.id);
+  if (error) throw new Error(`Silinemedi: ${error.message}`);
+  if (receipt.image_path) {
+    // Görsel silinemese bile kayıt silinmiştir; yalnızca yer kaplar
+    await supabase.storage.from(RECEIPT_IMAGES_BUCKET).remove([receipt.image_path]);
+  }
 }
 
 // numeric kolonlar güvenlik için Number'a çevrilir

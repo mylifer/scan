@@ -1,18 +1,48 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useMonthlySummary } from '../hooks/useMonthlySummary';
-import { confirmAction } from '../lib/alert';
+import { confirmAction, showAlert } from '../lib/alert';
 import { formatTL, isoToTrDate } from '../lib/format';
 import { colors, kategoriMeta } from '../lib/theme';
 import { supabase } from '../services/supabase/client';
+import type { ReceiptRecord } from '../types/receipt';
+
+const PAGE = 20;
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
-  const { summary, recent, loading, error, refresh, offset, monthLabel, prevMonth, nextMonth } = useMonthlySummary();
+  const { summary, loading, error, refresh, remove, period, label, showMonthly, showAll, prevMonth, nextMonth } =
+    useMonthlySummary();
   const s = summary;
+  const isMonth = period.mode === 'month';
+  const offset = isMonth ? period.offset : 0;
+  const [visible, setVisible] = useState(PAGE);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Dönem değişince listeyi baştan göster
+  useEffect(() => setVisible(PAGE), [label]);
+
+  function confirmDelete(r: ReceiptRecord) {
+    confirmAction(
+      'Fişi sil',
+      `${r.firma_adi} · ${isoToTrDate(r.tarih)} · ${formatTL(r.toplam_tutar)}\n\nBu fiş kalıcı olarak silinecek.`,
+      'Sil',
+      async () => {
+        setDeletingId(r.id);
+        try {
+          await remove(r);
+        } catch (e) {
+          showAlert('Silinemedi', (e as Error).message);
+        } finally {
+          setDeletingId(null);
+        }
+      },
+    );
+  }
   const maxKategori = Math.max(1, ...(s?.kategoriToplamlari.map((k) => k.toplam) ?? [1]));
 
   function confirmSignOut() {
@@ -28,21 +58,34 @@ export default function DashboardScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.overline}>Gider Özeti</Text>
             <View style={styles.monthRow}>
-              <Pressable onPress={prevMonth} hitSlop={10} style={styles.monthArrow}>
-                <Text style={styles.monthArrowText}>‹</Text>
-              </Pressable>
-              <Text style={styles.month}>{capitalize(monthLabel)}</Text>
-              <Pressable
-                onPress={nextMonth}
-                disabled={offset === 0}
-                hitSlop={10}
-                style={[styles.monthArrow, offset === 0 && { opacity: 0.25 }]}>
-                <Text style={styles.monthArrowText}>›</Text>
-              </Pressable>
+              {isMonth && (
+                <Pressable onPress={prevMonth} hitSlop={10} style={styles.monthArrow}>
+                  <Text style={styles.monthArrowText}>‹</Text>
+                </Pressable>
+              )}
+              <Text style={styles.month}>{capitalize(label)}</Text>
+              {isMonth && (
+                <Pressable
+                  onPress={nextMonth}
+                  disabled={offset === 0}
+                  hitSlop={10}
+                  style={[styles.monthArrow, offset === 0 && { opacity: 0.25 }]}>
+                  <Text style={styles.monthArrowText}>›</Text>
+                </Pressable>
+              )}
             </View>
           </View>
           <Pressable onPress={confirmSignOut} style={styles.avatar} hitSlop={8}>
             <Text style={{ fontSize: 18 }}>👤</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.segment}>
+          <Pressable onPress={showMonthly} style={[styles.segmentItem, isMonth && styles.segmentActive]}>
+            <Text style={[styles.segmentText, isMonth && styles.segmentTextActive]}>Aylık</Text>
+          </Pressable>
+          <Pressable onPress={showAll} style={[styles.segmentItem, !isMonth && styles.segmentActive]}>
+            <Text style={[styles.segmentText, !isMonth && styles.segmentTextActive]}>Tüm zamanlar</Text>
           </Pressable>
         </View>
 
@@ -54,7 +97,7 @@ export default function DashboardScreen() {
         )}
 
         <LinearGradient colors={[colors.heroFrom, colors.heroTo]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-          <Text style={styles.heroLabel}>{offset === 0 ? 'Bu ayki toplam gider' : `${capitalize(monthLabel)} toplam gideri`}</Text>
+          <Text style={styles.heroLabel}>{!isMonth ? 'Tüm zamanlardaki toplam gider' : offset === 0 ? 'Bu ayki toplam gider' : `${capitalize(label)} toplam gideri`}</Text>
           <Text style={styles.heroValue} adjustsFontSizeToFit numberOfLines={1}>
             {s ? formatTL(s.toplamGider) : '—'}
           </Text>
@@ -87,7 +130,7 @@ export default function DashboardScreen() {
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Kategorilere göre</Text>
-          {s && s.kategoriToplamlari.length === 0 && <Text style={styles.empty}>Bu ay tarihli fiş yok.</Text>}
+          {s && s.kategoriToplamlari.length === 0 && <Text style={styles.empty}>Bu dönemde fiş yok.</Text>}
           {s?.kategoriToplamlari.map(({ kategori, toplam }) => {
             const meta = kategoriMeta[kategori] ?? { emoji: '•', color: colors.primary };
             return (
@@ -106,10 +149,10 @@ export default function DashboardScreen() {
           })}
         </View>
 
-        {recent.length > 0 && (
+        {!!s?.fisler.length && (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Son eklenen fişler</Text>
-            {recent.map((r, i) => (
+            <Text style={styles.cardTitle}>Fişler ({s.fisler.length})</Text>
+            {s.fisler.slice(0, visible).map((r, i) => (
               <View key={r.id} style={[styles.receiptRow, i > 0 && styles.divider]}>
                 <View style={[styles.receiptIcon, { backgroundColor: `${kategoriMeta[r.kategori]?.color ?? colors.primary}1A` }]}>
                   <Text>{kategoriMeta[r.kategori]?.emoji ?? '🧾'}</Text>
@@ -123,10 +166,28 @@ export default function DashboardScreen() {
                   </Text>
                 </View>
                 <Text style={styles.receiptAmount}>{formatTL(r.toplam_tutar)}</Text>
+                <Pressable
+                  onPress={() => confirmDelete(r)}
+                  disabled={deletingId === r.id}
+                  hitSlop={8}
+                  style={styles.deleteBtn}
+                  accessibilityLabel="Fişi sil">
+                  {deletingId === r.id ? (
+                    <ActivityIndicator size="small" color={colors.danger} />
+                  ) : (
+                    <Text style={styles.deleteText}>🗑️</Text>
+                  )}
+                </Pressable>
               </View>
             ))}
+            {s.fisler.length > visible && (
+              <Pressable onPress={() => setVisible((v) => v + PAGE)} style={styles.moreBtn}>
+                <Text style={styles.moreText}>Daha fazla göster ({s.fisler.length - visible})</Text>
+              </Pressable>
+            )}
           </View>
         )}
+
         <Text style={styles.version}>Sürüm {(process.env.EXPO_PUBLIC_APP_VERSION ?? 'geliştirme').slice(0, 7)}</Text>
       </ScrollView>
 
@@ -227,6 +288,29 @@ const styles = StyleSheet.create({
   receiptName: { fontSize: 15, fontWeight: '600', color: colors.text },
   receiptMeta: { fontSize: 12, color: colors.muted, marginTop: 2 },
   receiptAmount: { fontSize: 15, fontWeight: '700', color: colors.text },
+  segment: { flexDirection: 'row', backgroundColor: '#E2E8F0', borderRadius: 12, padding: 3 },
+  segmentItem: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
+  segmentActive: {
+    backgroundColor: colors.card,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  segmentText: { fontSize: 14, fontWeight: '600', color: colors.muted },
+  segmentTextActive: { color: colors.text },
+  deleteBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: '#FEF2F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteText: { fontSize: 15 },
+  moreBtn: { paddingVertical: 10, alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.border },
+  moreText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
   version: { textAlign: 'center', color: colors.muted, fontSize: 12, marginTop: 4 },
   fabWrap: { position: 'absolute', left: 16, right: 16 },
   fab: {
