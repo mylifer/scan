@@ -14,7 +14,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.18.0
+## 1.18.0 — `6f2e789`
 - **Sıralama:** Fişler listesinin sağ üstünden En Yeni / En Eski / En Yüksek Tutar / En Düşük Tutar
 - **Fişi paylaş:** Fiş detayında "Paylaş" ile fotoğraf ve bilgiler (firma, tarih, tutar, KDV dilimleri) WhatsApp, Mail vb. ile tek dokunuşta gönderilir. Paylaşım menüsü olmayan bilgisayar tarayıcılarında bilgiler panoya kopyalanır
 
