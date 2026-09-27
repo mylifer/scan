@@ -13,11 +13,11 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'setup (bir kez) | build (yalnızca TestFlight yolunda)'
+        description: 'setup (bir kez) | update (güncellemeyi elle yayınla) | build (yalnızca TestFlight yolunda)'
         required: true
-        default: build
+        default: update
         type: choice
-        options: [setup, build]
+        options: [update, setup, build]
   push:
     branches: [claude/pos-receipt-scanner-app-tk3b0z]
 
@@ -91,7 +91,7 @@ jobs:
 
       # ---------- push: kod güncellemesini telefona gönder ----------
       - name: Güncellemeyi yayınla (EAS Update)
-        if: env.HAS_EXPO == 'true' && github.event_name == 'push' && hashFiles('app.json') != ''
+        if: env.HAS_EXPO == 'true' && (github.event_name == 'push' || github.event.inputs.action == 'update')
         run: |
           if ! grep -q '"projectId"' app.json; then
             echo "Expo projesi henüz bağlanmadı (setup çalıştırılmadı); atlanıyor."
