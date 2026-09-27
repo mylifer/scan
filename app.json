@@ -22,7 +22,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": []
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -56,6 +57,16 @@
     },
     "runtimeVersion": {
       "policy": "sdkVersion"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e4446685-6bd2-4e1c-b0d0-cb1c025e1905"
+      }
+    },
+    "owner": "daytonaa",
+    "updates": {
+      "url": "https://u.expo.dev/e4446685-6bd2-4e1c-b0d0-cb1c025e1905"
     }
   }
 }
