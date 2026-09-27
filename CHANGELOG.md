@@ -14,7 +14,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.12.1
+## 1.12.1 — `a2e3620`
 - **Düzeltme (iPhone, iOS 26):** Arama çubuğu ekranın altına inip "Elle / Fiş Tara" düğmelerinin üstüne biniyordu; artık başlığın altında sabit
 
 ## 1.12.0 — `470136b`
