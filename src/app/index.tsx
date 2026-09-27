@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useDrafts } from '../hooks/useDrafts';
 import { useMonthlySummary } from '../hooks/useMonthlySummary';
 import { confirmAction, showAlert } from '../lib/alert';
+import { formatRunAt } from '../lib/schedule';
 import { showToast } from '../lib/toast';
 import { formatTL, isoToTrDate } from '../lib/format';
 import { colors, kategoriMeta } from '../lib/theme';
@@ -23,6 +25,9 @@ export default function DashboardScreen() {
   const offset = isMonth ? period.offset : 0;
   const [visible, setVisible] = useState(PAGE);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { drafts, processor } = useDrafts();
+  const readyDrafts = drafts.filter((d) => d.status === 'ready').length;
+  const nextScheduled = drafts.find((d) => d.status === 'scheduled' && d.scheduled_for)?.scheduled_for;
 
   // Dönem değişince listeyi baştan göster
   useEffect(() => setVisible(PAGE), [label]);
@@ -95,6 +100,25 @@ export default function DashboardScreen() {
           <Pressable onPress={refresh} style={styles.error}>
             <Text style={styles.errorText}>Veriler alınamadı: {error}</Text>
             <Text style={[styles.errorText, { fontWeight: '700' }]}>Tekrar denemek için dokunun</Text>
+          </Pressable>
+        )}
+
+        {(drafts.length > 0 || processor.running) && (
+          <Pressable onPress={() => router.push('/batch')} style={styles.draftBanner}>
+            <Text style={{ fontSize: 22 }}>📚</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.draftTitle}>
+                {processor.running ? `Taranıyor ${processor.done}/${processor.total}` : `${drafts.length} taslak fiş`}
+              </Text>
+              <Text style={styles.draftSub}>
+                {readyDrafts
+                  ? `${readyDrafts} fiş incelemeye hazır`
+                  : nextScheduled
+                    ? `⏰ ${formatRunAt(nextScheduled)} için planlı`
+                    : 'Toplu taramaya dokunun'}
+              </Text>
+            </View>
+            <Text style={styles.draftChevron}>›</Text>
           </Pressable>
         )}
 
@@ -196,8 +220,13 @@ export default function DashboardScreen() {
       <View style={[styles.fabWrap, { bottom: insets.bottom + 20 }]}>
         <Pressable
           onPress={() => router.push('/camera')}
-          style={({ pressed }) => [styles.fab, pressed && { transform: [{ scale: 0.97 }] }]}>
+          style={({ pressed }) => [styles.fab, { flex: 1 }, pressed && { transform: [{ scale: 0.97 }] }]}>
           <Text style={styles.fabText}>📷  Fiş Tara</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => router.push('/batch')}
+          style={({ pressed }) => [styles.fab, styles.fabSecondary, pressed && { transform: [{ scale: 0.97 }] }]}>
+          <Text style={[styles.fabText, { color: colors.text }]}>📚  Toplu</Text>
         </Pressable>
       </View>
     </View>
@@ -314,7 +343,21 @@ const styles = StyleSheet.create({
   moreBtn: { paddingVertical: 10, alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.border },
   moreText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
   version: { textAlign: 'center', color: colors.muted, fontSize: 12, marginTop: 4 },
-  fabWrap: { position: 'absolute', left: 16, right: 16 },
+  fabWrap: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', gap: 10 },
+  fabSecondary: { backgroundColor: colors.card, paddingHorizontal: 20, borderWidth: 1, borderColor: colors.border },
+  draftBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#F5F3FF',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#DDD6FE',
+  },
+  draftTitle: { fontSize: 15, fontWeight: '700', color: '#4C1D95' },
+  draftSub: { fontSize: 13, color: '#6D28D9', marginTop: 2 },
+  draftChevron: { fontSize: 24, color: '#6D28D9', fontWeight: '700' },
   fab: {
     height: 58,
     borderRadius: 18,

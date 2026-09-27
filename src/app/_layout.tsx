@@ -31,6 +31,8 @@ function RootNavigator() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="camera" options={{ headerShown: false, animation: 'fade' }} />
         <Stack.Screen name="review" options={{ title: 'Fişi Kontrol Et' }} />
+        <Stack.Screen name="batch" options={{ title: 'Toplu Tarama' }} />
+        <Stack.Screen name="batch-review" options={{ title: 'İncele ve Kaydet' }} />
       </Stack.Protected>
       <Stack.Protected guard={!session}>
         <Stack.Screen name="login" options={{ headerShown: false }} />

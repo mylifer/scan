@@ -46,7 +46,9 @@ export class GeminiVisionAdapter implements VisionService {
         if (!TRANSIENT_STATUS.has(httpStatus(e) ?? 0)) break;
       }
     }
-    throw new VisionServiceError(friendlyMessage(lastError), lastError);
+    const status = httpStatus(lastError);
+    const kind = status === 429 ? 'quota' : TRANSIENT_STATUS.has(status ?? 0) ? 'busy' : 'other';
+    throw new VisionServiceError(friendlyMessage(lastError), lastError, kind);
   }
 
   private async generate(model: string, image: ReceiptImage, signal?: AbortSignal): Promise<string> {

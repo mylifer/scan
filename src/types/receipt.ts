@@ -28,3 +28,16 @@ export interface ReceiptRecord {
   kategori: Kategori;
   image_path: string | null;
 }
+
+export type DraftStatus = 'pending' | 'scheduled' | 'processing' | 'ready' | 'failed';
+
+/** Toplu taramada çekilmiş, henüz kaydedilmemiş fiş (receipt_drafts tablosu). */
+export interface ReceiptDraft {
+  id: string;
+  created_at: string;
+  image_path: string;
+  status: DraftStatus;
+  scheduled_for: string | null;
+  result: ReceiptData | null;
+  error: string | null;
+}

@@ -51,8 +51,12 @@ export class ClaudeVisionAdapter implements VisionService {
         }),
       });
       body = await res.json();
-      if (!res.ok) throw new Error(body.error?.message ?? `HTTP ${res.status}`);
+      if (!res.ok) {
+        const kind = res.status === 429 ? 'quota' : res.status >= 500 ? 'busy' : 'other';
+        throw new VisionServiceError(`Claude isteği başarısız: ${body.error?.message ?? `HTTP ${res.status}`}`, body, kind);
+      }
     } catch (e) {
+      if (e instanceof VisionServiceError) throw e;
       throw new VisionServiceError(`Claude isteği başarısız: ${(e as Error).message ?? e}`, e);
     }
     const text = body.content?.find((c) => c.type === 'text')?.text;

@@ -18,9 +18,7 @@ export async function saveReceipt(data: ReceiptData, archiveUri?: string): Promi
   const tarih = trDateToIso(data.tarih);
   if (!tarih) throw new Error('Tarih DD.MM.YYYY formatında olmalı.');
 
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) throw new Error('Oturum bulunamadı, lütfen tekrar giriş yapın.');
-  const userId = userData.user.id;
+  const userId = await currentUserId();
 
   let imagePath: string | null = null;
   let imageWarning: string | undefined;
@@ -54,10 +52,24 @@ export async function saveReceipt(data: ReceiptData, archiveUri?: string): Promi
   return { record: toRecord(record), imageWarning };
 }
 
-async function uploadReceiptImage(userId: string, uri: string): Promise<string> {
+export async function currentUserId(): Promise<string> {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) throw new Error('Oturum bulunamadı, lütfen tekrar giriş yapın.');
+  return data.user.id;
+}
+
+function uploadReceiptImage(userId: string, uri: string): Promise<string> {
+  return uploadImage(`${userId}/${uniqueName()}.jpg`, uri);
+}
+
+export function uniqueName(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** Yerel görseli (web: blob URL, native: dosya URI) Storage'a yükler ve yolunu döner. */
+export async function uploadImage(path: string, uri: string): Promise<string> {
   const bytes =
     Platform.OS === 'web' ? await (await fetch(uri)).arrayBuffer() : await new File(uri).arrayBuffer();
-  const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
   const { error } = await supabase.storage
     .from(RECEIPT_IMAGES_BUCKET)
     .upload(path, bytes, { contentType: 'image/jpeg', upsert: false });

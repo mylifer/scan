@@ -1,5 +1,5 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,12 +14,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '../components/PrimaryButton';
 import { setPendingPhoto } from '../lib/pendingPhoto';
+import { showToast } from '../lib/toast';
+import { prepareDraftImage } from '../services/image/prepareReceiptImages';
+import { addDraft } from '../services/supabase/draftsRepository';
 import { colors } from '../lib/theme';
 
 const FOCUS_RING = 72;
 
 export default function CameraScreen() {
   const insets = useSafeAreaInsets();
+  const batch = useLocalSearchParams<{ mode?: string }>().mode === 'batch';
+  const [batchCount, setBatchCount] = useState(0);
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [torch, setTorch] = useState(false);
@@ -65,6 +70,15 @@ export default function CameraScreen() {
     setCapturing(true);
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 1, shutterSound: false });
+      if (batch) {
+        // Toplu mod: taslağa ekle, kamerada kal
+        setCapturing(false);
+        setBatchCount((n) => n + 1);
+        prepareDraftImage(photo.uri, photo.width)
+          .then(addDraft)
+          .catch(() => showToast('Fotoğraf taslağa eklenemedi', 'error'));
+        return;
+      }
       setPendingPhoto({ uri: photo.uri, width: photo.width });
       router.replace('/review');
     } catch (e) {
@@ -113,6 +127,11 @@ export default function CameraScreen() {
 
       <View style={[styles.topBar, { top: insets.top + 8 }]}>
         <RoundButton label="✕" onPress={() => router.back()} />
+        {batch && (
+          <Pressable onPress={() => router.back()} style={styles.doneBtn}>
+            <Text style={styles.doneText}>Bitti ({batchCount})</Text>
+          </Pressable>
+        )}
         <RoundButton label={torch ? '🔦' : '💡'} active={torch} onPress={() => setTorch((t) => !t)} />
       </View>
 
@@ -176,6 +195,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FACC15',
   },
+  doneBtn: { backgroundColor: '#fff', borderRadius: 22, paddingHorizontal: 16, justifyContent: 'center' },
+  doneText: { color: '#000', fontWeight: '800', fontSize: 15 },
   topBar: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', justifyContent: 'space-between' },
   round: {
     width: 44,

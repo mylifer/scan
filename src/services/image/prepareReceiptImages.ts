@@ -13,6 +13,13 @@ const AI_QUALITY = 0.75;
 const ARCHIVE_WIDTH = 900;
 const ARCHIVE_QUALITY = 0.45;
 
+/**
+ * Taslak kopyası: toplu taramada sonradan AI'a gönderilecek, kaydedilince silinir.
+ * ~1400px / %65 ≈ 200–400 KB.
+ */
+export const DRAFT_WIDTH = 1400;
+const DRAFT_QUALITY = 0.65;
+
 export interface PreparedImages {
   ai: ReceiptImage;
   /** Yerel dosya URI'si; Kaydet'te Storage'a yüklenir. */
@@ -20,22 +27,38 @@ export interface PreparedImages {
 }
 
 export async function prepareReceiptImages(photoUri: string, photoWidth: number): Promise<PreparedImages> {
-  const [ai, archive] = await Promise.all([
-    render(photoUri, Math.min(AI_WIDTH, photoWidth), AI_QUALITY, true),
-    render(photoUri, Math.min(ARCHIVE_WIDTH, photoWidth), ARCHIVE_QUALITY, false),
+  const [ai, archiveUri] = await Promise.all([
+    prepareAiImage(photoUri, photoWidth),
+    prepareArchiveImage(photoUri, photoWidth),
   ]);
-  if (!ai.base64) throw new Error('Görüntü base64 formatına çevrilemedi.');
-  return {
-    ai: { base64: ai.base64, mimeType: 'image/jpeg' },
-    archiveUri: archive.uri,
-  };
+  return { ai, archiveUri };
 }
 
-async function render(uri: string, width: number, compress: number, base64: boolean) {
-  const ref = await ImageManipulator.manipulate(uri).resize({ width }).renderAsync();
+export async function prepareAiImage(uri: string, width: number): Promise<ReceiptImage> {
+  const result = await render(uri, Math.min(AI_WIDTH, width), AI_QUALITY, true);
+  if (!result.base64) throw new Error('Görüntü base64 formatına çevrilemedi.');
+  return { base64: result.base64, mimeType: 'image/jpeg' };
+}
+
+export async function prepareArchiveImage(uri: string, width: number): Promise<string> {
+  return (await render(uri, Math.min(ARCHIVE_WIDTH, width), ARCHIVE_QUALITY, false)).uri;
+}
+
+export async function prepareDraftImage(uri: string, width: number): Promise<string> {
+  return (await render(uri, Math.min(DRAFT_WIDTH, width), DRAFT_QUALITY, false)).uri;
+}
+
+/** Görseli en fazla `maxWidth` genişliğe küçültür (asla büyütmez) ve JPEG olarak kaydeder. */
+async function render(uri: string, maxWidth: number, compress: number, base64: boolean) {
+  const original = await ImageManipulator.manipulate(uri).renderAsync();
+  const ref =
+    original.width > maxWidth
+      ? await ImageManipulator.manipulate(original).resize({ width: maxWidth }).renderAsync()
+      : original;
   try {
     return await ref.saveAsync({ format: SaveFormat.JPEG, compress, base64 });
   } finally {
-    ref.release();
+    if (ref !== original) ref.release();
+    original.release();
   }
 }

@@ -16,10 +16,14 @@ export interface VisionService {
   analyzeReceipt(image: ReceiptImage, signal?: AbortSignal): Promise<ReceiptData>;
 }
 
+/** busy: sağlayıcı geçici olarak yoğun · quota: kullanım sınırı doldu · other: diğer */
+export type VisionErrorKind = 'busy' | 'quota' | 'other';
+
 export class VisionServiceError extends Error {
   constructor(
     message: string,
     public readonly cause?: unknown,
+    public readonly kind: VisionErrorKind = 'other',
   ) {
     super(message);
     this.name = 'VisionServiceError';
