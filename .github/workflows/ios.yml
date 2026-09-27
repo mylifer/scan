@@ -1,18 +1,19 @@
-# iPhone uygulaması (EAS Build + TestFlight + EAS Update)
+# iPhone uygulaması
 #
-# Gerekli GitHub secret'ları: EXPO_TOKEN, GEMINI_API_KEY,
-#   ASC_API_KEY_P8 (App Store Connect .p8 dosyasının içeriği), ASC_KEY_ID, ASC_ISSUER_ID, APPLE_TEAM_ID
+# Varsayılan (ücretsiz) yol: Expo Go + EAS Update
+#   - "setup": Expo projesini oluşturur/bağlar, app.json'a proje kimliğini yazıp commit'ler (bir kez)
+#   - push: her değişiklik EAS Update ile yayınlanır; Expo Go'da hesabınızla giriş yapınca proje listelenir
+#   Gerekli secret'lar: EXPO_TOKEN, GEMINI_API_KEY
 #
-# - "setup": Expo projesini oluşturur/bağlar ve app.json'a proje kimliğini yazıp commit'ler (bir kez)
-# - "build": yeni iPhone sürümü derler ve TestFlight'a gönderir (native değişikliklerde)
-# - push: JS değişikliklerini EAS Update ile telefona anında gönderir (build gerektirmez)
+# İleride TestFlight'a geçilirse: app.json'da runtimeVersion policy'yi "appVersion" yapın ve
+#   "build" eylemini kullanın (ek secret'lar: ASC_API_KEY_P8, ASC_KEY_ID, ASC_ISSUER_ID, APPLE_TEAM_ID)
 name: iPhone uygulaması
 
 on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'setup | build'
+        description: 'setup (bir kez) | build (yalnızca TestFlight yolunda)'
         required: true
         default: build
         type: choice
@@ -59,7 +60,8 @@ jobs:
         if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'setup'
         run: |
           npx eas-cli init --non-interactive --force
-          npx eas-cli update:configure --platform ios --non-interactive
+          # Expo Go ile uyumlu kalması için runtimeVersion "sdkVersion" politikasında tutulur
+          node -e 'const fs=require("fs");const a=JSON.parse(fs.readFileSync("app.json"));const id=a.expo.extra.eas.projectId;a.expo.updates={...(a.expo.updates||{}),url:"https://u.expo.dev/"+id};a.expo.runtimeVersion={policy:"sdkVersion"};fs.writeFileSync("app.json",JSON.stringify(a,null,2)+"\n")'
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add app.json
@@ -95,5 +97,5 @@ jobs:
             echo "Expo projesi henüz bağlanmadı (setup çalıştırılmadı); atlanıyor."
             exit 0
           fi
-          npx eas-cli update --channel production --environment production \
+          npx eas-cli update --branch production \
             --message "${{ github.sha }}" --platform ios --non-interactive

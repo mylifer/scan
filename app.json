@@ -55,7 +55,7 @@
       "baseUrl": "/scan"
     },
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "sdkVersion"
     }
   }
 }
