@@ -93,3 +93,29 @@ export function monthRange(offset = 0, now = new Date()): { from: string; to: st
 function pad(n: number): string {
   return String(n).padStart(2, '0');
 }
+
+/**
+ * Arşiv görselinin dosya adı: "2026-09-14_migros-ticaret-as_x7k2".
+ * Tarih başta olduğu için Storage'da tarih sırasıyla dizilir; sondaki ek aynı gün
+ * aynı firmadan gelen fişlerin çakışmasını önler.
+ */
+export function receiptImageName(isoDate: string, firmaAdi: string): string {
+  const suffix = Math.random().toString(36).slice(2, 6);
+  return `${isoDate}_${slugify(firmaAdi) || 'fis'}_${suffix}`;
+}
+
+const TR_ASCII: Record<string, string> = { ç: 'c', ğ: 'g', ı: 'i', i̇: 'i', ö: 'o', ş: 's', ü: 'u' };
+
+/** "MİGROS TİCARET A.Ş." → "migros-ticaret-as" (Storage anahtarları için güvenli ASCII) */
+export function slugify(text: string): string {
+  const slug = text
+    .toLocaleLowerCase('tr-TR')
+    .replace(/[çğıöşü]|i̇/g, (ch) => TR_ASCII[ch] ?? ch)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[.']/g, '') // "A.Ş." → "as"
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  // En fazla 40 karakter; kelimenin ortasından kesme
+  return slug.length <= 40 ? slug : slug.slice(0, 41).replace(/-[^-]*$/, '');
+}

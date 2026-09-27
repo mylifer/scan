@@ -1,7 +1,7 @@
 import { File } from 'expo-file-system';
 import { Platform } from 'react-native';
 
-import { round2, trDateToIso } from '../../lib/format';
+import { receiptImageName, round2, trDateToIso } from '../../lib/format';
 import type { Kategori, ReceiptData, ReceiptRecord } from '../../types/receipt';
 import { supabase } from './client';
 
@@ -24,7 +24,7 @@ export async function saveReceipt(data: ReceiptData, archiveUri?: string): Promi
   let imageWarning: string | undefined;
   if (archiveUri) {
     try {
-      imagePath = await uploadReceiptImage(userId, archiveUri);
+      imagePath = await uploadImage(`${userId}/${receiptImageName(tarih, data.firmaAdi)}.jpg`, archiveUri);
     } catch (e) {
       imageWarning = `Fiş görseli yüklenemedi: ${(e as Error).message}`;
     }
@@ -56,10 +56,6 @@ export async function currentUserId(): Promise<string> {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) throw new Error('Oturum bulunamadı, lütfen tekrar giriş yapın.');
   return data.user.id;
-}
-
-function uploadReceiptImage(userId: string, uri: string): Promise<string> {
-  return uploadImage(`${userId}/${uniqueName()}.jpg`, uri);
 }
 
 export function uniqueName(): string {
