@@ -1,0 +1,27 @@
+import { KATEGORILER } from '../../types/receipt';
+
+/** Tüm sağlayıcıların ortak kullandığı system prompt. */
+export const RECEIPT_SYSTEM_PROMPT = `- Sen Türkiye'deki maliye standartlarına uygun POS fişlerini okuyan bir uzman muhasebe asistanısın.
+- Çıktıyı SADECE geçerli bir JSON formatında ver, markdown veya ekstra metin kullanma.
+- JSON anahtarları şunlar olmalı: firmaAdi (string), tarih (DD.MM.YYYY formatında string), toplamTutar (number), kdvYuzde1 (number), kdvYuzde10 (number), kdvYuzde20 (number), kategori (string - ${KATEGORILER.join(', ')} seçeneklerinden en uygununu tahmin et).
+- Eğer fişte bazı KDV dilimleri yoksa değerlerini 0 yap. TOPLAM ve TOPKDV satırlarını asla karıştırma.
+- kdvYuzde1, kdvYuzde10 ve kdvYuzde20 alanlarına matrahı değil, o dilime ait KDV TUTARINI yaz.
+- Sayılarda ondalık ayırıcı olarak nokta kullan (ör. 1234.56), binlik ayırıcı kullanma.`;
+
+export const RECEIPT_USER_PROMPT = 'Bu POS fişini oku ve kurallara uygun JSON döndür.';
+
+/** Yapılandırılmış çıktıyı destekleyen sağlayıcılar için JSON şeması. */
+export const RECEIPT_JSON_SCHEMA = {
+  type: 'object',
+  properties: {
+    firmaAdi: { type: 'string' },
+    tarih: { type: 'string', description: 'DD.MM.YYYY' },
+    toplamTutar: { type: 'number' },
+    kdvYuzde1: { type: 'number' },
+    kdvYuzde10: { type: 'number' },
+    kdvYuzde20: { type: 'number' },
+    kategori: { type: 'string', enum: [...KATEGORILER] },
+  },
+  required: ['firmaAdi', 'tarih', 'toplamTutar', 'kdvYuzde1', 'kdvYuzde10', 'kdvYuzde20', 'kategori'],
+  additionalProperties: false,
+} as const;
