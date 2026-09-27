@@ -54,5 +54,6 @@ function normalizeKategori(value: unknown): Kategori {
   if (/iletişim|iletisim|telefon|internet|gsm/.test(v)) return 'iletişim';
   if (/fatura|elektrik|su |doğalgaz|dogalgaz/.test(v)) return 'faturalar';
   if (/kargo|posta|kurye/.test(v)) return 'kargo';
+  if (/giyim|kıyafet|elbise|ayakkabı|tekstil|konfeksiyon/.test(v)) return 'giyim';
   return 'diğer';
 }

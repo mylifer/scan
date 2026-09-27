@@ -21,6 +21,8 @@ describe('parseReceiptJson', () => {
     assert.equal(parseReceiptJson('{"kategori":"otel"}').kategori, 'konaklama');
     assert.equal(parseReceiptJson('{"kategori":"elektrik faturası"}').kategori, 'faturalar');
     assert.equal(parseReceiptJson('{"kategori":"kurye"}').kategori, 'kargo');
+    assert.equal(parseReceiptJson('{"kategori":"Giyim"}').kategori, 'giyim');
+    assert.equal(parseReceiptJson('{"kategori":"ayakkabı"}').kategori, 'giyim');
     assert.equal(parseReceiptJson('{"kategori":"çiçekçi"}').kategori, 'diğer');
   });
   it('geçersiz tarihte bugünün tarihini kullanır', () => {

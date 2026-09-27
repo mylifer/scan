@@ -193,7 +193,7 @@ export default function DashboardScreen() {
           <ListSection>
             <ListRow
               title="Yeni kategorileri etkinleştir"
-              subtitle="Ulaşım, Faturalar, Kargo ve fazlası"
+              subtitle="Ulaşım, Faturalar, Giyim ve fazlası"
               icon={{ sf: 'tag.fill', ion: 'pricetag', color: theme.purple }}
               onPress={() => router.push('/setup-categories')}
               chevron

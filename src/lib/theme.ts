@@ -112,5 +112,6 @@ export const categoryMeta: Record<Kategori, SymbolSpec & { color: keyof Theme; l
   iletişim: { sf: 'phone.fill', ion: 'call', color: 'cyan', label: L['iletişim'] },
   faturalar: { sf: 'bolt.fill', ion: 'flash', color: 'yellow', label: L['faturalar'] },
   kargo: { sf: 'shippingbox.fill', ion: 'cube', color: 'mint', label: L['kargo'] },
+  giyim: { sf: 'tshirt.fill', ion: 'shirt', color: 'red', label: L['giyim'] },
   diğer: { sf: 'ellipsis', ion: 'ellipsis-horizontal', color: 'gray', label: L['diğer'] },
 };

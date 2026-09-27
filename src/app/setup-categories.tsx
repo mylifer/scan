@@ -11,7 +11,7 @@ export default function SetupCategoriesScreen() {
   return (
     <SetupSteps
       sql={CATEGORIES_SETUP_SQL}
-      message="Ulaşım, Araç Bakım, Konaklama, İletişim, Faturalar, Kargo ve Diğer kategorilerini kullanabilmek için veritabanında küçük bir güncelleme gerekiyor. Mevcut fişleriniz etkilenmez."
+      message="Ulaşım, Araç Bakım, Konaklama, İletişim, Faturalar, Kargo, Giyim ve Diğer kategorilerini kullanabilmek için veritabanında küçük bir güncelleme gerekiyor. Mevcut fişleriniz etkilenmez."
       onCheck={async () => {
         const ready = await categoriesReady();
         if (ready) {

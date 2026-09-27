@@ -7,7 +7,7 @@ import { KATEGORILER } from '../types/receipt';
 
 describe('kurulum kodları', () => {
   it('kategori kurulumu migration dosyasıyla aynı', () => {
-    const file = readFileSync(new URL('../../supabase/migrations/003_more_categories.sql', import.meta.url), 'utf8');
+    const file = readFileSync(new URL('../../supabase/migrations/004_giyim_category.sql', import.meta.url), 'utf8');
     assert.ok(file.endsWith(CATEGORIES_SETUP_SQL));
   });
 

@@ -1,4 +1,4 @@
-/** Sıra, kategori seçicide ve Gemini şemasında kullanılır. Yeni kategori: 003 migration'ı da güncelleyin. */
+/** Sıra, kategori seçicide ve Gemini şemasında kullanılır. Yeni kategori: yeni bir migration ekleyip CATEGORIES_SETUP_SQL'i güncelleyin. */
 export const KATEGORILER = [
   'akaryakıt',
   'restoran',
@@ -11,6 +11,7 @@ export const KATEGORILER = [
   'iletişim',
   'faturalar',
   'kargo',
+  'giyim',
   'diğer',
 ] as const;
 
@@ -30,6 +31,7 @@ export const KATEGORI_ETIKETLERI: Record<Kategori, string> = {
   iletişim: 'İletişim',
   faturalar: 'Faturalar',
   kargo: 'Kargo',
+  giyim: 'Giyim',
   diğer: 'Diğer',
 };
 
