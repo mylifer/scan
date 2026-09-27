@@ -16,6 +16,7 @@ export interface WorkbookInput {
 /**
  * Dönemin fişlerini muhasebeciye gönderilecek bir Excel dosyası olarak üretir.
  * "Fişler": tarih sırasıyla tüm fişler ve formüllü toplam satırı. "Özet": toplamlar, KDV ve kategori dağılımı.
+ * Fişler birden çok aya yayılıyorsa "Aylar": aylık KDV beyannamesi için ay ay toplamlar.
  */
 export function buildReceiptsWorkbook(summary: WorkbookInput, periodLabel: string): Uint8Array {
   const fisler = [...summary.fisler].sort((a, b) => a.tarih.localeCompare(b.tarih) || a.created_at.localeCompare(b.created_at));
@@ -76,10 +77,66 @@ export function buildReceiptsWorkbook(summary: WorkbookInput, periodLabel: strin
     ]),
   ];
 
+  const months = monthlyRows(fisler);
   return buildXlsx([
     { name: 'Fişler', rows, widths: [12, 34, 14, 14, 12, 12, 12, 14, 14], freezeRows: 1 },
     { name: 'Özet', rows: ozet, widths: [22, 16, 10] },
+    ...(months ? [{ name: 'Aylar', rows: months, widths: [16, 8, 14, 12, 12, 12, 14, 14], freezeRows: 1 }] : []),
   ]);
+}
+
+const AYLAR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+
+/** Ay ay toplamlar (fişler tek aydaysa null) */
+export function monthlyRows(fisler: ReceiptRecord[]): Row[] | null {
+  const byMonth = new Map<string, { n: number; toplam: number; k1: number; k10: number; k20: number }>();
+  for (const r of fisler) {
+    const key = r.tarih.slice(0, 7);
+    const m = byMonth.get(key) ?? { n: 0, toplam: 0, k1: 0, k10: 0, k20: 0 };
+    m.n += 1;
+    m.toplam += r.toplam_tutar;
+    m.k1 += r.kdv_yuzde1;
+    m.k10 += r.kdv_yuzde10;
+    m.k20 += r.kdv_yuzde20;
+    byMonth.set(key, m);
+  }
+  if (byMonth.size < 2) return null;
+
+  const header: Row = ['Ay', 'Fiş', 'Toplam', 'KDV %1', 'KDV %10', 'KDV %20', 'Toplam KDV', 'KDV Hariç'].map((v) => ({ v, s: 'header' as const }));
+  const rows: Row[] = [header];
+  const keys = [...byMonth.keys()].sort();
+  keys.forEach((key, i) => {
+    const m = byMonth.get(key)!;
+    const n = i + 2;
+    const kdv = round2(m.k1 + m.k10 + m.k20);
+    rows.push([
+      `${AYLAR[Number(key.slice(5)) - 1]} ${key.slice(0, 4)}`,
+      m.n,
+      { v: round2(m.toplam), s: 'money' },
+      { v: round2(m.k1), s: 'money' },
+      { v: round2(m.k10), s: 'money' },
+      { v: round2(m.k20), s: 'money' },
+      { v: kdv, f: `D${n}+E${n}+F${n}`, s: 'money' },
+      { v: round2(m.toplam - kdv), f: `C${n}-G${n}`, s: 'money' },
+    ]);
+  });
+  const last = keys.length + 1;
+  const col = (c: string, pick: (m: { n: number; toplam: number; k1: number; k10: number; k20: number }) => number, money = true) => ({
+    v: round2([...byMonth.values()].reduce((a, m) => a + pick(m), 0)),
+    f: `SUM(${c}2:${c}${last})`,
+    s: money ? ('totalMoney' as const) : ('totalLabel' as const),
+  });
+  rows.push([
+    { v: 'TOPLAM', s: 'totalLabel' },
+    col('B', (m) => m.n, false),
+    col('C', (m) => m.toplam),
+    col('D', (m) => m.k1),
+    col('E', (m) => m.k10),
+    col('F', (m) => m.k20),
+    col('G', (m) => m.k1 + m.k10 + m.k20),
+    col('H', (m) => m.toplam - m.k1 - m.k10 - m.k20),
+  ]);
+  return rows;
 }
 
 function localDate(iso: string): Date {

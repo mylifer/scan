@@ -14,7 +14,8 @@ import { haptics } from '../lib/haptics';
 import { getPendingPhoto } from '../lib/pendingPhoto';
 import { type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
-import { prepareReceiptImages } from '../services/image/prepareReceiptImages';
+import { prepareDraftImage, prepareReceiptImages } from '../services/image/prepareReceiptImages';
+import { addDraft } from '../services/supabase/draftsRepository';
 import { saveReceipt } from '../services/supabase/receiptsRepository';
 import { getVisionService } from '../services/vision';
 
@@ -86,6 +87,23 @@ export default function ReviewScreen() {
     }
   }
 
+  // AI yoğun/kota dolu olduğunda fotoğraf kaybolmasın: taslağa ekle, sonra Toplu Tarama'dan taranır
+  async function saveAsDraft() {
+    if (!photo) return;
+    setSaving(true);
+    try {
+      await addDraft(await prepareDraftImage(photo.uri, photo.width || 3000));
+      haptics.success();
+      router.replace('/');
+      showToast('Taslaklara eklendi; Toplu Tarama\'dan taratabilirsiniz', 'info', 3500);
+    } catch (e) {
+      haptics.error();
+      showAlert('Taslağa eklenemedi', errorMessage(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   // Sayfa yenilendiyse fotoğraf bellekte kalmaz; ana sayfaya dön
   if (!photo) return <Redirect href="/" />;
 
@@ -126,6 +144,14 @@ export default function ReviewScreen() {
               }}
             />
             <ListRow title="Bilgileri Elle Gir" tone="action" onPress={() => setPhase('ready')} />
+            <ListRow
+              title="Taslak Olarak Sakla"
+              subtitle="Daha sonra Toplu Tarama'dan taratın"
+              tone="action"
+              onPress={saveAsDraft}
+              disabled={saving}
+              accessory={saving ? <ActivityIndicator /> : undefined}
+            />
           </ListSection>
         )}
 

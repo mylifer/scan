@@ -14,7 +14,12 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.8.0
+## 1.9.0
+- **Excel'de "Aylar" sayfası:** Fişler birden çok aya yayılıyorsa (yıllık / tüm zamanlar) ay ay fiş sayısı, toplam, %1/%10/%20 KDV ve KDV hariç tutar; muhasebeci aylık KDV beyannamesini doğrudan buradan okuyabilir
+- **"Taslak Olarak Sakla":** Tek fiş taramasında Gemini yoğun ya da kota doluysa fotoğraf kaybolmaz; tek dokunuşla taslaklara eklenir, sonra Toplu Tarama'dan taranır
+- README güncellendi: güncel özellikler, Expo Go, geri dönüş ve güvenlik önerileri
+
+## 1.8.0 — `3b5da77`
 - **Yıllık görünüm:** Ana sayfada Aylık / Yıllık / Tüm Zamanlar. Yıllar arasında oklarla gezilebilir; Excel ve Muhasebe Paketi o yılın fişleriyle "Fisler_2026.xlsx" gibi adlandırılır (yıllık gelir vergisi beyannamesi için)
 - Görünümler arası geçişte seçili zaman korunur (2025 yılındayken "Aylık"a basınca Aralık 2025 açılır)
 - Grafikte "Bu aya git" artık her görünümde çalışır
