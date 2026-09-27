@@ -7,18 +7,29 @@ import { IconTile } from './IconTile';
 
 interface SectionProps {
   header?: string;
+  /** Başlığın sağında mavi metin düğmesi (ör. "Sırala") */
+  headerAction?: { label: string; onPress: () => void; accessibilityLabel?: string };
   footer?: ReactNode;
   children: ReactNode;
   style?: ViewStyle;
 }
 
 /** iOS "inset grouped" liste bölümü: başlık, yuvarlatılmış kart, dipnot. */
-export function ListSection({ header, footer, children, style }: SectionProps) {
+export function ListSection({ header, headerAction, footer, children, style }: SectionProps) {
   const theme = useTheme();
   const rows = Children.toArray(children).filter(isValidElement) as ReactElement<{ isLast?: boolean }>[];
   return (
     <View style={[styles.section, style]}>
-      {header && <Text style={[t.footnote, styles.header, { color: theme.secondaryLabel }]}>{header.toLocaleUpperCase('tr-TR')}</Text>}
+      {header && (
+        <View style={styles.headerRow}>
+          <Text style={[t.footnote, styles.header, { color: theme.secondaryLabel }]}>{header.toLocaleUpperCase('tr-TR')}</Text>
+          {headerAction && (
+            <Pressable onPress={headerAction.onPress} hitSlop={10} accessibilityRole="button" accessibilityLabel={headerAction.accessibilityLabel ?? headerAction.label}>
+              {({ pressed }) => <Text style={[t.footnote, styles.headerAction, { color: theme.blue, opacity: pressed ? 0.5 : 1 }]}>{headerAction.label}</Text>}
+            </Pressable>
+          )}
+        </View>
+      )}
       <View style={[styles.card, { backgroundColor: theme.card }]}>
         {rows.map((row, i) => cloneElement(row, { key: row.key ?? i, isLast: i === rows.length - 1 }))}
       </View>
@@ -104,7 +115,9 @@ export function ListRow({
 
 const styles = StyleSheet.create({
   section: { marginHorizontal: 16, marginBottom: 28 },
-  header: { marginLeft: 16, marginBottom: 7 },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
+  header: { marginLeft: 16, marginBottom: 7, flexShrink: 1 },
+  headerAction: { marginRight: 16, marginBottom: 7 },
   footer: { marginHorizontal: 16, marginTop: 7 },
   card: { borderRadius: 12, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16 },

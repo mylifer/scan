@@ -17,9 +17,11 @@ import { useDrafts } from '../hooks/useDrafts';
 import { useMonthlySummary } from '../hooks/useMonthlySummary';
 import { showAlert } from '../lib/alert';
 import { formatTL } from '../lib/format';
+import { showActionSheet } from '../lib/actionSheet';
 import { haptics } from '../lib/haptics';
 import { periodRange } from '../lib/period';
 import { matchesReceipt } from '../lib/search';
+import { SORT_OPTIONS, type SortKey, sortReceipts } from '../lib/sort';
 import { formatRunAt } from '../lib/schedule';
 import { compareWithPreviousMonth } from '../lib/trend';
 import { categoryMeta, tabular, type Theme, type as t, useTheme } from '../lib/theme';
@@ -59,14 +61,28 @@ export default function DashboardScreen() {
   // Dönem değişince listeyi baştan göster (React'in önerdiği: efekt yerine render sırasında)
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Kategori | null>(null);
-  const listKey = `${label}|${query}|${category}`;
+  const [sort, setSort] = useState<SortKey>('newest');
+  const listKey = `${label}|${query}|${category}|${sort}`;
   const [shownKey, setShownKey] = useState(listKey);
   if (shownKey !== listKey) {
     setShownKey(listKey);
     setVisible(PAGE);
   }
   const filtering = !!query.trim() || !!category;
-  const filtered = s?.fisler.filter((r) => (!category || r.kategori === category) && matchesReceipt(r, query)) ?? [];
+  const filtered = sortReceipts(s?.fisler.filter((r) => (!category || r.kategori === category) && matchesReceipt(r, query)) ?? [], sort);
+
+  function chooseSort() {
+    showActionSheet({
+      title: 'Sırala',
+      options: SORT_OPTIONS.map((o) => ({
+        label: o.key === sort ? `✓ ${o.label}` : o.label,
+        onPress: () => {
+          haptics.select();
+          setSort(o.key);
+        },
+      })),
+    });
+  }
 
   const readyDrafts = drafts.filter((d) => d.status === 'ready').length;
   const nextScheduled = drafts.find((d) => d.status === 'scheduled' && d.scheduled_for)?.scheduled_for;
@@ -328,6 +344,11 @@ export default function DashboardScreen() {
                   )}
                   <ListSection
                     header={filtering ? `Fişler · ${filtered.length} / ${s.fisler.length}` : `Fişler · ${s.fisler.length}`}
+                    headerAction={
+                      s.fisler.length > 1
+                        ? { label: SORT_OPTIONS.find((o) => o.key === sort)!.label, onPress: chooseSort, accessibilityLabel: 'Sıralamayı değiştir' }
+                        : undefined
+                    }
                     footer={category ? `Yalnızca ${categoryMeta[category].label} kategorisi gösteriliyor. Kategoriye tekrar dokunarak filtreyi kaldırabilirsiniz.` : undefined}>
                     {[
                       ...(filtering

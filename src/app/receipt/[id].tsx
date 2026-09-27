@@ -14,6 +14,7 @@ import { showAlert } from '../../lib/alert';
 import { confirmIfDuplicate } from '../../lib/confirmDuplicate';
 import { haptics } from '../../lib/haptics';
 import { useTheme } from '../../lib/theme';
+import { shareReceipt } from '../../services/export/shareReceipt';
 import { prepareArchiveImage } from '../../services/image/prepareReceiptImages';
 import { showToast } from '../../lib/toast';
 import {
@@ -37,6 +38,7 @@ export default function ReceiptDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [attaching, setAttaching] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     getReceipt(id)
@@ -114,6 +116,18 @@ export default function ReceiptDetailScreen() {
     }
   }
 
+  async function share() {
+    if (!record) return;
+    setSharing(true);
+    try {
+      if ((await shareReceipt(record)) === 'copied') showToast('Fiş bilgileri panoya kopyalandı', 'info');
+    } catch (e) {
+      showAlert('Paylaşılamadı', errorMessage(e));
+    } finally {
+      setSharing(false);
+    }
+  }
+
   function remove() {
     if (!record) return;
     confirmDestructive(record.firma_adi, 'Bu fiş ve fotoğrafı kalıcı olarak silinecek.', 'Fişi Sil', async () => {
@@ -152,6 +166,15 @@ export default function ReceiptDetailScreen() {
         {record.image_path && <ReceiptPhoto uri={imageUrl} />}
         <ReceiptForm values={values} onChange={setValues} />
         <ListSection>
+          <ListRow
+            title="Paylaş"
+            subtitle={dirty ? 'Kaydedilmiş hâli paylaşılır' : undefined}
+            tone="action"
+            icon={{ sf: 'square.and.arrow.up', ion: 'share-outline', color: theme.blue }}
+            onPress={share}
+            disabled={sharing}
+            accessory={sharing ? <ActivityIndicator /> : undefined}
+          />
           <ListRow
             title={record.image_path ? 'Fotoğrafı Değiştir' : 'Fotoğraf Ekle'}
             tone="action"

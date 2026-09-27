@@ -14,6 +14,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.18.0
+- **Sıralama:** Fişler listesinin sağ üstünden En Yeni / En Eski / En Yüksek Tutar / En Düşük Tutar
+- **Fişi paylaş:** Fiş detayında "Paylaş" ile fotoğraf ve bilgiler (firma, tarih, tutar, KDV dilimleri) WhatsApp, Mail vb. ile tek dokunuşta gönderilir. Paylaşım menüsü olmayan bilgisayar tarayıcılarında bilgiler panoya kopyalanır
+
 ## 1.17.0 — `0d2907d`
 - **İnternetsiz açılış:** Ana sayfa son yüklenen verileri cihazda saklar; bağlantı yokken boş kalmaz, üstte "Çevrimdışı · Son veriler (saat)" yazar. Bağlantı gelince dokunarak yenilenir. Açılış da daha hızlı (önce kayıtlı veri, sonra güncel veri). Çıkış yapınca bu kayıtlar silinir
 
