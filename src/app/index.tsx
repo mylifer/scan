@@ -20,6 +20,7 @@ import { haptics } from '../lib/haptics';
 import { formatRunAt } from '../lib/schedule';
 import { categoryMeta, tabular, type Theme, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
+import { VERSION_LABEL } from '../lib/version';
 import { buildReceiptsWorkbook, exportFilename, shareXlsx } from '../services/export/exportReceipts';
 import { supabase } from '../services/supabase/client';
 import type { ReceiptRecord } from '../types/receipt';
@@ -219,7 +220,7 @@ export default function DashboardScreen() {
         )}
 
         <Text style={[t.caption1, { color: theme.tertiaryLabel, textAlign: 'center' }]}>
-          Sürüm {(process.env.EXPO_PUBLIC_APP_VERSION ?? 'geliştirme').slice(0, 7)}
+          Sürüm {VERSION_LABEL}
         </Text>
       </ScrollView>
 

@@ -18,6 +18,10 @@ on:
         default: update
         type: choice
         options: [update, setup, build]
+      ref:
+        description: 'Geri dönüş (update ile): yayınlanacak commit (CHANGELOG.md''deki kısa kod). Boş = en son sürüm.'
+        required: false
+        default: ''
   push:
     branches: [claude/pos-receipt-scanner-app-tk3b0z]
 
@@ -35,7 +39,6 @@ env:
   EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_7gu66leZ4qgYJPcOpcsh7g_yss8NOyN
   EXPO_PUBLIC_VISION_PROVIDER: gemini
   EXPO_PUBLIC_GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-  EXPO_PUBLIC_APP_VERSION: ${{ github.sha }}
 
 jobs:
   ios:
@@ -47,6 +50,11 @@ jobs:
 
       - uses: actions/checkout@v4
         if: env.HAS_EXPO == 'true'
+        with:
+          ref: ${{ github.event.inputs.ref || github.sha }}
+      - name: Sürüm etiketini ayarla
+        if: env.HAS_EXPO == 'true'
+        run: echo "EXPO_PUBLIC_APP_VERSION=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
         if: env.HAS_EXPO == 'true'
         with:
@@ -98,4 +106,4 @@ jobs:
             exit 0
           fi
           npx eas-cli update --channel production \
-            --message "${{ github.sha }}" --platform ios --non-interactive
+            --message "$EXPO_PUBLIC_APP_VERSION" --platform ios --non-interactive
