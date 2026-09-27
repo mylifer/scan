@@ -14,7 +14,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.16.0
+## 1.17.0
+- **İnternetsiz açılış:** Ana sayfa son yüklenen verileri cihazda saklar; bağlantı yokken boş kalmaz, üstte "Çevrimdışı · Son veriler (saat)" yazar. Bağlantı gelince dokunarak yenilenir. Açılış da daha hızlı (önce kayıtlı veri, sonra güncel veri). Çıkış yapınca bu kayıtlar silinir
+
+## 1.16.0 — `7ccb3b1`
 - **Sonradan fotoğraf ekleme:** Fiş detayında "Fotoğraf Ekle" (fotoğrafsız, elle eklenen fişler için) ya da "Fotoğrafı Değiştir"; kamerayla çekilebilir veya galeriden seçilebilir. Eski fotoğraf silinir, yer kaplamaz
 
 ## 1.15.0 — `95e14eb`

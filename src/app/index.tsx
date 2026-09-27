@@ -36,7 +36,7 @@ const PAGE = 25;
 export default function DashboardScreen() {
   const theme = useTheme();
   const toolbarHeight = useToolbarHeight();
-  const { summary: s, trend, loading, error, refresh, remove, period, label, showMonthly, showYearly, showAll, prev, next, goToMonth } =
+  const { summary: s, trend, loading, error, offlineSince, refresh, remove, period, label, showMonthly, showYearly, showAll, prev, next, goToMonth } =
     useMonthlySummary();
   const { drafts, processor } = useDrafts();
   const updateAvailable = useWebUpdateAvailable();
@@ -203,7 +203,13 @@ export default function DashboardScreen() {
 
         {error && (
           <ListSection>
-            <ListRow title="Veriler alınamadı" subtitle={error} icon={{ sf: 'wifi.exclamationmark', ion: 'cloud-offline', color: theme.orange }} onPress={refresh} chevron />
+            <ListRow
+              title={offlineSince ? 'Çevrimdışı' : 'Veriler alınamadı'}
+              subtitle={offlineSince ? `Son veriler · ${formatSavedAt(offlineSince)}` : error}
+              icon={{ sf: 'wifi.exclamationmark', ion: 'cloud-offline', color: theme.orange }}
+              onPress={refresh}
+              chevron
+            />
           </ListSection>
         )}
 
@@ -493,6 +499,12 @@ function ChevronButton({ dir, onPress, disabled, theme, label }: { dir: 'left' |
 function shortDate(iso: string) {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function formatSavedAt(ms: number) {
+  const d = new Date(ms);
+  const time = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  return d.toDateString() === new Date().toDateString() ? `bugün ${time}` : `${d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })} ${time}`;
 }
 
 function capitalize(s: string) {

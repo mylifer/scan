@@ -13,6 +13,7 @@ import { haptics } from '../lib/haptics';
 import { tabular, type as t, useTheme } from '../lib/theme';
 import { VERSION_LABEL } from '../lib/version';
 import { buildReceiptsWorkbook, exportFilename, shareXlsx } from '../services/export/exportReceipts';
+import { clearCache } from '../lib/offlineCache';
 import { supabase } from '../services/supabase/client';
 import { countReceipts, getStorageUsage, getSummary, type StorageUsage } from '../services/supabase/receiptsRepository';
 import { getVisionService } from '../services/vision';
@@ -107,7 +108,10 @@ export default function SettingsScreen() {
         <ListRow
           title="Çıkış Yap"
           tone="destructive"
-          onPress={() => confirmDestructive('Çıkış Yap', 'Fişleriniz hesabınızda saklanmaya devam eder.', 'Çıkış Yap', () => supabase.auth.signOut())}
+          onPress={() => confirmDestructive('Çıkış Yap', 'Fişleriniz hesabınızda saklanmaya devam eder.', 'Çıkış Yap', async () => {
+            await clearCache();
+            await supabase.auth.signOut();
+          })}
         />
       </ListSection>
     </ScrollView>

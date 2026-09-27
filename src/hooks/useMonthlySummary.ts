@@ -1,7 +1,8 @@
 import { errorMessage } from '../lib/errors';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
+import { readCache, writeCache } from '../lib/offlineCache';
 import { type Period, periodLabel, periodRange, stepPeriod, switchMode } from '../lib/period';
 import type { MonthPoint } from '../lib/trend';
 import { deleteReceipt, getMonthlyTotals, getSummary, type PeriodSummary } from '../services/supabase/receiptsRepository';
@@ -15,10 +16,21 @@ export function useMonthlySummary() {
   const [trend, setTrend] = useState<MonthPoint[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  /** İnternet yokken önbellekten gösteriliyorsa verinin kaydedildiği an */
+  const [offlineSince, setOfflineSince] = useState<number | null>(null);
+  const shownKey = useRef<string | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
+    const key = JSON.stringify(period);
+    const cached = await readCache<{ summary: PeriodSummary; trend: MonthPoint[] | null }>(period.mode, key);
+    // Önce cihazdaki son veriyi göster (anında açılış, çevrimdışı kullanım); ağdan gelen veri üzerine yazar
+    if (cached && shownKey.current !== key) {
+      setSummary(cached.value.summary);
+      if (cached.value.trend) setTrend(cached.value.trend);
+      shownKey.current = key;
+    }
     try {
       const [s, t] = await Promise.all([
         getSummary(periodRange(period)),
@@ -27,8 +39,12 @@ export function useMonthlySummary() {
       ]);
       setSummary(s);
       if (t) setTrend(t);
+      shownKey.current = key;
+      setOfflineSince(null);
+      writeCache(period.mode, key, { summary: s, trend: t });
     } catch (e) {
       setError(errorMessage(e));
+      setOfflineSince(cached ? cached.savedAt : null);
     } finally {
       setLoading(false);
     }
@@ -54,6 +70,7 @@ export function useMonthlySummary() {
     trend,
     loading,
     error,
+    offlineSince,
     refresh,
     remove,
     period,
