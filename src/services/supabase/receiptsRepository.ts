@@ -230,6 +230,19 @@ export async function getReceipt(id: string): Promise<ReceiptRecord> {
 }
 
 /** Kaydedilmiş fişin bilgilerini günceller (görsel değişmez). */
+/** Kayıtlı bir fişe fotoğraf ekler ya da fotoğrafını değiştirir (eski dosya silinir). */
+export async function attachReceiptImage(record: ReceiptRecord, archiveUri: string): Promise<ReceiptRecord> {
+  const userId = await currentUserId();
+  const path = await uploadImage(`${userId}/${receiptImageName(record.tarih, record.firma_adi)}.jpg`, archiveUri);
+  const { data: row, error } = await supabase.from(TABLE).update({ image_path: path }).eq('id', record.id).select().single();
+  if (error) {
+    await supabase.storage.from(RECEIPT_IMAGES_BUCKET).remove([path]);
+    throw new Error(`Fotoğraf eklenemedi: ${error.message}`);
+  }
+  if (record.image_path) await supabase.storage.from(RECEIPT_IMAGES_BUCKET).remove([record.image_path]);
+  return toRecord(row);
+}
+
 export async function updateReceipt(id: string, data: ReceiptData): Promise<ReceiptRecord> {
   const tarih = trDateToIso(data.tarih);
   if (!tarih) throw new Error('Tarih GG.AA.YYYY biçiminde olmalı.');

@@ -14,7 +14,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.15.0
+## 1.16.0
+- **Sonradan fotoğraf ekleme:** Fiş detayında "Fotoğraf Ekle" (fotoğrafsız, elle eklenen fişler için) ya da "Fotoğrafı Değiştir"; kamerayla çekilebilir veya galeriden seçilebilir. Eski fotoğraf silinir, yer kaplamaz
+
+## 1.15.0 — `95e14eb`
 - **Kategori hafızası:** Bir firmanın fişini daha önce hangi kategoriyle kaydettiyseniz, o firmanın yeni fişlerinde yapay zekânın tahmini yerine sizin seçiminiz kullanılır ("Kategori, bu firmanın önceki fişinizden alındı" notu çıkar). "MİGROS TİCARET A.Ş." ile "Migros Tic. AŞ" aynı firma sayılır. Toplu taramada da çalışır
 
 ## 1.14.0 — `d99fe38`

@@ -1,5 +1,6 @@
 import { errorMessage } from '../../lib/errors';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
@@ -8,13 +9,15 @@ import { ReceiptPhoto } from '../../components/ReceiptPhoto';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { HeaderTextButton } from '../../components/ui/HeaderButton';
 import { ListRow, ListSection } from '../../components/ui/List';
-import { confirmDestructive } from '../../lib/actionSheet';
+import { confirmDestructive, showActionSheet } from '../../lib/actionSheet';
 import { showAlert } from '../../lib/alert';
 import { confirmIfDuplicate } from '../../lib/confirmDuplicate';
 import { haptics } from '../../lib/haptics';
 import { useTheme } from '../../lib/theme';
+import { prepareArchiveImage } from '../../services/image/prepareReceiptImages';
 import { showToast } from '../../lib/toast';
 import {
+  attachReceiptImage,
   deleteReceipt,
   getReceipt,
   getReceiptImageUrl,
@@ -33,6 +36,7 @@ export default function ReceiptDetailScreen() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [attaching, setAttaching] = useState(false);
 
   useEffect(() => {
     getReceipt(id)
@@ -73,6 +77,43 @@ export default function ReceiptDetailScreen() {
     }
   }
 
+  function choosePhoto() {
+    showActionSheet({
+      title: record?.image_path ? 'Fotoğrafı Değiştir' : 'Fotoğraf Ekle',
+      options: [
+        { label: 'Fotoğraf Çek', onPress: () => attachFrom('camera') },
+        { label: 'Galeriden Seç', onPress: () => attachFrom('library') },
+      ],
+    });
+  }
+
+  async function attachFrom(source: 'camera' | 'library') {
+    if (!record) return;
+    const permission =
+      source === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      showToast(source === 'camera' ? 'Kamera izni verilmedi' : 'Galeri izni verilmedi', 'error');
+      return;
+    }
+    const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 1 };
+    const result = source === 'camera' ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
+    if (result.canceled || !result.assets.length) return;
+    const asset = result.assets[0];
+    setAttaching(true);
+    try {
+      const updated = await attachReceiptImage(record, await prepareArchiveImage(asset.uri, asset.width || 3000));
+      setRecord(updated);
+      if (updated.image_path) setImageUrl(await getReceiptImageUrl(updated.image_path, 3600));
+      haptics.success();
+      showToast('Fotoğraf eklendi');
+    } catch (e) {
+      haptics.error();
+      showAlert('Fotoğraf eklenemedi', errorMessage(e));
+    } finally {
+      setAttaching(false);
+    }
+  }
+
   function remove() {
     if (!record) return;
     confirmDestructive(record.firma_adi, 'Bu fiş ve fotoğrafı kalıcı olarak silinecek.', 'Fişi Sil', async () => {
@@ -110,6 +151,16 @@ export default function ReceiptDetailScreen() {
         contentContainerStyle={{ paddingTop: 16, paddingBottom: 40 }}>
         {record.image_path && <ReceiptPhoto uri={imageUrl} />}
         <ReceiptForm values={values} onChange={setValues} />
+        <ListSection>
+          <ListRow
+            title={record.image_path ? 'Fotoğrafı Değiştir' : 'Fotoğraf Ekle'}
+            tone="action"
+            icon={{ sf: 'camera.fill', ion: 'camera', color: theme.blue }}
+            onPress={choosePhoto}
+            disabled={saving || attaching}
+            accessory={attaching ? <ActivityIndicator /> : undefined}
+          />
+        </ListSection>
         <ListSection>
           <ListRow title="Fişi Sil" tone="destructive" onPress={remove} disabled={saving} />
         </ListSection>
