@@ -14,6 +14,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.23.0
+- **KDV hatırlatıcısı (iPhone):** Ayarlar → Takip → KDV Hatırlatıcısı açılınca her ayın 25'i saat 10:00'da "geçen ayın fişlerini muhasebecinize gönderin" bildirimi gelir (beyanname son günü ayın 28'i). İlk açılışta bildirim izni istenir. Web sürümünde bu ayar görünmez
+
 ## 1.22.0 — `f463693`
 - **Fiş ayrıntıları:** Satıcının vergi numarası (VKN/TCKN), fiş numarası ve ödeme şekli (Kart/Nakit) artık yapay zekâ tarafından fişten okunur ve kaydedilir; isteğe bağlı not alanı eklendi. Hepsi Excel'e yeni sütunlar olarak (muhasebe kaydı için), paylaşılan fiş metnine ve aramaya dahil
 - **Daha iyi mükerrer kontrolü:** Aynı satıcı vergi no + aynı fiş no, tutar yanlış okunmuş olsa bile aynı fiş olarak uyarılır

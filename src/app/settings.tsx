@@ -1,6 +1,6 @@
 import { router, Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { HeaderTextButton } from '../components/ui/HeaderButton';
 import { ListRow, ListSection } from '../components/ui/List';
@@ -13,6 +13,8 @@ import { haptics } from '../lib/haptics';
 import { tabular, type as t, useTheme } from '../lib/theme';
 import { VERSION_LABEL } from '../lib/version';
 import { useMonthlyBudget } from '../lib/budget';
+import { showToast } from '../lib/toast';
+import { disableReminder, enableReminder, isReminderEnabled, REMINDER_DAY, REMINDER_HOUR, remindersSupported } from '../services/reminders/kdvReminder';
 import { buildReceiptsWorkbook, exportFilename, shareXlsx } from '../services/export/exportReceipts';
 import { clearCache } from '../lib/offlineCache';
 import { supabase } from '../services/supabase/client';
@@ -32,6 +34,31 @@ export default function SettingsScreen() {
   const email = session?.user.email ?? '';
   const vision = safeVision();
   const budget = useMonthlyBudget();
+  const [reminder, setReminder] = useState(false);
+
+  useEffect(() => {
+    if (remindersSupported) isReminderEnabled().then(setReminder);
+  }, []);
+
+  async function toggleReminder(on: boolean) {
+    setReminder(on);
+    try {
+      if (on) {
+        if (!(await enableReminder())) {
+          setReminder(false);
+          showAlert('Bildirim izni gerekli', 'Hatırlatıcı için Ayarlar → Bildirimler bölümünden bu uygulamaya (Expo Go) izin verin.');
+          return;
+        }
+        haptics.success();
+        showToast(`Her ayın ${REMINDER_DAY}'i hatırlatılacak`);
+      } else {
+        await disableReminder();
+      }
+    } catch (e) {
+      setReminder(!on);
+      showAlert('Hatırlatıcı ayarlanamadı', errorMessage(e));
+    }
+  }
 
   useEffect(() => {
     countReceipts().then(setCount).catch(() => setCount(null));
@@ -68,7 +95,16 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <ListSection header="Takip">
+      <ListSection
+        header="Takip"
+        footer={remindersSupported ? `KDV hatırlatıcısı her ayın ${REMINDER_DAY}'i saat ${REMINDER_HOUR}:00'da, beyanname (ayın 28'i) öncesinde geçen ayın fişlerini göndermenizi hatırlatır.` : undefined}>
+        {remindersSupported ? (
+          <ListRow
+            title="KDV Hatırlatıcısı"
+            icon={{ sf: 'bell.badge.fill', ion: 'notifications', color: theme.red }}
+            accessory={<Switch value={reminder} onValueChange={toggleReminder} />}
+          />
+        ) : null}
         <ListRow
           title="Aylık Bütçe"
           value={budget ? formatTL(budget) : 'Yok'}
