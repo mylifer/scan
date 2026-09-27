@@ -65,3 +65,18 @@ export function compactTL(value: number): string {
   if (value >= 1000) return `${(value / 1000).toLocaleString('tr-TR', { maximumFractionDigits: 1 })} B`;
   return String(Math.round(value));
 }
+
+/**
+ * Aylık görünümde bir önceki ayla karşılaştırma. Bu ay henüz bitmediği için yüzde yalnızca
+ * geçmiş aylarda verilir (yarım ayı tam ayla kıyaslamak yanıltıcı olur).
+ */
+export function compareWithPreviousMonth(
+  series: MonthPoint[] | null,
+  offset: number,
+  currentTotal: number,
+): { previousTotal: number; changePct: number | null } | null {
+  const prev = series?.find((p) => p.offset === offset - 1);
+  if (!prev || prev.total <= 0) return null;
+  const changePct = offset < 0 ? Math.round(((currentTotal - prev.total) / prev.total) * 100) : null;
+  return { previousTotal: prev.total, changePct };
+}

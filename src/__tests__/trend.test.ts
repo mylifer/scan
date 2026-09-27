@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { buildMonthlySeries, compactTL, emptySeries, niceMax } from '../lib/trend';
+import { buildMonthlySeries, compactTL, compareWithPreviousMonth, emptySeries, niceMax } from '../lib/trend';
 
 const now = new Date(2026, 8, 27); // 27 Eylül 2026
 
@@ -48,5 +48,16 @@ describe('eksen', () => {
     assert.equal(compactTL(12500), '12,5 B');
     assert.equal(compactTL(800), '800');
     assert.equal(compactTL(2_500_000), '2,5 Mn');
+  });
+});
+
+describe('önceki ayla karşılaştırma', () => {
+  it('compareWithPreviousMonth', () => {
+    const s = emptySeries(12, new Date(2026, 8, 15)).map((p) => (p.offset === -2 ? { ...p, total: 200 } : p.offset === -1 ? { ...p, total: 100 } : p));
+    assert.deepEqual(compareWithPreviousMonth(s, -1, 100), { previousTotal: 200, changePct: -50 });
+    assert.deepEqual(compareWithPreviousMonth(s, 0, 30), { previousTotal: 100, changePct: null });
+    assert.equal(compareWithPreviousMonth(s, -2, 200), null); // önceki ay boş
+    assert.equal(compareWithPreviousMonth(s, -11, 0), null); // seri dışında
+    assert.equal(compareWithPreviousMonth(null, 0, 0), null);
   });
 });

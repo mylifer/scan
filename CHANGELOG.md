@@ -14,6 +14,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.11.0
+- **Geçen ayla karşılaştırma:** Aylık özet kartında "Geçen ay ₺X"; geçmiş aylarda ayrıca "%12 fazla / az" (bu ay bitmediği için yüzde gösterilmez)
+- **Tüm Zamanlarda Ara:** Arama o ayda sonuç bulamazsa tek dokunuşla tüm fişlerde arar
+
 ## 1.10.0 — `aa91707`
 - **Yeni sürüm bildirimi (web / Ana Ekran):** iPhone eski sürümü önbellekte tutuyorsa ana sayfanın üstünde "Yeni sürüm hazır" satırı çıkar; dokununca güncellenir
 

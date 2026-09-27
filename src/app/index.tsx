@@ -21,6 +21,7 @@ import { haptics } from '../lib/haptics';
 import { periodRange } from '../lib/period';
 import { matchesReceipt } from '../lib/search';
 import { formatRunAt } from '../lib/schedule';
+import { compareWithPreviousMonth } from '../lib/trend';
 import { categoryMeta, tabular, type Theme, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 import { VERSION_LABEL } from '../lib/version';
@@ -187,7 +188,13 @@ export default function DashboardScreen() {
           <ActivityIndicator style={{ marginTop: 48 }} />
         ) : (
           <>
-            <SummaryCard theme={theme} total={s?.toplamGider ?? 0} kdv={s?.toplamKdv ?? 0} count={s?.fisSayisi ?? 0} />
+            <SummaryCard
+              theme={theme}
+              total={s?.toplamGider ?? 0}
+              kdv={s?.toplamKdv ?? 0}
+              count={s?.fisSayisi ?? 0}
+              compare={isMonth ? compareWithPreviousMonth(trend, offset, s?.toplamGider ?? 0) : null}
+            />
 
             {(drafts.length > 0 || processor.running) && (
               <ListSection>
@@ -309,6 +316,17 @@ export default function DashboardScreen() {
                           ]
                         : []),
                       ...(filtering && filtered.length === 0 ? [<ListRow key="none" title="Eşleşen fiş yok" disabled />] : []),
+                      ...(filtering && filtered.length === 0 && period.mode !== 'all'
+                        ? [
+                            <ListRow
+                              key="all"
+                              title="Tüm Zamanlarda Ara"
+                              tone="action"
+                              icon={{ sf: 'magnifyingglass.circle.fill', ion: 'search-circle', color: theme.blue }}
+                              onPress={showAll}
+                            />,
+                          ]
+                        : []),
                       ...filtered.slice(0, visible).map((r) => (
                         <SwipeToDelete key={r.id} onDelete={() => deleteReceipt(r)} theme={theme}>
                           <ReceiptRow receipt={r} theme={theme} onPress={() => router.push({ pathname: '/receipt/[id]', params: { id: r.id } })} />
@@ -337,14 +355,24 @@ export default function DashboardScreen() {
   );
 }
 
-function SummaryCard({ theme, total, kdv, count }: { theme: Theme; total: number; kdv: number; count: number }) {
+type Compare = ReturnType<typeof compareWithPreviousMonth>;
+
+function SummaryCard({ theme, total, kdv, count, compare }: { theme: Theme; total: number; kdv: number; count: number; compare: Compare }) {
   return (
     <View style={[styles.summary, { backgroundColor: theme.card }]}>
       <Text style={[t.footnote, { color: theme.secondaryLabel, fontWeight: '600' }]}>TOPLAM GİDER</Text>
       <Text style={[styles.bigNumber, tabular, { color: theme.label }]} adjustsFontSizeToFit numberOfLines={1}>
         {formatTL(total)}
       </Text>
-      <Text style={[t.subhead, { color: theme.secondaryLabel }]}>{count} fiş</Text>
+      <Text style={[t.subhead, { color: theme.secondaryLabel }]}>
+        {count} fiş
+        {compare && ` · Geçen ay ${formatTL(compare.previousTotal)}`}
+        {compare?.changePct != null && compare.changePct !== 0 && (
+          <Text style={{ color: compare.changePct > 0 ? theme.orange : theme.green }}>
+            {` (%${Math.abs(compare.changePct)} ${compare.changePct > 0 ? 'fazla' : 'az'})`}
+          </Text>
+        )}
+      </Text>
       <View style={[styles.hr, { backgroundColor: theme.separator }]} />
       <View style={styles.stats}>
         <Stat label="KDV Alacağı" value={formatTL(kdv)} color={theme.green} theme={theme} />
