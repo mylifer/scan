@@ -61,6 +61,20 @@ export async function deleteDraft(draft: Pick<ReceiptDraft, 'id' | 'image_path'>
   await supabase.storage.from(RECEIPT_IMAGES_BUCKET).remove([draft.image_path]);
 }
 
+/** Birden fazla taslağı (kayıt + görsel) tek seferde siler. */
+export async function deleteDrafts(drafts: Pick<ReceiptDraft, 'id' | 'image_path'>[]): Promise<void> {
+  if (!drafts.length) return;
+  const { error } = await supabase
+    .from(TABLE)
+    .delete()
+    .in(
+      'id',
+      drafts.map((d) => d.id),
+    );
+  check(error);
+  await supabase.storage.from(RECEIPT_IMAGES_BUCKET).remove(drafts.map((d) => d.image_path));
+}
+
 /** Taslak görsellerini ekranda göstermek için geçici (1 saatlik) bağlantılar. */
 export async function draftImageUrls(paths: string[]): Promise<Record<string, string>> {
   if (!paths.length) return {};

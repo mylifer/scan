@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AddPhotoButtons, type PickedPhoto } from '../components/AddPhotoButtons';
+import { PhotoViewer } from '../components/PhotoViewer';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Icon } from '../components/ui/Icon';
@@ -21,15 +22,16 @@ import { DRAFTS_SETUP_SQL, SUPABASE_SQL_EDITOR_URL } from '../lib/setupSql';
 import { type Theme, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 import { isScannable } from '../services/drafts/draftProcessor';
-import { prepareDraftImage } from '../services/image/prepareReceiptImages';
-import { addDraft, deleteDraft, draftImageUrls, scheduleDrafts } from '../services/supabase/draftsRepository';
+import { clearUploadFailures, enqueueDraftUpload, getUploadState, subscribeUploads } from '../services/drafts/uploadQueue';
+import { deleteDraft, deleteDrafts, draftImageUrls, scheduleDrafts } from '../services/supabase/draftsRepository';
 import type { ReceiptDraft } from '../types/receipt';
 
 export default function BatchScreen() {
   const theme = useTheme();
   const { drafts, loading, notSetUp, error, processor, refresh, run } = useDrafts();
   const [urls, setUrls] = useState<Record<string, string>>({});
-  const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
+  const [uploads, setUploads] = useState(getUploadState());
+  const [viewer, setViewer] = useState<string | null>(null);
 
   // isScannable, kuyruğun çalışıp çalışmadığına da bakar; her render'da hesaplanır (ucuz)
   const scannable = drafts.filter(isScannable);
@@ -47,41 +49,67 @@ export default function BatchScreen() {
     draftImageUrls(missing).then((m) => setUrls((u) => ({ ...u, ...m })));
   }, [drafts]);
 
+  // Yükleme kuyruğunu izle: her tamamlanan yüklemede listeyi yenile, hataları bir kez bildir
+  const lastCompleted = useRef(getUploadState().completed);
+  useEffect(
+    () =>
+      subscribeUploads((st) => {
+        setUploads(st);
+        if (st.completed !== lastCompleted.current) {
+          lastCompleted.current = st.completed;
+          refresh();
+        }
+        if (st.failed) {
+          showToast(`${st.failed} fotoğraf eklenemedi`, 'error');
+          clearUploadFailures();
+        }
+      }),
+    [refresh],
+  );
+
   if (notSetUp) return <SetupNeeded onCheck={refresh} />;
 
-  async function addPhotos(photos: PickedPhoto[]) {
-    setUploading({ done: 0, total: photos.length });
-    let failed = 0;
-    for (let i = 0; i < photos.length; i++) {
-      try {
-        await addDraft(await prepareDraftImage(photos[i].uri, photos[i].width));
-      } catch {
-        failed++;
-      }
-      setUploading({ done: i + 1, total: photos.length });
-      refresh();
-    }
-    setUploading(null);
-    if (failed) showToast(`${failed} fotoğraf eklenemedi`, 'error');
-    else haptics.success();
+  function addPhotos(photos: PickedPhoto[]) {
+    photos.forEach((p) => enqueueDraftUpload(p.uri, p.width));
   }
 
   function openDraft(d: ReceiptDraft) {
     if (d.status === 'processing') return;
     haptics.tap();
-    confirmDestructive(
-      d.result?.firmaAdi ?? statusText(d),
-      d.status === 'failed' && d.error ? d.error : 'Bu fotoğraf taslaklardan silinecek.',
-      'Taslağı Sil',
-      async () => {
-        try {
-          await deleteDraft(d);
-          refresh();
-        } catch (e) {
-          showAlert('Silinemedi', errorMessage(e));
-        }
-      },
-    );
+    const url = urls[d.image_path];
+    showActionSheet({
+      title: d.result?.firmaAdi ?? statusText(d),
+      message: d.status === 'failed' && d.error ? d.error : undefined,
+      options: [
+        ...(url ? [{ label: 'Fotoğrafı Görüntüle', onPress: () => setViewer(url) }] : []),
+        ...(d.status === 'failed' && !processor.running ? [{ label: 'Tekrar Tara', onPress: () => run([d]) }] : []),
+        {
+          label: 'Taslağı Sil',
+          destructive: true,
+          onPress: async () => {
+            try {
+              await deleteDraft(d);
+              refresh();
+            } catch (e) {
+              showAlert('Silinemedi', errorMessage(e));
+            }
+          },
+        },
+      ],
+    });
+  }
+
+  function deleteAll() {
+    const removable = drafts.filter((d) => d.status !== 'processing');
+    confirmDestructive('Tüm Taslakları Sil', `${removable.length} taslak fotoğraf kalıcı olarak silinecek.`, 'Tümünü Sil', async () => {
+      try {
+        await deleteDrafts(removable);
+        haptics.success();
+        refresh();
+      } catch (e) {
+        showAlert('Silinemedi', errorMessage(e));
+      }
+    });
   }
 
   function pickSchedule() {
@@ -105,20 +133,25 @@ export default function BatchScreen() {
     });
   }
 
-  const busy = processor.running || !!uploading;
+  const uploading = uploads.pending > 0;
+  const busy = processor.running || uploading;
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingTop: 8, paddingBottom: toolbarHeight }}>
-        <AddPhotoButtons onPicked={addPhotos} disabled={!!uploading} />
+        <AddPhotoButtons onPicked={addPhotos} />
 
-        {(uploading || processor.running) && (
+        {uploading && (
           <ListSection>
-            <ProgressRow
-              theme={theme}
-              label={uploading ? `Fotoğraflar kaydediliyor ${uploading.done}/${uploading.total}` : `Taranıyor ${processor.done}/${processor.total}`}
-              value={uploading ? uploading.done / uploading.total : processor.done / Math.max(processor.total, 1)}
-            />
+            <View style={styles.uploadRow}>
+              <ActivityIndicator />
+              <Text style={[t.body, { color: theme.label }]}>{uploads.pending} fotoğraf yükleniyor…</Text>
+            </View>
+          </ListSection>
+        )}
+        {processor.running && (
+          <ListSection>
+            <ProgressRow theme={theme} label={`Taranıyor ${processor.done}/${processor.total}`} value={processor.done / Math.max(processor.total, 1)} />
           </ListSection>
         )}
 
@@ -174,7 +207,15 @@ export default function BatchScreen() {
             </View>
           </View>
         )}
+
+        {drafts.length > 1 && (
+          <ListSection>
+            <ListRow title="Tüm Taslakları Sil" tone="destructive" onPress={deleteAll} disabled={processor.running} />
+          </ListSection>
+        )}
       </ScrollView>
+
+      <PhotoViewer uri={viewer} visible={!!viewer} onClose={() => setViewer(null)} />
 
       {toolbarRows > 0 && (
         <Toolbar>
@@ -307,6 +348,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  uploadRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, minHeight: 44 },
   track: { height: 4, borderRadius: 2, overflow: 'hidden' },
   fill: { height: 4, borderRadius: 2 },
   code: {

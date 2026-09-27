@@ -13,8 +13,7 @@ import { haptics } from '../lib/haptics';
 import { setPendingPhoto } from '../lib/pendingPhoto';
 import { type SymbolSpec, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
-import { prepareDraftImage } from '../services/image/prepareReceiptImages';
-import { addDraft } from '../services/supabase/draftsRepository';
+import { enqueueDraftUpload } from '../services/drafts/uploadQueue';
 
 const FOCUS_BOX = 76;
 
@@ -78,9 +77,9 @@ export default function CameraScreen() {
         // Toplu mod: taslağa ekle, kamerada kal
         setCapturing(false);
         setShots((s) => [...s, photo.uri]);
-        prepareDraftImage(photo.uri, photo.width)
-          .then(addDraft)
-          .catch(() => showToast('Fotoğraf taslağa eklenemedi', 'error'));
+        enqueueDraftUpload(photo.uri, photo.width).then((ok) => {
+          if (!ok) showToast('Fotoğraf taslağa eklenemedi', 'error');
+        });
         return;
       }
       setPendingPhoto({ uri: photo.uri, width: photo.width });
