@@ -16,7 +16,7 @@ import { type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 import { prepareDraftImage, prepareReceiptImages } from '../services/image/prepareReceiptImages';
 import { addDraft } from '../services/supabase/draftsRepository';
-import { saveReceipt } from '../services/supabase/receiptsRepository';
+import { applyLearnedCategory, saveReceipt } from '../services/supabase/receiptsRepository';
 import { getVisionService } from '../services/vision';
 
 type Phase = 'analyzing' | 'ready' | 'error';
@@ -28,6 +28,7 @@ export default function ReviewScreen() {
   const [error, setError] = useState<string | null>(null);
   const [values, setValues] = useState<ReceiptFormValues>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [learned, setLearned] = useState(false);
   const archiveUri = useRef<string | undefined>(undefined);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -39,9 +40,10 @@ export default function ReviewScreen() {
       if (!photo) return;
       const images = await prepareReceiptImages(photo.uri, photo.width || 3000);
       archiveUri.current = images.archiveUri;
-      const data = await getVisionService().analyzeReceipt(images.ai, controller.signal);
+      const { data, learned } = await applyLearnedCategory(await getVisionService().analyzeReceipt(images.ai, controller.signal));
       if (controller.signal.aborted) return;
       setValues(toFormValues(data));
+      setLearned(learned);
       setPhase('ready');
       haptics.success();
     } catch (e) {
@@ -158,6 +160,11 @@ export default function ReviewScreen() {
         {phase === 'ready' && (
           <>
             <ReceiptForm values={values} onChange={setValues} />
+            {learned && (
+              <Text style={[t.footnote, { color: theme.secondaryLabel, marginHorizontal: 32, marginTop: -20, marginBottom: 24 }]}>
+                Kategori, bu firmanın önceki fişinizden alındı.
+              </Text>
+            )}
             <ListSection>
               <ListRow title="Yeniden Çek" tone="action" onPress={() => router.replace('/camera')} disabled={saving} />
             </ListSection>

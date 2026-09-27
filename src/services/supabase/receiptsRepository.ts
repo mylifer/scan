@@ -3,6 +3,7 @@ import { File } from 'expo-file-system';
 import { Platform } from 'react-native';
 
 import { receiptImageName, round2, trDateToIso } from '../../lib/format';
+import { learnedCategoryFor } from '../../lib/search';
 import { buildMonthlySeries, type MonthPoint } from '../../lib/trend';
 import type { Kategori, ReceiptData, ReceiptRecord } from '../../types/receipt';
 import { supabase } from './client';
@@ -169,6 +170,26 @@ export async function findPossibleDuplicates(data: ReceiptData, excludeId?: stri
   const { data: rows, error } = await query;
   if (error) return []; // kontrol başarısızsa kaydı engelleme
   return (rows ?? []).map(toRecord);
+}
+
+/**
+ * Kullanıcı bu firmanın bir fişini daha önce kaydettiyse o kategoriyi kullanır (AI tahmini yerine).
+ * Hata olursa veriyi olduğu gibi döner; tarama akışını asla bozmaz.
+ */
+export async function applyLearnedCategory(data: ReceiptData): Promise<{ data: ReceiptData; learned: boolean }> {
+  try {
+    const { data: rows, error } = await supabase
+      .from(TABLE)
+      .select('firma_adi, kategori')
+      .order('created_at', { ascending: false })
+      .limit(500);
+    if (error || !rows) return { data, learned: false };
+    const kategori = learnedCategoryFor(rows as { firma_adi: string; kategori: Kategori }[], data.firmaAdi);
+    if (!kategori || kategori === data.kategori) return { data, learned: false };
+    return { data: { ...data, kategori }, learned: true };
+  } catch {
+    return { data, learned: false };
+  }
 }
 
 /** Tüm zamanlardaki fiş sayısı (satırları indirmeden). */

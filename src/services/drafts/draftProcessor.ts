@@ -2,6 +2,7 @@ import { errorMessage } from '../../lib/errors';
 import type { ReceiptDraft } from '../../types/receipt';
 import { DRAFT_WIDTH, prepareAiImage } from '../image/prepareReceiptImages';
 import { downloadDraftImage, updateDraft } from '../supabase/draftsRepository';
+import { applyLearnedCategory } from '../supabase/receiptsRepository';
 import { getVisionService, VisionServiceError } from '../vision';
 
 /**
@@ -60,7 +61,7 @@ export async function processDrafts(drafts: ReceiptDraft[], onItemDone?: () => v
       try {
         const uri = await downloadDraftImage(d.image_path);
         const image = await prepareAiImage(uri, DRAFT_WIDTH);
-        const result = await getVisionService().analyzeReceipt(image);
+        const { data: result } = await applyLearnedCategory(await getVisionService().analyzeReceipt(image));
         await updateDraft(d.id, { status: 'ready', result, scheduled_for: null, error: null });
         ok++;
       } catch (e) {

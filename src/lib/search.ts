@@ -27,3 +27,24 @@ export function matchesReceipt(r: Pick<ReceiptRecord, 'firma_adi' | 'toplam_tuta
   }
   return false;
 }
+
+const FIRM_NOISE = new Set(['a', 's', 'as', 'ao', 'ltd', 'sti', 'tic', 'ticaret', 'san', 'sanayi', 've', 'anonim', 'sirketi', 'limited', 'ith', 'ihr', 'paz', 'pazarlama']);
+
+/** "MİGROS TİCARET A.Ş." ve "Migros Tic. AŞ" → "migros": şirket türü eklerinden bağımsız firma anahtarı */
+export function firmKey(name: string): string {
+  return normalizeForSearch(name)
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .split(' ')
+    .filter((w) => w && !FIRM_NOISE.has(w))
+    .join(' ');
+}
+
+/**
+ * Kullanıcının bu firma için daha önce seçtiği kategori (en yeni fiş; `rows` yeniden eskiye sıralı).
+ * Yapay zekânın tahmini yerine kullanıcının kendi tercihi kullanılsın diye.
+ */
+export function learnedCategoryFor<K extends string>(rows: { firma_adi: string; kategori: K }[], firmaAdi: string): K | null {
+  const key = firmKey(firmaAdi);
+  if (!key) return null;
+  return rows.find((r) => firmKey(r.firma_adi) === key)?.kategori ?? null;
+}
