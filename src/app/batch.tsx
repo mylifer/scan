@@ -1,3 +1,4 @@
+import { errorMessage } from '../lib/errors';
 import { BlurView } from 'expo-blur';
 import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
@@ -77,7 +78,7 @@ export default function BatchScreen() {
           await deleteDraft(d);
           refresh();
         } catch (e) {
-          showAlert('Silinemedi', (e as Error).message);
+          showAlert('Silinemedi', errorMessage(e));
         }
       },
     );

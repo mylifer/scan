@@ -1,3 +1,4 @@
+import { errorMessage } from '../lib/errors';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
@@ -20,7 +21,7 @@ export function useMonthlySummary() {
     try {
       setSummary(await getSummary(period.mode === 'month' ? monthRange(period.offset) : undefined));
     } catch (e) {
-      setError((e as Error).message);
+      setError(errorMessage(e));
     } finally {
       setLoading(false);
     }

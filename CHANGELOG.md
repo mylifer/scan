@@ -14,7 +14,11 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.0.2
+## 1.0.3
+- Beklenmeyen bir hatada beyaz ekran yerine "Bir Şeyler Ters Gitti" ekranı ve **Tekrar Dene** düğmesi
+- Teknik hata mesajları anlaşılır Türkçeye çevrildi (internet yok, oturum süresi doldu, hatalı şifre vb.)
+
+## 1.0.2 — `b76dd8e`
 - 34 otomatik test (tutar/tarih okuma, AI yanıtı çözümleme, form doğrulama, Excel, planlama)
 - Kod denetimi (lint) ve testler her yayından önce çalışır; hata varsa yayın yapılmaz
 - Gece yarısını geçince elle girilen fişin tarihinin dün kalması düzeltildi

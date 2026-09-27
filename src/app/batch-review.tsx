@@ -1,3 +1,4 @@
+import { errorMessage } from '../lib/errors';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
@@ -50,7 +51,7 @@ export default function BatchReviewScreen() {
           setTotal(ready.length);
           show(ready[0]);
         })
-        .catch((e) => showAlert('Taslaklar alınamadı', (e as Error).message));
+        .catch((e) => showAlert('Taslaklar alınamadı', errorMessage(e)));
     }, [show]),
   );
 
@@ -85,7 +86,7 @@ export default function BatchReviewScreen() {
       next(count);
     } catch (e) {
       haptics.error();
-      showAlert('Kaydedilemedi', (e as Error).message);
+      showAlert('Kaydedilemedi', errorMessage(e));
     } finally {
       setSaving(false);
     }

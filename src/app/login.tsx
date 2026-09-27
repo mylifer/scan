@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../components/ui/Button';
 import { Image } from 'expo-image';
 import { showAlert } from '../lib/alert';
+import { errorMessage } from '../lib/errors';
 import { haptics } from '../lib/haptics';
 import { fontFamily, type as t, useTheme } from '../lib/theme';
 import { supabase } from '../services/supabase/client';
@@ -29,7 +30,7 @@ export default function LoginScreen() {
     setBusy(null);
     if (error) {
       haptics.error();
-      showAlert(mode === 'signin' ? 'Giriş yapılamadı' : 'Hesap oluşturulamadı', error.message);
+      showAlert(mode === 'signin' ? 'Giriş yapılamadı' : 'Hesap oluşturulamadı', errorMessage(error));
     } else if (mode === 'signup' && !data.session) {
       showAlert('E-postanızı kontrol edin', 'Hesabınızı doğrulamak için gönderilen bağlantıya dokunun.');
     } else {

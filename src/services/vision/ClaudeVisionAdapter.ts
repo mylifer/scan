@@ -1,3 +1,4 @@
+import { errorMessage } from '../../lib/errors';
 import type { ReceiptData } from '../../types/receipt';
 import { parseReceiptJson } from './parseReceiptJson';
 import { RECEIPT_SYSTEM_PROMPT, RECEIPT_USER_PROMPT } from './receiptPrompt';
@@ -57,7 +58,7 @@ export class ClaudeVisionAdapter implements VisionService {
       }
     } catch (e) {
       if (e instanceof VisionServiceError) throw e;
-      throw new VisionServiceError(`Claude isteği başarısız: ${(e as Error).message ?? e}`, e);
+      throw new VisionServiceError(`Claude isteği başarısız: ${errorMessage(e) ?? e}`, e);
     }
     const text = body.content?.find((c) => c.type === 'text')?.text;
     if (!text) throw new VisionServiceError('Claude boş yanıt döndürdü.');

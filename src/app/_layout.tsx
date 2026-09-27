@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { type ErrorBoundaryProps, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -7,6 +7,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ToastHost } from '../components/ToastHost';
 import { ActionSheetHost } from '../components/ui/ActionSheetHost';
 import { AuthProvider, useAuth } from '../hooks/useAuth';
+import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
+import { errorMessage } from '../lib/errors';
 import { largeTitle, stackScreenOptions } from '../lib/navigation';
 import { useTheme } from '../lib/theme';
 
@@ -36,6 +39,24 @@ function RootNavigator() {
         <Stack.Screen name="login" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
+  );
+}
+
+/**
+ * Beklenmeyen bir hata ekranı çökertirse beyaz sayfa yerine bu gösterilir.
+ * (expo-router, kök layout'tan dışa aktarılan ErrorBoundary'yi kullanır.)
+ */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const theme = useTheme();
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', backgroundColor: theme.background, padding: 20 }}>
+      <EmptyState
+        icon={{ sf: 'exclamationmark.triangle', ion: 'warning-outline' }}
+        title="Bir Şeyler Ters Gitti"
+        message={`Uygulama beklenmedik bir hatayla karşılaştı. Verileriniz güvende.\n\n${errorMessage(error)}`}
+      />
+      <Button title="Tekrar Dene" onPress={retry} />
+    </View>
   );
 }
 

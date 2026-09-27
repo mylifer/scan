@@ -1,3 +1,4 @@
+import { errorMessage } from '../lib/errors';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -34,7 +35,7 @@ export function useDrafts() {
       return list;
     } catch (e) {
       if (e instanceof DraftsNotSetUpError) setNotSetUp(true);
-      else setError((e as Error).message);
+      else setError(errorMessage(e));
       return [];
     } finally {
       if (mounted.current) setLoading(false);

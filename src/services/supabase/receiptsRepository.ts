@@ -1,3 +1,4 @@
+import { errorMessage } from '../../lib/errors';
 import { File } from 'expo-file-system';
 import { Platform } from 'react-native';
 
@@ -26,7 +27,7 @@ export async function saveReceipt(data: ReceiptData, archiveUri?: string): Promi
     try {
       imagePath = await uploadImage(`${userId}/${receiptImageName(tarih, data.firmaAdi)}.jpg`, archiveUri);
     } catch (e) {
-      imageWarning = `Fiş görseli yüklenemedi: ${(e as Error).message}`;
+      imageWarning = `Fiş görseli yüklenemedi: ${errorMessage(e)}`;
     }
   }
 

@@ -1,3 +1,4 @@
+import { errorMessage } from '../../lib/errors';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
@@ -41,7 +42,7 @@ export default function ReceiptDetailScreen() {
         setValues(v);
         if (r.image_path) setImageUrl(await getReceiptImageUrl(r.image_path, 3600));
       })
-      .catch((e) => setError((e as Error).message));
+      .catch((e) => setError(errorMessage(e)));
   }, [id]);
 
   const dirty = useMemo(() => !!values && !!initial && JSON.stringify(values) !== JSON.stringify(initial), [values, initial]);
@@ -61,7 +62,7 @@ export default function ReceiptDetailScreen() {
       showToast('Değişiklikler kaydedildi');
     } catch (e) {
       haptics.error();
-      showAlert('Kaydedilemedi', (e as Error).message);
+      showAlert('Kaydedilemedi', errorMessage(e));
     } finally {
       setSaving(false);
     }
@@ -75,7 +76,7 @@ export default function ReceiptDetailScreen() {
         router.back();
         showToast('Fiş silindi', 'info');
       } catch (e) {
-        showAlert('Silinemedi', (e as Error).message);
+        showAlert('Silinemedi', errorMessage(e));
       }
     });
   }

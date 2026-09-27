@@ -1,3 +1,4 @@
+import { errorMessage } from '../lib/errors';
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import { router, Stack } from 'expo-router';
 import { cloneElement, type ReactElement, useState } from 'react';
@@ -65,7 +66,7 @@ export default function DashboardScreen() {
       haptics.success();
       showToast('Fiş silindi', 'info');
     } catch (e) {
-      showAlert('Silinemedi', (e as Error).message);
+      showAlert('Silinemedi', errorMessage(e));
     }
   }
 
@@ -77,7 +78,7 @@ export default function DashboardScreen() {
       await shareXlsx(buildReceiptsWorkbook(s, capitalize(label)), exportFilename(range));
       haptics.success();
     } catch (e) {
-      showAlert('Dışa aktarılamadı', (e as Error).message);
+      showAlert('Dışa aktarılamadı', errorMessage(e));
     } finally {
       setExporting(false);
     }

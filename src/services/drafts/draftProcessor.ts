@@ -1,3 +1,4 @@
+import { errorMessage } from '../../lib/errors';
 import type { ReceiptDraft } from '../../types/receipt';
 import { DRAFT_WIDTH, prepareAiImage } from '../image/prepareReceiptImages';
 import { downloadDraftImage, updateDraft } from '../supabase/draftsRepository';
@@ -63,7 +64,7 @@ export async function processDrafts(drafts: ReceiptDraft[], onItemDone?: () => v
         await updateDraft(d.id, { status: 'ready', result, scheduled_for: null, error: null });
         ok++;
       } catch (e) {
-        await updateDraft(d.id, { status: 'failed', error: (e as Error).message }).catch(() => {});
+        await updateDraft(d.id, { status: 'failed', error: errorMessage(e) }).catch(() => {});
         if (e instanceof VisionServiceError && (e.kind === 'quota' || e.kind === 'busy')) {
           // Kalanları tekrar denemek boşuna kota harcar; olduğu gibi bırak
           set({ stoppedReason: e.message, done: i + 1 });

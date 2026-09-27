@@ -1,3 +1,4 @@
+import { errorMessage } from '../lib/errors';
 import { Redirect, router, Stack } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
@@ -43,7 +44,7 @@ export default function ReviewScreen() {
       haptics.success();
     } catch (e) {
       if (controller.signal.aborted) return;
-      setError((e as Error).message);
+      setError(errorMessage(e));
       setPhase('error');
       haptics.error();
     }
@@ -76,7 +77,7 @@ export default function ReviewScreen() {
       }
     } catch (e) {
       haptics.error();
-      showAlert('Kaydedilemedi', (e as Error).message);
+      showAlert('Kaydedilemedi', errorMessage(e));
     } finally {
       setSaving(false);
     }
