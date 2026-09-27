@@ -123,6 +123,10 @@ export default function DashboardScreen() {
             ? {
                 headerSearchBarOptions: {
                   placeholder: 'Firma ya da tutar ara',
+                  // iOS 26 arama çubuğunu varsayılan olarak alta taşıyor ve "Fiş Tara" çubuğunun üstüne biniyor;
+                  // başlığın altında (klasik yerinde) sabit kalsın
+                  placement: 'stacked' as const,
+                  allowToolbarIntegration: false,
                   cancelButtonText: 'Vazgeç',
                   autoCapitalize: 'none' as const,
                   hideWhenScrolling: true,
