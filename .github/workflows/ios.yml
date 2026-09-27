@@ -51,9 +51,15 @@ jobs:
       - uses: actions/checkout@v4
         if: env.HAS_EXPO == 'true'
         with:
-          ref: ${{ github.event.inputs.ref || github.sha }}
+          fetch-depth: 0 # geri dönüşte kısa commit kodunu çözebilmek için tüm geçmiş
+      - name: Geri dönüş sürümüne geç
+        if: env.HAS_EXPO == 'true' && github.event.inputs.ref != ''
+        env:
+          REF: ${{ github.event.inputs.ref }}
+        run: git checkout --detach "$REF"
       - name: Sürüm etiketini ayarla
         if: env.HAS_EXPO == 'true'
+        # Uygulamanın altında görünen commit kodu (geri dönüşte eski commit'in kodu)
         run: echo "EXPO_PUBLIC_APP_VERSION=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
         if: env.HAS_EXPO == 'true'

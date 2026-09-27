@@ -38,7 +38,12 @@ jobs:
           fi
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.ref || github.sha }}
+          fetch-depth: 0 # geri dönüşte kısa commit kodunu çözebilmek için tüm geçmiş
+      - name: Geri dönüş sürümüne geç
+        if: github.event.inputs.ref != ''
+        env:
+          REF: ${{ github.event.inputs.ref }}
+        run: git checkout --detach "$REF"
       - name: Sürüm etiketini ayarla
         # Uygulamanın altında görünen commit kodu (geri dönüşte eski commit'in kodu)
         run: echo "EXPO_PUBLIC_APP_VERSION=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
