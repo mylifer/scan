@@ -15,6 +15,13 @@ describe('parseReceiptJson', () => {
     assert.equal(parseReceiptJson('{"kategori":"Süpermarket"}').kategori, 'market');
     assert.equal(parseReceiptJson('{"kategori":"benzin istasyonu"}').kategori, 'akaryakıt');
     assert.equal(parseReceiptJson('{"kategori":"kırtasiye"}').kategori, 'ofis gideri');
+    assert.equal(parseReceiptJson('{"kategori":"Ulaşım"}').kategori, 'ulaşım');
+    assert.equal(parseReceiptJson('{"kategori":"otopark"}').kategori, 'ulaşım');
+    assert.equal(parseReceiptJson('{"kategori":"lastik değişimi"}').kategori, 'araç bakım');
+    assert.equal(parseReceiptJson('{"kategori":"otel"}').kategori, 'konaklama');
+    assert.equal(parseReceiptJson('{"kategori":"elektrik faturası"}').kategori, 'faturalar');
+    assert.equal(parseReceiptJson('{"kategori":"kurye"}').kategori, 'kargo');
+    assert.equal(parseReceiptJson('{"kategori":"çiçekçi"}').kategori, 'diğer');
   });
   it('geçersiz tarihte bugünün tarihini kullanır', () => {
     assert.match(parseReceiptJson('{"tarih":"yok"}').tarih, /^\d{2}\.\d{2}\.\d{4}$/);

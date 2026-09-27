@@ -24,6 +24,9 @@ const light = {
   indigo: '#5856D6',
   teal: '#30B0C7',
   pink: '#FF2D55',
+  brown: '#A2845E',
+  mint: '#00C7BE',
+  cyan: '#32ADE6',
   gray: '#8E8E93',
   // Grafik renkleri (dataviz doğrulayıcısından geçti: açık zeminde #FFFFFF)
   chartBase: '#007AFF',
@@ -51,6 +54,9 @@ const dark: typeof light = {
   indigo: '#5E5CE6',
   teal: '#40C8E0',
   pink: '#FF375F',
+  brown: '#AC8E68',
+  mint: '#63E6E2',
+  cyan: '#64D2FF',
   gray: '#8E8E93',
   // Koyu zeminde (#1C1C1E) açıklık bandına uyması için iOS yeşilinden bir ton koyu
   chartBase: '#0A84FF',
@@ -100,4 +106,11 @@ export const categoryMeta: Record<Kategori, SymbolSpec & { color: keyof Theme; l
   market: { sf: 'cart.fill', ion: 'cart', color: 'green', label: L['market'] },
   teknoloji: { sf: 'laptopcomputer', ion: 'laptop', color: 'indigo', label: L['teknoloji'] },
   'ofis gideri': { sf: 'paperclip', ion: 'attach', color: 'teal', label: L['ofis gideri'] },
+  ulaşım: { sf: 'bus.fill', ion: 'bus', color: 'blue', label: L['ulaşım'] },
+  'araç bakım': { sf: 'wrench.and.screwdriver.fill', ion: 'construct', color: 'brown', label: L['araç bakım'] },
+  konaklama: { sf: 'bed.double.fill', ion: 'bed', color: 'purple', label: L['konaklama'] },
+  iletişim: { sf: 'phone.fill', ion: 'call', color: 'cyan', label: L['iletişim'] },
+  faturalar: { sf: 'bolt.fill', ion: 'flash', color: 'yellow', label: L['faturalar'] },
+  kargo: { sf: 'shippingbox.fill', ion: 'cube', color: 'mint', label: L['kargo'] },
+  diğer: { sf: 'ellipsis', ion: 'ellipsis-horizontal', color: 'gray', label: L['diğer'] },
 };

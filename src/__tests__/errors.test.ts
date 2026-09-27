@@ -12,4 +12,7 @@ describe('errorMessage', () => {
   it('RLS hatasını çevirir', () => assert.match(errorMessage('new row violates row-level security policy'), /yetkiniz yok/));
   it('bilinmeyen hatayı olduğu gibi bırakır', () => assert.equal(errorMessage(new Error('Tarih hatalı')), 'Tarih hatalı'));
   it('boş hata için genel mesaj', () => assert.equal(errorMessage(undefined), 'Beklenmeyen bir hata oluştu.'));
+  it('eski veritabanında yeni kategori hatası', () => {
+    assert.match(errorMessage(new Error('new row for relation "receipts" violates check constraint "receipts_kategori_check"')), /kategori henüz etkin değil/);
+  });
 });

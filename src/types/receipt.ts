@@ -1,4 +1,21 @@
-export const KATEGORILER = ['akaryakıt', 'restoran', 'market', 'teknoloji', 'ofis gideri'] as const;
+/** Sıra, kategori seçicide ve Gemini şemasında kullanılır. Yeni kategori: 003 migration'ı da güncelleyin. */
+export const KATEGORILER = [
+  'akaryakıt',
+  'restoran',
+  'market',
+  'teknoloji',
+  'ofis gideri',
+  'ulaşım',
+  'araç bakım',
+  'konaklama',
+  'iletişim',
+  'faturalar',
+  'kargo',
+  'diğer',
+] as const;
+
+/** 003 kurulumundan önce veritabanının kabul ettiği kategoriler */
+export const ESKI_KATEGORILER: readonly Kategori[] = ['akaryakıt', 'restoran', 'market', 'teknoloji', 'ofis gideri'];
 export type Kategori = (typeof KATEGORILER)[number];
 
 export const KATEGORI_ETIKETLERI: Record<Kategori, string> = {
@@ -7,6 +24,13 @@ export const KATEGORI_ETIKETLERI: Record<Kategori, string> = {
   market: 'Market',
   teknoloji: 'Teknoloji',
   'ofis gideri': 'Ofis Gideri',
+  ulaşım: 'Ulaşım',
+  'araç bakım': 'Araç Bakım',
+  konaklama: 'Konaklama',
+  iletişim: 'İletişim',
+  faturalar: 'Faturalar',
+  kargo: 'Kargo',
+  diğer: 'Diğer',
 };
 
 /** Görüntü okuma servisinin döndürdüğü, form üzerinde düzenlenen fiş verisi. */

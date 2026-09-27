@@ -1,13 +1,13 @@
 import { errorMessage } from '../lib/errors';
 import { BlurView } from 'expo-blur';
-import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AddPhotoButtons, type PickedPhoto } from '../components/AddPhotoButtons';
 import { PhotoViewer } from '../components/PhotoViewer';
+import { SetupSteps } from '../components/SetupSteps';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Icon } from '../components/ui/Icon';
@@ -18,7 +18,7 @@ import { confirmDestructive, showActionSheet } from '../lib/actionSheet';
 import { showAlert } from '../lib/alert';
 import { haptics } from '../lib/haptics';
 import { formatRunAt, nextRunAt, RECOMMENDED_HOUR, SCHEDULE_HOURS } from '../lib/schedule';
-import { DRAFTS_SETUP_SQL, SUPABASE_SQL_EDITOR_URL } from '../lib/setupSql';
+import { DRAFTS_SETUP_SQL } from '../lib/setupSql';
 import { type Theme, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 import { isScannable } from '../services/drafts/draftProcessor';
@@ -67,7 +67,14 @@ export default function BatchScreen() {
     [refresh],
   );
 
-  if (notSetUp) return <SetupNeeded onCheck={refresh} />;
+  if (notSetUp)
+    return (
+      <SetupSteps
+        sql={DRAFTS_SETUP_SQL}
+        message="Toplu tarama, taslakları saklamak için Supabase'de yeni bir tabloya ihtiyaç duyuyor."
+        onCheck={refresh}
+      />
+    );
 
   function addPhotos(photos: PickedPhoto[]) {
     photos.forEach((p) => enqueueDraftUpload(p.uri, p.width));
@@ -278,61 +285,6 @@ function ProgressRow({ label, value, theme, isLast }: { label: string; value: nu
 }
 
 /** receipt_drafts tablosu yoksa: kodu kopyala → Supabase'i aç → çalıştır → kontrol et */
-function SetupNeeded({ onCheck }: { onCheck: () => Promise<unknown> }) {
-  const theme = useTheme();
-  const [showCode, setShowCode] = useState(false);
-  const [checking, setChecking] = useState(false);
-
-  async function copy() {
-    try {
-      if (!(await Clipboard.setStringAsync(DRAFTS_SETUP_SQL))) throw new Error();
-      showToast('Kod kopyalandı');
-    } catch {
-      setShowCode(true);
-      showToast('Kopyalanamadı; kodu aşağıdan seçin', 'info', 4000);
-    }
-  }
-
-  return (
-    <ScrollView style={{ backgroundColor: theme.background }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 40 }}>
-      <EmptyState
-        icon={{ sf: 'wrench.and.screwdriver.fill', ion: 'construct' }}
-        title="Tek Seferlik Kurulum"
-        message="Toplu tarama, taslakları saklamak için Supabase'de yeni bir tabloya ihtiyaç duyuyor."
-      />
-      <ListSection header="Adımlar" footer='Kodu SQL ekranına yapıştırıp "Run" düğmesine basın. "Success" yazısını görünce kurulumu kontrol edin.'>
-        <ListRow title="1. Kurulum Kodunu Kopyala" icon={{ sf: 'doc.on.doc.fill', ion: 'copy', color: theme.blue }} onPress={copy} />
-        <ListRow
-          title="2. Supabase SQL Ekranını Aç"
-          icon={{ sf: 'arrow.up.right.square.fill', ion: 'open', color: theme.green }}
-          onPress={() => Linking.openURL(SUPABASE_SQL_EDITOR_URL)}
-        />
-        <ListRow title={showCode ? 'Kodu Gizle' : 'Kodu Göster'} tone="action" onPress={() => setShowCode((v) => !v)} />
-      </ListSection>
-      {showCode && (
-        <TextInput
-          value={DRAFTS_SETUP_SQL}
-          multiline
-          editable={false}
-          selectTextOnFocus
-          style={[styles.code, { backgroundColor: theme.card, color: theme.label }]}
-        />
-      )}
-      <View style={{ paddingHorizontal: 16 }}>
-        <Button
-          title="Kurulumu Kontrol Et"
-          loading={checking}
-          onPress={async () => {
-            setChecking(true);
-            await onCheck();
-            setChecking(false);
-          }}
-        />
-      </View>
-    </ScrollView>
-  );
-}
-
 const styles = StyleSheet.create({
   gridHeader: { marginLeft: 32, marginBottom: 7 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 2, marginHorizontal: 16, borderRadius: 12, overflow: 'hidden' },
@@ -351,13 +303,4 @@ const styles = StyleSheet.create({
   uploadRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, minHeight: 44 },
   track: { height: 4, borderRadius: 2, overflow: 'hidden' },
   fill: { height: 4, borderRadius: 2 },
-  code: {
-    fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }),
-    fontSize: 11,
-    borderRadius: 12,
-    padding: 12,
-    height: 260,
-    marginHorizontal: 16,
-    marginBottom: 28,
-  },
 });

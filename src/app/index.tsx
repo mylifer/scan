@@ -1,7 +1,7 @@
 import { errorMessage } from '../lib/errors';
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import { router, Stack } from 'expo-router';
-import { cloneElement, type ReactElement, useState } from 'react';
+import { cloneElement, type ReactElement, useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 
@@ -28,6 +28,7 @@ import { VERSION_LABEL } from '../lib/version';
 import { reloadApp, useWebUpdateAvailable } from '../lib/webUpdate';
 import { buildAccountingPackage } from '../services/export/exportPackage';
 import { buildReceiptsWorkbook, exportFilename, shareXlsx, shareZip } from '../services/export/exportReceipts';
+import { categoriesReady } from '../services/supabase/schema';
 import type { Kategori, ReceiptRecord } from '../types/receipt';
 
 const PAGE = 25;
@@ -39,6 +40,12 @@ export default function DashboardScreen() {
     useMonthlySummary();
   const { drafts, processor } = useDrafts();
   const updateAvailable = useWebUpdateAvailable();
+  // Yeni kategoriler için veritabanı kurulumu (003) yapılmadıysa üstte hatırlat
+  const [needsCategorySetup, setNeedsCategorySetup] = useState(false);
+  useEffect(() => {
+    if (!s) return;
+    categoriesReady().then((ready) => setNeedsCategorySetup(ready === false));
+  }, [s]);
   const [visible, setVisible] = useState(PAGE);
   // Yenileme göstergesi yalnızca kullanıcı aşağı çektiğinde görünür; arka plan yenilemeleri
   // (ekrana her dönüşte) göstergeyi tetiklerse iOS sayfayı aşağı kaydırıp geri çıkarır.
@@ -177,6 +184,18 @@ export default function DashboardScreen() {
               subtitle="Güncellemek için dokunun"
               icon={{ sf: 'arrow.down.circle.fill', ion: 'arrow-down-circle', color: theme.blue }}
               onPress={reloadApp}
+              chevron
+            />
+          </ListSection>
+        )}
+
+        {needsCategorySetup && (
+          <ListSection>
+            <ListRow
+              title="Yeni kategorileri etkinleştir"
+              subtitle="Ulaşım, Faturalar, Kargo ve fazlası"
+              icon={{ sf: 'tag.fill', ion: 'pricetag', color: theme.purple }}
+              onPress={() => router.push('/setup-categories')}
               chevron
             />
           </ListSection>
@@ -408,7 +427,7 @@ function Stat({ label, value, color, theme }: { label: string; value: string; co
 }
 
 function ReceiptRow({ receipt: r, theme, onPress, isLast }: { receipt: ReceiptRecord; theme: Theme; onPress: () => void; isLast?: boolean }) {
-  const meta = categoryMeta[r.kategori] ?? categoryMeta['ofis gideri'];
+  const meta = categoryMeta[r.kategori] ?? categoryMeta['diğer'];
   return (
     <ListRow
       icon={{ sf: meta.sf, ion: meta.ion, color: theme[meta.color] as string }}

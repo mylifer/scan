@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type SheetRequest, subscribeActionSheet } from '../../lib/actionSheet';
@@ -9,6 +9,7 @@ import { type as t, useTheme } from '../../lib/theme';
 export function ActionSheetHost() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
   const [req, setReq] = useState<SheetRequest | null>(null);
 
   useEffect(() => subscribeActionSheet(setReq), []);
@@ -31,21 +32,24 @@ export function ActionSheetHost() {
                 {req.message && <Text style={[t.footnote, { color: theme.secondaryLabel, textAlign: 'center' }]}>{req.message}</Text>}
               </View>
             )}
-            {req?.options.map((o, i) => (
-              <Pressable
-                key={o.label}
-                onPress={() => {
-                  close();
-                  o.onPress();
-                }}
-                style={({ pressed }) => [
-                  styles.option,
-                  i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.separator },
-                  pressed && { backgroundColor: theme.highlight },
-                ]}>
-                <Text style={[styles.optionText, { color: o.destructive ? theme.red : theme.blue }]}>{o.label}</Text>
-              </Pressable>
-            ))}
+            {/* Uzun listeler (ör. 12 kategori) küçük ekranlarda kaydırılabilsin */}
+            <ScrollView style={{ maxHeight: height - insets.top - 200 }} bounces={false}>
+              {req?.options.map((o, i) => (
+                <Pressable
+                  key={o.label}
+                  onPress={() => {
+                    close();
+                    o.onPress();
+                  }}
+                  style={({ pressed }) => [
+                    styles.option,
+                    i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.separator },
+                    pressed && { backgroundColor: theme.highlight },
+                  ]}>
+                  <Text style={[styles.optionText, { color: o.destructive ? theme.red : theme.blue }]}>{o.label}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
           </View>
           <Pressable onPress={cancel} style={({ pressed }) => [styles.group, styles.option, { backgroundColor: pressed ? theme.highlight : bg }]}>
             <Text style={[styles.optionText, { color: theme.blue, fontWeight: '600' }]}>{req?.cancelLabel}</Text>

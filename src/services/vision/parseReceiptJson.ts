@@ -39,13 +39,20 @@ function extractJsonObject(raw: string): Record<string, unknown> {
 }
 
 function normalizeKategori(value: unknown): Kategori {
-  if (typeof value !== 'string') return 'ofis gideri';
+  if (typeof value !== 'string') return 'diğer';
   const v = value.toLocaleLowerCase('tr-TR').trim();
   const exact = KATEGORILER.find((k) => k === v);
   if (exact) return exact;
-  if (/akaryak|benzin|motorin|yakıt|opet|shell|petrol/.test(v)) return 'akaryakıt';
+  if (/akaryak|benzin|motorin|yakıt|opet|shell|petrol|lpg/.test(v)) return 'akaryakıt';
   if (/restoran|cafe|kafe|yemek|lokanta/.test(v)) return 'restoran';
   if (/market|gıda|süpermarket/.test(v)) return 'market';
-  if (/teknoloji|elektronik|bilgisayar/.test(v)) return 'teknoloji';
-  return 'ofis gideri';
+  if (/teknoloji|elektronik|bilgisayar|yazılım/.test(v)) return 'teknoloji';
+  if (/ofis|kırtasiye|temizlik/.test(v)) return 'ofis gideri';
+  if (/ulaşım|ulasim|taksi|otopark|otoyol|köprü|bilet|toplu taşıma/.test(v)) return 'ulaşım';
+  if (/bakım|bakim|servis|lastik|yedek parça|yıkama|oto/.test(v)) return 'araç bakım';
+  if (/konaklama|otel|pansiyon/.test(v)) return 'konaklama';
+  if (/iletişim|iletisim|telefon|internet|gsm/.test(v)) return 'iletişim';
+  if (/fatura|elektrik|su |doğalgaz|dogalgaz/.test(v)) return 'faturalar';
+  if (/kargo|posta|kurye/.test(v)) return 'kargo';
+  return 'diğer';
 }
