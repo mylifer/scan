@@ -2,7 +2,7 @@ import { errorMessage } from '../lib/errors';
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import { router, Stack } from 'expo-router';
 import { cloneElement, type ReactElement, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 import { HeaderIconButton } from '../components/ui/HeaderButton';
@@ -10,18 +10,20 @@ import { Icon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Button } from '../components/ui/Button';
 import { ListRow, ListSection } from '../components/ui/List';
+import { SearchField } from '../components/ui/SearchField';
 import { Toolbar, useToolbarHeight } from '../components/ui/Toolbar';
 import { useDrafts } from '../hooks/useDrafts';
 import { useMonthlySummary } from '../hooks/useMonthlySummary';
 import { showAlert } from '../lib/alert';
 import { formatTL, monthRange } from '../lib/format';
 import { haptics } from '../lib/haptics';
+import { matchesReceipt } from '../lib/search';
 import { formatRunAt } from '../lib/schedule';
 import { categoryMeta, tabular, type Theme, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 import { VERSION_LABEL } from '../lib/version';
 import { buildReceiptsWorkbook, exportFilename, shareXlsx } from '../services/export/exportReceipts';
-import type { ReceiptRecord } from '../types/receipt';
+import type { Kategori, ReceiptRecord } from '../types/receipt';
 
 const PAGE = 25;
 
@@ -40,11 +42,16 @@ export default function DashboardScreen() {
   const offset = isMonth ? period.offset : 0;
 
   // Dönem değişince listeyi baştan göster (React'in önerdiği: efekt yerine render sırasında)
-  const [shownLabel, setShownLabel] = useState(label);
-  if (shownLabel !== label) {
-    setShownLabel(label);
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<Kategori | null>(null);
+  const listKey = `${label}|${query}|${category}`;
+  const [shownKey, setShownKey] = useState(listKey);
+  if (shownKey !== listKey) {
+    setShownKey(listKey);
     setVisible(PAGE);
   }
+  const filtering = !!query.trim() || !!category;
+  const filtered = s?.fisler.filter((r) => (!category || r.kategori === category) && matchesReceipt(r, query)) ?? [];
 
   const readyDrafts = drafts.filter((d) => d.status === 'ready').length;
   const nextScheduled = drafts.find((d) => d.status === 'scheduled' && d.scheduled_for)?.scheduled_for;
@@ -89,6 +96,20 @@ export default function DashboardScreen() {
               label="Toplu tarama"
             />
           ),
+          // iOS: büyük başlığın altında sistem arama çubuğu (Mail/Notlar gibi)
+          ...(Platform.OS === 'ios'
+            ? {
+                headerSearchBarOptions: {
+                  placeholder: 'Firma ya da tutar ara',
+                  cancelButtonText: 'Vazgeç',
+                  autoCapitalize: 'none' as const,
+                  hideWhenScrolling: true,
+                  obscureBackground: false,
+                  onChangeText: (e: { nativeEvent: { text: string } }) => setQuery(e.nativeEvent.text),
+                  onCancelButtonPress: () => setQuery(''),
+                },
+              }
+            : {}),
         }}
       />
       <ScrollView
@@ -192,20 +213,51 @@ export default function DashboardScreen() {
                           icon={{ sf: meta.sf, ion: meta.ion, color: theme[meta.color] as string }}
                           title={meta.label}
                           value={`${formatTL(k.toplam)}  ·  %${total ? Math.round((k.toplam / total) * 100) : 0}`}
+                          onPress={() => {
+                            haptics.select();
+                            setCategory((c) => (c === k.kategori ? null : k.kategori));
+                          }}
+                          accessory={
+                            <View style={{ width: 18, alignItems: 'flex-end' }}>
+                              {category === k.kategori && <Icon sf="checkmark" ion="checkmark" size={16} color={theme.blue} weight="semibold" />}
+                            </View>
+                          }
                         />
                       );
                     })}
                   </ListSection>
 
-                  <ListSection header={`Fişler · ${s.fisler.length}`}>
+                  {Platform.OS !== 'ios' && (
+                    <View style={{ marginHorizontal: 16, marginBottom: 12 }}>
+                      <SearchField value={query} onChangeText={setQuery} placeholder="Firma ya da tutar ara" />
+                    </View>
+                  )}
+                  <ListSection
+                    header={filtering ? `Fişler · ${filtered.length} / ${s.fisler.length}` : `Fişler · ${s.fisler.length}`}
+                    footer={category ? `Yalnızca ${categoryMeta[category].label} kategorisi gösteriliyor. Kategoriye tekrar dokunarak filtreyi kaldırabilirsiniz.` : undefined}>
                     {[
-                      ...s.fisler.slice(0, visible).map((r) => (
+                      ...(filtering
+                        ? [
+                            <ListRow
+                              key="clear"
+                              title="Filtreyi Temizle"
+                              tone="action"
+                              icon={{ sf: 'line.3.horizontal.decrease.circle.fill', ion: 'filter-circle', color: theme.blue }}
+                              onPress={() => {
+                                setQuery('');
+                                setCategory(null);
+                              }}
+                            />,
+                          ]
+                        : []),
+                      ...(filtering && filtered.length === 0 ? [<ListRow key="none" title="Eşleşen fiş yok" disabled />] : []),
+                      ...filtered.slice(0, visible).map((r) => (
                         <SwipeToDelete key={r.id} onDelete={() => deleteReceipt(r)} theme={theme}>
                           <ReceiptRow receipt={r} theme={theme} onPress={() => router.push({ pathname: '/receipt/[id]', params: { id: r.id } })} />
                         </SwipeToDelete>
                       )),
-                      ...(s.fisler.length > visible
-                        ? [<ListRow key="more" title={`${s.fisler.length - visible} fiş daha göster`} tone="action" onPress={() => setVisible((v) => v + PAGE)} />]
+                      ...(filtered.length > visible
+                        ? [<ListRow key="more" title={`${filtered.length - visible} fiş daha göster`} tone="action" onPress={() => setVisible((v) => v + PAGE)} />]
                         : []),
                     ]}
                   </ListSection>
