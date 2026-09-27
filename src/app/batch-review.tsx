@@ -11,6 +11,7 @@ import { HeaderTextButton } from '../components/ui/HeaderButton';
 import { ListRow, ListSection } from '../components/ui/List';
 import { confirmDestructive } from '../lib/actionSheet';
 import { showAlert } from '../lib/alert';
+import { confirmIfDuplicate } from '../lib/confirmDuplicate';
 import { haptics } from '../lib/haptics';
 import { useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
@@ -76,9 +77,11 @@ export default function BatchReviewScreen() {
     }
     setSaving(true);
     try {
+      const data = fromFormValues(values);
+      if (!(await confirmIfDuplicate(data))) return;
       const local = await downloadDraftImage(current.image_path);
       const archiveUri = await prepareArchiveImage(local, DRAFT_WIDTH);
-      await saveReceipt(fromFormValues(values), archiveUri);
+      await saveReceipt(data, archiveUri);
       await deleteDraft(current);
       haptics.success();
       const count = saved + 1;

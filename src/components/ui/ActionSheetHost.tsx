@@ -14,11 +14,15 @@ export function ActionSheetHost() {
   useEffect(() => subscribeActionSheet(setReq), []);
 
   const close = () => setReq(null);
+  const cancel = () => {
+    req?.onCancel?.();
+    close();
+  };
   const bg = theme.dark ? '#2C2C2E' : '#F9F9F9';
 
   return (
-    <Modal visible={!!req} transparent animationType="fade" onRequestClose={close}>
-      <Pressable style={styles.backdrop} onPress={close}>
+    <Modal visible={!!req} transparent animationType="fade" onRequestClose={cancel}>
+      <Pressable style={styles.backdrop} onPress={cancel}>
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 8) }]}>
           <View style={[styles.group, { backgroundColor: bg }]}>
             {(req?.title || req?.message) && (
@@ -43,7 +47,7 @@ export function ActionSheetHost() {
               </Pressable>
             ))}
           </View>
-          <Pressable onPress={close} style={({ pressed }) => [styles.group, styles.option, { backgroundColor: pressed ? theme.highlight : bg }]}>
+          <Pressable onPress={cancel} style={({ pressed }) => [styles.group, styles.option, { backgroundColor: pressed ? theme.highlight : bg }]}>
             <Text style={[styles.optionText, { color: theme.blue, fontWeight: '600' }]}>{req?.cancelLabel}</Text>
           </Pressable>
         </View>

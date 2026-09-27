@@ -11,6 +11,8 @@ export interface SheetRequest {
   message?: string;
   options: SheetOption[];
   cancelLabel?: string;
+  /** Vazgeç'e basılınca ya da sayfa kapatılınca */
+  onCancel?: () => void;
 }
 
 type Listener = (req: SheetRequest | null) => void;
@@ -29,7 +31,11 @@ export function showActionSheet(req: SheetRequest) {
         cancelButtonIndex: labels.length - 1,
         destructiveButtonIndex: req.options.map((o, i) => (o.destructive ? i : -1)).filter((i) => i >= 0),
       },
-      (i) => req.options[i]?.onPress(),
+      (i) => {
+        const option = req.options[i];
+        if (option) option.onPress();
+        else req.onCancel?.();
+      },
     );
     return;
   }

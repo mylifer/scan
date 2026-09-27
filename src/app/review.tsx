@@ -8,6 +8,7 @@ import { ReceiptPhoto } from '../components/ReceiptPhoto';
 import { HeaderTextButton } from '../components/ui/HeaderButton';
 import { ListRow, ListSection } from '../components/ui/List';
 import { showAlert } from '../lib/alert';
+import { confirmIfDuplicate } from '../lib/confirmDuplicate';
 import { monthRange } from '../lib/format';
 import { haptics } from '../lib/haptics';
 import { getPendingPhoto } from '../lib/pendingPhoto';
@@ -66,7 +67,9 @@ export default function ReviewScreen() {
     }
     setSaving(true);
     try {
-      const { record, imageWarning } = await saveReceipt(fromFormValues(values), archiveUri.current);
+      const data = fromFormValues(values);
+      if (!(await confirmIfDuplicate(data))) return;
+      const { record, imageWarning } = await saveReceipt(data, archiveUri.current);
       router.replace('/');
       if (imageWarning) {
         showToast('Fiş kaydedildi, fotoğrafı yüklenemedi', 'info', 4000);

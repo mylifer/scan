@@ -10,6 +10,7 @@ import { HeaderTextButton } from '../../components/ui/HeaderButton';
 import { ListRow, ListSection } from '../../components/ui/List';
 import { confirmDestructive } from '../../lib/actionSheet';
 import { showAlert } from '../../lib/alert';
+import { confirmIfDuplicate } from '../../lib/confirmDuplicate';
 import { haptics } from '../../lib/haptics';
 import { useTheme } from '../../lib/theme';
 import { showToast } from '../../lib/toast';
@@ -57,7 +58,11 @@ export default function ReceiptDetailScreen() {
     }
     setSaving(true);
     try {
-      await updateReceipt(record.id, fromFormValues(values));
+      const data = fromFormValues(values);
+      // Yalnızca tarih ya da tutar değiştiyse mükerrer kontrolü yap
+      const keyChanged = !!initial && (values.tarih !== initial.tarih || values.toplamTutar !== initial.toplamTutar);
+      if (keyChanged && !(await confirmIfDuplicate(data, record.id))) return;
+      await updateReceipt(record.id, data);
       router.back();
       showToast('Değişiklikler kaydedildi');
     } catch (e) {

@@ -1,15 +1,16 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Platform, StyleSheet, Text, TextInput, type TextInputProps } from 'react-native';
+import { Platform, StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
 
 import { showActionSheet } from '../lib/actionSheet';
 import { formatTL, normalizeTrDate, parseAmount, round2, todayTr } from '../lib/format';
-import type { ReceiptFormValues } from '../lib/receiptForm';
+import { formWarnings, type ReceiptFormValues } from '../lib/receiptForm';
 import { haptics } from '../lib/haptics';
 import { categoryMeta, fontFamily, tabular, type as t, useTheme } from '../lib/theme';
 import { KATEGORILER } from '../types/receipt';
+import { Icon } from './ui/Icon';
 import { FieldRow, ListRow, ListSection } from './ui/List';
 
-export { emptyForm, fromFormValues, type ReceiptFormValues, toFormValues, validateForm } from '../lib/receiptForm';
+export { emptyForm, formWarnings, fromFormValues, type ReceiptFormValues, toFormValues, validateForm } from '../lib/receiptForm';
 
 interface Props {
   values: ReceiptFormValues;
@@ -36,8 +37,22 @@ export function ReceiptForm({ values, onChange }: Props) {
     });
   }
 
+  const warnings = formWarnings(values);
+
   return (
     <>
+      {warnings.length > 0 && (
+        <View style={[styles.warning, { backgroundColor: theme.dark ? 'rgba(255,159,10,0.16)' : 'rgba(255,149,0,0.12)' }]}>
+          <Icon sf="exclamationmark.triangle.fill" ion="warning" size={18} color={theme.orange} />
+          <View style={{ flex: 1, gap: 4 }}>
+            {warnings.map((w) => (
+              <Text key={w} style={[t.subhead, { color: theme.label }]}>
+                {w}
+              </Text>
+            ))}
+          </View>
+        </View>
+      )}
       <ListSection header="Fiş">
         <FieldRow label="Firma">
           <Input value={values.firmaAdi} onChangeText={(v) => set('firmaAdi', v)} placeholder="Firma adı" autoCapitalize="characters" />
@@ -131,4 +146,5 @@ function DateField({ value, onChange }: { value: string; onChange: (v: string) =
 const styles = StyleSheet.create({
   input: { textAlign: 'right', paddingVertical: 11, minWidth: 120, width: '100%', fontFamily, ...Platform.select({ web: { outlineWidth: 0 } }) },
   footer: { marginHorizontal: 16, marginTop: 7 },
+  warning: { flexDirection: 'row', gap: 10, marginHorizontal: 16, marginBottom: 20, padding: 12, borderRadius: 12 },
 });

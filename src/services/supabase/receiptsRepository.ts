@@ -139,6 +139,17 @@ export async function getSummary(range?: { from: string; to: string }): Promise<
   };
 }
 
+/** Aynı tarih ve tutarda kayıtlı fişler (mükerrer kayıt uyarısı için). */
+export async function findPossibleDuplicates(data: ReceiptData, excludeId?: string): Promise<ReceiptRecord[]> {
+  const tarih = trDateToIso(data.tarih);
+  if (!tarih) return [];
+  let query = supabase.from(TABLE).select('*').eq('tarih', tarih).eq('toplam_tutar', round2(data.toplamTutar)).limit(3);
+  if (excludeId) query = query.neq('id', excludeId);
+  const { data: rows, error } = await query;
+  if (error) return []; // kontrol başarısızsa kaydı engelleme
+  return (rows ?? []).map(toRecord);
+}
+
 /** Tüm zamanlardaki fiş sayısı (satırları indirmeden). */
 export async function countReceipts(): Promise<number> {
   const { count, error } = await supabase.from(TABLE).select('id', { count: 'exact', head: true });
