@@ -14,7 +14,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.23.0
+## 1.23.0 — `e23b6ac`
 - **KDV hatırlatıcısı (iPhone):** Ayarlar → Takip → KDV Hatırlatıcısı açılınca her ayın 25'i saat 10:00'da "geçen ayın fişlerini muhasebecinize gönderin" bildirimi gelir (beyanname son günü ayın 28'i). İlk açılışta bildirim izni istenir. Web sürümünde bu ayar görünmez
 
 ## 1.22.0 — `f463693`
