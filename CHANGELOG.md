@@ -14,7 +14,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.19.0
+## 1.19.0 — `e04361f`
 - **Kota dolunca planla:** Toplu tarama Gemini kotası/yoğunluğu yüzünden durursa Toplu Tarama ekranında nedeni ve "Kalan N Fişi Planla" düğmesi çıkar; önerilen saat günlük hakkın yenilendiği saattir
 
 ## 1.18.0 — `6f2e789`
