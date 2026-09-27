@@ -24,6 +24,8 @@ jobs:
       EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_7gu66leZ4qgYJPcOpcsh7g_yss8NOyN
       EXPO_PUBLIC_VISION_PROVIDER: gemini
       EXPO_PUBLIC_GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      # Uygulamanın altında görünen sürüm etiketi (commit'in ilk 7 karakteri)
+      EXPO_PUBLIC_APP_VERSION: ${{ github.sha }}
     steps:
       - name: Anahtarları kontrol et
         run: |

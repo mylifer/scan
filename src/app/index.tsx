@@ -127,6 +127,7 @@ export default function DashboardScreen() {
             ))}
           </View>
         )}
+        <Text style={styles.version}>Sürüm {(process.env.EXPO_PUBLIC_APP_VERSION ?? 'geliştirme').slice(0, 7)}</Text>
       </ScrollView>
 
       <View style={[styles.fabWrap, { bottom: insets.bottom + 20 }]}>
@@ -226,6 +227,7 @@ const styles = StyleSheet.create({
   receiptName: { fontSize: 15, fontWeight: '600', color: colors.text },
   receiptMeta: { fontSize: 12, color: colors.muted, marginTop: 2 },
   receiptAmount: { fontSize: 15, fontWeight: '700', color: colors.text },
+  version: { textAlign: 'center', color: colors.muted, fontSize: 12, marginTop: 4 },
   fabWrap: { position: 'absolute', left: 16, right: 16 },
   fab: {
     height: 58,
