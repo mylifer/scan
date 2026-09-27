@@ -1,0 +1,131 @@
+import { router, Stack } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+
+import { HeaderTextButton } from '../components/ui/HeaderButton';
+import { ListRow, ListSection } from '../components/ui/List';
+import { useAuth } from '../hooks/useAuth';
+import { confirmDestructive } from '../lib/actionSheet';
+import { showAlert } from '../lib/alert';
+import { errorMessage } from '../lib/errors';
+import { formatBytes } from '../lib/format';
+import { haptics } from '../lib/haptics';
+import { tabular, type as t, useTheme } from '../lib/theme';
+import { VERSION_LABEL } from '../lib/version';
+import { buildReceiptsWorkbook, exportFilename, shareXlsx } from '../services/export/exportReceipts';
+import { supabase } from '../services/supabase/client';
+import { countReceipts, getStorageUsage, getSummary, type StorageUsage } from '../services/supabase/receiptsRepository';
+import { getVisionService } from '../services/vision';
+
+/** Supabase free plan depolama kotası */
+const STORAGE_QUOTA = 1024 * 1024 * 1024;
+const REPO_URL = 'https://github.com/mylifer/scan';
+
+export default function SettingsScreen() {
+  const theme = useTheme();
+  const { session } = useAuth();
+  const [count, setCount] = useState<number | null>(null);
+  const [usage, setUsage] = useState<StorageUsage | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const email = session?.user.email ?? '';
+  const vision = safeVision();
+
+  useEffect(() => {
+    countReceipts().then(setCount).catch(() => setCount(null));
+    getStorageUsage().then(setUsage).catch(() => setUsage(null));
+  }, []);
+
+  async function exportAll() {
+    setExporting(true);
+    try {
+      await shareXlsx(buildReceiptsWorkbook(await getSummary(), 'Tüm Zamanlar'), exportFilename());
+      haptics.success();
+    } catch (e) {
+      showAlert('Dışa aktarılamadı', errorMessage(e));
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const ratio = usage ? usage.bytes / STORAGE_QUOTA : 0;
+
+  return (
+    <ScrollView style={{ backgroundColor: theme.background }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingTop: 16, paddingBottom: 40 }}>
+      <Stack.Screen options={{ headerRight: () => <HeaderTextButton title="Bitti" bold onPress={() => router.back()} /> }} />
+
+      <View style={[styles.account, { backgroundColor: theme.card }]}>
+        <View style={[styles.avatar, { backgroundColor: theme.gray }]}>
+          <Text style={styles.avatarText}>{(email[0] ?? '?').toLocaleUpperCase('tr-TR')}</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[t.title3, { color: theme.label }]} numberOfLines={1}>
+            {email || 'Hesap'}
+          </Text>
+          <Text style={[t.subhead, { color: theme.secondaryLabel }]}>Supabase hesabı</Text>
+        </View>
+      </View>
+
+      <ListSection header="Veriler" footer="Fotoğraflar Supabase'in ücretsiz 1 GB alanında saklanır. Arşiv fotoğrafları sıkıştırılarak (~50–120 KB) kaydedilir.">
+        <ListRow title="Fiş Sayısı" value={count === null ? '—' : String(count)} icon={{ sf: 'doc.text.fill', ion: 'document-text', color: theme.blue }} />
+        <ListRow
+          title="Fotoğraf Alanı"
+          value={usage ? `${formatBytes(usage.bytes)} · %${(ratio * 100).toFixed(ratio < 0.1 ? 1 : 0).replace('.', ',')}` : '—'}
+          icon={{ sf: 'externaldrive.fill', ion: 'server', color: theme.gray }}>
+          {usage && (
+            <View style={styles.meterWrap}>
+              <View style={[styles.meter, { backgroundColor: theme.tertiaryFill }]}>
+                <View style={{ width: `${Math.min(100, Math.max(ratio * 100, 0.5))}%`, backgroundColor: ratio > 0.8 ? theme.red : ratio > 0.6 ? theme.orange : theme.blue }} />
+              </View>
+              <Text style={[t.caption1, tabular, { color: theme.secondaryLabel }]}>
+                {usage.files} dosya · 1 GB&apos;ın {formatBytes(usage.bytes)} kadarı kullanılıyor
+              </Text>
+            </View>
+          )}
+        </ListRow>
+        <ListRow
+          title="Tüm Fişleri Excel'e Aktar"
+          icon={{ sf: 'tablecells.fill', ion: 'grid', color: theme.green }}
+          onPress={exportAll}
+          disabled={exporting}
+          accessory={exporting ? <ActivityIndicator /> : undefined}
+          chevron={!exporting}
+        />
+      </ListSection>
+
+      <ListSection header="Yapay Zekâ" footer="Fiş fotoğrafları okunmak üzere bu sağlayıcıya gönderilir. Model yoğunsa uygulama otomatik olarak yedek modellere geçer.">
+        <ListRow title="Sağlayıcı" value={vision?.providerName ?? 'Tanımsız'} icon={{ sf: 'sparkles', ion: 'sparkles', color: theme.purple }} />
+        <ListRow title="Model" value={vision?.modelLabel ?? '—'} />
+      </ListSection>
+
+      <ListSection header="Uygulama">
+        <ListRow title="Sürüm" value={VERSION_LABEL} icon={{ sf: 'info.circle.fill', ion: 'information-circle', color: theme.gray }} />
+        <ListRow title="Sürüm Geçmişi" icon={{ sf: 'clock.arrow.circlepath', ion: 'time', color: theme.indigo }} onPress={() => Linking.openURL(`${REPO_URL}/blob/claude/pos-receipt-scanner-app-tk3b0z/CHANGELOG.md`)} chevron />
+        <ListRow title="Web Sürümünü Aç" icon={{ sf: 'safari.fill', ion: 'globe', color: theme.blue }} onPress={() => Linking.openURL('https://mylifer.github.io/scan/')} chevron />
+      </ListSection>
+
+      <ListSection>
+        <ListRow
+          title="Çıkış Yap"
+          tone="destructive"
+          onPress={() => confirmDestructive('Çıkış Yap', 'Fişleriniz hesabınızda saklanmaya devam eder.', 'Çıkış Yap', () => supabase.auth.signOut())}
+        />
+      </ListSection>
+    </ScrollView>
+  );
+}
+
+function safeVision() {
+  try {
+    return getVisionService();
+  } catch {
+    return null;
+  }
+}
+
+const styles = StyleSheet.create({
+  account: { marginHorizontal: 16, marginBottom: 28, borderRadius: 12, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 },
+  avatar: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: '#fff', fontSize: 26, fontWeight: '600' },
+  meterWrap: { paddingLeft: 16 + 29 + 12, paddingRight: 16, paddingBottom: 12, gap: 6 },
+  meter: { height: 6, borderRadius: 3, overflow: 'hidden', flexDirection: 'row' },
+});

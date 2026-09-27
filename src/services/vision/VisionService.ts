@@ -13,6 +13,8 @@ export interface ReceiptImage {
  */
 export interface VisionService {
   readonly providerName: string;
+  /** Kullanılan model(ler), ör. "gemini-2.5-flash (+3 yedek)" — Ayarlar'da gösterilir */
+  readonly modelLabel: string;
   analyzeReceipt(image: ReceiptImage, signal?: AbortSignal): Promise<ReceiptData>;
 }
 

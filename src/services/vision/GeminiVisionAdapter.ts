@@ -33,6 +33,10 @@ export class GeminiVisionAdapter implements VisionService {
     this.models = [...new Set([model, ...FALLBACK_MODELS])];
   }
 
+  get modelLabel() {
+    return `${this.models[0]} (+${this.models.length - 1} yedek)`;
+  }
+
   async analyzeReceipt(image: ReceiptImage, signal?: AbortSignal): Promise<ReceiptData> {
     let lastError: unknown;
     for (const model of this.models) {

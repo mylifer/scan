@@ -119,3 +119,10 @@ export function slugify(text: string): string {
   // En fazla 40 karakter; kelimenin ortasından kesme
   return slug.length <= 40 ? slug : slug.slice(0, 41).replace(/-[^-]*$/, '');
 }
+
+/** 1536 → "2 KB", 12.3 MB → "12,3 MB" */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(1).replace('.', ',')} MB`;
+  return `${(bytes / 1024 ** 3).toFixed(2).replace('.', ',')} GB`;
+}

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { amountToInput, isoToTrDate, monthRange, normalizeTrDate, parseAmount, receiptImageName, round2, slugify, trDateToIso } from '../lib/format';
+import { amountToInput, formatBytes, isoToTrDate, monthRange, normalizeTrDate, parseAmount, receiptImageName, round2, slugify, trDateToIso } from '../lib/format';
 
 describe('parseAmount', () => {
   it('Türk biçimini okur', () => assert.equal(parseAmount('1.234,56'), 1234.56));
@@ -48,4 +48,13 @@ describe('dosya adları', () => {
     assert.equal(s, 'cagdas-kirtasiye-ofis-urunleri-ltd-sti');
   });
   it('boş firma adında "fis" kullanır', () => assert.match(receiptImageName('2026-09-14', '***'), /^2026-09-14_fis_[a-z0-9]{1,4}$/));
+});
+
+describe('formatBytes', () => {
+  it('KB / MB / GB', () => {
+    assert.equal(formatBytes(1536), '2 KB');
+    assert.equal(formatBytes(12.34 * 1024 * 1024), '12,3 MB');
+    assert.equal(formatBytes(1.5 * 1024 ** 3), '1,50 GB');
+    assert.equal(formatBytes(0), '1 KB');
+  });
 });

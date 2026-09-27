@@ -11,10 +11,8 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { Button } from '../components/ui/Button';
 import { ListRow, ListSection } from '../components/ui/List';
 import { Toolbar, useToolbarHeight } from '../components/ui/Toolbar';
-import { useAuth } from '../hooks/useAuth';
 import { useDrafts } from '../hooks/useDrafts';
 import { useMonthlySummary } from '../hooks/useMonthlySummary';
-import { showActionSheet } from '../lib/actionSheet';
 import { showAlert } from '../lib/alert';
 import { formatTL, monthRange } from '../lib/format';
 import { haptics } from '../lib/haptics';
@@ -23,14 +21,12 @@ import { categoryMeta, tabular, type Theme, type as t, useTheme } from '../lib/t
 import { showToast } from '../lib/toast';
 import { VERSION_LABEL } from '../lib/version';
 import { buildReceiptsWorkbook, exportFilename, shareXlsx } from '../services/export/exportReceipts';
-import { supabase } from '../services/supabase/client';
 import type { ReceiptRecord } from '../types/receipt';
 
 const PAGE = 25;
 
 export default function DashboardScreen() {
   const theme = useTheme();
-  const { session } = useAuth();
   const toolbarHeight = useToolbarHeight();
   const { summary: s, loading, error, refresh, remove, period, label, showMonthly, showAll, prevMonth, nextMonth } =
     useMonthlySummary();
@@ -53,12 +49,6 @@ export default function DashboardScreen() {
   const readyDrafts = drafts.filter((d) => d.status === 'ready').length;
   const nextScheduled = drafts.find((d) => d.status === 'scheduled' && d.scheduled_for)?.scheduled_for;
 
-  function openAccount() {
-    showActionSheet({
-      title: session?.user.email ?? undefined,
-      options: [{ label: 'Çıkış Yap', destructive: true, onPress: () => supabase.auth.signOut() }],
-    });
-  }
 
   async function deleteReceipt(r: ReceiptRecord) {
     try {
@@ -90,7 +80,7 @@ export default function DashboardScreen() {
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       <Stack.Screen
         options={{
-          headerLeft: () => <HeaderIconButton icon={{ sf: 'person.crop.circle', ion: 'person-circle-outline' }} onPress={openAccount} label="Hesap" />,
+          headerLeft: () => <HeaderIconButton icon={{ sf: 'person.crop.circle', ion: 'person-circle-outline' }} onPress={() => router.push('/settings')} label="Ayarlar" />,
           headerRight: () => (
             <HeaderIconButton
               icon={{ sf: 'square.stack.3d.up', ion: 'layers-outline' }}

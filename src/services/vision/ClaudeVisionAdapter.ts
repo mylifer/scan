@@ -20,6 +20,10 @@ export class ClaudeVisionAdapter implements VisionService {
     if (!apiKey) throw new VisionServiceError('EXPO_PUBLIC_ANTHROPIC_API_KEY tanımlı değil.');
   }
 
+  get modelLabel() {
+    return this.model;
+  }
+
   async analyzeReceipt(image: ReceiptImage, signal?: AbortSignal): Promise<ReceiptData> {
     let body: { content?: { type: string; text?: string }[]; error?: { message?: string } };
     try {

@@ -139,6 +139,37 @@ export async function getSummary(range?: { from: string; to: string }): Promise<
   };
 }
 
+/** Tüm zamanlardaki fiş sayısı (satırları indirmeden). */
+export async function countReceipts(): Promise<number> {
+  const { count, error } = await supabase.from(TABLE).select('id', { count: 'exact', head: true });
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+export interface StorageUsage {
+  bytes: number;
+  files: number;
+}
+
+/** Kullanıcının Storage klasöründeki (arşiv + taslak) fotoğrafların toplam boyutu. */
+export async function getStorageUsage(): Promise<StorageUsage> {
+  const userId = await currentUserId();
+  const usage: StorageUsage = { bytes: 0, files: 0 };
+  for (const folder of [userId, `${userId}/drafts`]) {
+    for (let offset = 0; ; offset += 1000) {
+      const { data, error } = await supabase.storage.from(RECEIPT_IMAGES_BUCKET).list(folder, { limit: 1000, offset });
+      if (error) throw new Error(error.message);
+      for (const f of data ?? []) {
+        if (!f.id) continue; // alt klasör
+        usage.files++;
+        usage.bytes += Number(f.metadata?.size ?? 0);
+      }
+      if (!data || data.length < 1000) break;
+    }
+  }
+  return usage;
+}
+
 export async function getReceipt(id: string): Promise<ReceiptRecord> {
   const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single();
   if (error) throw new Error(error.message);
