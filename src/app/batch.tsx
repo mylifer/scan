@@ -162,6 +162,17 @@ export default function BatchScreen() {
           </ListSection>
         )}
 
+        {!processor.running && processor.stoppedReason && scannable.length > 0 && scheduled.length === 0 && (
+          <ListSection footer="Ücretsiz planın günlük hakkı Türkiye saatiyle 10:00–11:00 civarında yenilenir.">
+            <ListRow
+              title="Tarama durdu"
+              subtitle={processor.stoppedReason}
+              icon={{ sf: 'pause.circle.fill', ion: 'pause-circle', color: theme.orange }}
+            />
+            <ListRow title={`Kalan ${scannable.length} Fişi Planla`} tone="action" onPress={pickSchedule} />
+          </ListSection>
+        )}
+
         {error && (
           <ListSection>
             <ListRow title="Taslaklar alınamadı" subtitle={error} icon={{ sf: 'wifi.exclamationmark', ion: 'cloud-offline', color: theme.orange }} onPress={refresh} />
