@@ -14,7 +14,11 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.5.0
+## 1.6.0
+- **Muhasebe Paketi (ZIP):** Dönemin Excel dosyası + tüm fiş fotoğrafları tek dosyada; fotoğraflar "2026-09-14_migros_337,30.jpg" gibi adlandırılır. İndirme ilerlemesi gösterilir
+- **Düzeltme (iPhone):** Toplu taramada taslak fotoğrafının indirilmesi iPhone'da başarısız olabiliyordu (React Native'de Blob'dan bayt okunamıyor); artık dosya olarak indiriliyor
+
+## 1.5.0 — `793eeb2`
 - **Son 12 Ay grafiği** (Sağlık uygulaması tarzı): her ay KDV hariç tutar + KDV olarak; çubuğa dokununca o ayın toplamı ve KDV'si üstte görünür, aylık görünümde "Bu aya git" ile o aya geçilir. Renkler açık ve koyu modda renk körlüğü denetiminden geçirildi
 
 ## 1.4.0 — `055a755`

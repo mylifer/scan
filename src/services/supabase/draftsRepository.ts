@@ -1,9 +1,7 @@
-import { File, Paths } from 'expo-file-system';
-import { Platform } from 'react-native';
-
 import type { ReceiptData, ReceiptDraft } from '../../types/receipt';
 import { supabase } from './client';
 import { currentUserId, RECEIPT_IMAGES_BUCKET, uniqueName, uploadImage } from './receiptsRepository';
+import { downloadToLocal } from './storageFiles';
 
 const TABLE = 'receipt_drafts';
 
@@ -72,12 +70,7 @@ export async function draftImageUrls(paths: string[]): Promise<Record<string, st
   return map;
 }
 
-/** Taslak görselini indirip yerel bir URI döner (web: blob URL, native: önbellek dosyası). */
-export async function downloadDraftImage(path: string): Promise<string> {
-  const { data, error } = await supabase.storage.from(RECEIPT_IMAGES_BUCKET).download(path);
-  if (error || !data) throw new Error(`Taslak görseli indirilemedi: ${error?.message ?? ''}`);
-  if (Platform.OS === 'web') return URL.createObjectURL(data);
-  const file = new File(Paths.cache, `draft-${uniqueName()}.jpg`);
-  file.write(new Uint8Array(await data.arrayBuffer()));
-  return file.uri;
+/** Taslak görselini indirip yerel bir URI döner (web: blob URL, iPhone: önbellek dosyası). */
+export function downloadDraftImage(path: string): Promise<string> {
+  return downloadToLocal(path);
 }

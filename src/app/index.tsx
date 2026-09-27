@@ -23,7 +23,8 @@ import { formatRunAt } from '../lib/schedule';
 import { categoryMeta, tabular, type Theme, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 import { VERSION_LABEL } from '../lib/version';
-import { buildReceiptsWorkbook, exportFilename, shareXlsx } from '../services/export/exportReceipts';
+import { buildAccountingPackage } from '../services/export/exportPackage';
+import { buildReceiptsWorkbook, exportFilename, shareXlsx, shareZip } from '../services/export/exportReceipts';
 import type { Kategori, ReceiptRecord } from '../types/receipt';
 
 const PAGE = 25;
@@ -39,6 +40,7 @@ export default function DashboardScreen() {
   // (ekrana her dönüşte) göstergeyi tetiklerse iOS sayfayı aşağı kaydırıp geri çıkarır.
   const [pulling, setPulling] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [packing, setPacking] = useState<{ done: number; total: number } | null>(null);
   const isMonth = period.mode === 'month';
   const offset = isMonth ? period.offset : 0;
 
@@ -65,6 +67,22 @@ export default function DashboardScreen() {
       showToast('Fiş silindi', 'info');
     } catch (e) {
       showAlert('Silinemedi', errorMessage(e));
+    }
+  }
+
+  async function exportPackage() {
+    if (!s || packing) return;
+    setPacking({ done: 0, total: 0 });
+    try {
+      const range = isMonth ? monthRange(offset) : undefined;
+      const { bytes, failed } = await buildAccountingPackage(s, capitalize(label), exportFilename(range), (done, total) => setPacking({ done, total }));
+      await shareZip(bytes, exportFilename(range, 'zip'));
+      if (failed) showToast(`${failed} fotoğraf indirilemedi; paket onlarsız oluşturuldu`, 'error', 4000);
+      else haptics.success();
+    } catch (e) {
+      showAlert('Paket oluşturulamadı', errorMessage(e));
+    } finally {
+      setPacking(null);
     }
   }
 
@@ -195,6 +213,21 @@ export default function DashboardScreen() {
                       disabled={exporting}
                       accessory={exporting ? <ActivityIndicator /> : undefined}
                       chevron={!exporting}
+                    />
+                    <ListRow
+                      title="Muhasebe Paketi (ZIP)"
+                      subtitle={
+                        packing
+                          ? packing.total
+                            ? `Fotoğraflar indiriliyor ${packing.done}/${packing.total}`
+                            : 'Hazırlanıyor…'
+                          : `Excel + ${s.fisler.filter((r) => r.image_path).length} fiş fotoğrafı`
+                      }
+                      icon={{ sf: 'archivebox.fill', ion: 'archive', color: theme.orange }}
+                      onPress={exportPackage}
+                      disabled={!!packing}
+                      accessory={packing ? <ActivityIndicator /> : undefined}
+                      chevron={!packing}
                     />
                   </ListSection>
 

@@ -6,10 +6,22 @@ export { buildReceiptsWorkbook } from './receiptsWorkbook';
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
+const ZIP_MIME = 'application/zip';
+
+/** Excel dosyasını paylaşır. */
+export function shareXlsx(bytes: Uint8Array, filename: string): Promise<void> {
+  return shareFile(bytes, filename, XLSX_MIME, 'org.openxmlformats.spreadsheetml.sheet');
+}
+
+/** ZIP dosyasını paylaşır. */
+export function shareZip(bytes: Uint8Array, filename: string): Promise<void> {
+  return shareFile(bytes, filename, ZIP_MIME, 'public.zip-archive');
+}
+
 /** Dosyayı web'de indirir, iPhone'da paylaşım menüsünü açar (Mail, WhatsApp, Dosyalar...). */
-export async function shareXlsx(bytes: Uint8Array, filename: string): Promise<void> {
+async function shareFile(bytes: Uint8Array, filename: string, mimeType: string, uti: string): Promise<void> {
   if (Platform.OS === 'web') {
-    const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: XLSX_MIME }));
+    const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: mimeType }));
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
@@ -23,14 +35,11 @@ export async function shareXlsx(bytes: Uint8Array, filename: string): Promise<vo
   if (file.exists) file.delete();
   file.write(bytes);
   if (!(await Sharing.isAvailableAsync())) throw new Error('Bu cihazda paylaşım kullanılamıyor.');
-  await Sharing.shareAsync(file.uri, {
-    mimeType: XLSX_MIME,
-    UTI: 'org.openxmlformats.spreadsheetml.sheet',
-    dialogTitle: filename,
-  });
+  await Sharing.shareAsync(file.uri, { mimeType, UTI: uti, dialogTitle: filename });
 }
 
-/** "Fisler_2026-09.xlsx" / "Fisler_Tum_Zamanlar.xlsx" */
-export function exportFilename(range?: { from: string }): string {
-  return range ? `Fisler_${range.from.slice(0, 7)}.xlsx` : 'Fisler_Tum_Zamanlar.xlsx';
+/** "Fisler_2026-09.xlsx" / "Fisler_Tum_Zamanlar.xlsx" (ext: "zip" için paket adı) */
+export function exportFilename(range?: { from: string }, ext: 'xlsx' | 'zip' = 'xlsx'): string {
+  const base = range ? `Fisler_${range.from.slice(0, 7)}` : 'Fisler_Tum_Zamanlar';
+  return ext === 'zip' ? `${base.replace('Fisler', 'Muhasebe_Paketi')}.zip` : `${base}.xlsx`;
 }
