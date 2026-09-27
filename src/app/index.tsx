@@ -11,6 +11,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { Button } from '../components/ui/Button';
 import { ListRow, ListSection } from '../components/ui/List';
 import { SearchField } from '../components/ui/SearchField';
+import { TrendChart } from '../components/TrendChart';
 import { Toolbar, useToolbarHeight } from '../components/ui/Toolbar';
 import { useDrafts } from '../hooks/useDrafts';
 import { useMonthlySummary } from '../hooks/useMonthlySummary';
@@ -30,7 +31,7 @@ const PAGE = 25;
 export default function DashboardScreen() {
   const theme = useTheme();
   const toolbarHeight = useToolbarHeight();
-  const { summary: s, loading, error, refresh, remove, period, label, showMonthly, showAll, prevMonth, nextMonth } =
+  const { summary: s, trend, loading, error, refresh, remove, period, label, showMonthly, showAll, prevMonth, nextMonth, goToMonth } =
     useMonthlySummary();
   const { drafts, processor } = useDrafts();
   const [visible, setVisible] = useState(PAGE);
@@ -196,6 +197,17 @@ export default function DashboardScreen() {
                       chevron={!exporting}
                     />
                   </ListSection>
+
+                  {trend && trend.some((p) => p.total > 0) && (
+                    <ListSection header="Son 12 Ay">
+                      <TrendChart
+                        key={`${isMonth ? offset : 'all'}`}
+                        data={trend}
+                        currentOffset={isMonth ? offset : null}
+                        onOpenMonth={isMonth ? goToMonth : undefined}
+                      />
+                    </ListSection>
+                  )}
 
                   <ListSection header="KDV Dağılımı">
                     <ListRow title="%1" value={formatTL(s.kdv1)} />

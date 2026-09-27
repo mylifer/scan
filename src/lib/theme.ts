@@ -25,6 +25,9 @@ const light = {
   teal: '#30B0C7',
   pink: '#FF2D55',
   gray: '#8E8E93',
+  // Grafik renkleri (dataviz doğrulayıcısından geçti: açık zeminde #FFFFFF)
+  chartBase: '#007AFF',
+  chartKdv: '#34C759',
 };
 
 const dark: typeof light = {
@@ -49,6 +52,9 @@ const dark: typeof light = {
   teal: '#40C8E0',
   pink: '#FF375F',
   gray: '#8E8E93',
+  // Koyu zeminde (#1C1C1E) açıklık bandına uyması için iOS yeşilinden bir ton koyu
+  chartBase: '#0A84FF',
+  chartKdv: '#22A947',
 };
 
 export type Theme = typeof light;

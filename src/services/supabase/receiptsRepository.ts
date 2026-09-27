@@ -3,6 +3,7 @@ import { File } from 'expo-file-system';
 import { Platform } from 'react-native';
 
 import { receiptImageName, round2, trDateToIso } from '../../lib/format';
+import { buildMonthlySeries, type MonthPoint } from '../../lib/trend';
 import type { Kategori, ReceiptData, ReceiptRecord } from '../../types/receipt';
 import { supabase } from './client';
 
@@ -137,6 +138,26 @@ export async function getSummary(range?: { from: string; to: string }): Promise<
       .sort((a, b) => b.toplam - a.toplam),
     fisler: rows,
   };
+}
+
+/** Son `months` ayın aylık toplamları (grafik için; yalnızca gereken sütunlar indirilir). */
+export async function getMonthlyTotals(months = 12): Promise<MonthPoint[]> {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+  const from = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-01`;
+  const rows: { tarih: string; toplam_tutar: number; toplam_kdv: number }[] = [];
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select('tarih,toplam_tutar,toplam_kdv')
+      .gte('tarih', from)
+      .order('tarih')
+      .range(offset, offset + PAGE_SIZE - 1);
+    if (error) throw new Error(error.message);
+    for (const r of data ?? []) rows.push({ tarih: String(r.tarih), toplam_tutar: Number(r.toplam_tutar), toplam_kdv: Number(r.toplam_kdv) });
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+  return buildMonthlySeries(rows, months, now);
 }
 
 /** Aynı tarih ve tutarda kayıtlı fişler (mükerrer kayıt uyarısı için). */
