@@ -14,7 +14,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.13.0
+## 1.13.0 — `eb517e6`
 - **7 yeni kategori:** Ulaşım (taksi, otopark, otoyol), Araç Bakım (servis, lastik, yıkama), Konaklama, İletişim (telefon, internet), Faturalar (elektrik, su, doğalgaz), Kargo ve Diğer. Yapay zekâ fişleri bu kategorilere de ayırır
 - Tek seferlik kurulum gerekir: ana sayfadaki "Yeni kategorileri etkinleştir" satırı adım adım anlatır (`supabase/migrations/003_more_categories.sql`). Mevcut fişler etkilenmez
 - Kurulum yapılmadan yeni bir kategoriyle kaydedilirse anlaşılır bir uyarı çıkar
