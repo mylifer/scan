@@ -63,6 +63,17 @@ npx expo start
 Telefonda **Expo Go** ile QR kodu okutun. Native modül eklerseniz development build gerekir:
 `npx expo run:android` / `npx expo run:ios`.
 
+### 4. Testler
+
+```bash
+npm test                                   # birim testleri (CI'da her yayında çalışır)
+NODE_PATH=$(npm root -g) npm run test:e2e  # tarayıcı testleri: web'i dist-e2e/'ye derler, ana akışları dener
+```
+
+Uçtan uca testler (`e2e/`) sahte bir Supabase (`https://e2e.supabase.co`) ve sahte Gemini kullanır; gerçek
+veritabanına dokunmaz. Fiş tarihleri bugüne göre üretildiği için takvimden bağımsızdır. Playwright ve Chromium
+gerekir (`CHROMIUM_PATH` ile tarayıcı yolu verilebilir).
+
 ## Mimari: VisionService
 
 ```
