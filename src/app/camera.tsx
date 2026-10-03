@@ -3,7 +3,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Animated, type GestureResponderEvent, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, type GestureResponderEvent, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../components/ui/Button';
@@ -40,10 +40,19 @@ export default function CameraScreen() {
         <EmptyState
           icon={{ sf: 'camera.fill', ion: 'camera' }}
           title="Kamera İzni Gerekli"
-          message="Fişlerinizi okuyabilmek için kameraya erişim izni verin."
+          message={
+            permission.canAskAgain
+              ? 'Fişlerinizi okuyabilmek için kameraya erişim izni verin.'
+              : 'Kamera izni daha önce reddedildi. Ayarlar\'dan bu uygulama için Kamera iznini açın.'
+          }
         />
         <View style={{ gap: 8, paddingHorizontal: 20 }}>
-          <Button title="İzin Ver" onPress={requestPermission} />
+          {/* iOS izni bir kez reddedilince sistem penceresini bir daha göstermez; tek yol Ayarlar */}
+          {permission.canAskAgain ? (
+            <Button title="İzin Ver" onPress={requestPermission} />
+          ) : (
+            <Button title="Ayarları Aç" onPress={() => Linking.openSettings()} />
+          )}
           <Button title="Vazgeç" variant="plain" onPress={() => router.back()} />
         </View>
       </View>
