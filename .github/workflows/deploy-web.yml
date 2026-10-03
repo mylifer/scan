@@ -18,7 +18,8 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # Yayın yarıda kesilmesin: çalışan yayın biter, arada gelenlerden yalnızca en yenisi sırada bekler
+  cancel-in-progress: false
 
 jobs:
   build:
