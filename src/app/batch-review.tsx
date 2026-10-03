@@ -86,7 +86,12 @@ export default function BatchReviewScreen() {
         const local = await downloadDraftImage(current.image_path);
         const archiveUri = await prepareArchiveImage(local, DRAFT_WIDTH).finally(() => releaseLocal(local));
         await saveReceipt(data, archiveUri);
-        await deleteDraft(current);
+        // Fiş kaydedildi; taslak silinemese bile "Kaydedilemedi" denmemeli (tekrar kaydedip çift kayıt oluşmasın)
+        try {
+          await deleteDraft(current);
+        } catch {
+          showToast('Fiş kaydedildi, taslak silinemedi. Toplu Tarama ekranından silebilirsiniz.', 'info', 4500);
+        }
         haptics.success();
         const count = saved + 1;
         setSaved(count);
