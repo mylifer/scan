@@ -31,6 +31,7 @@ import { showToast } from '../lib/toast';
 import { compareWithPreviousMonth } from '../lib/trend';
 import { VERSION_LABEL } from '../lib/version';
 import { reloadApp, useWebUpdateAvailable } from '../lib/webUpdate';
+import { resumePendingUploads } from '../services/drafts/uploadQueue';
 import { categoriesReady } from '../services/supabase/schema';
 import type { Kategori, ReceiptRecord } from '../types/receipt';
 
@@ -44,6 +45,14 @@ export default function DashboardScreen() {
   const { drafts, processor } = useDrafts();
   const updateAvailable = useWebUpdateAvailable();
   const budget = useMonthlyBudget();
+  // Önceki oturumda (uygulama kapanınca) yüklenemeden kalan toplu çekim fotoğraflarını yüklemeye devam et
+  useEffect(() => {
+    resumePendingUploads()
+      .then((n) => {
+        if (n) showToast(`Önceki çekimden kalan ${n} fotoğraf yükleniyor`, 'info', 3500);
+      })
+      .catch(() => {});
+  }, []);
   // Yeni kategoriler için veritabanı kurulumu (003) yapılmadıysa üstte hatırlat
   const [needsCategorySetup, setNeedsCategorySetup] = useState(false);
   useEffect(() => {
