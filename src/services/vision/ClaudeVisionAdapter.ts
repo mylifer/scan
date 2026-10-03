@@ -55,7 +55,8 @@ export class ClaudeVisionAdapter implements VisionService {
           ],
         }),
       });
-      body = await res.json();
+      // Ağ geçidi hataları (502/503/529) HTML gövde döndürebilir: JSON çözülemese de durum koduna göre sınıflandır
+      body = await res.json().catch(() => ({}));
       if (!res.ok) {
         const kind = res.status === 429 ? 'quota' : res.status >= 500 ? 'busy' : 'other';
         throw new VisionServiceError(`Claude isteği başarısız: ${body.error?.message ?? `HTTP ${res.status}`}`, body, kind);
