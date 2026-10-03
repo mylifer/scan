@@ -16,8 +16,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.27.1
-- **Düzeltme (iPhone):** 1.22'den sonraki güncellemeler Expo Go'da açılamıyor, telefon 1.21.1'de kalıyordu. Nedeni KDV hatırlatıcısının bildirim paketinin uygulama açılırken yüklenmesiydi; artık yalnızca gerektiğinde ve korumalı yükleniyor (yüklenemezse hatırlatıcı satırı gizlenir, uygulama yine açılır)
+## 1.27.1 — `6d1a0ed`
+- Bildirim paketi artık uygulama açılırken değil, yalnızca gerektiğinde ve korumalı yükleniyor (yüklenemezse hatırlatıcı satırı gizlenir, uygulama yine açılır)
+- Not: Telefonun 1.21.1'de kalmasının asıl nedeni, Expo Go'daki "Son açılanlar" kaydının eski bir sürüme sabitlenmiş olmasıydı. Uygulamayı her zaman şu bağlantıyla açın: `exp://u.expo.dev/e4446685-6bd2-4e1c-b0d0-cb1c025e1905?channel-name=production`
 
 ## 1.27.0 — `e96e222`
 - **Kaydetmeden çıkma uyarısı:** Fiş detayında değişiklik yapıp geri dönerseniz, elle eklemede formu doldurup Vazgeç'e basarsanız ya da okunmuş fişi kaydetmeden geri dönerseniz "Kaydetmeden Çık" onayı sorulur (önceden bilgiler sessizce kayboluyordu)
