@@ -108,6 +108,8 @@ export async function getSummary(range?: { from: string; to: string }): Promise<
     const { data, error } = await query
       .order('tarih', { ascending: false })
       .order('created_at', { ascending: false })
+      // Benzersiz son sıralama anahtarı: sayfa sınırlarında satır atlanmasın/tekrarlanmasın
+      .order('id')
       .range(offset, offset + PAGE_SIZE - 1);
     if (error) throw new Error(error.message);
     rows.push(...(data ?? []).map(toRecord));
@@ -153,6 +155,7 @@ export async function getMonthlyTotals(months = 12): Promise<MonthPoint[]> {
       .select('tarih,toplam_tutar,toplam_kdv')
       .gte('tarih', from)
       .order('tarih')
+      .order('id')
       .range(offset, offset + PAGE_SIZE - 1);
     if (error) throw new Error(error.message);
     for (const r of data ?? []) rows.push({ tarih: String(r.tarih), toplam_tutar: Number(r.toplam_tutar), toplam_kdv: Number(r.toplam_kdv) });
