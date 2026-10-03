@@ -23,11 +23,12 @@ export default function CameraWebScreen() {
   async function handleFile(file: File | undefined) {
     if (!file) return;
     setLoading(true);
+    const uri = URL.createObjectURL(file);
     try {
-      const uri = URL.createObjectURL(file);
       setPendingPhoto({ uri, width: await imageWidth(uri) });
       router.replace('/review');
     } catch {
+      URL.revokeObjectURL(uri);
       setLoading(false);
       showAlert('Fotoğraf açılamadı', 'Lütfen tekrar deneyin.');
     }
@@ -63,7 +64,11 @@ export default function CameraWebScreen() {
         accept="image/*"
         capture="environment"
         style={{ display: 'none' }}
-        onChange={(e) => handleFile(e.currentTarget.files?.[0])}
+        onChange={(e) => {
+          const file = e.currentTarget.files?.[0];
+          e.currentTarget.value = ''; // açılamayan fotoğraf tekrar seçilebilsin (aynı dosyada onChange tetiklenmez)
+          handleFile(file);
+        }}
       />
     </ScrollView>
   );
