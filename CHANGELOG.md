@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.27.0
+## 1.27.0 — `e96e222`
 - **Kaydetmeden çıkma uyarısı:** Fiş detayında değişiklik yapıp geri dönerseniz, elle eklemede formu doldurup Vazgeç'e basarsanız ya da okunmuş fişi kaydetmeden geri dönerseniz "Kaydetmeden Çık" onayı sorulur (önceden bilgiler sessizce kayboluyordu)
 - **Gemini anahtarını sunucuda tutma seçeneği hazır:** `supabase/functions/analyze-receipt` + "Supabase fonksiyonunu yayınla" iş akışı. Varsayılan davranış değişmedi; etkinleştirme adımları README'de
 - **Kalıcı tarayıcı testleri:** `e2e/` klasöründe 7 ana akış (`npm run test:e2e`), sahte Supabase ile; gerçek veritabanına dokunmaz
