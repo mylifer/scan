@@ -100,8 +100,10 @@ function escapeXml(s: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    // XML 1.0'da geçersiz kontrol karakterleri
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+    // XML 1.0'da geçersiz kontrol karakterleri ve U+FFFE/U+FFFF
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '')
+    // Eşi olmayan vekil (surrogate) yarımlar: geçerli çiftler korunur, tek kalanlar atılır (OCR çıktısında görülebilir)
+    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDFFF]/g, (m) => (m.length === 2 ? m : ''));
 }
 
 /** Sayfa adları: en fazla 31 karakter, : \ / ? * [ ] yasak */

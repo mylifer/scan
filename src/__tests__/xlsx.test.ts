@@ -24,6 +24,12 @@ describe('xlsx', () => {
     for (const f of ['[Content_Types].xml', '_rels/.rels', 'xl/workbook.xml', 'xl/styles.xml', 'xl/worksheets/sheet1.xml']) assert.ok(files[f], f);
   });
 
+  it('geçersiz XML karakterlerini atar, emojiyi korur', () => {
+    const files = unzipSync(buildXlsx([{ name: 'S', rows: [['A\u0001B\uFFFFC\uD800D😀']] }]));
+    const xml = strFromU8(files['xl/worksheets/sheet1.xml']);
+    assert.ok(xml.includes('ABCD😀'), xml);
+  });
+
   it('özel karakterleri kaçışlar ve geçersiz sayfa adlarını düzeltir', () => {
     const files = unzipSync(buildXlsx([{ name: 'A/B:C*[D]', rows: [['<&>"']] }]));
     assert.ok(strFromU8(files['xl/worksheets/sheet1.xml']).includes('&lt;&amp;&gt;&quot;'));
