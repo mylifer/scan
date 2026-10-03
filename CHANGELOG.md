@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.26.0
+## 1.26.0 — `3e0699e`
 İkinci kod incelemesi ve düzeltmeler:
 - Gemini yedek modellerinden biri kullanımdan kalkmışsa (404) kalan yedekler denenmiyordu; artık zincir devam ediyor
 - Kamera izni bir kez reddedilince "İzin Ver" çalışmıyordu; artık "Ayarları Aç" çıkıyor (iPhone)
