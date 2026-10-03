@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.29.0 — `(yayında)`
+## 1.29.0 — `9a01092`
 - **Vergi Takvimi** (Ayarlar → Takip): önümüzdeki 12 ayın KDV, geçici vergi ve yıllık gelir vergisi son günleri; istenirse muhtasar ve Ba-Bs. Son gün hafta sonuna ya da bayrama denk gelirse ilk iş gününe kaydırılır (ör. Nisan 2026 KDV → 1 Haziran). Arife ve 28 Ekim gibi yarım günler turuncu notla işaretlenir. 2026–2027 bayram tarihleri iki ayrı kaynakla doğrulandı
 - **Vergi Hatırlatıcısı:** eski "her ayın 25'i" hatırlatıcısının yerine; her son günden 3 gün önce 10:00'da ve son gün 09:00'da bildirim. Açık olan eski hatırlatıcı kendiliğinden yenisine geçer
 - **Öne Çıkanlar** (ana sayfa, aylık görünüm): geçen aya göre en çok artan/azalan kategori, en çok harcanan firma, en büyük fiş, KDV oranı ve bu ayın gidişatı. Yapay zekâ kullanmaz, kota harcamaz
