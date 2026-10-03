@@ -13,19 +13,29 @@ export function normalizeForSearch(text: string): string {
     .trim();
 }
 
-/** Firma adında ya da tutarda (ör. "337" → ₺337,30) arar. Boş sorgu her şeyle eşleşir. */
-export function matchesReceipt(r: Pick<ReceiptRecord, 'firma_adi' | 'toplam_tutar'>, query: string): boolean {
+type Searchable = Pick<ReceiptRecord, 'firma_adi' | 'toplam_tutar'>;
+
+/**
+ * Sorgu için eşleştirici üretir: sorgu bir kez normalleştirilir, liste filtrelenirken her satırda tekrar edilmez.
+ * Firma adında ya da tutarda (ör. "337" → ₺337,30) arar. Boş sorgu her şeyle eşleşir.
+ */
+export function receiptMatcher(query: string): (r: Searchable) => boolean {
   const q = normalizeForSearch(query);
-  if (!q) return true;
-  if (normalizeForSearch(r.firma_adi).includes(q)) return true;
+  if (!q) return () => true;
   // Tutar araması: "337", "337,3", "337.30", "1.500" gibi girdiler
   const digits = q.replace(/\s/g, '');
-  if (/^[\d.,]+$/.test(digits)) {
+  const isAmount = /^[\d.,]+$/.test(digits);
+  const typed = digits.replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.'); // binlik noktalarını at
+  return (r) => {
+    if (normalizeForSearch(r.firma_adi).includes(q)) return true;
+    if (!isAmount) return false;
     const amount = r.toplam_tutar.toFixed(2); // "1500.00"
-    const typed = digits.replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.'); // binlik noktalarını at
     return amount.startsWith(typed) || amount.replace('.', ',').startsWith(digits);
-  }
-  return false;
+  };
+}
+
+export function matchesReceipt(r: Searchable, query: string): boolean {
+  return receiptMatcher(query)(r);
 }
 
 const FIRM_NOISE = new Set(['a', 's', 'as', 'ao', 'ltd', 'sti', 'tic', 'ticaret', 'san', 'sanayi', 've', 'anonim', 'sirketi', 'limited', 'ith', 'ihr', 'paz', 'pazarlama']);

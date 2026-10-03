@@ -1,5 +1,5 @@
 import { router, Stack } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { CategorySection } from '../components/dashboard/CategorySection';
@@ -23,7 +23,7 @@ import { formatTL } from '../lib/format';
 import { haptics } from '../lib/haptics';
 import { periodRange } from '../lib/period';
 import { formatRunAt } from '../lib/schedule';
-import { matchesReceipt } from '../lib/search';
+import { receiptMatcher } from '../lib/search';
 import { groupByMonth, SORT_OPTIONS, type SortKey, sortReceipts } from '../lib/sort';
 import { useMonthlyBudget } from '../lib/budget';
 import { categoryMeta, type as t, useTheme } from '../lib/theme';
@@ -69,7 +69,11 @@ export default function DashboardScreen() {
     setVisible(PAGE);
   }
   const filtering = !!query.trim() || !!category;
-  const filtered = sortReceipts(s?.fisler.filter((r) => (!category || r.kategori === category) && matchesReceipt(r, query)) ?? [], sort);
+  const fisler = s?.fisler;
+  const filtered = useMemo(() => {
+    const matches = receiptMatcher(query);
+    return sortReceipts(fisler?.filter((r) => (!category || r.kategori === category) && matches(r)) ?? [], sort);
+  }, [fisler, category, query, sort]);
 
   function chooseSort() {
     showActionSheet({
@@ -100,17 +104,20 @@ export default function DashboardScreen() {
 
   const shown = filtered.slice(0, visible);
   // Yıllık / tüm zamanlar görünümünde, tarihe göre sıralıyken fişleri aylara ayır
-  const grouped = period.mode !== 'month' && (sort === 'newest' || sort === 'oldest') ? groupByMonth(shown) : null;
-  const monthTotals = new Map<string, { count: number; total: number }>();
-  if (grouped) {
+  const grouping = period.mode !== 'month' && (sort === 'newest' || sort === 'oldest');
+  const grouped = useMemo(() => (grouping ? groupByMonth(filtered.slice(0, visible)) : null), [grouping, filtered, visible]);
+  const monthTotals = useMemo(() => {
+    const totals = new Map<string, { count: number; total: number }>();
+    if (!grouping) return totals;
     for (const r of filtered) {
       const key = r.tarih.slice(0, 7);
-      const m = monthTotals.get(key) ?? { count: 0, total: 0 };
+      const m = totals.get(key) ?? { count: 0, total: 0 };
       m.count += 1;
       m.total += r.toplam_tutar;
-      monthTotals.set(key, m);
+      totals.set(key, m);
     }
-  }
+    return totals;
+  }, [filtered, grouping]);
   const categoryFooter = category
     ? `Yalnızca ${categoryMeta[category].label} kategorisi gösteriliyor. Kategoriye tekrar dokunarak filtreyi kaldırabilirsiniz.`
     : undefined;
