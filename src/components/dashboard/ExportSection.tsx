@@ -9,7 +9,7 @@ import type { PeriodRange } from '../../lib/period';
 import { useTheme } from '../../lib/theme';
 import { showToast } from '../../lib/toast';
 import { buildAccountingPackage } from '../../services/export/exportPackage';
-import { buildReceiptsWorkbook, exportFilename, shareXlsx, shareZip } from '../../services/export/exportReceipts';
+import { buildReceiptsWorkbook, exportFilename, shareXlsx, shareZipStream } from '../../services/export/exportReceipts';
 import type { PeriodSummary } from '../../services/supabase/receiptsRepository';
 import { ListRow, ListSection } from '../ui/List';
 
@@ -23,8 +23,9 @@ export function ExportSection({ summary: s, label, range }: { summary: PeriodSum
     if (packing) return;
     setPacking({ done: 0, total: 0 });
     try {
-      const { bytes, failed } = await buildAccountingPackage(s, capitalizeTr(label), exportFilename(range), (done, total) => setPacking({ done, total }));
-      await shareZip(bytes, exportFilename(range, 'zip'));
+      const { failed } = await shareZipStream(exportFilename(range, 'zip'), (sink) =>
+        buildAccountingPackage(s, capitalizeTr(label), exportFilename(range), sink, (done, total) => setPacking({ done, total })),
+      );
       if (failed) showToast(`${failed} fotoğraf indirilemedi; paket onlarsız oluşturuldu`, 'error', 4000);
       else haptics.success();
     } catch (e) {
