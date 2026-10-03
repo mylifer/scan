@@ -9,6 +9,12 @@ describe('parseAmount', () => {
   it('düz ondalığı okur', () => assert.equal(parseAmount('1234.56'), 1234.56));
   it('para simgesini atar', () => assert.equal(parseAmount('₺ 45,00'), 45));
   it('yalnızca binlik noktalarını çözer', () => assert.equal(parseAmount('1.234.567'), 1234567));
+  it('tek binlik noktasını çözer (15.000 = on beş bin)', () => {
+    assert.equal(parseAmount('15.000'), 15000);
+    assert.equal(parseAmount('1.250'), 1250);
+    assert.equal(parseAmount('12.50'), 12.5);
+    assert.equal(parseAmount('1250.5'), 1250.5);
+  });
   it('sayıyı yuvarlar', () => assert.equal(parseAmount(12.345), 12.35));
   it('geçersizde 0 döner', () => {
     assert.equal(parseAmount('abc'), 0);

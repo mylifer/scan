@@ -25,8 +25,8 @@ export function parseAmount(input: unknown): number {
   } else if (lastDot > lastComma && lastComma !== -1) {
     // İngiliz formatı: virgül binlik
     s = s.replace(/,/g, '');
-  } else if (lastComma === -1 && (s.match(/\./g) ?? []).length > 1) {
-    // "1.234.567" → hepsi binlik
+  } else if (lastComma === -1 && ((s.match(/\./g) ?? []).length > 1 || /^-?\d{1,3}\.\d{3}$/.test(s))) {
+    // "1.234.567" → hepsi binlik; tek noktadan sonra tam 3 hane ("15.000", "1.250") de Türkçe binliktir
     s = s.replace(/\./g, '');
   }
   const n = Number(s);
