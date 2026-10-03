@@ -26,6 +26,9 @@ import { clearUploadFailures, enqueueDraftUpload, getUploadState, subscribeUploa
 import { deleteDraft, deleteDrafts, draftImageUrls, scheduleDrafts } from '../services/supabase/draftsRepository';
 import type { ReceiptDraft } from '../types/receipt';
 
+/** İmzalı bağlantı 3600 sn geçerli; 50 dakikadan eski olanlar yenilenir */
+const URL_REFRESH_MS = 50 * 60 * 1000;
+
 export default function BatchScreen() {
   const theme = useTheme();
   const { drafts, loading, notSetUp, error, processor, refresh, run } = useDrafts();
@@ -40,13 +43,17 @@ export default function BatchScreen() {
   const toolbarRows = (ready.length ? 1 : 0) + (scannable.length ? 1 : 0);
   const toolbarHeight = useToolbarHeight(Math.max(toolbarRows, 1));
 
-  // Yeni eklenen taslakların önizleme bağlantılarını (her yol için bir kez) al
-  const requested = useRef(new Set<string>());
+  // Taslakların önizleme bağlantılarını al. İmzalı bağlantılar 1 saat geçerli: süresi dolmak
+  // üzere olanlar liste her yenilendiğinde (ekrana dönüşte) yeniden istenir
+  const requestedAt = useRef(new Map<string, number>());
   useEffect(() => {
-    const missing = drafts.map((d) => d.image_path).filter((p) => !requested.current.has(p));
+    const now = Date.now();
+    const missing = drafts.map((d) => d.image_path).filter((p) => now - (requestedAt.current.get(p) ?? 0) > URL_REFRESH_MS);
     if (!missing.length) return;
-    missing.forEach((p) => requested.current.add(p));
-    draftImageUrls(missing).then((m) => setUrls((u) => ({ ...u, ...m })));
+    missing.forEach((p) => requestedAt.current.set(p, now));
+    draftImageUrls(missing)
+      .then((m) => setUrls((u) => ({ ...u, ...m })))
+      .catch(() => missing.forEach((p) => requestedAt.current.delete(p))); // sonraki yenilemede tekrar dene
   }, [drafts]);
 
   // Yükleme kuyruğunu izle: her tamamlanan yüklemede listeyi yenile, hataları bir kez bildir
