@@ -18,6 +18,8 @@ export default function LoginScreen() {
   const [busy, setBusy] = useState<'signin' | 'signup' | null>(null);
 
   async function submit(mode: 'signin' | 'signup') {
+    // Klavyedeki "Git" tuşu düğmeden bağımsız çağırır; istek sürerken ikinci kez gönderme
+    if (busy) return;
     if (!email.trim() || password.length < 6) {
       haptics.error();
       showAlert('Eksik bilgi', 'Geçerli bir e-posta ve en az 6 karakterli bir şifre girin.');
