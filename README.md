@@ -7,10 +7,12 @@ Türkiye'deki POS fişlerini kamerayla okuyup gider ve KDV takibi yapan Expo (Re
 - **Düzenlenebilir form:** Okunan değerleri kontrol edip düzeltme, kaydetmeden önce doğrulama (TOPLAM/TOPKDV karışıklığı kontrolü)
 - **Supabase:** E-posta ile giriş, `receipts` tablosu (RLS açık), sıkıştırılmış fiş görselleri (~50–120 KB)
 - **Toplu tarama:** Arka arkaya çekim / galeriden çoklu seçim → taslaklar Supabase'de saklanır → topluca veya planlanan saatte taranır → tek tek kontrol edilip kaydedilir (`supabase/migrations/002_receipt_drafts.sql` gerekir)
-- **Ana sayfa:** Aylık / Yıllık / Tüm Zamanlar; toplam gider, KDV alacağı (%1 / %10 / %20), son 12 ay grafiği, kategori dağılımı, arama ve kategori filtresi, kaydırarak silme
-- **Fiş detayı:** Düzenleme, tam ekran yakınlaştırılabilir fotoğraf, mükerrer fiş ve şüpheli KDV uyarıları
-- **Dışa aktarma:** Excel (.xlsx) ve Muhasebe Paketi (Excel + tüm fotoğraflar, ZIP)
-- **Ayarlar:** Hesap, depolama kullanımı, yapay zekâ modeli, sürüm bilgisi
+- **Ana sayfa:** Aylık / Yıllık / Tüm Zamanlar; toplam gider, KDV alacağı (%1 / %10 / %20), geçen ayla karşılaştırma, aylık bütçe çubuğu, son 12 ay grafiği, kategori dağılımı, arama, kategori filtresi, sıralama, aylara göre gruplama, kaydırarak silme; internetsizken son veriler gösterilir
+- **13 kategori** ve **kategori hafızası:** bir firmayı hangi kategoriyle kaydettiyseniz sonraki fişleri de öyle gelir (`supabase/migrations/004_giyim_category.sql`)
+- **Fiş ekleme:** Kamera, galeri, toplu çekim ya da **elle** (fotoğrafsız; sonradan fotoğraf eklenebilir)
+- **Fiş detayı:** Düzenleme, tam ekran yakınlaştırılabilir fotoğraf, paylaşma, mükerrer fiş ve şüpheli KDV uyarıları
+- **Dışa aktarma:** Excel (.xlsx; çok aylı dönemlerde "Aylar" sayfası) ve Muhasebe Paketi (Excel + tüm fotoğraflar, ZIP; akış olarak üretilir)
+- **Ayarlar:** Hesap, aylık bütçe, KDV hatırlatıcısı (iPhone, her ayın 25'i), depolama kullanımı, yapay zekâ modeli, sürüm bilgisi
 
 ## iPhone'da kullanım (web sürümü)
 
