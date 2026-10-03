@@ -112,8 +112,12 @@ export default function BatchReviewScreen() {
   function discard() {
     if (!current) return;
     confirmDestructive('Taslağı Sil', 'Bu fiş kaydedilmeden silinecek.', 'Taslağı Sil', async () => {
-      await deleteDraft(current);
-      next(saved);
+      try {
+        await deleteDraft(current);
+        next(saved);
+      } catch (e) {
+        showAlert('Taslak silinemedi', errorMessage(e));
+      }
     });
   }
 

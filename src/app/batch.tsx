@@ -128,12 +128,16 @@ export default function BatchScreen() {
         return {
           label: `${formatRunAt(at.toISOString())}${h === RECOMMENDED_HOUR ? '  (önerilen)' : ''}`,
           onPress: async () => {
-            await scheduleDrafts(
-              scannable.map((d) => d.id),
-              at,
-            );
-            await refresh();
-            showToast(`${scannable.length} fiş ${formatRunAt(at.toISOString())} için planlandı`, 'info', 3500);
+            try {
+              await scheduleDrafts(
+                scannable.map((d) => d.id),
+                at,
+              );
+              await refresh();
+              showToast(`${scannable.length} fiş ${formatRunAt(at.toISOString())} için planlandı`, 'info', 3500);
+            } catch (e) {
+              showAlert('Planlanamadı', errorMessage(e));
+            }
           },
         };
       }),
@@ -190,11 +194,15 @@ export default function BatchScreen() {
               title="Planı İptal Et"
               tone="destructive"
               onPress={async () => {
-                await scheduleDrafts(
-                  scheduled.map((d) => d.id),
-                  null,
-                );
-                refresh();
+                try {
+                  await scheduleDrafts(
+                    scheduled.map((d) => d.id),
+                    null,
+                  );
+                  refresh();
+                } catch (e) {
+                  showAlert('Plan iptal edilemedi', errorMessage(e));
+                }
               }}
             />
           </ListSection>

@@ -23,6 +23,8 @@ export async function setMonthlyBudget(value: number | null): Promise<void> {
   try {
     if (current) await AsyncStorage.setItem(KEY, String(current));
     else await AsyncStorage.removeItem(KEY);
+  } catch {
+    // Depolama kapalı/dolu: değer bu oturumda geçerli kalır, kaydetme sessizce atlanır
   } finally {
     listeners.forEach((l) => l(current ?? null));
   }
