@@ -28,15 +28,22 @@ export async function buildAccountingPackage(
   onProgress?: (done: number, total: number) => void,
 ): Promise<PackageResult> {
   let zipError: Error | null = null;
+  /** İlk hatada diğer indirme işçileri de dursun (yarım dosyaya yazmaya devam etmesinler) */
+  let aborted = false;
   const zip = new Zip((err, chunk) => {
     if (err) zipError = err;
     else sink(chunk);
   });
   const add = (name: string, data: Uint8Array, compress: boolean) => {
-    const entry = compress ? new ZipDeflate(name, { level: 6 }) : new ZipPassThrough(name);
-    zip.add(entry);
-    entry.push(data, true);
-    if (zipError) throw zipError;
+    try {
+      const entry = compress ? new ZipDeflate(name, { level: 6 }) : new ZipPassThrough(name);
+      zip.add(entry);
+      entry.push(data, true);
+      if (zipError) throw zipError;
+    } catch (e) {
+      aborted = true;
+      throw e;
+    }
   };
 
   add(excelName, buildReceiptsWorkbook(summary, periodLabel), true);
@@ -49,7 +56,7 @@ export async function buildAccountingPackage(
   let done = 0;
   onProgress?.(0, withPhoto.length);
   async function worker() {
-    while (next < withPhoto.length) {
+    while (!aborted && next < withPhoto.length) {
       const r = withPhoto[next++];
       let bytes: Uint8Array | null = null;
       try {
@@ -57,6 +64,7 @@ export async function buildAccountingPackage(
       } catch {
         failed++;
       }
+      if (aborted) return;
       if (bytes) add(`Fotograflar/${names.get(r.id)}`, bytes, false);
       onProgress?.(++done, withPhoto.length);
     }

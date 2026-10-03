@@ -1,4 +1,4 @@
-import { File, Paths } from 'expo-file-system';
+import { File, FileMode, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 
@@ -27,14 +27,20 @@ export async function shareZipStream<R>(filename: string, build: (sink: (chunk: 
   const file = new File(Paths.cache, filename);
   if (file.exists) file.delete();
   file.create();
+  // Tek bir dosya tanıtıcısı: her parçada dosyayı yeniden açmaz; yazma hatası (ör. disk dolu)
+  // yakalanabilir bir hata olarak döner (write(append) iOS'ta yakalanamayan istisna atabiliyor)
+  const handle = file.open(FileMode.WriteOnly);
+  let result: R;
   try {
-    const result = await build((c) => file.write(c, { append: true }));
-    await shareCachedFile(file, filename, ZIP_MIME, 'public.zip-archive');
-    return result;
+    result = await build((c) => handle.writeBytes(c));
   } catch (e) {
+    handle.close();
     if (file.exists) file.delete();
     throw e;
   }
+  handle.close();
+  await shareCachedFile(file, filename, ZIP_MIME, 'public.zip-archive');
+  return result;
 }
 
 function downloadBlob(blob: Blob, filename: string) {
