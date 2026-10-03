@@ -16,6 +16,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.27.1
+- **Düzeltme (iPhone):** 1.22'den sonraki güncellemeler Expo Go'da açılamıyor, telefon 1.21.1'de kalıyordu. Nedeni KDV hatırlatıcısının bildirim paketinin uygulama açılırken yüklenmesiydi; artık yalnızca gerektiğinde ve korumalı yükleniyor (yüklenemezse hatırlatıcı satırı gizlenir, uygulama yine açılır)
+
 ## 1.27.0 — `e96e222`
 - **Kaydetmeden çıkma uyarısı:** Fiş detayında değişiklik yapıp geri dönerseniz, elle eklemede formu doldurup Vazgeç'e basarsanız ya da okunmuş fişi kaydetmeden geri dönerseniz "Kaydetmeden Çık" onayı sorulur (önceden bilgiler sessizce kayboluyordu)
 - **Gemini anahtarını sunucuda tutma seçeneği hazır:** `supabase/functions/analyze-receipt` + "Supabase fonksiyonunu yayınla" iş akışı. Varsayılan davranış değişmedi; etkinleştirme adımları README'de
