@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.28.0
+## 1.28.0 — `3f007e8`
 - **Toplu çekimde fotoğraf kaybolmuyor (iPhone):** Fotoğraf çekilir çekilmez telefonda kalıcı olarak saklanıyor; uygulama yükleme bitmeden kapanırsa bir sonraki açılışta "Önceki çekimden kalan N fotoğraf yükleniyor" deyip kaldığı yerden yüklüyor
 - **Şifremi unuttum:** Giriş ekranında e-posta yazıp "Şifremi Unuttum"a dokunun; gelen bağlantı tarayıcıda açılır, yeni şifre belirlenir, sonra uygulamada yeni şifreyle giriş yapılır. Tek seferlik ayar gerekir: Supabase → Authentication → URL Configuration → Redirect URLs'e `https://mylifer.github.io/scan/` ekleyin
 
