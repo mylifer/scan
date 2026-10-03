@@ -68,9 +68,9 @@ jobs:
           cache: npm
       - if: env.HAS_EXPO == 'true'
         run: npm ci
-      - name: Tür denetimi ve testler
+      - name: Tür denetimi, testler ve kod denetimi
         if: env.HAS_EXPO == 'true'
-        run: npx tsc --noEmit && npm test
+        run: npx tsc --noEmit && npm test && npx expo lint
 
       # ---------- setup: Expo projesini bağla (bir kez) ----------
       - name: Expo projesini oluştur ve bağla
