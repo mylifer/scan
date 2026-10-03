@@ -1,0 +1,51 @@
+# Tanı: EAS Update'te yayınlanan son güncellemeleri ve Expo Go'nun gördüğü manifesti listeler.
+# Sonuçlar "warning" notu olarak yazılır (Actions özetinde görünür).
+name: iPhone güncelleme tanısı
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/pos-receipt-scanner-app-tk3b0z]
+    paths: ['.github/workflows/diagnose-ios.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Son güncellemeler (EAS)
+        run: |
+          npx eas-cli update:list --branch production --limit 8 --json --non-interactive > updates.json || true
+          node -e '
+            const raw = require("fs").readFileSync("updates.json", "utf8");
+            let d; try { d = JSON.parse(raw); } catch { console.log("::warning::update:list çıktısı çözülemedi: " + raw.slice(0, 300).replace(/\n/g, " ")); process.exit(0); }
+            const list = d.currentPage ?? d;
+            for (const u of list) console.log(`::warning::UPDATE ${u.createdAt} rt=${u.runtimeVersion} platforms=${u.platforms ?? u.platform} group=${u.group} msg=${(u.message ?? "").slice(0, 12)}`);
+          '
+      - name: Expo Go'nun gördüğü manifest
+        run: |
+          curl -sS -D headers.txt -o manifest.txt "https://u.expo.dev/e4446685-6bd2-4e1c-b0d0-cb1c025e1905?channel-name=production" \
+            -H "expo-runtime-version: exposdk:57.0.0" -H "expo-platform: ios" -H "expo-protocol-version: 1" \
+            -H "accept: multipart/mixed,application/expo+json,application/json" || true
+          echo "::warning::MANIFEST status: $(head -1 headers.txt | tr -d '\r')"
+          node -e '
+            const t = require("fs").readFileSync("manifest.txt", "utf8");
+            const m = t.match(/\{"id".*\}/s);
+            if (!m) { console.log("::warning::MANIFEST gövde: " + t.slice(0, 300).replace(/\s+/g, " ")); process.exit(0); }
+            const j = JSON.parse(m[0].split(/\r?\n--/)[0]);
+            console.log(`::warning::MANIFEST id=${j.id} createdAt=${j.createdAt} rt=${j.runtimeVersion} launch=${j.launchAsset?.url?.slice(-40)} assets=${j.assets?.length}`);
+            console.log(`::warning::MANIFEST extra.expoClient.version=${j.extra?.expoClient?.version} sdk=${j.extra?.expoClient?.sdkVersion}`);
+          '
+      - name: Paket sürümleri
+        run: |
+          node -e 'const p=require("./package.json").dependencies; console.log("::warning::DEPS expo="+p.expo+" notifications="+p["expo-notifications"]+" font="+p["expo-font"]+" updates="+p["expo-updates"])'
