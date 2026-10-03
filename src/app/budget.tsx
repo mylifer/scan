@@ -10,25 +10,29 @@ import { amountToInput, parseAmount } from '../lib/format';
 import { haptics } from '../lib/haptics';
 import { fontFamily, tabular, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
+import { useSingleFlight } from '../hooks/useSingleFlight';
 
 /** Aylık gider bütçesi: ana sayfadaki özet kartında ne kadarının kullanıldığı gösterilir. */
 export default function BudgetScreen() {
   const theme = useTheme();
+  const runOnce = useSingleFlight();
   const budget = useMonthlyBudget();
   const [text, setText] = useState<string | null>(null);
   const value = text ?? (budget ? amountToInput(budget).replace(/,00$/, '') : '');
 
   async function save() {
-    const amount = parseAmount(value);
-    if (!(amount > 0)) {
-      haptics.error();
-      showAlert('Geçersiz tutar', 'Aylık bütçe için sıfırdan büyük bir tutar girin.');
-      return;
-    }
-    await setMonthlyBudget(amount);
-    haptics.success();
-    router.back();
-    showToast('Bütçe kaydedildi');
+    await runOnce(async () => {
+      const amount = parseAmount(value);
+      if (!(amount > 0)) {
+        haptics.error();
+        showAlert('Geçersiz tutar', 'Aylık bütçe için sıfırdan büyük bir tutar girin.');
+        return;
+      }
+      await setMonthlyBudget(amount);
+      haptics.success();
+      router.back();
+      showToast('Bütçe kaydedildi');
+    });
   }
 
   return (

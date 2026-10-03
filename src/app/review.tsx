@@ -18,11 +18,13 @@ import { prepareDraftImage, prepareReceiptImages } from '../services/image/prepa
 import { addDraft } from '../services/supabase/draftsRepository';
 import { applyLearnedCategory, saveReceipt } from '../services/supabase/receiptsRepository';
 import { getVisionService } from '../services/vision';
+import { useSingleFlight } from '../hooks/useSingleFlight';
 
 type Phase = 'analyzing' | 'ready' | 'error';
 
 export default function ReviewScreen() {
   const theme = useTheme();
+  const runOnce = useSingleFlight();
   const photo = getPendingPhoto();
   const [phase, setPhase] = useState<Phase>('analyzing');
   const [error, setError] = useState<string | null>(null);
@@ -62,48 +64,52 @@ export default function ReviewScreen() {
   }, [analyze]);
 
   async function handleSave() {
-    const errors = validateForm(values);
-    if (errors.length) {
-      haptics.error();
-      showAlert('Lütfen kontrol edin', errors.join('\n'));
-      return;
-    }
-    setSaving(true);
-    try {
-      const data = fromFormValues(values);
-      if (!(await confirmIfDuplicate(data))) return;
-      const { record, imageWarning } = await saveReceipt(data, archiveUri.current);
-      router.replace('/');
-      if (imageWarning) {
-        showToast('Fiş kaydedildi, fotoğrafı yüklenemedi', 'info', 4000);
-      } else {
-        const { from, to } = monthRange(0);
-        const otherMonth = record.tarih < from || record.tarih >= to;
-        showToast(otherMonth ? `Kaydedildi · ${monthLabelOf(record.tarih)}` : 'Fiş kaydedildi');
+    await runOnce(async () => {
+      const errors = validateForm(values);
+      if (errors.length) {
+        haptics.error();
+        showAlert('Lütfen kontrol edin', errors.join('\n'));
+        return;
       }
-    } catch (e) {
-      haptics.error();
-      showAlert('Kaydedilemedi', errorMessage(e));
-    } finally {
-      setSaving(false);
-    }
+      setSaving(true);
+      try {
+        const data = fromFormValues(values);
+        if (!(await confirmIfDuplicate(data))) return;
+        const { record, imageWarning } = await saveReceipt(data, archiveUri.current);
+        router.replace('/');
+        if (imageWarning) {
+          showToast('Fiş kaydedildi, fotoğrafı yüklenemedi', 'info', 4000);
+        } else {
+          const { from, to } = monthRange(0);
+          const otherMonth = record.tarih < from || record.tarih >= to;
+          showToast(otherMonth ? `Kaydedildi · ${monthLabelOf(record.tarih)}` : 'Fiş kaydedildi');
+        }
+      } catch (e) {
+        haptics.error();
+        showAlert('Kaydedilemedi', errorMessage(e));
+      } finally {
+        setSaving(false);
+      }
+    });
   }
 
   // AI yoğun/kota dolu olduğunda fotoğraf kaybolmasın: taslağa ekle, sonra Toplu Tarama'dan taranır
   async function saveAsDraft() {
-    if (!photo) return;
-    setSaving(true);
-    try {
-      await addDraft(await prepareDraftImage(photo.uri, photo.width || 3000));
-      haptics.success();
-      router.replace('/');
-      showToast('Taslaklara eklendi; Toplu Tarama\'dan taratabilirsiniz', 'info', 3500);
-    } catch (e) {
-      haptics.error();
-      showAlert('Taslağa eklenemedi', errorMessage(e));
-    } finally {
-      setSaving(false);
-    }
+    await runOnce(async () => {
+      if (!photo) return;
+      setSaving(true);
+      try {
+        await addDraft(await prepareDraftImage(photo.uri, photo.width || 3000));
+        haptics.success();
+        router.replace('/');
+        showToast('Taslaklara eklendi; Toplu Tarama\'dan taratabilirsiniz', 'info', 3500);
+      } catch (e) {
+        haptics.error();
+        showAlert('Taslağa eklenemedi', errorMessage(e));
+      } finally {
+        setSaving(false);
+      }
+    });
   }
 
   // Sayfa yenilendiyse fotoğraf bellekte kalmaz; ana sayfaya dön

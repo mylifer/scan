@@ -11,34 +11,38 @@ import { haptics } from '../lib/haptics';
 import { type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 import { saveReceipt } from '../services/supabase/receiptsRepository';
+import { useSingleFlight } from '../hooks/useSingleFlight';
 
 /** Fotoğrafsız fiş ekleme: e-posta ile gelen e-Arşiv faturaları ya da kaybolan fişler için. */
 export default function ManualReceiptScreen() {
   const theme = useTheme();
+  const runOnce = useSingleFlight();
   const [values, setValues] = useState<ReceiptFormValues>(emptyForm);
   const [saving, setSaving] = useState(false);
 
   async function save() {
-    const errors = validateForm(values);
-    if (errors.length) {
-      haptics.error();
-      showAlert('Lütfen kontrol edin', errors.join('\n'));
-      return;
-    }
-    setSaving(true);
-    try {
-      const data = fromFormValues(values);
-      if (!(await confirmIfDuplicate(data))) return;
-      await saveReceipt(data);
-      haptics.success();
-      router.back();
-      showToast('Fiş kaydedildi');
-    } catch (e) {
-      haptics.error();
-      showAlert('Kaydedilemedi', errorMessage(e));
-    } finally {
-      setSaving(false);
-    }
+    await runOnce(async () => {
+      const errors = validateForm(values);
+      if (errors.length) {
+        haptics.error();
+        showAlert('Lütfen kontrol edin', errors.join('\n'));
+        return;
+      }
+      setSaving(true);
+      try {
+        const data = fromFormValues(values);
+        if (!(await confirmIfDuplicate(data))) return;
+        await saveReceipt(data);
+        haptics.success();
+        router.back();
+        showToast('Fiş kaydedildi');
+      } catch (e) {
+        haptics.error();
+        showAlert('Kaydedilemedi', errorMessage(e));
+      } finally {
+        setSaving(false);
+      }
+    });
   }
 
   return (

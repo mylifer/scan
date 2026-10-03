@@ -20,10 +20,12 @@ import { deleteDraft, downloadDraftImage, draftImageUrls, listDrafts } from '../
 import { releaseLocal } from '../services/supabase/storageFiles';
 import { saveReceipt } from '../services/supabase/receiptsRepository';
 import type { ReceiptDraft } from '../types/receipt';
+import { useSingleFlight } from '../hooks/useSingleFlight';
 
 /** Taranmış taslakları sırayla gösterir: kontrol et, düzelt, kaydet, sonrakine geç. */
 export default function BatchReviewScreen() {
   const theme = useTheme();
+  const runOnce = useSingleFlight();
   const [queue, setQueue] = useState<ReceiptDraft[] | null>(null);
   const [total, setTotal] = useState(0);
   const [values, setValues] = useState<ReceiptFormValues | null>(null);
@@ -69,31 +71,33 @@ export default function BatchReviewScreen() {
   }
 
   async function save() {
-    if (!current || !values) return;
-    const errors = validateForm(values);
-    if (errors.length) {
-      haptics.error();
-      showAlert('Lütfen kontrol edin', errors.join('\n'));
-      return;
-    }
-    setSaving(true);
-    try {
-      const data = fromFormValues(values);
-      if (!(await confirmIfDuplicate(data))) return;
-      const local = await downloadDraftImage(current.image_path);
-      const archiveUri = await prepareArchiveImage(local, DRAFT_WIDTH).finally(() => releaseLocal(local));
-      await saveReceipt(data, archiveUri);
-      await deleteDraft(current);
-      haptics.success();
-      const count = saved + 1;
-      setSaved(count);
-      next(count);
-    } catch (e) {
-      haptics.error();
-      showAlert('Kaydedilemedi', errorMessage(e));
-    } finally {
-      setSaving(false);
-    }
+    await runOnce(async () => {
+      if (!current || !values) return;
+      const errors = validateForm(values);
+      if (errors.length) {
+        haptics.error();
+        showAlert('Lütfen kontrol edin', errors.join('\n'));
+        return;
+      }
+      setSaving(true);
+      try {
+        const data = fromFormValues(values);
+        if (!(await confirmIfDuplicate(data))) return;
+        const local = await downloadDraftImage(current.image_path);
+        const archiveUri = await prepareArchiveImage(local, DRAFT_WIDTH).finally(() => releaseLocal(local));
+        await saveReceipt(data, archiveUri);
+        await deleteDraft(current);
+        haptics.success();
+        const count = saved + 1;
+        setSaved(count);
+        next(count);
+      } catch (e) {
+        haptics.error();
+        showAlert('Kaydedilemedi', errorMessage(e));
+      } finally {
+        setSaving(false);
+      }
+    });
   }
 
   function discard() {

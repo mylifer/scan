@@ -26,10 +26,12 @@ import {
   updateReceipt,
 } from '../../services/supabase/receiptsRepository';
 import type { ReceiptRecord } from '../../types/receipt';
+import { useSingleFlight } from '../../hooks/useSingleFlight';
 
 /** Kaydedilmiş bir fişi görüntüle, düzenle ya da sil. */
 export default function ReceiptDetailScreen() {
   const theme = useTheme();
+  const runOnce = useSingleFlight();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [record, setRecord] = useState<ReceiptRecord | null>(null);
   const [initial, setInitial] = useState<ReceiptFormValues | null>(null);
@@ -55,28 +57,30 @@ export default function ReceiptDetailScreen() {
   const dirty = useMemo(() => !!values && !!initial && JSON.stringify(values) !== JSON.stringify(initial), [values, initial]);
 
   async function save() {
-    if (!values || !record) return;
-    const errors = validateForm(values);
-    if (errors.length) {
-      haptics.error();
-      showAlert('Lütfen kontrol edin', errors.join('\n'));
-      return;
-    }
-    setSaving(true);
-    try {
-      const data = fromFormValues(values);
-      // Yalnızca tarih ya da tutar değiştiyse mükerrer kontrolü yap
-      const keyChanged = !!initial && (values.tarih !== initial.tarih || values.toplamTutar !== initial.toplamTutar);
-      if (keyChanged && !(await confirmIfDuplicate(data, record.id))) return;
-      await updateReceipt(record.id, data);
-      router.back();
-      showToast('Değişiklikler kaydedildi');
-    } catch (e) {
-      haptics.error();
-      showAlert('Kaydedilemedi', errorMessage(e));
-    } finally {
-      setSaving(false);
-    }
+    await runOnce(async () => {
+      if (!values || !record) return;
+      const errors = validateForm(values);
+      if (errors.length) {
+        haptics.error();
+        showAlert('Lütfen kontrol edin', errors.join('\n'));
+        return;
+      }
+      setSaving(true);
+      try {
+        const data = fromFormValues(values);
+        // Yalnızca tarih ya da tutar değiştiyse mükerrer kontrolü yap
+        const keyChanged = !!initial && (values.tarih !== initial.tarih || values.toplamTutar !== initial.toplamTutar);
+        if (keyChanged && !(await confirmIfDuplicate(data, record.id))) return;
+        await updateReceipt(record.id, data);
+        router.back();
+        showToast('Değişiklikler kaydedildi');
+      } catch (e) {
+        haptics.error();
+        showAlert('Kaydedilemedi', errorMessage(e));
+      } finally {
+        setSaving(false);
+      }
+    });
   }
 
   function choosePhoto() {
