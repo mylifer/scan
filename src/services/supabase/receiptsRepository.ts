@@ -165,6 +165,27 @@ export async function getMonthlyTotals(months = 12): Promise<MonthPoint[]> {
   return buildMonthlySeries(rows, months, now);
 }
 
+/** Dönemin kategori toplamları (yalnızca iki sütun çekilir; aylık içgörüde önceki ayla kıyas için). range: [from, to) */
+export async function getCategoryTotals(range: { from: string; to: string }): Promise<{ kategori: Kategori; toplam: number }[]> {
+  const totals = new Map<Kategori, number>();
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select('kategori,toplam_tutar')
+      .gte('tarih', range.from)
+      .lt('tarih', range.to)
+      .order('id')
+      .range(offset, offset + PAGE_SIZE - 1);
+    if (error) throw new Error(error.message);
+    for (const r of data ?? []) {
+      const k = r.kategori as Kategori;
+      totals.set(k, (totals.get(k) ?? 0) + Number(r.toplam_tutar));
+    }
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+  return [...totals.entries()].map(([kategori, toplam]) => ({ kategori, toplam: round2(toplam) }));
+}
+
 /** Aynı tarih ve tutarda kayıtlı fişler (mükerrer kayıt uyarısı için). */
 export async function findPossibleDuplicates(data: ReceiptData, excludeId?: string): Promise<ReceiptRecord[]> {
   const tarih = trDateToIso(data.tarih);

@@ -54,6 +54,16 @@ test('ana sayfa bu ayın fişlerini ve toplamını gösterir', async (b) => {
   await close();
 });
 
+test('öne çıkanlar: önceki ayla kategori kıyası', async (b) => {
+  const { page, errors, close } = await open(b, { receipts: thisMonth() });
+  const text = await page.locator('body').innerText();
+  assert.ok(text.includes('ÖNE ÇIKANLAR'), 'özet bölümü görünmeli');
+  assert.ok(text.includes('Akaryakıt harcaması geçen ay yoktu'), 'yeni kategori söylenmeli');
+  assert.ok(!text.includes('En çok harcama'), 'her firmanın tek fişi varken firma cümlesi yok');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 test('hızlı ay geçişinde geç dönen eski istek listeyi ezmez', async (b) => {
   const lastMonthFrom = isoDate(-1, 1);
   const { page, errors, close } = await open(b, {
@@ -114,6 +124,24 @@ test('aylık bütçe: "15.000" on beş bin olarak kaydedilir', async (b) => {
   // Ayarlar modalı ve arkadaki ana sayfa (bütçe çubuğu) aynı tutarı gösterir
   assert.ok((await page.getByText('₺15.000,00').count()) >= 1, '₺15.000,00 görünmeli');
   assert.equal(await page.getByText('₺15,00', { exact: true }).count(), 0, '15 TL olarak kaydedilmemeli');
+  await close();
+});
+
+test('vergi takvimi: önümüzdeki son günler, muhtasar isteğe bağlı', async (b) => {
+  const { page, errors, close } = await open(b, { receipts: thisMonth() });
+  await page.getByLabel('Ayarlar').click();
+  await page.waitForTimeout(800);
+  await page.getByText('Vergi Takvimi').click();
+  await page.waitForTimeout(800);
+  const text = await page.locator('body').innerText();
+  assert.ok(text.includes('KDV beyannamesi ve ödemesi'), 'KDV son günleri görünmeli');
+  assert.ok(text.includes('Geçici vergi beyannamesi ve ödemesi'), 'geçici vergi görünmeli');
+  assert.ok(text.includes('VUK 18'), 'tatil kayması açıklaması görünmeli');
+  assert.equal(await page.getByText('Muhtasar ve prim hizmet beyannamesi').count(), 0, 'muhtasar varsayılan gizli');
+  await page.getByRole('switch').click();
+  await page.waitForTimeout(400);
+  assert.ok((await page.getByText('Muhtasar ve prim hizmet beyannamesi').count()) >= 11, 'açılınca 12 ayın muhtasarı görünmeli');
+  assert.deepEqual(errors, []);
   await close();
 });
 

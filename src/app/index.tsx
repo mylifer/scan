@@ -4,6 +4,7 @@ import { ActivityIndicator, Platform, RefreshControl, ScrollView, Text, View } f
 
 import { CategorySection } from '../components/dashboard/CategorySection';
 import { ExportSection } from '../components/dashboard/ExportSection';
+import { InsightsSection } from '../components/dashboard/InsightsSection';
 import { PeriodPicker } from '../components/dashboard/PeriodPicker';
 import { ReceiptRow, SwipeToDelete } from '../components/dashboard/ReceiptRow';
 import { SummaryCard } from '../components/dashboard/SummaryCard';
@@ -24,6 +25,7 @@ import { haptics } from '../lib/haptics';
 import { periodRange } from '../lib/period';
 import { formatRunAt } from '../lib/schedule';
 import { receiptMatcher } from '../lib/search';
+import { monthlyInsights } from '../lib/insights';
 import { groupByMonth, SORT_OPTIONS, type SortKey, sortReceipts } from '../lib/sort';
 import { useMonthlyBudget } from '../lib/budget';
 import { categoryMeta, type as t, useTheme } from '../lib/theme';
@@ -40,7 +42,7 @@ const PAGE = 25;
 export default function DashboardScreen() {
   const theme = useTheme();
   const toolbarHeight = useToolbarHeight();
-  const { summary: s, trend, loading, error, offlineSince, refresh, remove, period, label, showMonthly, showYearly, showAll, prev, next, goToMonth } =
+  const { summary: s, previousCategories, trend, loading, error, offlineSince, refresh, remove, period, label, showMonthly, showYearly, showAll, prev, next, goToMonth } =
     useMonthlySummary();
   const { drafts, processor } = useDrafts();
   const updateAvailable = useWebUpdateAvailable();
@@ -96,6 +98,18 @@ export default function DashboardScreen() {
       })),
     });
   }
+
+  const insights = useMemo(() => {
+    if (!s || !isMonth) return [];
+    const now = new Date();
+    return monthlyInsights({
+      fisler: s.fisler,
+      toplamGider: s.toplamGider,
+      toplamKdv: s.toplamKdv,
+      previous: previousCategories,
+      current: offset === 0 ? { day: now.getDate(), daysInMonth: new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() } : null,
+    });
+  }, [s, isMonth, offset, previousCategories]);
 
   const readyDrafts = drafts.filter((d) => d.status === 'ready').length;
   const nextScheduled = drafts.find((d) => d.status === 'scheduled' && d.scheduled_for)?.scheduled_for;
@@ -297,6 +311,8 @@ export default function DashboardScreen() {
             ) : (
               s && (
                 <>
+                  <InsightsSection items={insights} />
+
                   <ExportSection summary={s} label={label} range={range} />
 
                   {trend && trend.some((p) => p.total > 0) && (
