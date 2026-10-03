@@ -40,7 +40,7 @@ export default function ReviewScreen() {
     abortRef.current = controller;
     try {
       if (!photo) return;
-      const images = await prepareReceiptImages(photo.uri, photo.width || 3000);
+      const images = await prepareReceiptImages(photo.uri);
       archiveUri.current = images.archiveUri;
       const { data, learned } = await applyLearnedCategory(await getVisionService().analyzeReceipt(images.ai, controller.signal));
       if (controller.signal.aborted) return;

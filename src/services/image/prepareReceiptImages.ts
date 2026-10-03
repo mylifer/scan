@@ -26,12 +26,20 @@ export interface PreparedImages {
   archiveUri: string;
 }
 
-export async function prepareReceiptImages(photoUri: string, photoWidth: number): Promise<PreparedImages> {
-  const [ai, archiveUri] = await Promise.all([
-    prepareAiImage(photoUri, photoWidth),
-    prepareArchiveImage(photoUri, photoWidth),
-  ]);
-  return { ai, archiveUri };
+/**
+ * AI ve arşiv kopyalarını tek seferde üretir: tam çözünürlüklü fotoğraf (12 MP ≈ 48 MB bellek)
+ * yalnızca bir kez açılır; önce iki ayrı paralel açma yapılıyordu.
+ */
+export async function prepareReceiptImages(photoUri: string): Promise<PreparedImages> {
+  const original = await ImageManipulator.manipulate(photoUri).renderAsync();
+  try {
+    const ai = await saveResized(original, AI_WIDTH, AI_QUALITY, true);
+    if (!ai.base64) throw new Error('Görüntü base64 formatına çevrilemedi.');
+    const archive = await saveResized(original, ARCHIVE_WIDTH, ARCHIVE_QUALITY, false);
+    return { ai: { base64: ai.base64, mimeType: 'image/jpeg' }, archiveUri: archive.uri };
+  } finally {
+    original.release();
+  }
 }
 
 export async function prepareAiImage(uri: string, width: number): Promise<ReceiptImage> {
@@ -51,14 +59,21 @@ export async function prepareDraftImage(uri: string, width: number): Promise<str
 /** Görseli en fazla `maxWidth` genişliğe küçültür (asla büyütmez) ve JPEG olarak kaydeder. */
 async function render(uri: string, maxWidth: number, compress: number, base64: boolean) {
   const original = await ImageManipulator.manipulate(uri).renderAsync();
-  const ref =
-    original.width > maxWidth
-      ? await ImageManipulator.manipulate(original).resize({ width: maxWidth }).renderAsync()
-      : original;
+  try {
+    return await saveResized(original, maxWidth, compress, base64);
+  } finally {
+    original.release();
+  }
+}
+
+type ImageRef = Awaited<ReturnType<ReturnType<typeof ImageManipulator.manipulate>['renderAsync']>>;
+
+/** Açılmış görselden (bırakmadan) küçültülmüş JPEG kopya kaydeder. */
+async function saveResized(original: ImageRef, maxWidth: number, compress: number, base64: boolean) {
+  const ref = original.width > maxWidth ? await ImageManipulator.manipulate(original).resize({ width: maxWidth }).renderAsync() : original;
   try {
     return await ref.saveAsync({ format: SaveFormat.JPEG, compress, base64 });
   } finally {
     if (ref !== original) ref.release();
-    original.release();
   }
 }
