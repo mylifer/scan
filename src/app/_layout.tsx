@@ -12,6 +12,10 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { errorMessage } from '../lib/errors';
 import { largeTitle, stackScreenOptions } from '../lib/navigation';
 import { useTheme } from '../lib/theme';
+import { setupNotifications } from '../services/reminders/notificationSetup';
+
+// Bildirim davranışı uygulama açılışında bir kez ayarlanır (KDV hatırlatıcısı ön planda da görünsün)
+setupNotifications();
 
 function RootNavigator() {
   const theme = useTheme();

@@ -10,11 +10,6 @@ export const REMINDER_HOUR = 10;
 
 export const remindersSupported = true;
 
-// Uygulama açıkken gelen bildirim de banner olarak görünsün
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
-});
-
 export async function isReminderEnabled(): Promise<boolean> {
   try {
     const all = await Notifications.getAllScheduledNotificationsAsync();
