@@ -3,6 +3,17 @@ import { describe, it } from 'node:test';
 
 import { amountToInput, formatBytes, isoToTrDate, monthRange, normalizeTrDate, parseAmount, receiptImageName, round2, slugify, trDateToIso } from '../lib/format';
 
+describe('round2', () => {
+  it('kayan nokta hatasında kuruşu doğru yuvarlar', () => {
+    assert.equal(round2(1.005), 1.01);
+    assert.equal(round2(2.675), 2.68);
+    assert.equal(round2(-1.005), -1.01);
+    assert.equal(round2(0.1 + 0.2), 0.3);
+    assert.equal(round2(1234567.125), 1234567.13);
+    assert.equal(round2(10), 10);
+  });
+});
+
 describe('parseAmount', () => {
   it('Türk biçimini okur', () => assert.equal(parseAmount('1.234,56'), 1234.56));
   it('İngiliz biçimini okur', () => assert.equal(parseAmount('1,234.56'), 1234.56));

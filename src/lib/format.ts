@@ -4,8 +4,9 @@ export function formatTL(value: number): string {
   return tl.format(Number.isFinite(value) ? value : 0);
 }
 
+/** Kuruşa yuvarlar. 1.005 * 100 = 100.49999… olduğu için doğrudan Math.round 1,00 verir; düzeltme payı eklenir. */
 export function round2(value: number): number {
-  return Math.round(value * 100) / 100;
+  return Math.round((value + Math.sign(value) * Number.EPSILON * Math.max(1, Math.abs(value))) * 100) / 100;
 }
 
 /**
