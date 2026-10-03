@@ -193,24 +193,31 @@ export async function applyLearnedCategory(data: ReceiptData): Promise<{ data: R
 }
 
 type FirmCategory = { firma_adi: string; kategori: Kategori };
-/** Toplu taramada her taslak için 500 satır tekrar indirilmesin: kısa süreli bellek önbelleği */
-let firmCategoryCache: { rows: FirmCategory[]; at: number } | null = null;
+/** Toplu taramada her taslak için 500 satır tekrar indirilmesin: kısa süreli, kullanıcıya bağlı bellek önbelleği */
+let firmCategoryCache: { owner: string; rows: FirmCategory[]; at: number } | null = null;
+/** Geçersiz kılma sayacı: kayıttan önce başlayıp sonra biten sorgu eski veriyi tekrar önbelleğe yazmasın */
+let firmCacheGeneration = 0;
 const FIRM_CACHE_MS = 5 * 60 * 1000;
 
 async function recentFirmCategories(): Promise<FirmCategory[] | null> {
-  if (firmCategoryCache && Date.now() - firmCategoryCache.at < FIRM_CACHE_MS) return firmCategoryCache.rows;
+  const owner = (await supabase.auth.getSession()).data.session?.user.id ?? '';
+  if (firmCategoryCache && firmCategoryCache.owner === owner && Date.now() - firmCategoryCache.at < FIRM_CACHE_MS) {
+    return firmCategoryCache.rows;
+  }
+  const generation = firmCacheGeneration;
   const { data: rows, error } = await supabase
     .from(TABLE)
     .select('firma_adi, kategori')
     .order('created_at', { ascending: false })
     .limit(500);
   if (error || !rows) return null;
-  firmCategoryCache = { rows: rows as FirmCategory[], at: Date.now() };
-  return firmCategoryCache.rows;
+  if (generation === firmCacheGeneration) firmCategoryCache = { owner, rows: rows as FirmCategory[], at: Date.now() };
+  return rows as FirmCategory[];
 }
 
 /** Fiş eklenince/değişince/silinince kategori hafızası yeniden okunsun */
 function invalidateFirmCategories() {
+  firmCacheGeneration++;
   firmCategoryCache = null;
 }
 
