@@ -52,6 +52,7 @@ export async function saveReceipt(data: ReceiptData, archiveUri?: string): Promi
     if (imagePath) await supabase.storage.from(RECEIPT_IMAGES_BUCKET).remove([imagePath]);
     throw new Error(`Kayıt başarısız: ${error.message}`);
   }
+  invalidateFirmCategories();
   return { record: toRecord(record), imageWarning };
 }
 
@@ -181,18 +182,36 @@ export async function findPossibleDuplicates(data: ReceiptData, excludeId?: stri
  */
 export async function applyLearnedCategory(data: ReceiptData): Promise<{ data: ReceiptData; learned: boolean }> {
   try {
-    const { data: rows, error } = await supabase
-      .from(TABLE)
-      .select('firma_adi, kategori')
-      .order('created_at', { ascending: false })
-      .limit(500);
-    if (error || !rows) return { data, learned: false };
-    const kategori = learnedCategoryFor(rows as { firma_adi: string; kategori: Kategori }[], data.firmaAdi);
+    const rows = await recentFirmCategories();
+    if (!rows) return { data, learned: false };
+    const kategori = learnedCategoryFor(rows, data.firmaAdi);
     if (!kategori || kategori === data.kategori) return { data, learned: false };
     return { data: { ...data, kategori }, learned: true };
   } catch {
     return { data, learned: false };
   }
+}
+
+type FirmCategory = { firma_adi: string; kategori: Kategori };
+/** Toplu taramada her taslak için 500 satır tekrar indirilmesin: kısa süreli bellek önbelleği */
+let firmCategoryCache: { rows: FirmCategory[]; at: number } | null = null;
+const FIRM_CACHE_MS = 5 * 60 * 1000;
+
+async function recentFirmCategories(): Promise<FirmCategory[] | null> {
+  if (firmCategoryCache && Date.now() - firmCategoryCache.at < FIRM_CACHE_MS) return firmCategoryCache.rows;
+  const { data: rows, error } = await supabase
+    .from(TABLE)
+    .select('firma_adi, kategori')
+    .order('created_at', { ascending: false })
+    .limit(500);
+  if (error || !rows) return null;
+  firmCategoryCache = { rows: rows as FirmCategory[], at: Date.now() };
+  return firmCategoryCache.rows;
+}
+
+/** Fiş eklenince/değişince/silinince kategori hafızası yeniden okunsun */
+function invalidateFirmCategories() {
+  firmCategoryCache = null;
 }
 
 /** Tüm zamanlardaki fiş sayısı (satırları indirmeden). */
@@ -264,6 +283,7 @@ export async function updateReceipt(id: string, data: ReceiptData): Promise<Rece
     .select()
     .single();
   if (error) throw new Error(`Güncellenemedi: ${error.message}`);
+  invalidateFirmCategories();
   return toRecord(row);
 }
 
@@ -285,6 +305,7 @@ export function recordToData(r: ReceiptRecord): ReceiptData {
 export async function deleteReceipt(receipt: ReceiptRecord): Promise<void> {
   const { error } = await supabase.from(TABLE).delete().eq('id', receipt.id);
   if (error) throw new Error(`Silinemedi: ${error.message}`);
+  invalidateFirmCategories();
   if (receipt.image_path) {
     // Görsel silinemese bile kayıt silinmiştir; yalnızca yer kaplar
     await supabase.storage.from(RECEIPT_IMAGES_BUCKET).remove([receipt.image_path]);
