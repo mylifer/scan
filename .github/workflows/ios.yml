@@ -88,12 +88,18 @@ jobs:
       # ---------- build: TestFlight'a yeni sürüm ----------
       - name: App Store Connect anahtarını hazırla
         if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'build'
+        # Gizli değerler komut metnine gömülmez, ortam değişkeniyle aktarılır (tırnak/$ içeren değerler kabuğu bozmasın)
+        env:
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          printf '%s' "${{ secrets.ASC_API_KEY_P8 }}" > "$RUNNER_TEMP/asc.p8"
+          printf '%s' "$ASC_API_KEY_P8" > "$RUNNER_TEMP/asc.p8"
           echo "EXPO_ASC_API_KEY_PATH=$RUNNER_TEMP/asc.p8" >> "$GITHUB_ENV"
-          echo "EXPO_ASC_KEY_ID=${{ secrets.ASC_KEY_ID }}" >> "$GITHUB_ENV"
-          echo "EXPO_ASC_ISSUER_ID=${{ secrets.ASC_ISSUER_ID }}" >> "$GITHUB_ENV"
-          echo "EXPO_APPLE_TEAM_ID=${{ secrets.APPLE_TEAM_ID }}" >> "$GITHUB_ENV"
+          echo "EXPO_ASC_KEY_ID=$ASC_KEY_ID" >> "$GITHUB_ENV"
+          echo "EXPO_ASC_ISSUER_ID=$ASC_ISSUER_ID" >> "$GITHUB_ENV"
+          echo "EXPO_APPLE_TEAM_ID=$APPLE_TEAM_ID" >> "$GITHUB_ENV"
           echo "EXPO_APPLE_TEAM_TYPE=INDIVIDUAL" >> "$GITHUB_ENV"
       - name: Gizli anahtarları EAS'e aktar
         if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'build'
