@@ -1,4 +1,4 @@
-import * as Notifications from 'expo-notifications';
+import { loadNotifications } from './loadNotifications';
 
 /**
  * Aylık KDV hatırlatıcısı: her ayın 25'i 10:00'da yerel bildirim.
@@ -8,9 +8,12 @@ const ID = 'kdv-reminder';
 export const REMINDER_DAY = 25;
 export const REMINDER_HOUR = 10;
 
-export const remindersSupported = true;
+/** Bildirim paketi bu ortamda yüklenebiliyorsa true (yüklenemezse Ayarlar'daki satır gizlenir) */
+export const remindersSupported = loadNotifications() !== null;
 
 export async function isReminderEnabled(): Promise<boolean> {
+  const Notifications = loadNotifications();
+  if (!Notifications) return false;
   try {
     const all = await Notifications.getAllScheduledNotificationsAsync();
     return all.some((n) => n.identifier === ID);
@@ -21,6 +24,8 @@ export async function isReminderEnabled(): Promise<boolean> {
 
 /** @returns false: kullanıcı bildirim izni vermedi */
 export async function enableReminder(): Promise<boolean> {
+  const Notifications = loadNotifications();
+  if (!Notifications) return false;
   const permission = await Notifications.requestPermissionsAsync();
   if (!permission.granted) return false;
   await Notifications.cancelScheduledNotificationAsync(ID).catch(() => {});
@@ -36,5 +41,5 @@ export async function enableReminder(): Promise<boolean> {
 }
 
 export async function disableReminder(): Promise<void> {
-  await Notifications.cancelScheduledNotificationAsync(ID);
+  await loadNotifications()?.cancelScheduledNotificationAsync(ID);
 }
