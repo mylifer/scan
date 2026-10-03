@@ -12,24 +12,29 @@ export type { Period } from '../lib/period';
 
 export function useMonthlySummary() {
   const [period, setPeriod] = useState<Period>({ mode: 'month', offset: 0 });
-  const [summary, setSummary] = useState<PeriodSummary | null>(null);
+  /** Özet, ait olduğu dönemin anahtarıyla saklanır; dönem değişince eski dönemin verisi gösterilmez */
+  const [data, setData] = useState<{ key: string; summary: PeriodSummary } | null>(null);
   const [trend, setTrend] = useState<MonthPoint[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   /** İnternet yokken önbellekten gösteriliyorsa verinin kaydedildiği an */
   const [offlineSince, setOfflineSince] = useState<number | null>(null);
-  const shownKey = useRef<string | null>(null);
+  /** Her yenilemenin sırası: hızlı dönem değişiminde geç dönen eski istek yeni veriyi ezmesin */
+  const latest = useRef(0);
+  const currentKey = JSON.stringify(period);
 
   const refresh = useCallback(async () => {
+    const req = ++latest.current;
+    const isLatest = () => req === latest.current;
     setLoading(true);
     setError(null);
     const key = JSON.stringify(period);
     const cached = await readCache<{ summary: PeriodSummary; trend: MonthPoint[] | null }>(period.mode, key);
+    if (!isLatest()) return;
     // Önce cihazdaki son veriyi göster (anında açılış, çevrimdışı kullanım); ağdan gelen veri üzerine yazar
-    if (cached && shownKey.current !== key) {
-      setSummary(cached.value.summary);
+    if (cached) {
+      setData((d) => (d?.key === key ? d : { key, summary: cached.value.summary }));
       if (cached.value.trend) setTrend(cached.value.trend);
-      shownKey.current = key;
     }
     try {
       const [s, t] = await Promise.all([
@@ -37,16 +42,17 @@ export function useMonthlySummary() {
         // Grafik kritik değil: alınamazsa özet yine gösterilsin
         getMonthlyTotals(12).catch(() => null),
       ]);
-      setSummary(s);
+      if (!isLatest()) return;
+      setData({ key, summary: s });
       if (t) setTrend(t);
-      shownKey.current = key;
       setOfflineSince(null);
       writeCache(period.mode, key, { summary: s, trend: t });
     } catch (e) {
+      if (!isLatest()) return;
       setError(errorMessage(e));
       setOfflineSince(cached ? cached.savedAt : null);
     } finally {
-      setLoading(false);
+      if (isLatest()) setLoading(false);
     }
   }, [period]);
 
@@ -66,7 +72,7 @@ export function useMonthlySummary() {
   );
 
   return {
-    summary,
+    summary: data?.key === currentKey ? data.summary : null,
     trend,
     loading,
     error,
