@@ -1,6 +1,6 @@
 import { errorMessage } from '../lib/errors';
 import { router, Stack, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
 import { fromFormValues, ReceiptForm, type ReceiptFormValues, toFormValues, validateForm } from '../components/ReceiptForm';
@@ -35,7 +35,11 @@ export default function BatchReviewScreen() {
 
   const current = queue?.[0];
 
+  // Gösterilen taslak: hızlı "Atla"da geç gelen önceki fotoğraf bağlantısı yeni taslağın yanına konmasın
+  const shownId = useRef<string | null>(null);
+
   const show = useCallback(async (d: ReceiptDraft | undefined) => {
+    shownId.current = d?.id ?? null;
     setImageUrl(null);
     if (!d?.result) {
       setValues(null);
@@ -43,7 +47,7 @@ export default function BatchReviewScreen() {
     }
     setValues(toFormValues(d.result));
     const urls = await draftImageUrls([d.image_path]);
-    setImageUrl(urls[d.image_path] ?? null);
+    if (shownId.current === d.id) setImageUrl(urls[d.image_path] ?? null);
   }, []);
 
   useFocusEffect(
