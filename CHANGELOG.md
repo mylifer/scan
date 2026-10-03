@@ -16,6 +16,13 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.29.0 — `(yayında)`
+- **Vergi Takvimi** (Ayarlar → Takip): önümüzdeki 12 ayın KDV, geçici vergi ve yıllık gelir vergisi son günleri; istenirse muhtasar ve Ba-Bs. Son gün hafta sonuna ya da bayrama denk gelirse ilk iş gününe kaydırılır (ör. Nisan 2026 KDV → 1 Haziran). Arife ve 28 Ekim gibi yarım günler turuncu notla işaretlenir. 2026–2027 bayram tarihleri iki ayrı kaynakla doğrulandı
+- **Vergi Hatırlatıcısı:** eski "her ayın 25'i" hatırlatıcısının yerine; her son günden 3 gün önce 10:00'da ve son gün 09:00'da bildirim. Açık olan eski hatırlatıcı kendiliğinden yenisine geçer
+- **Öne Çıkanlar** (ana sayfa, aylık görünüm): geçen aya göre en çok artan/azalan kategori, en çok harcanan firma, en büyük fiş, KDV oranı ve bu ayın gidişatı. Yapay zekâ kullanmaz, kota harcamaz
+- **Tam Yedek** (Ayarlar → Yedek): tüm fişler ve fotoğraflar tek dosyada; iPhone'da Dosyalar → iCloud Drive'a kaydedilebilir. **Yedekten Geri Yükle** hesapta zaten olan fişleri atlar, hiçbir şeyi silmez; aynı yedek iki kez yüklense de kopya oluşmaz
+- Düzeltme: Ayarlar'daki anahtarlar (ör. hatırlatıcı) web'de ekran okuyuculara devre dışı görünüyordu
+
 ## 1.28.0 — `3f007e8`
 - **Toplu çekimde fotoğraf kaybolmuyor (iPhone):** Fotoğraf çekilir çekilmez telefonda kalıcı olarak saklanıyor; uygulama yükleme bitmeden kapanırsa bir sonraki açılışta "Önceki çekimden kalan N fotoğraf yükleniyor" deyip kaldığı yerden yüklüyor
 - **Şifremi unuttum:** Giriş ekranında e-posta yazıp "Şifremi Unuttum"a dokunun; gelen bağlantı tarayıcıda açılır, yeni şifre belirlenir, sonra uygulamada yeni şifreyle giriş yapılır. Tek seferlik ayar gerekir: Supabase → Authentication → URL Configuration → Redirect URLs'e `https://mylifer.github.io/scan/` ekleyin
