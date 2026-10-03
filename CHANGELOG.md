@@ -16,7 +16,21 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.25.0
+## 1.26.0
+İkinci kod incelemesi ve düzeltmeler:
+- Gemini yedek modellerinden biri kullanımdan kalkmışsa (404) kalan yedekler denenmiyordu; artık zincir devam ediyor
+- Kamera izni bir kez reddedilince "İzin Ver" çalışmıyordu; artık "Ayarları Aç" çıkıyor (iPhone)
+- KDV hatırlatıcısı uygulama açıkken gösterilmeyebiliyordu (iPhone)
+- Muhasebe Paketi: telefon hafızası dolarsa çökme yerine hata mesajı; hata sonrası yarım dosya kalmıyor
+- Web'de onay menüsünün mesajına dokunmak işlemi sessizce iptal ediyordu
+- Arka arkaya gelen bildirimlerden ikincisi kaybolabiliyordu
+- Kategori hafızası daha az veri indiriyor ve kullanıcıya bağlı
+- Tek fiş taramasında fotoğraf bir kez açılıyor (daha az bellek)
+- Giriş ekranında çift istek, web'de aynı fotoğrafı tekrar seçememe düzeltildi
+- VoiceOver (ekran okuyucu) desteği iyileştirildi
+- Altyapı: kullanılmayan iki paket kaldırıldı; web yayını yarıda iptal edilmiyor
+
+## 1.25.0 — `f732eae`
 Kod incelemesi ve hata düzeltmeleri (davranışı görünür biçimde değiştirmez, yalnızca hataları giderir):
 - "15.000" gibi Türkçe binlik yazımı 15 olarak okunuyordu (bütçe ve tutar alanları)
 - Aylar arasında hızlı geçişte başlık bir ayı, liste başka bir ayı gösterebiliyordu; Excel yanlış ayın fişleriyle oluşabiliyordu
