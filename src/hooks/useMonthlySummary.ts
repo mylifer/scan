@@ -3,6 +3,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 
 import { readCache, writeCache } from '../lib/offlineCache';
+import { useAuth } from './useAuth';
 import { type Period, periodLabel, periodRange, stepPeriod, switchMode } from '../lib/period';
 import type { MonthPoint } from '../lib/trend';
 import { deleteReceipt, getMonthlyTotals, getSummary, type PeriodSummary } from '../services/supabase/receiptsRepository';
@@ -21,6 +22,8 @@ export function useMonthlySummary() {
   const [offlineSince, setOfflineSince] = useState<number | null>(null);
   /** Her yenilemenin sırası: hızlı dönem değişiminde geç dönen eski istek yeni veriyi ezmesin */
   const latest = useRef(0);
+  // Önbellek kullanıcıya bağlı: aynı cihazda başka hesap açılırsa öncekinin verisi görünmesin
+  const owner = useAuth().session?.user.id ?? '';
   const currentKey = JSON.stringify(period);
 
   const refresh = useCallback(async () => {
@@ -29,7 +32,8 @@ export function useMonthlySummary() {
     setLoading(true);
     setError(null);
     const key = JSON.stringify(period);
-    const cached = await readCache<{ summary: PeriodSummary; trend: MonthPoint[] | null }>(period.mode, key);
+    const cacheKey = `${owner}|${key}`;
+    const cached = owner ? await readCache<{ summary: PeriodSummary; trend: MonthPoint[] | null }>(period.mode, cacheKey) : null;
     if (!isLatest()) return;
     // Önce cihazdaki son veriyi göster (anında açılış, çevrimdışı kullanım); ağdan gelen veri üzerine yazar
     if (cached) {
@@ -46,7 +50,7 @@ export function useMonthlySummary() {
       setData({ key, summary: s });
       if (t) setTrend(t);
       setOfflineSince(null);
-      writeCache(period.mode, key, { summary: s, trend: t });
+      if (owner) writeCache(period.mode, cacheKey, { summary: s, trend: t });
     } catch (e) {
       if (!isLatest()) return;
       setError(errorMessage(e));
@@ -54,7 +58,7 @@ export function useMonthlySummary() {
     } finally {
       if (isLatest()) setLoading(false);
     }
-  }, [period]);
+  }, [period, owner]);
 
   // Ekran her odaklandığında (ör. yeni fiş kaydedip dönünce) ve dönem değişince yenile
   useFocusEffect(
