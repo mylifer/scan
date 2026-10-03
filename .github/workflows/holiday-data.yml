@@ -1,0 +1,34 @@
+# Vergi takvimi için Türkiye resmi tatillerini iki bağımsız kaynaktan çeker (karşılaştırma için).
+# Sonuçlar uyarı notu olarak yazılır. Yalnızca bu dosya değişince ya da elle çalışır.
+name: Tatil verisi
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/pos-receipt-scanner-app-tk3b0z]
+    paths: ['.github/workflows/holiday-data.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  holidays:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kaynak 1 — date.nager.at
+        run: |
+          for y in 2026 2027 2028; do
+            curl -sS "https://date.nager.at/api/v3/PublicHolidays/$y/TR" | python3 -c "
+          import sys, json
+          d = json.load(sys.stdin)
+          print('::warning::NAGER $y ' + ' '.join(h['date'] + '=' + h['name'].replace(' ', '_') for h in d))"
+          done
+      - name: Kaynak 2 — python holidays
+        run: |
+          pip install --quiet holidays
+          python3 -c "
+          import holidays
+          for y in (2026, 2027, 2028):
+              tr = holidays.Turkey(years=y)
+              print('::warning::PYHOL %d ' % y + ' '.join('%s=%s' % (d, n.replace(' ', '_')) for d, n in sorted(tr.items())))
+          "
