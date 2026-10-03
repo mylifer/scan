@@ -84,17 +84,8 @@ export function ListRow({
   const inset = icon ? 16 + 29 + 12 : 16;
   const interactive = !!(onPress || onLongPress);
 
-  return (
-    <Pressable
-      onPress={onPress}
-      onLongPress={onLongPress}
-      disabled={disabled || !interactive}
-      // Yalnızca dokunulabilir satırlar tek öğe olarak okunur; diğerlerinde içerideki anahtar (Switch)
-      // gibi denetimlere VoiceOver ile ayrıca ulaşılabilsin
-      accessible={interactive}
-      accessibilityRole={interactive ? 'button' : undefined}
-      accessibilityState={interactive ? { disabled: !!disabled } : undefined}
-      style={({ pressed }) => [{ backgroundColor: pressed ? theme.highlight : 'transparent' }]}>
+  const content = (
+    <>
       <View style={[styles.row, { minHeight: subtitle ? 60 : 44 }]}>
         {icon && <IconTile {...icon} />}
         <View style={{ flex: 1, paddingVertical: 11 }}>
@@ -117,6 +108,23 @@ export function ListRow({
       </View>
       {children}
       {!isLast && <View style={[styles.separator, { marginLeft: inset, backgroundColor: theme.separator }]} />}
+    </>
+  );
+
+  // Dokunulamayan satır düz View: devre dışı bir Pressable web'de aria-disabled taşır ve içerideki
+  // anahtarı (Switch) da erişilebilirlik ağacında devre dışı gösterir. Diğer denetimlere VoiceOver
+  // ile ayrıca ulaşılabilsin diye satır tek öğe olarak okunmaz.
+  if (!interactive) return <View>{content}</View>;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onLongPress={onLongPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!disabled }}
+      style={({ pressed }) => [{ backgroundColor: pressed ? theme.highlight : 'transparent' }]}>
+      {content}
     </Pressable>
   );
 }
