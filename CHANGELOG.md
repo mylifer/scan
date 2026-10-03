@@ -12,7 +12,23 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 > Not: Geri dönüş yalnızca yayını eski koda çevirir; veritabanındaki fişlerinize dokunmaz.
 
+**Sağlam yedek:** 1.24.0'ın tam hâli GitHub'da ayrı bir dalda saklanıyor: `backup/stable-1.24.0` (commit `070c18b`). Geri dönmek için **ref** kutusuna `070c18b` yazmanız yeterli.
+
 ---
+
+## 1.25.0
+Kod incelemesi ve hata düzeltmeleri (davranışı görünür biçimde değiştirmez, yalnızca hataları giderir):
+- "15.000" gibi Türkçe binlik yazımı 15 olarak okunuyordu (bütçe ve tutar alanları)
+- Aylar arasında hızlı geçişte başlık bir ayı, liste başka bir ayı gösterebiliyordu; Excel yanlış ayın fişleriyle oluşabiliyordu
+- Kaydet'e hızlı çift dokunuşta (iPhone) aynı fiş iki kez kaydedilebilirdi
+- Toplu incelemede taslak silinemeyince kaydedilen fiş için "Kaydedilemedi" deniyordu (tekrar kaydedip çift kayıt riski); hızlı geçişte yanlış fotoğraf gösterilebiliyordu
+- Toplu taramada tek bir bağlantı hatası kuyruğu sessizce durduruyordu; okunan sonuç kaybolabiliyordu
+- Çevrimdışı önbellek kullanıcıya bağlandı (aynı cihazda başka hesap öncekinin verisini görmez) ve boyut sınırı getirildi
+- Planlama, plan iptali, taslak silme hataları artık gösteriliyor
+- Taslak önizlemeleri 1 saat sonra açılmıyordu
+- Muhasebe Paketi (ZIP) artık akış olarak üretiliyor: yıllık binlerce fotoğraflı paket belleği doldurup uygulamayı çökertmez
+- Ana sayfada arama/sıralama daha hızlı; kuruş yuvarlama (1,005 → 1,01) ve Excel'de geçersiz karakter düzeltmeleri; geçici dosya/bellek temizliği
+- Altyapı: eksik expo-font bağımlılığı eklendi; iPhone yayınına lint denetimi; CI'da gizli anahtarlar güvenli aktarılıyor
 
 ## 1.24.0 — `6e88335`
 - Fiş no, vergi no, ödeme şekli ve not alanları (1.22.0) isteğiniz üzerine kaldırıldı; form, Excel ve mükerrer kontrolü 1.21.1'deki hâline döndü. KDV hatırlatıcısı ve diğer özellikler duruyor
