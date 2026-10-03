@@ -24,7 +24,8 @@ export function ActionSheetHost() {
   return (
     <Modal visible={!!req} transparent animationType="fade" onRequestClose={cancel}>
       <Pressable style={styles.backdrop} onPress={cancel}>
-        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+        {/* Sayfanın kendisine (başlık, mesaj, boşluk) dokunmak arka plana geçip "Vazgeç" sayılmasın */}
+        <Pressable style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 8) }]} onPress={() => {}} accessible={false}>
           <View style={[styles.group, { backgroundColor: bg }]}>
             {(req?.title || req?.message) && (
               <View style={[styles.head, { borderBottomColor: theme.separator }]}>
@@ -54,7 +55,7 @@ export function ActionSheetHost() {
           <Pressable onPress={cancel} style={({ pressed }) => [styles.group, styles.option, { backgroundColor: pressed ? theme.highlight : bg }]}>
             <Text style={[styles.optionText, { color: theme.blue, fontWeight: '600' }]}>{req?.cancelLabel}</Text>
           </Pressable>
-        </View>
+        </Pressable>
       </Pressable>
     </Modal>
   );
