@@ -1,4 +1,5 @@
 import { prepareDraftImage } from '../image/prepareReceiptImages';
+import { revokeBlobUrl } from '../../lib/pendingPhoto';
 import { addDraft } from '../supabase/draftsRepository';
 
 /**
@@ -43,6 +44,9 @@ export function enqueueDraftUpload(uri: string, width: number): Promise<boolean>
     } catch {
       set({ pending: state.pending - 1, failed: state.failed + 1 });
       return false;
+    } finally {
+      // Web'de seçilen fotoğrafın tam çözünürlüklü kopyası yüklendikten sonra bellekte kalmasın
+      revokeBlobUrl(uri);
     }
   });
   chain = job.then(() => undefined);

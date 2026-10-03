@@ -10,7 +10,14 @@ export interface PendingPhoto {
 let pending: PendingPhoto | null = null;
 
 export function setPendingPhoto(photo: PendingPhoto) {
+  // Web: önceki fotoğrafın blob URL'si (tam çözünürlük, birkaç MB) bırakılsın; yerine yenisi geldi
+  if (pending && pending.uri !== photo.uri) revokeBlobUrl(pending.uri);
   pending = photo;
+}
+
+/** Yalnızca web'deki blob: URL'lerini bırakır; iPhone dosya yollarına dokunmaz. */
+export function revokeBlobUrl(uri: string) {
+  if (uri.startsWith('blob:') && typeof URL !== 'undefined' && URL.revokeObjectURL) URL.revokeObjectURL(uri);
 }
 
 export function getPendingPhoto(): PendingPhoto | null {
