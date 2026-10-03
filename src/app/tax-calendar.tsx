@@ -7,6 +7,13 @@ import { tabular, type as t, useTheme } from '../lib/theme';
 
 const AYLAR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 
+const GUN_KISA = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+
+function weekdayOf(isoDate: string): number {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay();
+}
+
 function remaining(days: number): string {
   if (days === 0) return 'Bugün';
   if (days === 1) return 'Yarın';
@@ -53,12 +60,11 @@ export default function TaxCalendarScreen() {
                 <View style={styles.row}>
                   <View style={[styles.day, { backgroundColor: soon ? theme.red : theme.tertiaryFill }]}>
                     <Text style={[t.headline, tabular, { color: soon ? '#FFFFFF' : theme.label }]}>{Number(d.date.slice(8))}</Text>
+                    <Text style={[t.caption2, { color: soon ? '#FFFFFF' : theme.secondaryLabel }]}>{GUN_KISA[weekdayOf(d.date)]}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[t.body, { color: theme.label }]}>{d.title}</Text>
-                    <Text style={[t.subhead, { color: theme.secondaryLabel }]}>
-                      {d.period} · {formatTrDate(d.date).split(' ').pop()}
-                    </Text>
+                    <Text style={[t.subhead, { color: theme.secondaryLabel }]}>Dönem: {d.period}</Text>
                     {d.notes.map((n) => (
                       <Text key={n} style={[t.footnote, { color: n.includes('yarım gün') || n.includes('doğrulanmadı') ? theme.orange : theme.secondaryLabel, marginTop: 4 }]}>
                         {n}
@@ -83,7 +89,7 @@ export default function TaxCalendarScreen() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 16, paddingVertical: 11 },
-  day: { width: 36, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  separator: { height: StyleSheet.hairlineWidth, marginLeft: 16 + 36 + 12 },
+  day: { width: 40, height: 44, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  separator: { height: StyleSheet.hairlineWidth, marginLeft: 16 + 40 + 12 },
   disclaimer: { marginHorizontal: 32 },
 });
