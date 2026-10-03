@@ -39,20 +39,30 @@ export class GeminiVisionAdapter implements VisionService {
 
   async analyzeReceipt(image: ReceiptImage, signal?: AbortSignal): Promise<ReceiptData> {
     let lastError: unknown;
-    for (const model of this.models) {
+    let firstTransient: unknown;
+    for (const [i, model] of this.models.entries()) {
       try {
         const text = await this.generate(model, image, signal);
         return parseReceiptJson(text);
       } catch (e) {
         if (signal?.aborted) throw e;
         lastError = e;
-        // Geçici bir sunucu sorunuysa sıradaki modele geç; değilse (ör. geçersiz anahtar) hemen bildir
-        if (!TRANSIENT_STATUS.has(httpStatus(e) ?? 0)) break;
+        const status = httpStatus(e) ?? 0;
+        // Geçici sunucu sorunu: sıradaki modele geç
+        if (TRANSIENT_STATUS.has(status)) {
+          firstTransient ??= e;
+          continue;
+        }
+        // Asıl modelin kalıcı hatası (ör. okunamayan görüntü) ya da anahtar hatası: hemen bildir.
+        // Yedek modelin kalıcı hatası (ör. emekliye ayrılmış model → 404) zinciri kesmesin; sıradakini dene.
+        if (i === 0 || status === 401 || status === 403) break;
       }
     }
-    const status = httpStatus(lastError);
+    // Yoğunluk yüzünden yedeklere geçildiyse asıl neden o yoğunluktur (yedeğin 404'ü değil)
+    const cause = firstTransient ?? lastError;
+    const status = httpStatus(cause);
     const kind = status === 429 ? 'quota' : TRANSIENT_STATUS.has(status ?? 0) ? 'busy' : 'other';
-    throw new VisionServiceError(friendlyMessage(lastError), lastError, kind);
+    throw new VisionServiceError(friendlyMessage(cause), cause, kind);
   }
 
   private async generate(model: string, image: ReceiptImage, signal?: AbortSignal): Promise<string> {
