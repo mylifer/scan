@@ -5,7 +5,7 @@ import { ActivityIndicator, Linking, ScrollView, StyleSheet, Switch, Text, View 
 import { HeaderTextButton } from '../components/ui/HeaderButton';
 import { ListRow, ListSection } from '../components/ui/List';
 import { useAuth } from '../hooks/useAuth';
-import { confirmDestructive } from '../lib/actionSheet';
+import { confirmDestructive, showActionSheet } from '../lib/actionSheet';
 import { showAlert } from '../lib/alert';
 import { errorMessage } from '../lib/errors';
 import { formatBytes, formatTL } from '../lib/format';
@@ -15,7 +15,10 @@ import { VERSION_LABEL } from '../lib/version';
 import { useMonthlyBudget } from '../lib/budget';
 import { showToast } from '../lib/toast';
 import { disableReminder, enableReminder, isReminderEnabled, remindersSupported } from '../services/reminders/taxReminders';
-import { buildReceiptsWorkbook, exportFilename, shareXlsx } from '../services/export/exportReceipts';
+import { applyRestore, createBackup, previewRestore } from '../services/backup/backup';
+import { pickBackupFile } from '../services/backup/pickBackupFile';
+import { buildReceiptsWorkbook, exportFilename, shareXlsx, shareZipStream } from '../services/export/exportReceipts';
+import { backupFilename } from '../lib/backupFormat';
 import { clearCache } from '../lib/offlineCache';
 import { supabase } from '../services/supabase/client';
 import { countReceipts, getStorageUsage, getSummary, type StorageUsage } from '../services/supabase/receiptsRepository';
@@ -75,6 +78,84 @@ export default function SettingsScreen() {
     } finally {
       setExporting(false);
     }
+  }
+
+  /** Yedekleme / geri yükleme sürerken satırda gösterilen ilerleme */
+  const [backupStatus, setBackupStatus] = useState<{ kind: 'backup' | 'restore'; text: string } | null>(null);
+
+  async function backup() {
+    setBackupStatus({ kind: 'backup', text: 'Hazırlanıyor' });
+    try {
+      const r = await shareZipStream(backupFilename(), (sink) =>
+        createBackup(sink, (done, total) => setBackupStatus({ kind: 'backup', text: total ? `Fotoğraflar ${done}/${total}` : 'Hazırlanıyor' })),
+      );
+      haptics.success();
+      if (r.failedPhotos) {
+        showAlert('Yedek oluşturuldu', `${r.receipts} fiş yedeklendi. ${r.failedPhotos} fotoğraf indirilemedi; bu fişler fotoğrafsız yedeklendi.`);
+      } else {
+        showToast(`${r.receipts} fiş ve ${r.photos} fotoğraf yedeklendi`);
+      }
+    } catch (e) {
+      showAlert('Yedeklenemedi', errorMessage(e));
+    } finally {
+      setBackupStatus(null);
+    }
+  }
+
+  async function restore() {
+    let bytes: Uint8Array | null;
+    try {
+      bytes = await pickBackupFile();
+    } catch (e) {
+      showAlert('Dosya açılamadı', errorMessage(e));
+      return;
+    }
+    if (!bytes) return;
+    setBackupStatus({ kind: 'restore', text: 'Okunuyor' });
+    let preview: Awaited<ReturnType<typeof previewRestore>>;
+    try {
+      preview = await previewRestore(bytes);
+    } catch (e) {
+      setBackupStatus(null);
+      showAlert('Geri yüklenemedi', errorMessage(e));
+      return;
+    }
+    setBackupStatus(null);
+    const date = preview.createdAt ? new Date(preview.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    if (preview.toInsert.length === 0) {
+      showAlert('Eklenecek fiş yok', `Yedekteki ${preview.total} fişin hepsi hesabınızda zaten var.`);
+      return;
+    }
+    showActionSheet({
+      title: 'Yedekten Geri Yükle',
+      message: `${date ? `${date} tarihli yedek. ` : ''}${preview.toInsert.length} fiş eklenecek${preview.skipped ? `, hesabınızda zaten olan ${preview.skipped} fiş atlanacak` : ''}. Mevcut fişleriniz silinmez.`,
+      options: [
+        {
+          label: `${preview.toInsert.length} Fişi Ekle`,
+          onPress: async () => {
+            setBackupStatus({ kind: 'restore', text: 'Başlıyor' });
+            try {
+              const r = await applyRestore(preview, (done, total) => setBackupStatus({ kind: 'restore', text: `${done}/${total}` }));
+              setCount((c) => (c === null ? c : c + r.inserted));
+              if (r.failed || r.photoFailed) {
+                haptics.error();
+                showAlert(
+                  'Geri yükleme tamamlandı',
+                  `${r.inserted} fiş eklendi.${r.failed ? ` ${r.failed} fiş eklenemedi (bağlantıyı kontrol edip yedeği yeniden yükleyebilirsiniz; eklenenler tekrar eklenmez).` : ''}${r.photoFailed ? ` ${r.photoFailed} fişin fotoğrafı yüklenemedi.` : ''}`,
+                );
+              } else {
+                haptics.success();
+                showToast(`${r.inserted} fiş geri yüklendi`);
+              }
+            } catch (e) {
+              showAlert('Geri yüklenemedi', errorMessage(e));
+            } finally {
+              setBackupStatus(null);
+            }
+          },
+        },
+      ],
+    });
   }
 
   const ratio = usage ? usage.bytes / STORAGE_QUOTA : 0;
@@ -148,6 +229,29 @@ export default function SettingsScreen() {
           disabled={exporting}
           accessory={exporting ? <ActivityIndicator /> : undefined}
           chevron={!exporting}
+        />
+      </ListSection>
+
+      <ListSection
+        header="Yedek"
+        footer="Tüm fişler ve fotoğrafları tek bir dosyaya kaydedilir; iPhone'da Dosyalar → iCloud Drive'a kaydedebilirsiniz. Geri yüklerken hesabınızda zaten olan fişler atlanır, hiçbir fiş silinmez.">
+        <ListRow
+          title="Tam Yedek Al"
+          icon={{ sf: 'icloud.and.arrow.up.fill', ion: 'cloud-upload', color: theme.blue }}
+          onPress={backup}
+          disabled={!!backupStatus}
+          value={backupStatus?.kind === 'backup' ? backupStatus.text : undefined}
+          accessory={backupStatus?.kind === 'backup' ? <ActivityIndicator /> : undefined}
+          chevron={!backupStatus}
+        />
+        <ListRow
+          title="Yedekten Geri Yükle"
+          icon={{ sf: 'icloud.and.arrow.down.fill', ion: 'cloud-download', color: theme.teal }}
+          onPress={restore}
+          disabled={!!backupStatus}
+          value={backupStatus?.kind === 'restore' ? backupStatus.text : undefined}
+          accessory={backupStatus?.kind === 'restore' ? <ActivityIndicator /> : undefined}
+          chevron={!backupStatus}
         />
       </ListSection>
 

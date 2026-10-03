@@ -242,6 +242,43 @@ function invalidateFirmCategories() {
   firmCategoryCache = null;
 }
 
+/**
+ * Yedekten bir fişi bu hesaba ekler (fotoğraf varsa önce yüklenir). Fotoğraf yüklenemezse fiş
+ * fotoğrafsız eklenir ve photoFailed döner; kayıt başarısızsa yüklenen fotoğraf geri silinir.
+ */
+export async function insertRestoredReceipt(
+  userId: string,
+  r: Pick<ReceiptRecord, 'firma_adi' | 'tarih' | 'toplam_tutar' | 'kdv_yuzde1' | 'kdv_yuzde10' | 'kdv_yuzde20' | 'kategori' | 'created_at'>,
+  photo: Uint8Array | null,
+): Promise<{ photoFailed: boolean }> {
+  let imagePath: string | null = null;
+  let photoFailed = false;
+  if (photo) {
+    const path = `${userId}/${receiptImageName(r.tarih, r.firma_adi)}.jpg`;
+    const { error } = await supabase.storage.from(RECEIPT_IMAGES_BUCKET).upload(path, photo, { contentType: 'image/jpeg', upsert: false });
+    if (error) photoFailed = true;
+    else imagePath = path;
+  }
+  const { error } = await supabase.from(TABLE).insert({
+    firma_adi: r.firma_adi,
+    tarih: r.tarih,
+    toplam_tutar: round2(r.toplam_tutar),
+    kdv_yuzde1: round2(r.kdv_yuzde1),
+    kdv_yuzde10: round2(r.kdv_yuzde10),
+    kdv_yuzde20: round2(r.kdv_yuzde20),
+    kategori: r.kategori,
+    image_path: imagePath,
+    // Sıralama korunsun: fişin ilk eklendiği an
+    ...(r.created_at ? { created_at: r.created_at } : {}),
+  });
+  if (error) {
+    if (imagePath) await supabase.storage.from(RECEIPT_IMAGES_BUCKET).remove([imagePath]);
+    throw new Error(error.message);
+  }
+  invalidateFirmCategories();
+  return { photoFailed };
+}
+
 /** Tüm zamanlardaki fiş sayısı (satırları indirmeden). */
 export async function countReceipts(): Promise<number> {
   const { count, error } = await supabase.from(TABLE).select('id', { count: 'exact', head: true });

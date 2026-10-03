@@ -161,6 +161,52 @@ test('muhasebe paketi geçerli bir ZIP üretir (Excel + fotoğraflar)', async (b
   await close();
 });
 
+test('tam yedek: tüm fişler + fotoğraflar → başka hesaba geri yükleme, var olanlar atlanır', async (b) => {
+  const a = await open(b, { receipts: thisMonth() });
+  await a.page.getByLabel('Ayarlar').click();
+  await a.page.waitForTimeout(800);
+  const [download] = await Promise.all([a.page.waitForEvent('download'), a.page.getByText('Tam Yedek Al').click()]);
+  // İndirilen dosya bağlam kapanınca silinir; ikinci hesap için kalıcı bir kopya
+  const zipPath = path.join(require('node:os').tmpdir(), `e2e-yedek-${Date.now()}.zip`);
+  await download.saveAs(zipPath);
+  const entries = unzipSync(fs.readFileSync(zipPath));
+  const manifest = JSON.parse(strFromU8(entries['yedek.json']));
+  assert.equal(manifest.receipts.length, 4, 'tüm zamanların 4 fişi');
+  assert.equal(Object.keys(entries).filter((n) => n.startsWith('fotograflar/')).length, 2, 'iki fotoğraf');
+  assert.deepEqual(a.errors, []);
+  await a.close();
+
+  // Başka bir hesap: fişlerden biri zaten var
+  const c = await open(b, { receipts: [thisMonth()[1]] });
+  const dialogs = [];
+  c.page.on('dialog', (d) => {
+    dialogs.push(d.message());
+    d.accept();
+  });
+  await c.page.getByLabel('Ayarlar').click();
+  await c.page.waitForTimeout(800);
+  const [chooser] = await Promise.all([c.page.waitForEvent('filechooser'), c.page.getByText('Yedekten Geri Yükle').click()]);
+  await chooser.setFiles(zipPath);
+  await c.page.waitForTimeout(1200);
+  assert.ok((await c.page.getByText('zaten olan 1 fiş atlanacak').count()) === 1, 'onayda atlanacak fiş sayısı');
+  await c.page.getByText('3 Fişi Ekle').click();
+  await c.page.waitForTimeout(2000);
+  assert.equal(c.backend.db.receipts.length, 4, '3 fiş eklenmeli');
+  const migros = c.backend.db.receipts.find((r) => r.firma_adi === 'MİGROS TİCARET A.Ş.');
+  assert.ok(migros.image_path && c.backend.storage.has(migros.image_path), 'fotoğraf yeni hesaba yüklenmeli');
+  assert.ok((await c.page.getByText('3 fiş geri yüklendi').count()) >= 1, 'başarı bildirimi');
+
+  // Aynı yedek tekrar: eklenecek fiş yok
+  const [again] = await Promise.all([c.page.waitForEvent('filechooser'), c.page.getByText('Yedekten Geri Yükle').click()]);
+  await again.setFiles(zipPath);
+  await c.page.waitForTimeout(1200);
+  assert.ok(dialogs.some((m) => m.includes('Eklenecek fiş yok')), dialogs.join(' | '));
+  assert.equal(c.backend.db.receipts.length, 4);
+  assert.deepEqual(c.errors, []);
+  await c.close();
+  fs.rmSync(zipPath, { force: true });
+});
+
 test('toplu tarama: galeriden 3 fotoğraf → tara → incele → kaydet', async (b) => {
   const { page, backend, errors, close } = await open(b, { receipts: [] });
   await page.getByLabel('Toplu tarama').click();
