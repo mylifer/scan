@@ -4,7 +4,7 @@ import { Platform, Share } from 'react-native';
 import { receiptImageName } from '../../lib/format';
 import { receiptShareText } from '../../lib/receiptText';
 import type { ReceiptRecord } from '../../types/receipt';
-import { downloadBytes, downloadToLocal } from '../supabase/storageFiles';
+import { downloadBytes, downloadToLocal, releaseLocal } from '../supabase/storageFiles';
 
 /**
  * Tek bir fişi fotoğrafı ve bilgileriyle paylaşım menüsüne gönderir (WhatsApp, Mail…).
@@ -15,8 +15,12 @@ export async function shareReceipt(r: ReceiptRecord): Promise<'shared' | 'copied
 
   if (Platform.OS !== 'web') {
     const url = r.image_path ? await downloadToLocal(r.image_path) : undefined;
-    // iOS: fotoğraf ve metin birlikte paylaşılır
-    await Share.share(url ? { url, message: text } : { message: text });
+    try {
+      // iOS: fotoğraf ve metin birlikte paylaşılır; Share.share paylaşım sayfası kapanınca döner
+      await Share.share(url ? { url, message: text } : { message: text });
+    } finally {
+      if (url) releaseLocal(url);
+    }
     return 'shared';
   }
 
