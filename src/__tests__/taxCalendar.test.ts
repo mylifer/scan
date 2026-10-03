@@ -58,3 +58,23 @@ describe('vergi takvimi', () => {
     assert.deepEqual([...list].sort((a, b) => a.date.localeCompare(b.date)), list, 'tarihe göre sıralı');
   });
 });
+
+describe('vergi hatırlatma planı', () => {
+  it('3 gün önce 10:00 ve son gün 09:00; geçmiştekiler yok; sadece ana yükümlülükler', async () => {
+    const { planTaxReminders, localDate } = await import('../lib/taxReminderPlan');
+    const plan = planTaxReminders(new Date(2026, 9, 25, 12, 0)); // 25 Ekim 2026 12:00
+    // Eylül KDV son günü 28 Ekim: 25 Ekim 10:00 geçti, son gün bildirimi kaldı
+    assert.ok(!plan.some((r) => r.id === 'tax-kdv-2026-10-28-before'));
+    const due = plan.find((r) => r.id === 'tax-kdv-2026-10-28-due');
+    assert.ok(due);
+    assert.equal(localDate(due).getTime(), new Date(2026, 9, 28, 9, 0).getTime());
+    const gecici = plan.find((r) => r.id === 'tax-gecici-2026-11-17-before');
+    assert.equal(gecici?.day, '2026-11-14');
+    assert.ok(!plan.some((r) => r.id.includes('muhtasar') || r.id.includes('babs')));
+    assert.equal(new Set(plan.map((r) => r.id)).size, plan.length, 'kimlikler benzersiz');
+    assert.ok(plan.length < 40, 'iOS 64 bildirim sınırının altında');
+    // Kayan son gün (Nisan 2026 KDV → 1 Haziran) bildirimi kaymış güne göre
+    const may = planTaxReminders(new Date(2026, 4, 1, 8, 0)).find((r) => r.id.startsWith('tax-kdv-2026-06-01'));
+    assert.ok(may);
+  });
+});

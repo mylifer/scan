@@ -14,7 +14,7 @@ import { tabular, type as t, useTheme } from '../lib/theme';
 import { VERSION_LABEL } from '../lib/version';
 import { useMonthlyBudget } from '../lib/budget';
 import { showToast } from '../lib/toast';
-import { disableReminder, enableReminder, isReminderEnabled, REMINDER_DAY, REMINDER_HOUR, remindersSupported } from '../services/reminders/kdvReminder';
+import { disableReminder, enableReminder, isReminderEnabled, remindersSupported } from '../services/reminders/taxReminders';
 import { buildReceiptsWorkbook, exportFilename, shareXlsx } from '../services/export/exportReceipts';
 import { clearCache } from '../lib/offlineCache';
 import { supabase } from '../services/supabase/client';
@@ -50,7 +50,7 @@ export default function SettingsScreen() {
           return;
         }
         haptics.success();
-        showToast(`Her ayın ${REMINDER_DAY}'i hatırlatılacak`);
+        showToast('Vergi son günleri hatırlatılacak');
       } else {
         await disableReminder();
       }
@@ -97,10 +97,20 @@ export default function SettingsScreen() {
 
       <ListSection
         header="Takip"
-        footer={remindersSupported ? `KDV hatırlatıcısı her ayın ${REMINDER_DAY}'i saat ${REMINDER_HOUR}:00'da, beyanname (ayın 28'i) öncesinde geçen ayın fişlerini göndermenizi hatırlatır.` : undefined}>
+        footer={
+          remindersSupported
+            ? 'Hatırlatıcı; KDV, geçici vergi ve yıllık gelir vergisi son günlerinden 3 gün önce ve son gün bildirim gönderir. Hafta sonu ve bayram kaymaları hesaba katılır.'
+            : undefined
+        }>
+        <ListRow
+          title="Vergi Takvimi"
+          icon={{ sf: 'calendar', ion: 'calendar', color: theme.red }}
+          onPress={() => router.push('/tax-calendar')}
+          chevron
+        />
         {remindersSupported ? (
           <ListRow
-            title="KDV Hatırlatıcısı"
+            title="Vergi Hatırlatıcısı"
             icon={{ sf: 'bell.badge.fill', ion: 'notifications', color: theme.red }}
             accessory={<Switch value={reminder} onValueChange={toggleReminder} />}
           />

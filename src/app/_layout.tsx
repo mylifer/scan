@@ -16,9 +16,12 @@ import { errorMessage } from '../lib/errors';
 import { largeTitle, stackScreenOptions } from '../lib/navigation';
 import { useTheme } from '../lib/theme';
 import { setupNotifications } from '../services/reminders/notificationSetup';
+import { refreshTaxReminders } from '../services/reminders/taxReminders';
 
-// Bildirim davranışı uygulama açılışında bir kez ayarlanır (KDV hatırlatıcısı ön planda da görünsün)
+// Bildirim davranışı uygulama açılışında bir kez ayarlanır (vergi hatırlatıcısı ön planda da görünsün);
+// açıksa hatırlatıcı planı 6 ay ileriye yenilenir
 setupNotifications();
+void refreshTaxReminders();
 
 function RootNavigator() {
   const theme = useTheme();
@@ -49,6 +52,7 @@ function RootNavigator() {
         <Stack.Screen name="manual" options={{ title: 'Elle Fiş Ekle', presentation: 'modal' }} />
         <Stack.Screen name="setup-categories" options={{ title: 'Yeni Kategoriler' }} />
         <Stack.Screen name="budget" options={{ title: 'Aylık Bütçe', presentation: 'modal' }} />
+        <Stack.Screen name="tax-calendar" options={{ title: 'Vergi Takvimi' }} />
         <Stack.Screen name="batch" options={{ title: 'Toplu Tarama', ...largeTitle }} />
         <Stack.Screen name="batch-review" options={{ title: 'İncele' }} />
         <Stack.Screen name="receipt/[id]" options={{ title: 'Fiş' }} />

@@ -61,7 +61,7 @@ function parse(isoDate: string) {
 }
 
 /** Takvim günü (saat dilimi etkisiz, UTC üzerinden) */
-function addDays(isoDate: string, days: number): string {
+export function addDays(isoDate: string, days: number): string {
   const { y, m, d } = parse(isoDate);
   const t = new Date(Date.UTC(y, m - 1, d + days));
   return iso(t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate());
