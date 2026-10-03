@@ -20,7 +20,11 @@ export function ToastHost() {
 
   const hide = () => {
     if (timer.current) clearTimeout(timer.current);
-    Animated.timing(anim, { toValue: 0, duration: 220, useNativeDriver }).start(() => setToast(null));
+    // Kaybolma sırasında yeni toast gelirse animasyon yarıda kesilir (finished=false); o zaman
+    // yeni toast'ı silmemek için yalnızca animasyon gerçekten bittiyse temizle
+    Animated.timing(anim, { toValue: 0, duration: 220, useNativeDriver }).start(({ finished }) => {
+      if (finished) setToast(null);
+    });
   };
 
   useEffect(
