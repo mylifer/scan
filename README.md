@@ -103,9 +103,11 @@ Açık kalan iki nokta ve yapılması önerilenler:
 1. **Yeni hesap açılışını kapatın.** Uygulamayı yalnızca siz kullanıyorsanız: Supabase → Authentication →
    Sign In / Providers → **Allow new users to sign up** kapalı. Böylece başkaları hesap açıp depolamanızı kullanamaz.
 2. **Gemini anahtarı uygulama paketindedir** (`EXPO_PUBLIC_*` değişkenleri pakete gömülür). Web sürümünü açan
-   biri anahtarı çıkarıp ücretsiz kotanızı tüketebilir; ücretsiz planda para kaybı olmaz. Faturalandırmayı
-   açarsanız AI çağrısını bir **Supabase Edge Function** üzerinden yapın (yeni bir `VisionService` adaptörü
-   yeterli) ve Google AI Studio'da harcama sınırı koyun.
+   biri anahtarı çıkarıp ücretsiz kotanızı tüketebilir; ücretsiz planda para kaybı olmaz. Kalıcı çözüm hazır:
+   `supabase/functions/analyze-receipt` (anahtar sunucuda kalır, yalnızca giriş yapmış kullanıcılar çağırabilir).
+   Etkinleştirmek için: GitHub'a `SUPABASE_ACCESS_TOKEN` secret'ı ekleyin → Actions'ta **"Supabase fonksiyonunu
+   yayınla"** → iki yayın iş akışında `EXPO_PUBLIC_VISION_PROVIDER: edge` yapıp `EXPO_PUBLIC_GEMINI_API_KEY`
+   satırını kaldırın. Faturalandırmayı açarsanız Google AI Studio'da harcama sınırı da koyun.
 
 ## Depolama (Supabase Free Plan)
 

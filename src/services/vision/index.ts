@@ -1,4 +1,6 @@
 import { ClaudeVisionAdapter } from './ClaudeVisionAdapter';
+import { supabase } from '../supabase/client';
+import { EdgeFunctionVisionAdapter } from './EdgeFunctionVisionAdapter';
 import { GeminiVisionAdapter } from './GeminiVisionAdapter';
 import { type VisionService, VisionServiceError } from './VisionService';
 
@@ -27,6 +29,10 @@ export function getVisionService(): VisionService {
         process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY ?? '',
         process.env.EXPO_PUBLIC_CLAUDE_MODEL || undefined,
       );
+      break;
+    case 'edge':
+      // Anahtar sunucuda: supabase/functions/analyze-receipt
+      instance = new EdgeFunctionVisionAdapter((name, options) => supabase.functions.invoke(name, options));
       break;
     default:
       throw new VisionServiceError(`Bilinmeyen görüntü sağlayıcısı: ${provider}`);
