@@ -42,6 +42,10 @@ export function Button({
         onPress();
       }}
       disabled={inactive}
+      accessibilityRole="button"
+      // Yüklenirken başlık yerine dönen gösterge çıktığı için etiket ayrıca verilir
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: !!disabled, busy: !!loading }}
       style={({ pressed }) => [
         styles.base,
         size === 'large' ? styles.large : styles.medium,

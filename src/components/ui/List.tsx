@@ -82,12 +82,18 @@ export function ListRow({
   const theme = useTheme();
   const titleColor = tone === 'action' ? theme.blue : tone === 'destructive' ? theme.red : theme.label;
   const inset = icon ? 16 + 29 + 12 : 16;
+  const interactive = !!(onPress || onLongPress);
 
   return (
     <Pressable
       onPress={onPress}
       onLongPress={onLongPress}
-      disabled={disabled || (!onPress && !onLongPress)}
+      disabled={disabled || !interactive}
+      // Yalnızca dokunulabilir satırlar tek öğe olarak okunur; diğerlerinde içerideki anahtar (Switch)
+      // gibi denetimlere VoiceOver ile ayrıca ulaşılabilsin
+      accessible={interactive}
+      accessibilityRole={interactive ? 'button' : undefined}
+      accessibilityState={interactive ? { disabled: !!disabled } : undefined}
       style={({ pressed }) => [{ backgroundColor: pressed ? theme.highlight : 'transparent' }]}>
       <View style={[styles.row, { minHeight: subtitle ? 60 : 44 }]}>
         {icon && <IconTile {...icon} />}

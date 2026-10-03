@@ -14,7 +14,8 @@ export function HeaderIconButton({ icon, onPress, badge, label }: { icon: Symbol
         onPress();
       }}
       hitSlop={10}
-      accessibilityLabel={label}
+      accessibilityRole="button"
+      accessibilityLabel={badge ? `${label}, ${badge} yeni` : label}
       style={({ pressed }) => [styles.btn, { opacity: pressed ? 0.5 : 1 }]}>
       <Icon {...icon} size={22} color={theme.blue} />
       {!!badge && (
@@ -30,7 +31,13 @@ export function HeaderIconButton({ icon, onPress, badge, label }: { icon: Symbol
 export function HeaderTextButton({ title, onPress, bold, disabled }: { title: string; onPress: () => void; bold?: boolean; disabled?: boolean }) {
   const theme = useTheme();
   return (
-    <Pressable onPress={onPress} disabled={disabled} hitSlop={10} style={({ pressed }) => ({ opacity: disabled ? 0.35 : pressed ? 0.5 : 1, paddingHorizontal: 4 })}>
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!disabled }}
+      style={({ pressed }) => ({ opacity: disabled ? 0.35 : pressed ? 0.5 : 1, paddingHorizontal: 4 })}>
       <Text style={{ color: theme.blue, fontSize: 17, fontWeight: bold ? '600' : '400' }}>{title}</Text>
     </Pressable>
   );

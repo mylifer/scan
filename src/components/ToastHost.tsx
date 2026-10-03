@@ -1,6 +1,6 @@
 import { BlurView } from 'expo-blur';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Platform, Pressable, StyleSheet, Text } from 'react-native';
+import { AccessibilityInfo, Animated, Platform, Pressable, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { haptics } from '../lib/haptics';
@@ -32,6 +32,8 @@ export function ToastHost() {
       subscribeToast((next) => {
         if (timer.current) clearTimeout(timer.current);
         setToast(next);
+        // VoiceOver kullanıcıları da bildirimi duysun
+        AccessibilityInfo.announceForAccessibility(next.text);
         if (next.type === 'success') haptics.success();
         else if (next.type === 'error') haptics.error();
         anim.setValue(0);
