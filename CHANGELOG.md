@@ -16,6 +16,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.28.0
+- **Toplu çekimde fotoğraf kaybolmuyor (iPhone):** Fotoğraf çekilir çekilmez telefonda kalıcı olarak saklanıyor; uygulama yükleme bitmeden kapanırsa bir sonraki açılışta "Önceki çekimden kalan N fotoğraf yükleniyor" deyip kaldığı yerden yüklüyor
+- **Şifremi unuttum:** Giriş ekranında e-posta yazıp "Şifremi Unuttum"a dokunun; gelen bağlantı tarayıcıda açılır, yeni şifre belirlenir, sonra uygulamada yeni şifreyle giriş yapılır. Tek seferlik ayar gerekir: Supabase → Authentication → URL Configuration → Redirect URLs'e `https://mylifer.github.io/scan/` ekleyin
+
 ## 1.27.1 — `6d1a0ed`
 - Bildirim paketi artık uygulama açılırken değil, yalnızca gerektiğinde ve korumalı yükleniyor (yüklenemezse hatırlatıcı satırı gizlenir, uygulama yine açılır)
 - Not: Telefonun 1.21.1'de kalmasının asıl nedeni, Expo Go'daki "Son açılanlar" kaydının eski bir sürüme sabitlenmiş olmasıydı. Uygulamayı her zaman şu bağlantıyla açın: `exp://u.expo.dev/e4446685-6bd2-4e1c-b0d0-cb1c025e1905?channel-name=production`

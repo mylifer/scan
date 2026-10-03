@@ -3,7 +3,7 @@
     "name": "Fiş Tarayıcı",
     "slug": "fis-tarayici",
     "scheme": "fistarayici",
-    "version": "1.27.1",
+    "version": "1.28.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
