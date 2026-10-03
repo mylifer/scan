@@ -8,14 +8,14 @@ import { showAlert } from '../lib/alert';
 import { errorMessage } from '../lib/errors';
 import { haptics } from '../lib/haptics';
 import { fontFamily, type as t, useTheme } from '../lib/theme';
-import { supabase } from '../services/supabase/client';
+import { PASSWORD_RESET_REDIRECT, supabase } from '../services/supabase/client';
 
 export default function LoginScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState<'signin' | 'signup' | null>(null);
+  const [busy, setBusy] = useState<'signin' | 'signup' | 'reset' | null>(null);
 
   async function submit(mode: 'signin' | 'signup') {
     // Klavyedeki "Git" tuşu düğmeden bağımsız çağırır; istek sürerken ikinci kez gönderme
@@ -38,6 +38,27 @@ export default function LoginScreen() {
     } else {
       haptics.success();
     }
+  }
+
+  async function forgot() {
+    if (busy) return;
+    const mail = email.trim();
+    if (!mail) {
+      showAlert('E-posta gerekli', 'Önce e-posta adresinizi yazın, sonra "Şifremi Unuttum"a dokunun.');
+      return;
+    }
+    setBusy('reset');
+    const { error } = await supabase.auth.resetPasswordForEmail(mail, { redirectTo: PASSWORD_RESET_REDIRECT });
+    setBusy(null);
+    if (error) {
+      haptics.error();
+      showAlert('Gönderilemedi', errorMessage(error));
+      return;
+    }
+    showAlert(
+      'E-postanızı kontrol edin',
+      'Şifre sıfırlama bağlantısı gönderildi. Bağlantı tarayıcıda açılır; orada yeni şifrenizi belirleyin, sonra burada yeni şifrenizle giriş yapın.',
+    );
   }
 
   const inputStyle = [t.body, styles.input, { color: theme.label }];
@@ -86,6 +107,7 @@ export default function LoginScreen() {
         <View style={{ gap: 8 }}>
           <Button title="Giriş Yap" onPress={() => submit('signin')} loading={busy === 'signin'} disabled={busy === 'signup'} />
           <Button title="Hesap Oluştur" variant="plain" onPress={() => submit('signup')} loading={busy === 'signup'} disabled={busy === 'signin'} />
+          <Button title="Şifremi Unuttum" variant="plain" onPress={forgot} loading={busy === 'reset'} disabled={!!busy && busy !== 'reset'} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { unzipSync, strFromU8 } = require('fflate');
 
-const { AUTH_KEY, isoDate, receipt, installBackend } = require('./mockBackend.cjs');
+const { isoDate, receipt, installBackend, session } = require('./mockBackend.cjs');
 const { startServer } = require('./server.cjs');
 
 let chromium;
@@ -26,13 +26,13 @@ const EXECUTABLE = process.env.CHROMIUM_PATH || (fs.existsSync('/opt/pw-browsers
 const tests = [];
 const test = (name, fn) => tests.push({ name, fn });
 
-async function open(browser, opts) {
+async function open(browser, opts, urlSuffix = '') {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true, permissions: ['clipboard-read', 'clipboard-write'] });
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   const backend = await installBackend(page, { photo: PHOTO, ...opts });
-  await page.goto(APP, { waitUntil: 'networkidle' });
+  await page.goto(APP + urlSuffix, { waitUntil: 'networkidle' });
   await page.waitForTimeout(1200);
   return { page, backend, errors, close: () => context.close() };
 }
@@ -154,6 +154,56 @@ test('toplu tarama: galeriden 3 fotoğraf → tara → incele → kaydet', async
   assert.equal(backend.db.receipt_drafts.length, 0, 'taslaklar silinmeli');
   assert.deepEqual(errors, []);
   await close();
+});
+
+test('şifremi unuttum: sıfırlama e-postası web adresine yönlendirmeyle istenir', async (b) => {
+  const { page, backend, close } = await open(b, { loggedOut: true });
+  const dialogs = [];
+  page.on('dialog', (d) => {
+    dialogs.push(d.message());
+    d.accept();
+  });
+  await page.getByText('Şifremi Unuttum').click();
+  await page.waitForTimeout(400);
+  assert.ok(dialogs.some((m) => m.includes('E-posta gerekli')), 'e-posta boşken uyarmalı');
+  await page.getByPlaceholder('E-posta').fill('kisi@ornek.com');
+  await page.getByText('Şifremi Unuttum').click();
+  await page.waitForTimeout(1000);
+  assert.ok(backend.log.some((l) => l.startsWith('RECOVER kisi@ornek.com https://mylifer.github.io/scan/')), backend.log.join(' | '));
+  assert.ok(dialogs.some((m) => m.includes('E-postanızı kontrol edin')));
+  await close();
+});
+
+test('sıfırlama bağlantısı: yeni şifre ekranı → kaydet → uygulamaya giriş', async (b) => {
+  const s = session();
+  const hash = `#access_token=${s.access_token}&refresh_token=r&expires_in=3600&expires_at=${s.expires_at}&token_type=bearer&type=recovery`;
+  const { page, backend, errors, close } = await open(b, { loggedOut: true, receipts: thisMonth() }, hash);
+  assert.equal(await page.getByText('Yeni Şifre', { exact: true }).count(), 1, 'yeni şifre ekranı açılmalı');
+  await page.getByPlaceholder('Yeni şifre', { exact: true }).fill('yeni-sifre-123');
+  await page.getByPlaceholder('Yeni şifre (tekrar)').fill('yeni-sifre-123');
+  await page.getByText('Şifreyi Kaydet').click();
+  await page.waitForTimeout(1500);
+  assert.ok(backend.log.includes('PASSWORD updated'), backend.log.join(' | '));
+  assert.equal(await page.getByText('Yeni Şifre', { exact: true }).count(), 0, 'kaydedince ana sayfaya geçmeli');
+  assert.ok((await page.getByText('MİGROS TİCARET A.Ş.').count()) > 0, 'ana sayfa açılmalı');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('süresi dolmuş sıfırlama bağlantısı anlaşılır uyarı verir', async (b) => {
+  const dialogs = [];
+  const context = await b.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  page.on('dialog', (d) => {
+    dialogs.push(d.message());
+    d.accept();
+  });
+  await installBackend(page, { loggedOut: true });
+  await page.goto(`${APP}#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(1200);
+  assert.ok(dialogs.some((m) => m.includes('Bağlantı geçersiz')), dialogs.join(' | '));
+  assert.equal(await page.getByText('Giriş Yap').count() > 0, true, 'giriş ekranı açık kalmalı');
+  await context.close();
 });
 
 (async () => {

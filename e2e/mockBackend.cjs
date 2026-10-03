@@ -59,9 +59,11 @@ async function installBackend(page, opts = {}) {
   const json = (route, body, status = 200) =>
     route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body), headers: { 'access-control-allow-origin': '*' } });
 
-  await page.addInitScript(([k, v]) => {
-    if (!localStorage.getItem('e2e-no-session')) localStorage.setItem(k, v);
-  }, [AUTH_KEY, JSON.stringify(session())]);
+  if (!opts.loggedOut) {
+    await page.addInitScript(([k, v]) => {
+      if (!localStorage.getItem('e2e-no-session')) localStorage.setItem(k, v);
+    }, [AUTH_KEY, JSON.stringify(session())]);
+  }
 
   await page.route('https://generativelanguage.googleapis.com/**', (route) => {
     state.geminiCalls++;
@@ -78,7 +80,15 @@ async function installBackend(page, opts = {}) {
     if (m === 'OPTIONS') return route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' } });
     const wait = opts.delay?.(url);
     if (wait) await new Promise((r) => setTimeout(r, wait));
+    if (path.startsWith('/auth/v1/user') && m === 'PUT') {
+      state.log.push(`PASSWORD ${JSON.parse(req.postData()).password ? 'updated' : '?'}`);
+      return json(route, session(state.userId).user);
+    }
     if (path.startsWith('/auth/v1/user')) return json(route, session(state.userId).user);
+    if (path.startsWith('/auth/v1/recover')) {
+      state.log.push(`RECOVER ${JSON.parse(req.postData()).email} ${url.searchParams.get('redirect_to')}`);
+      return json(route, {});
+    }
     if (path.startsWith('/auth/v1/logout')) return route.fulfill({ status: 204, body: '' });
     if (path.startsWith('/rest/v1/rpc/receipt_schema_version')) {
       const v = opts.schema ?? 4;

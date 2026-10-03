@@ -11,12 +11,28 @@ if (!url || !key) {
   console.warn('Supabase ayarları eksik: .env içinde EXPO_PUBLIC_SUPABASE_URL ve EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY tanımlayın.');
 }
 
+/**
+ * Şifre sıfırlama e-postasındaki bağlantı web sürümünü #access_token=…&type=recovery ile açar.
+ * Supabase bu adresi işleyip temizlemeden önce okunur (oturum açılış olayını kaçırmamak için).
+ */
+function readAuthLink(): { recovery: boolean; error: string | null } {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return { recovery: false, error: null };
+  const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  return { recovery: params.get('type') === 'recovery', error: params.get('error_description') ?? params.get('error') };
+}
+
+export const initialAuthLink = readAuthLink();
+
+/** Şifre sıfırlama bağlantısının açılacağı adres (Supabase → Authentication → URL Configuration'da izinli olmalı) */
+export const PASSWORD_RESET_REDIRECT = 'https://mylifer.github.io/scan/';
+
 export const supabase = createClient(url, key, {
   auth: {
     ...(Platform.OS !== 'web' ? { storage: AsyncStorage } : {}),
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    // Web: şifre sıfırlama bağlantısındaki oturumu adresten al (iPhone'da bağlantı tarayıcıda açılır)
+    detectSessionInUrl: Platform.OS === 'web',
   },
 });
 

@@ -1,14 +1,17 @@
 import { type ErrorBoundaryProps, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { ResetPassword } from '../components/ResetPassword';
 import { ToastHost } from '../components/ToastHost';
 import { ActionSheetHost } from '../components/ui/ActionSheetHost';
 import { AuthProvider, useAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
+import { showAlert } from '../lib/alert';
 import { errorMessage } from '../lib/errors';
 import { largeTitle, stackScreenOptions } from '../lib/navigation';
 import { useTheme } from '../lib/theme';
@@ -19,7 +22,12 @@ setupNotifications();
 
 function RootNavigator() {
   const theme = useTheme();
-  const { session, loading } = useAuth();
+  const { session, loading, recovering, linkError } = useAuth();
+
+  // Geçersiz/süresi dolmuş sıfırlama bağlantısı: bir kez bildir
+  useEffect(() => {
+    if (linkError) showAlert('Bağlantı geçersiz', `Şifre sıfırlama bağlantısı geçersiz ya da süresi dolmuş. Giriş ekranından yeniden isteyin.\n\n(${linkError})`);
+  }, [linkError]);
 
   if (loading) {
     return (
@@ -28,6 +36,9 @@ function RootNavigator() {
       </View>
     );
   }
+
+  // Şifre sıfırlama bağlantısıyla gelindiyse önce yeni şifre belirlensin
+  if (recovering && session) return <ResetPassword />;
 
   return (
     <Stack screenOptions={stackScreenOptions(theme)}>

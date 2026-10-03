@@ -33,6 +33,10 @@ export function errorMessage(e: unknown): string {
     return 'Bu kategori henüz etkin değil. Ana sayfadaki "Yeni kategorileri etkinleştir" adımını bir kez yapın ya da eski kategorilerden birini seçin.';
   }
   if (/invalid login credentials/.test(lower)) return 'E-posta ya da şifre hatalı.';
+  if (/rate limit|too many requests|for security purposes, you can only request/.test(lower)) {
+    return 'Çok sık istek gönderildi. Birkaç dakika (e-posta için bir saate kadar) bekleyip tekrar deneyin.';
+  }
+  if (/new password should be different/.test(lower)) return 'Yeni şifre eskisinden farklı olmalı.';
   if (/user already registered/.test(lower)) return 'Bu e-posta ile zaten bir hesap var. Giriş yapmayı deneyin.';
   if (/email not confirmed/.test(lower)) return 'E-posta adresiniz henüz doğrulanmadı. Gelen kutunuzu kontrol edin.';
   return raw || 'Beklenmeyen bir hata oluştu.';
