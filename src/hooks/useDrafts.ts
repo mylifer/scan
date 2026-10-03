@@ -44,11 +44,16 @@ export function useDrafts() {
 
   const run = useCallback(
     async (items: ReceiptDraft[]) => {
-      const ok = await processDrafts(items, refresh);
-      await refresh();
-      const { stoppedReason } = getProcessorState();
-      if (stoppedReason) showToast(`Tarama durdu: ${stoppedReason}`, 'error', 5000);
-      else if (ok) showToast(`${ok} fiş tarandı, incelemeye hazır`);
+      try {
+        const ok = await processDrafts(items, refresh);
+        await refresh();
+        const { stoppedReason } = getProcessorState();
+        if (stoppedReason) showToast(`Tarama durdu: ${stoppedReason}`, 'error', 5000);
+        else if (ok) showToast(`${ok} fiş tarandı, incelemeye hazır`);
+      } catch (e) {
+        // run çoğu yerde beklenmeden (fire-and-forget) çağrılır; hata sessizce kaybolmasın
+        showToast(`Tarama durdu: ${errorMessage(e)}`, 'error', 5000);
+      }
     },
     [refresh],
   );

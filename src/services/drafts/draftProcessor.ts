@@ -1,5 +1,5 @@
-import { errorMessage } from '../../lib/errors';
-import type { ReceiptDraft } from '../../types/receipt';
+import { errorMessage, isNetworkError } from '../../lib/errors';
+import type { ReceiptData, ReceiptDraft } from '../../types/receipt';
 import { DRAFT_WIDTH, prepareAiImage } from '../image/prepareReceiptImages';
 import { downloadDraftImage, updateDraft } from '../supabase/draftsRepository';
 import { releaseLocal } from '../supabase/storageFiles';
@@ -58,21 +58,35 @@ export async function processDrafts(drafts: ReceiptDraft[], onItemDone?: () => v
   try {
     for (let i = 0; i < drafts.length; i++) {
       const d = drafts[i];
-      await updateDraft(d.id, { status: 'processing', error: null });
+      let result: ReceiptData;
       try {
+        await updateDraft(d.id, { status: 'processing', error: null });
         const uri = await downloadDraftImage(d.image_path);
         const image = await prepareAiImage(uri, DRAFT_WIDTH).finally(() => releaseLocal(uri));
-        const { data: result } = await applyLearnedCategory(await getVisionService().analyzeReceipt(image));
-        await updateDraft(d.id, { status: 'ready', result, scheduled_for: null, error: null });
-        ok++;
+        result = (await applyLearnedCategory(await getVisionService().analyzeReceipt(image))).data;
       } catch (e) {
         await updateDraft(d.id, { status: 'failed', error: errorMessage(e) }).catch(() => {});
-        if (e instanceof VisionServiceError && (e.kind === 'quota' || e.kind === 'busy')) {
-          // Kalanları tekrar denemek boşuna kota harcar; olduğu gibi bırak
-          set({ stoppedReason: e.message, done: i + 1 });
+        // Kota/yoğunluk ya da bağlantı kopukluğu: kalanları denemek boşuna; olduğu gibi bırak
+        if ((e instanceof VisionServiceError && (e.kind === 'quota' || e.kind === 'busy')) || isNetworkError(e)) {
+          set({ stoppedReason: e instanceof VisionServiceError ? e.message : errorMessage(e), done: i + 1 });
           onItemDone?.();
           break;
         }
+        set({ done: i + 1 });
+        onItemDone?.();
+        continue;
+      }
+      // Okuma başarılı (kota harcandı): sonucu kaydetmeyi bir kez daha dene; yine olmazsa
+      // taslağı 'failed' yapma (sonuç kaybolmasın) — kuyruğu durdur, taslak tekrar taranabilir kalır
+      try {
+        await updateDraft(d.id, { status: 'ready', result, scheduled_for: null, error: null }).catch(() =>
+          updateDraft(d.id, { status: 'ready', result, scheduled_for: null, error: null }),
+        );
+        ok++;
+      } catch (e) {
+        set({ stoppedReason: `Sonuç kaydedilemedi: ${errorMessage(e)}`, done: i + 1 });
+        onItemDone?.();
+        break;
       }
       set({ done: i + 1 });
       onItemDone?.();

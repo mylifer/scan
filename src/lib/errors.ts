@@ -2,11 +2,19 @@
  * Teknik hata mesajlarını kullanıcının anlayacağı Türkçeye çevirir.
  * Bilinmeyen hatalar olduğu gibi gösterilir (destek için ipucu olsun diye).
  */
+const NETWORK_RE = /network request failed|failed to fetch|networkerror|load failed|internet connection appears to be offline/;
+
+/** Bağlantı kopukluğu mu? (tekrar denemek yerine işi durdurmak için) */
+export function isNetworkError(e: unknown): boolean {
+  const raw = e instanceof Error ? e.message : typeof e === 'string' ? e : '';
+  return NETWORK_RE.test(raw.toLowerCase());
+}
+
 export function errorMessage(e: unknown): string {
   const raw = e instanceof Error ? e.message : typeof e === 'string' ? e : String(e ?? '');
   const lower = raw.toLowerCase();
 
-  if (/network request failed|failed to fetch|networkerror|load failed|internet connection appears to be offline/.test(lower)) {
+  if (NETWORK_RE.test(lower)) {
     return 'İnternet bağlantısı yok gibi görünüyor. Bağlantınızı kontrol edip tekrar deneyin.';
   }
   if (/timeout|timed out|zaman aşımı/.test(lower)) {

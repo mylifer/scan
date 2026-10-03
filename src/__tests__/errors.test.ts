@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { errorMessage } from '../lib/errors';
+import { errorMessage, isNetworkError } from '../lib/errors';
 
 describe('errorMessage', () => {
   it('ağ hatalarını çevirir', () => {
@@ -14,5 +14,10 @@ describe('errorMessage', () => {
   it('boş hata için genel mesaj', () => assert.equal(errorMessage(undefined), 'Beklenmeyen bir hata oluştu.'));
   it('eski veritabanında yeni kategori hatası', () => {
     assert.match(errorMessage(new Error('new row for relation "receipts" violates check constraint "receipts_kategori_check"')), /kategori henüz etkin değil/);
+  });
+  it('bağlantı hatasını tanır', () => {
+    assert.ok(isNetworkError(new TypeError('Network request failed')));
+    assert.ok(isNetworkError(new TypeError('Failed to fetch')));
+    assert.ok(!isNetworkError(new Error('JSON parse error')));
   });
 });
