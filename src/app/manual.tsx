@@ -12,12 +12,15 @@ import { type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 import { saveReceipt } from '../services/supabase/receiptsRepository';
 import { useSingleFlight } from '../hooks/useSingleFlight';
+import { useConfirmLeave } from '../hooks/useConfirmLeave';
 
 /** Fotoğrafsız fiş ekleme: e-posta ile gelen e-Arşiv faturaları ya da kaybolan fişler için. */
 export default function ManualReceiptScreen() {
   const theme = useTheme();
   const runOnce = useSingleFlight();
-  const [values, setValues] = useState<ReceiptFormValues>(emptyForm);
+  const [initial] = useState<ReceiptFormValues>(emptyForm);
+  const [values, setValues] = useState<ReceiptFormValues>(initial);
+  const allowLeave = useConfirmLeave(JSON.stringify(values) !== JSON.stringify(initial));
   const [saving, setSaving] = useState(false);
 
   async function save() {
@@ -34,6 +37,7 @@ export default function ManualReceiptScreen() {
         if (!(await confirmIfDuplicate(data))) return;
         await saveReceipt(data);
         haptics.success();
+        allowLeave();
         router.back();
         showToast('Fiş kaydedildi');
       } catch (e) {

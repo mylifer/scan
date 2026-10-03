@@ -27,6 +27,7 @@ import {
 } from '../../services/supabase/receiptsRepository';
 import type { ReceiptRecord } from '../../types/receipt';
 import { useSingleFlight } from '../../hooks/useSingleFlight';
+import { useConfirmLeave } from '../../hooks/useConfirmLeave';
 
 /** Kaydedilmiş bir fişi görüntüle, düzenle ya da sil. */
 export default function ReceiptDetailScreen() {
@@ -55,6 +56,7 @@ export default function ReceiptDetailScreen() {
   }, [id]);
 
   const dirty = useMemo(() => !!values && !!initial && JSON.stringify(values) !== JSON.stringify(initial), [values, initial]);
+  const allowLeave = useConfirmLeave(dirty);
 
   async function save() {
     await runOnce(async () => {
@@ -72,6 +74,7 @@ export default function ReceiptDetailScreen() {
         const keyChanged = !!initial && (values.tarih !== initial.tarih || values.toplamTutar !== initial.toplamTutar);
         if (keyChanged && !(await confirmIfDuplicate(data, record.id))) return;
         await updateReceipt(record.id, data);
+        allowLeave();
         router.back();
         showToast('Değişiklikler kaydedildi');
       } catch (e) {
@@ -137,6 +140,7 @@ export default function ReceiptDetailScreen() {
     confirmDestructive(record.firma_adi, 'Bu fiş ve fotoğrafı kalıcı olarak silinecek.', 'Fişi Sil', async () => {
       try {
         await deleteReceipt(record);
+        allowLeave();
         router.back();
         showToast('Fiş silindi', 'info');
       } catch (e) {

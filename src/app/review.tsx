@@ -19,6 +19,7 @@ import { addDraft } from '../services/supabase/draftsRepository';
 import { applyLearnedCategory, saveReceipt } from '../services/supabase/receiptsRepository';
 import { getVisionService } from '../services/vision';
 import { useSingleFlight } from '../hooks/useSingleFlight';
+import { useConfirmLeave } from '../hooks/useConfirmLeave';
 
 type Phase = 'analyzing' | 'ready' | 'error';
 
@@ -31,6 +32,8 @@ export default function ReviewScreen() {
   const [values, setValues] = useState<ReceiptFormValues>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [learned, setLearned] = useState(false);
+  // Okunmuş ama kaydedilmemiş fiş varken geri dönülürse sor
+  const allowLeave = useConfirmLeave(phase === 'ready');
   const archiveUri = useRef<string | undefined>(undefined);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -76,6 +79,7 @@ export default function ReviewScreen() {
         const data = fromFormValues(values);
         if (!(await confirmIfDuplicate(data))) return;
         const { record, imageWarning } = await saveReceipt(data, archiveUri.current);
+        allowLeave();
         router.replace('/');
         if (imageWarning) {
           showToast('Fiş kaydedildi, fotoğrafı yüklenemedi', 'info', 4000);
@@ -101,6 +105,7 @@ export default function ReviewScreen() {
       try {
         await addDraft(await prepareDraftImage(photo.uri, photo.width || 3000));
         haptics.success();
+        allowLeave();
         router.replace('/');
         showToast('Taslaklara eklendi; Toplu Tarama\'dan taratabilirsiniz', 'info', 3500);
       } catch (e) {
@@ -172,7 +177,10 @@ export default function ReviewScreen() {
               </Text>
             )}
             <ListSection>
-              <ListRow title="Yeniden Çek" tone="action" onPress={() => router.replace('/camera')} disabled={saving} />
+              <ListRow title="Yeniden Çek" tone="action" onPress={() => {
+                  allowLeave();
+                  router.replace('/camera');
+                }} disabled={saving} />
             </ListSection>
           </>
         )}
