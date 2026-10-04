@@ -2,7 +2,7 @@ import { BlurView } from 'expo-blur';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, type GestureResponderEvent, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,13 +10,26 @@ import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Icon } from '../components/ui/Icon';
 import { haptics } from '../lib/haptics';
-import { setPendingPhoto } from '../lib/pendingPhoto';
 import { type SymbolSpec, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
+import { subscribeDraftStatus } from '../services/drafts/draftProcessor';
 import { enqueueDraftUpload } from '../services/drafts/uploadQueue';
 
 const FOCUS_BOX = 76;
 
+type ShotStatus = 'uploading' | 'reading' | 'ready' | 'failed';
+interface Shot {
+  key: number;
+  uri: string;
+  draftId?: string;
+  status: ShotStatus;
+}
+
+/**
+ * Fiş kamerası. Varsayılan (hızlı çekim): her fotoğraf arka planda yüklenip hemen yapay zekâyla okunur,
+ * kamera açık kalır; "İncele" okunanları sırayla kontrol ettirir. Toplu mod (?mode=batch): yalnızca
+ * taslağa ekler, okuma Toplu Tarama ekranından (şimdi ya da planlı) başlatılır.
+ */
 export default function CameraScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -28,7 +41,17 @@ export default function CameraScreen() {
   const [capturing, setCapturing] = useState(false);
   const [autofocus, setAutofocus] = useState<'on' | 'off'>('on');
   const [focusPoint, setFocusPoint] = useState<{ x: number; y: number } | null>(null);
-  const [shots, setShots] = useState<string[]>([]);
+  const [shots, setShots] = useState<Shot[]>([]);
+  const nextKey = useRef(0);
+
+  // Hızlı çekimde taslakların okuma durumunu izle
+  useEffect(
+    () =>
+      subscribeDraftStatus((id, status) =>
+        setShots((list) => list.map((s) => (s.draftId === id ? { ...s, status: status === 'processing' ? 'reading' : status } : s))),
+      ),
+    [],
+  );
   const [focusAnim] = useState(() => new Animated.Value(0));
   const [flash] = useState(() => new Animated.Value(0));
 
@@ -82,17 +105,22 @@ export default function CameraScreen() {
     Animated.timing(flash, { toValue: 0, duration: 250, useNativeDriver: true }).start();
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 1, shutterSound: false });
-      if (batch) {
-        // Toplu mod: taslağa ekle, kamerada kal
-        setCapturing(false);
-        setShots((s) => [...s, photo.uri]);
-        enqueueDraftUpload(photo.uri, photo.width).then((ok) => {
-          if (!ok) showToast('Fotoğraf taslağa eklenemedi', 'error');
-        });
-        return;
-      }
-      setPendingPhoto({ uri: photo.uri, width: photo.width });
-      router.replace('/review');
+      // Kamerada kal: fotoğraf arka planda yüklenir (hızlı çekimde ardından hemen okunur)
+      setCapturing(false);
+      const key = nextKey.current++;
+      setShots((s) => [...s, { key, uri: photo.uri, status: 'uploading' }]);
+      enqueueDraftUpload(photo.uri, photo.width, { scan: !batch }).then((draft) => {
+        if (!draft) showToast('Fotoğraf yüklenemedi; uygulama yeniden açılınca tekrar denenir', 'error');
+        setShots((list) =>
+          list.map((s) =>
+            s.key !== key
+              ? s
+              : draft
+                ? { ...s, draftId: draft.id, status: s.status === 'uploading' ? (batch ? 'ready' : 'reading') : s.status }
+                : { ...s, status: 'failed' },
+          ),
+        );
+      });
     } catch {
       setCapturing(false);
       haptics.error();
@@ -100,6 +128,25 @@ export default function CameraScreen() {
   }
 
   const last = shots[shots.length - 1];
+  const readyCount = shots.filter((s) => s.status === 'ready').length;
+  const readingCount = shots.filter((s) => s.status === 'reading' || s.status === 'uploading').length;
+  const failedCount = shots.filter((s) => s.status === 'failed').length;
+  const pill = batch
+    ? `Toplu çekim · ${shots.length}`
+    : shots.length === 0
+      ? 'Fişi çerçeveye hizalayın'
+      : [`${shots.length} fiş`, readingCount && `${readingCount} okunuyor`, readyCount && `${readyCount} hazır`, failedCount && `${failedCount} okunamadı`]
+          .filter(Boolean)
+          .join(' · ');
+
+  function finish() {
+    if (batch || shots.length === 0) {
+      router.back();
+      return;
+    }
+    // Okunanları incele; okunmakta olanlar hazır oldukça sıraya eklenir
+    router.replace('/batch-review');
+  }
 
   return (
     <View style={styles.black}>
@@ -141,7 +188,7 @@ export default function CameraScreen() {
         <GlassButton icon={{ sf: 'xmark', ion: 'close' }} onPress={() => router.back()} label="Kapat" />
         <View style={styles.hintPill}>
           <Text style={[t.footnote, { color: '#fff', fontWeight: '600' }]}>
-            {batch ? `Toplu çekim · ${shots.length}` : 'Fişi çerçeveye hizalayın'}
+            {pill}
           </Text>
         </View>
         <GlassButton
@@ -157,7 +204,22 @@ export default function CameraScreen() {
 
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 28 }]}>
         <View style={styles.side}>
-          {batch && last && <Image source={{ uri: last }} style={styles.thumb} contentFit="cover" />}
+          {last && (
+            <View>
+              <Image source={{ uri: last.uri }} style={styles.thumb} contentFit="cover" />
+              {!batch && (
+                <View style={[styles.badge, { backgroundColor: last.status === 'ready' ? '#30D158' : last.status === 'failed' ? '#FF453A' : 'rgba(0,0,0,0.6)' }]}>
+                  {last.status === 'ready' ? (
+                    <Icon sf="checkmark" ion="checkmark" size={12} color="#fff" weight="bold" />
+                  ) : last.status === 'failed' ? (
+                    <Icon sf="exclamationmark" ion="alert" size={12} color="#fff" weight="bold" />
+                  ) : (
+                    <ActivityIndicator size="small" color="#fff" style={{ transform: [{ scale: 0.6 }] }} />
+                  )}
+                </View>
+              )}
+            </View>
+          )}
         </View>
         <Pressable
           onPress={takePicture}
@@ -167,9 +229,9 @@ export default function CameraScreen() {
           {capturing ? <ActivityIndicator color="#fff" /> : <View style={styles.shutter} />}
         </Pressable>
         <View style={styles.side}>
-          {batch && (
-            <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button" style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
-              <Text style={[t.headline, { color: '#FFD60A' }]}>Bitti</Text>
+          {shots.length > 0 && (
+            <Pressable onPress={finish} hitSlop={10} accessibilityRole="button" style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
+              <Text style={[t.headline, { color: '#FFD60A' }]}>{batch ? 'Bitti' : 'İncele'}</Text>
             </Pressable>
           )}
         </View>
@@ -215,6 +277,7 @@ const styles = StyleSheet.create({
   },
   side: { width: 64, alignItems: 'center' },
   thumb: { width: 52, height: 52, borderRadius: 8, borderWidth: 1.5, borderColor: '#fff' },
+  badge: { position: 'absolute', right: -6, top: -6, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#fff' },
   shutterRing: {
     width: 80,
     height: 80,

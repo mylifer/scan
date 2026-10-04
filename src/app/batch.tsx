@@ -261,8 +261,8 @@ export default function BatchScreen() {
             <Button
               title={`İncele ve Kaydet (${ready.length})`}
               icon={{ sf: 'checkmark.circle.fill', ion: 'checkmark-circle' }}
+              // Okuma sürerken de açılabilir: okunanlar hazır oldukça incelemeye eklenir
               onPress={() => router.push('/batch-review')}
-              disabled={processor.running}
             />
           )}
           {scannable.length > 0 && (

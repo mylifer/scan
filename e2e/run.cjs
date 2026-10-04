@@ -371,6 +371,31 @@ test('toplu tarama: galeriden 3 fotoğraf → tara → incele → kaydet', async
   await close();
 });
 
+test('okuma sürerken inceleme: hazır olan fişler sıraya eklenir, sonuncuya kadar beklenir', async (b) => {
+  const { page, backend, errors, close } = await open(b, { receipts: [] });
+  await page.getByLabel('Toplu tarama').click();
+  await page.waitForTimeout(1000);
+  const photo = path.join(__dirname, 'fixtures', 'fis.jpg');
+  await page.locator('input[multiple]').setInputFiles([photo, photo, photo]);
+  await page.waitForTimeout(4000);
+  await page.getByText(/Şimdi Tara/).click();
+  // İlk fiş okununca (istekler arası 4 sn) hemen incelemeye geç
+  await page.getByText(/İncele ve Kaydet/).click({ timeout: 8000 });
+  await page.waitForTimeout(1200);
+  assert.ok(backend.geminiCalls < 3, 'diğerleri hâlâ okunuyor olmalı');
+  await page.getByText('Kaydet', { exact: true }).click();
+  await page.waitForTimeout(1500);
+  // Sıradaki fiş okunurken bekleme ekranı ya da yeni gelen fiş görünür; hepsi gelene kadar kaydetmeye devam
+  for (let i = 0; i < 2; i++) {
+    await page.getByText('Kaydet', { exact: true }).click({ timeout: 15000 });
+    await page.waitForTimeout(1500);
+  }
+  assert.equal(backend.db.receipts.length, 3, '3 fiş kaydedilmeli');
+  assert.equal(backend.geminiCalls, 3);
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 test('emin olunamayan alan turuncu işaretlenir, düzeltince işaret kalkar', async (b) => {
   const { page, errors, close } = await open(b, {
     receipts: [],
