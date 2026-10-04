@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.29.1 — `(yayında)`
+## 1.29.1 — `b08221d`
 - Çok büyük bir yedeği geri yüklerken iPhone'un belleği dolup uygulamanın kapanabilmesi düzeltildi (fotoğraflar artık 20'şerli gruplar hâlinde açılıyor)
 - Geri yüklemede bir fotoğraf yüklenemezse o fiş eklenmiyor; yedeği yeniden yükleyince fotoğrafıyla birlikte ekleniyor (önceden fotoğrafsız eklenip bir daha düzeltilemiyordu)
 - Vergi hatırlatıcısını hızlıca açıp kapatınca bildirimlerin yine de gelmesi düzeltildi
