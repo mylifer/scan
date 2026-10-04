@@ -8,9 +8,18 @@ import type { ReceiptRecord } from '../../types/receipt';
 import { Icon } from '../ui/Icon';
 import { ListRow } from '../ui/List';
 
-export function ReceiptRow({ receipt: r, onPress, isLast }: { receipt: ReceiptRecord; onPress: () => void; isLast?: boolean }) {
+interface RowProps {
+  receipt: ReceiptRecord;
+  onPress: () => void;
+  isLast?: boolean;
+  /** Seçim modunda: işaretli mi (undefined = seçim modu kapalı) */
+  selected?: boolean;
+}
+
+export function ReceiptRow({ receipt: r, onPress, isLast, selected }: RowProps) {
   const theme = useTheme();
   const meta = categoryMeta[r.kategori] ?? categoryMeta['diğer'];
+  const selecting = selected !== undefined;
   return (
     <ListRow
       icon={{ sf: meta.sf, ion: meta.ion, color: theme[meta.color] as string }}
@@ -18,7 +27,19 @@ export function ReceiptRow({ receipt: r, onPress, isLast }: { receipt: ReceiptRe
       subtitle={`${shortTrDate(r.tarih)} · KDV ${formatTL(r.toplam_kdv)}`}
       value={formatTL(r.toplam_tutar)}
       valueColor={theme.label}
-      chevron
+      chevron={!selecting}
+      accessory={
+        selecting ? (
+          <View accessibilityLabel={selected ? 'seçili' : 'seçili değil'}>
+            <Icon
+              sf={selected ? 'checkmark.circle.fill' : 'circle'}
+              ion={selected ? 'checkmark-circle' : 'ellipse-outline'}
+              size={22}
+              color={selected ? theme.blue : theme.tertiaryLabel}
+            />
+          </View>
+        ) : undefined
+      }
       onPress={onPress}
       isLast={isLast}
     />

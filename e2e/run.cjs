@@ -195,7 +195,7 @@ test('çöp kutusu: silinen fiş Son Silinenler’e gider, fotoğrafı korunur, 
   await page.waitForTimeout(800);
   await page.getByText('Son Silinenler', { exact: true }).click();
   await page.waitForTimeout(1200);
-  assert.ok((await page.getByText(/30 gün sonra kalıcı olarak silinecek/).count()) === 1);
+  assert.ok((await page.getByText(/30 gün kaldı/).count()) === 1);
   await page.getByText('OPET PETROLCÜLÜK A.Ş.').click();
   await page.waitForTimeout(400);
   await page.getByText('Geri Al', { exact: true }).click();
@@ -205,6 +205,35 @@ test('çöp kutusu: silinen fiş Son Silinenler’e gider, fotoğrafı korunur, 
   assert.equal(back.image_path, 'u/b.jpg', 'fotoğraf bağlantısı korunmalı');
   assert.equal(backend.db.receipt_trash.length, 0);
   assert.ok((await page.getByText('Son Silinen Yok').count()) === 1);
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('toplu düzenleme: seçilen fişlerin kategorisi değişir, toplu silinir', async (b) => {
+  const { page, backend, errors, close } = await open(b, { receipts: thisMonth(), schema: 5 });
+  await page.getByText('Seç', { exact: true }).click();
+  await page.waitForTimeout(300);
+  await page.getByText('MİGROS TİCARET A.Ş.').click();
+  await page.getByText('OPET PETROLCÜLÜK A.Ş.').click();
+  assert.ok((await page.getByText('Sil (2)').count()) === 1, 'seçim sayısı');
+  await page.getByText('Kategori', { exact: true }).last().click();
+  await page.waitForTimeout(300);
+  await page.getByText('Ofis Gideri', { exact: true }).last().click();
+  await page.waitForTimeout(1500);
+  const cats = backend.db.receipts.filter((r) => r.id === 'a' || r.id === 'b').map((r) => r.kategori);
+  assert.deepEqual(cats, ['ofis gideri', 'ofis gideri']);
+  assert.ok((await page.getByText('2 fiş Ofis Gideri yapıldı').count()) >= 1);
+
+  await page.getByText('Seç', { exact: true }).click();
+  await page.waitForTimeout(300);
+  await page.getByText('Tümünü Seç').click();
+  await page.getByText('Sil (2)').click();
+  await page.waitForTimeout(300);
+  await page.getByText('2 Fişi Sil').click();
+  await page.waitForTimeout(2000);
+  assert.equal(backend.db.receipts.filter((r) => r.id === 'a' || r.id === 'b').length, 0, 'bu ayın fişleri silinmeli');
+  assert.equal(backend.db.receipt_trash.length, 2, 'çöp kutusuna gitmeli');
+  assert.equal(backend.db.receipts.length, 2, 'diğer ayların fişlerine dokunulmamalı');
   assert.deepEqual(errors, []);
   await close();
 });

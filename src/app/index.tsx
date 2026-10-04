@@ -11,13 +11,13 @@ import { SummaryCard } from '../components/dashboard/SummaryCard';
 import { TrendChart } from '../components/TrendChart';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
-import { HeaderIconButton } from '../components/ui/HeaderButton';
+import { HeaderIconButton, HeaderTextButton } from '../components/ui/HeaderButton';
 import { ListRow, ListSection } from '../components/ui/List';
 import { SearchField } from '../components/ui/SearchField';
 import { Toolbar, useToolbarHeight } from '../components/ui/Toolbar';
 import { useDrafts } from '../hooks/useDrafts';
 import { useMonthlySummary } from '../hooks/useMonthlySummary';
-import { showActionSheet } from '../lib/actionSheet';
+import { confirmDestructive, showActionSheet } from '../lib/actionSheet';
 import { showAlert } from '../lib/alert';
 import { errorMessage } from '../lib/errors';
 import { formatTL } from '../lib/format';
@@ -37,8 +37,8 @@ import { resumePendingUploads } from '../services/drafts/uploadQueue';
 import { updateMonthlySummary } from '../services/reminders/monthlySummary';
 import { monthOffset } from '../lib/monthlySummaryPlan';
 import { categoriesReady } from '../services/supabase/schema';
-import { purgeExpiredTrash } from '../services/supabase/receiptsRepository';
-import type { Kategori, ReceiptRecord } from '../types/receipt';
+import { deleteReceipt as deleteReceiptRecord, purgeExpiredTrash, updateReceiptsCategory } from '../services/supabase/receiptsRepository';
+import { ESKI_KATEGORILER, type Kategori, KATEGORILER, type ReceiptRecord } from '../types/receipt';
 
 const PAGE = 25;
 
@@ -80,9 +80,14 @@ export default function DashboardScreen() {
   const [sort, setSort] = useState<SortKey>('newest');
   const listKey = `${label}|${query}|${category}|${sort}`;
   const [shownKey, setShownKey] = useState(listKey);
+  // Toplu düzenleme: seçim modu ve seçilen fişler (dönem/filtre değişince seçim temizlenir)
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   if (shownKey !== listKey) {
     setShownKey(listKey);
     setVisible(PAGE);
+    setSelected(new Set());
   }
   const filtering = !!query.trim() || !!category;
   const fisler = s?.fisler;
@@ -192,11 +197,83 @@ export default function DashboardScreen() {
         ]
       : []),
   ];
-  const receiptRow = (r: ReceiptRecord) => (
+  const selectedList = filtered.filter((r) => selected.has(r.id));
+  const allSelected = filtered.length > 0 && selectedList.length === filtered.length;
+
+  function toggle(id: string) {
+    haptics.select();
+    setSelected((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function exitSelection() {
+    setSelecting(false);
+    setSelected(new Set());
+  }
+
+  async function bulk(run: () => Promise<string>) {
+    setBulkBusy(true);
+    try {
+      const message = await run();
+      haptics.success();
+      exitSelection();
+      await refresh();
+      showToast(message, 'info');
+    } catch (e) {
+      showAlert('İşlem tamamlanamadı', errorMessage(e));
+      await refresh();
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  function bulkCategory() {
+    const ids = selectedList.map((r) => r.id);
+    if (!ids.length) return;
+    showActionSheet({
+      title: `${ids.length} fişin kategorisi`,
+      options: KATEGORILER.map((k) => ({
+        label: categoryMeta[k].label,
+        onPress: async () => {
+          if (!ESKI_KATEGORILER.includes(k) && (await categoriesReady()) === false) {
+            showAlert('Kurulum gerekli', 'Bu kategoriyi kullanmak için önce ana sayfadaki "Yeni kategorileri etkinleştir" adımını tamamlayın.');
+            return;
+          }
+          await bulk(async () => `${await updateReceiptsCategory(ids, k)} fiş ${categoryMeta[k].label} yapıldı`);
+        },
+      })),
+    });
+  }
+
+  function bulkDelete() {
+    const list = selectedList;
+    if (!list.length) return;
+    confirmDestructive(`${list.length} Fiş`, 'Seçilen fişler silinecek. Çöp kutusu etkinse 30 gün içinde Ayarlar → Son Silinenler’den geri alabilirsiniz.', `${list.length} Fişi Sil`, () =>
+      bulk(async () => {
+        let trashed = 0;
+        let deleted = 0;
+        // Sırayla: biri başarısız olursa öncekiler silinmiş, sonrakiler dokunulmamış kalır
+        for (const r of list) {
+          if ((await deleteReceiptRecord(r)) === 'trash') trashed++;
+          else deleted++;
+        }
+        return trashed ? `${trashed + deleted} fiş Son Silinenler’e taşındı` : `${deleted} fiş silindi`;
+      }),
+    );
+  }
+
+  const receiptRow = (r: ReceiptRecord) =>
+    selecting ? (
+      <ReceiptRow key={r.id} receipt={r} selected={selected.has(r.id)} onPress={() => toggle(r.id)} />
+    ) : (
     <SwipeToDelete key={r.id} onDelete={() => deleteReceipt(r)}>
       <ReceiptRow receipt={r} onPress={() => router.push({ pathname: '/receipt/[id]', params: { id: r.id } })} />
     </SwipeToDelete>
-  );
+    );
   const moreRow =
     filtered.length > visible ? <ListRow key="more" title={`${filtered.length - visible} fiş daha göster`} tone="action" onPress={() => setVisible((v) => v + PAGE)} /> : null;
 
@@ -204,15 +281,29 @@ export default function DashboardScreen() {
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       <Stack.Screen
         options={{
-          headerLeft: () => <HeaderIconButton icon={{ sf: 'person.crop.circle', ion: 'person-circle-outline' }} onPress={() => router.push('/settings')} label="Ayarlar" />,
-          headerRight: () => (
-            <HeaderIconButton
-              icon={{ sf: 'square.stack.3d.up', ion: 'layers-outline' }}
-              onPress={() => router.push('/batch')}
-              badge={readyDrafts || undefined}
-              label="Toplu tarama"
-            />
-          ),
+          headerLeft: () =>
+            selecting ? (
+              <HeaderTextButton
+                title={allSelected ? 'Seçimi Kaldır' : 'Tümünü Seç'}
+                onPress={() => setSelected(allSelected ? new Set() : new Set(filtered.map((r) => r.id)))}
+              />
+            ) : (
+              <HeaderIconButton icon={{ sf: 'person.crop.circle', ion: 'person-circle-outline' }} onPress={() => router.push('/settings')} label="Ayarlar" />
+            ),
+          headerRight: () =>
+            selecting ? (
+              <HeaderTextButton title="Bitti" bold onPress={exitSelection} />
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                {!!s?.fisler.length && <HeaderTextButton title="Seç" onPress={() => setSelecting(true)} />}
+                <HeaderIconButton
+                  icon={{ sf: 'square.stack.3d.up', ion: 'layers-outline' }}
+                  onPress={() => router.push('/batch')}
+                  badge={readyDrafts || undefined}
+                  label="Toplu tarama"
+                />
+              </View>
+            ),
           // iOS: büyük başlığın altında sistem arama çubuğu (Mail/Notlar gibi)
           ...(Platform.OS === 'ios'
             ? {
@@ -391,6 +482,27 @@ export default function DashboardScreen() {
       </ScrollView>
 
       <Toolbar>
+        {selecting ? (
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <Button
+              title="Kategori"
+              variant="gray"
+              icon={{ sf: 'tag', ion: 'pricetag-outline' }}
+              onPress={bulkCategory}
+              disabled={!selectedList.length || bulkBusy}
+              style={{ flex: 1 }}
+            />
+            <Button
+              title={selectedList.length ? `Sil (${selectedList.length})` : 'Sil'}
+              tone="red"
+              icon={{ sf: 'trash', ion: 'trash-outline' }}
+              onPress={bulkDelete}
+              loading={bulkBusy}
+              disabled={!selectedList.length || bulkBusy}
+              style={{ flex: 1 }}
+            />
+          </View>
+        ) : (
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <Button
             title="Elle"
@@ -401,6 +513,7 @@ export default function DashboardScreen() {
           />
           <Button title="Fiş Tara" icon={{ sf: 'camera.fill', ion: 'camera' }} onPress={() => router.push('/camera')} style={{ flex: 1 }} />
         </View>
+        )}
       </Toolbar>
     </View>
   );

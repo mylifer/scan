@@ -312,6 +312,15 @@ export async function renameFirms(from: string[], to: string): Promise<number> {
   return data?.length ?? 0;
 }
 
+/** Seçilen fişlerin kategorisini değiştirir. @returns değişen fiş sayısı */
+export async function updateReceiptsCategory(ids: string[], kategori: Kategori): Promise<number> {
+  if (!ids.length) return 0;
+  const { data, error } = await supabase.from(TABLE).update({ kategori }).in('id', ids).select('id');
+  if (error) throw new Error(`Kategori değiştirilemedi: ${error.message}`);
+  invalidateFirmCategories();
+  return data?.length ?? 0;
+}
+
 /** Tüm zamanlardaki fiş sayısı (satırları indirmeden). */
 export async function countReceipts(): Promise<number> {
   const { count, error } = await supabase.from(TABLE).select('id', { count: 'exact', head: true });
