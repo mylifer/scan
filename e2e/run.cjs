@@ -252,6 +252,40 @@ test('toplu düzenleme: seçilen fişlerin kategorisi değişir, toplu silinir',
   await close();
 });
 
+test('tüm fişler, firmalar ve firma detayı', async (b) => {
+  const { page, errors, close } = await open(b, {
+    receipts: [...thisMonth(), receipt('m2', 'Migros ', isoDate(-3, 4), 62.7, { kdv_yuzde10: 5.7, toplam_kdv: 5.7, kdv_yuzde20: 0 })],
+  });
+  await page.getByText('Tüm Fişler', { exact: true }).click();
+  await page.waitForTimeout(1200);
+  let text = await page.locator('body').innerText();
+  for (const f of ['MİGROS TİCARET A.Ş.', 'OPET PETROLCÜLÜK A.Ş.', 'KÖFTECİ YUSUF', 'ESKİ AY FİRMASI']) assert.ok(text.includes(f), `${f} görünmeli`);
+  assert.ok(text.includes('2.397,00'), 'tüm zamanların toplamı');
+  await page.getByPlaceholder('Firma ya da tutar ara').last().fill('köfteci');
+  await page.waitForTimeout(300);
+  text = await page.locator('body').innerText();
+  assert.ok(text.includes('KÖFTECİ YUSUF') && !text.includes('OPET PETROLCÜLÜK A.Ş.'), 'arama süzmeli');
+  await page.goBack();
+  await page.waitForTimeout(800);
+
+  await page.getByText('Firmalar', { exact: true }).click();
+  await page.waitForTimeout(1200);
+  text = await page.locator('body').innerText();
+  assert.ok(text.includes('FİRMALAR · 5') || text.includes('FİRMALAR · 4'), text.slice(0, 300));
+  await page.getByRole('button', { name: /OPET PETROLCÜLÜK A\.Ş\. 1 fiş/ }).click();
+  await page.waitForTimeout(1200);
+  text = await page.locator('body').innerText();
+  assert.ok(text.includes('Ortalama Fiş') && text.includes('₺1.500,00'), 'firma özeti');
+  assert.ok(text.includes('TOPLAM KDV') || text.includes('Toplam KDV'), 'KDV dağılımı');
+  assert.ok(text.includes('1 fiş'), 'fiş sayısı');
+  // Firmanın fişine dokununca fiş detayı açılır
+  await page.getByText('OPET PETROLCÜLÜK A.Ş.', { exact: true }).last().click();
+  await page.waitForTimeout(1200);
+  assert.ok((await page.getByText('Fişi Sil').count()) >= 1, 'fiş detayı açılmalı');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 test('muhasebe paketi geçerli bir ZIP üretir (Excel + fotoğraflar)', async (b) => {
   const { page, errors, close } = await open(b, { receipts: thisMonth() });
   const row = page.getByText('Muhasebe Paketi (ZIP)');

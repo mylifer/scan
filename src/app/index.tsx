@@ -415,6 +415,21 @@ export default function DashboardScreen() {
               </ListSection>
             )}
 
+            <ListSection>
+              <ListRow
+                title="Tüm Fişler"
+                icon={{ sf: 'doc.text.fill', ion: 'document-text', color: theme.blue }}
+                onPress={() => router.push('/receipts')}
+                chevron
+              />
+              <ListRow
+                title="Firmalar"
+                icon={{ sf: 'building.2.fill', ion: 'business', color: theme.indigo }}
+                onPress={() => router.push('/firms')}
+                chevron
+              />
+            </ListSection>
+
             {s && s.fisSayisi === 0 ? (
               <EmptyState
                 icon={{ sf: 'doc.text.viewfinder', ion: 'scan-outline' }}
