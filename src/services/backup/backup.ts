@@ -80,15 +80,16 @@ export interface RestorePreview {
   toInsert: BackupReceipt[];
   skipped: number;
   createdAt: string;
-  /** ZIP içeriği (fotoğraflar); geri yüklemede kullanılır */
-  files: Record<string, Uint8Array>;
+  /** ZIP dosyasının kendisi; fotoğraflar geri yükleme sırasında küçük gruplar hâlinde çıkarılır */
+  zip: Uint8Array;
 }
 
 /** Yedek dosyasını açar, doğrular ve hesapta zaten olan fişleri ayıklar (henüz hiçbir şey yazmaz). */
 export async function previewRestore(bytes: Uint8Array): Promise<RestorePreview> {
   let files: Record<string, Uint8Array>;
   try {
-    files = unzipSync(bytes);
+    // Yalnızca yedek.json çıkarılır: binlerce fotoğraflı yedeğin hepsi birden belleğe açılmasın
+    files = unzipSync(bytes, { filter: (f) => f.name === MANIFEST_NAME });
   } catch {
     throw new Error('Dosya açılamadı. Uygulamadan alınmış bir yedek (.zip) seçin.');
   }
@@ -97,8 +98,10 @@ export async function previewRestore(bytes: Uint8Array): Promise<RestorePreview>
   const { receipts, createdAt } = parseManifest(strFromU8(manifest));
   const { fisler } = await getSummary();
   const plan = planRestore(receipts, fisler);
-  return { total: receipts.length, toInsert: plan.toInsert, skipped: plan.skipped, createdAt, files };
+  return { total: receipts.length, toInsert: plan.toInsert, skipped: plan.skipped, createdAt, zip: bytes };
 }
+
+const PHOTO_BATCH = 20;
 
 export interface RestoreResult {
   inserted: number;
@@ -115,17 +118,30 @@ export async function applyRestore(preview: RestorePreview, onProgress?: (done: 
   const result: RestoreResult = { inserted: 0, failed: 0, photoFailed: 0 };
   const total = preview.toInsert.length;
   onProgress?.(0, total);
-  // Sırayla: Supabase'i yormadan, ilerleme doğru görünsün
-  for (const [i, r] of preview.toInsert.entries()) {
-    try {
-      const photo = r.photo ? (preview.files[r.photo] ?? null) : null;
-      const { photoFailed } = await insertRestoredReceipt(userId, r, photo);
-      result.inserted++;
-      if (photoFailed || (r.photo && !photo)) result.photoFailed++;
-    } catch {
-      result.failed++;
+  // Sırayla: Supabase'i yormadan, ilerleme doğru görünsün. Fotoğraflar 20'şerlik gruplar hâlinde
+  // ZIP'ten çıkarılır; bellekte aynı anda yalnızca o grubun fotoğrafları bulunur.
+  for (let start = 0; start < total; start += PHOTO_BATCH) {
+    const batch = preview.toInsert.slice(start, start + PHOTO_BATCH);
+    const wanted = new Set(batch.map((r) => r.photo).filter((p): p is string => !!p));
+    let photos: Record<string, Uint8Array> = {};
+    if (wanted.size) {
+      try {
+        photos = unzipSync(preview.zip, { filter: (f) => wanted.has(f.name) });
+      } catch {
+        photos = {};
+      }
     }
-    onProgress?.(i + 1, total);
+    for (const [j, r] of batch.entries()) {
+      try {
+        const photo = r.photo ? (photos[r.photo] ?? null) : null;
+        await insertRestoredReceipt(userId, r, photo);
+        result.inserted++;
+        if (r.photo && !photo) result.photoFailed++;
+      } catch {
+        result.failed++;
+      }
+      onProgress?.(start + j + 1, total);
+    }
   }
   return result;
 }
