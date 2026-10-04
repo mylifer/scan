@@ -44,7 +44,7 @@ export default function TaxCalendarScreen() {
   return (
     <ScrollView style={{ backgroundColor: theme.background }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingTop: 16, paddingBottom: 40 }}>
       <ListSection footer="Muhtasar yalnızca çalışanınız ya da kira stopajınız varsa verilir; Ba-Bs formlarını genellikle muhasebeciniz verir.">
-        <ListRow title="Muhtasar ve Ba-Bs'yi Göster" accessory={<Switch value={showAll} onValueChange={setShowAll} />} isLast />
+        <ListRow title="Muhtasar ve Ba-Bs'yi Göster" accessory={<Switch value={showAll} onValueChange={setShowAll} accessibilityLabel="Muhtasar ve Ba-Bs'yi göster" />} isLast />
       </ListSection>
 
       {groups.map((g) => (

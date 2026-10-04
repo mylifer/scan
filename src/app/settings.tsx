@@ -193,7 +193,7 @@ export default function SettingsScreen() {
           <ListRow
             title="Vergi Hatırlatıcısı"
             icon={{ sf: 'bell.badge.fill', ion: 'notifications', color: theme.red }}
-            accessory={<Switch value={reminder} onValueChange={toggleReminder} />}
+            accessory={<Switch value={reminder} onValueChange={toggleReminder} accessibilityLabel="Vergi hatırlatıcısı" />}
           />
         ) : null}
         <ListRow
