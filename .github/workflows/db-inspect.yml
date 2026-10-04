@@ -1,6 +1,6 @@
 # Supabase veritabanının içeriğini YALNIZCA OKUYARAK listeler (tablolar, satır sayıları, fonksiyonlar,
 # tetikleyiciler, depolama alanları, Edge Function'lar). Hiçbir şeyi değiştirmez.
-# Sonuçlar uyarı notu olarak yazılır. Yalnızca bu dosya değişince ya da elle çalışır.
+# Sonuçlar uyarı notu olarak yazılır. Yalnızca bu dosya değişince ya da elle çalışır (çalıştırma: 2).
 name: Veritabanı envanteri
 
 on:
