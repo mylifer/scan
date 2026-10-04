@@ -12,6 +12,17 @@ const KEY = 'tax-reminders:v1';
 /** 1.29 öncesindeki "her ayın 25'i" hatırlatıcısı */
 const LEGACY_ID = 'kdv-reminder';
 
+/**
+ * Aç / kapat / açılış yenilemesi sırayla çalışır: hızlıca açıp kapatınca geç biten "aç" işlemi
+ * "kapat"ın ardından bildirimleri yeniden kurmasın.
+ */
+let queue: Promise<unknown> = Promise.resolve();
+function serial<T>(fn: () => Promise<T>): Promise<T> {
+  const run = queue.then(fn, fn);
+  queue = run.catch(() => {});
+  return run;
+}
+
 /** Bildirim paketi bu ortamda yüklenebiliyorsa true (yüklenemezse Ayarlar'daki satır gizlenir) */
 export const remindersSupported = loadNotifications() !== null;
 
@@ -50,19 +61,27 @@ export async function enableReminder(): Promise<boolean> {
   if (!Notifications) return false;
   const permission = await Notifications.requestPermissionsAsync();
   if (!permission.granted) return false;
-  try {
-    await schedule();
-    await AsyncStorage.setItem(KEY, '1');
-  } catch (e) {
-    // Yarım kalan plan kurulu kalmasın (ayar kapalı görünürken bildirim gelmesin)
-    await disableReminder().catch(() => {});
-    throw e;
-  }
+  await serial(async () => {
+    try {
+      await schedule();
+      await AsyncStorage.setItem(KEY, '1');
+    } catch (e) {
+      // Yarım kalan plan kurulu kalmasın (ayar kapalı görünürken bildirim gelmesin)
+      await cancelAll().catch(() => {});
+      throw e;
+    }
+  });
   return true;
 }
 
-export async function disableReminder(): Promise<void> {
-  await AsyncStorage.setItem(KEY, '0').catch(() => {});
+export function disableReminder(): Promise<void> {
+  return serial(async () => {
+    await AsyncStorage.setItem(KEY, '0').catch(() => {});
+    await cancelAll();
+  });
+}
+
+async function cancelAll(): Promise<void> {
   const Notifications = loadNotifications();
   if (!Notifications) return;
   const existing = await Notifications.getAllScheduledNotificationsAsync();
@@ -77,7 +96,11 @@ export async function disableReminder(): Promise<void> {
  * Açılışta çağrılır: açıksa planı 6 ay ileriye yeniler; eski aylık hatırlatıcı kuruluysa
  * yeni takvime taşır. İzin sorulmaz (izin yoksa hiçbir şey yapmaz). Hata fırlatmaz.
  */
-export async function refreshTaxReminders(): Promise<void> {
+export function refreshTaxReminders(): Promise<void> {
+  return serial(refresh);
+}
+
+async function refresh(): Promise<void> {
   const Notifications = loadNotifications();
   if (!Notifications) return;
   try {
