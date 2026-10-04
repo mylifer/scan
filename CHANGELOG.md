@@ -16,6 +16,12 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.29.1 — `(yayında)`
+- Çok büyük bir yedeği geri yüklerken iPhone'un belleği dolup uygulamanın kapanabilmesi düzeltildi (fotoğraflar artık 20'şerli gruplar hâlinde açılıyor)
+- Geri yüklemede bir fotoğraf yüklenemezse o fiş eklenmiyor; yedeği yeniden yükleyince fotoğrafıyla birlikte ekleniyor (önceden fotoğrafsız eklenip bir daha düzeltilemiyordu)
+- Vergi hatırlatıcısını hızlıca açıp kapatınca bildirimlerin yine de gelmesi düzeltildi
+- Ekran okuyucu (VoiceOver) anahtarların adını okuyor
+
 ## 1.29.0 — `9a01092`
 - **Vergi Takvimi** (Ayarlar → Takip): önümüzdeki 12 ayın KDV, geçici vergi ve yıllık gelir vergisi son günleri; istenirse muhtasar ve Ba-Bs. Son gün hafta sonuna ya da bayrama denk gelirse ilk iş gününe kaydırılır (ör. Nisan 2026 KDV → 1 Haziran). Arife ve 28 Ekim gibi yarım günler turuncu notla işaretlenir. 2026–2027 bayram tarihleri iki ayrı kaynakla doğrulandı
 - **Vergi Hatırlatıcısı:** eski "her ayın 25'i" hatırlatıcısının yerine; her son günden 3 gün önce 10:00'da ve son gün 09:00'da bildirim. Açık olan eski hatırlatıcı kendiliğinden yenisine geçer
