@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.30.0 — `(yayında)`
+## 1.30.0 — `9018e9b`
 - **Son Silinenler (çöp kutusu):** Silinen fiş 30 gün boyunca Ayarlar → Son Silinenler'de durur, fotoğrafıyla birlikte geri alınabilir; süre dolunca kalıcı silinir. Veritabanı güncellemesi yapıldı (005)
 - **Firma Adlarını Birleştir** (Ayarlar → Veriler): "MİGROS TİCARET A.Ş.", "Migros", "MIGROS" gibi yazımları tek ada toplar; hangi adın kullanılacağını ve hangi yazımların dahil olacağını siz seçersiniz
 - **Toplu düzenleme:** Ana sayfada sağ üstteki "Seç" ile birden çok fişi işaretleyip kategorisini tek seferde değiştirin ya da silin
