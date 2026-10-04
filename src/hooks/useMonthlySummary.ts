@@ -72,8 +72,9 @@ export function useMonthlySummary() {
 
   const remove = useCallback(
     async (receipt: ReceiptRecord) => {
-      await deleteReceipt(receipt);
+      const result = await deleteReceipt(receipt);
       await refresh();
+      return result;
     },
     [refresh],
   );

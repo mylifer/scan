@@ -24,6 +24,7 @@ import { clearCache } from '../lib/offlineCache';
 import { supabase } from '../services/supabase/client';
 import { countReceipts, getStorageUsage, getSummary, type StorageUsage } from '../services/supabase/receiptsRepository';
 import { getVisionService } from '../services/vision';
+import { trashReady } from '../services/supabase/schema';
 
 /** Supabase free plan depolama kotası */
 const STORAGE_QUOTA = 1024 * 1024 * 1024;
@@ -254,6 +255,12 @@ export default function SettingsScreen() {
             </View>
           )}
         </ListRow>
+        <ListRow
+          title="Son Silinenler"
+          icon={{ sf: 'trash.fill', ion: 'trash', color: theme.gray }}
+          onPress={async () => router.push((await trashReady()) === false ? '/setup-trash' : '/trash')}
+          chevron
+        />
         <ListRow
           title="Firma Adlarını Birleştir"
           icon={{ sf: 'building.2.fill', ion: 'business', color: theme.indigo }}

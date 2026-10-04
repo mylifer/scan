@@ -6,9 +6,12 @@ import { receiptImageName, round2, trDateToIso } from '../../lib/format';
 import { learnedCategoryFor } from '../../lib/search';
 import { buildMonthlySeries, type MonthPoint } from '../../lib/trend';
 import type { Kategori, ReceiptData, ReceiptRecord } from '../../types/receipt';
+import { trashCutoff } from '../../lib/trash';
 import { supabase } from './client';
+import { trashReady } from './schema';
 
 const TABLE = 'receipts';
+const TRASH_TABLE = 'receipt_trash';
 export const RECEIPT_IMAGES_BUCKET = 'receipt-images';
 
 export interface SaveResult {
@@ -397,13 +400,101 @@ export function recordToData(r: ReceiptRecord): ReceiptData {
 }
 
 /** Fişi ve (varsa) Storage'daki görselini siler. */
-export async function deleteReceipt(receipt: ReceiptRecord): Promise<void> {
+/**
+ * Fişi siler. Çöp kutusu kuruluysa (005) fiş 30 gün geri alınabilir şekilde oraya taşınır ve
+ * fotoğrafı saklanır; kurulu değilse fiş ve fotoğrafı kalıcı olarak silinir.
+ */
+export async function deleteReceipt(receipt: ReceiptRecord): Promise<'trash' | 'deleted'> {
+  if ((await trashReady()) === true) {
+    const { toplam_kdv: _generated, ...row } = receipt;
+    // Önceki yarım kalmış bir denemeden kalan kayıt varsa çakışmasın
+    await supabase.from(TRASH_TABLE).delete().eq('id', receipt.id);
+    const { error: trashError } = await supabase.from(TRASH_TABLE).insert({ id: receipt.id, receipt: row });
+    if (trashError) throw new Error(`Silinemedi: ${trashError.message}`);
+    const { error } = await supabase.from(TABLE).delete().eq('id', receipt.id);
+    if (error) {
+      await supabase.from(TRASH_TABLE).delete().eq('id', receipt.id);
+      throw new Error(`Silinemedi: ${error.message}`);
+    }
+    invalidateFirmCategories();
+    return 'trash';
+  }
   const { error } = await supabase.from(TABLE).delete().eq('id', receipt.id);
   if (error) throw new Error(`Silinemedi: ${error.message}`);
   invalidateFirmCategories();
   if (receipt.image_path) {
     // Görsel silinemese bile kayıt silinmiştir; yalnızca yer kaplar
     await supabase.storage.from(RECEIPT_IMAGES_BUCKET).remove([receipt.image_path]);
+  }
+  return 'deleted';
+}
+
+export interface TrashItem {
+  id: string;
+  deleted_at: string;
+  receipt: ReceiptRecord;
+}
+
+/** Çöp kutusundaki fişler, en son silinen önce */
+export async function listTrash(): Promise<TrashItem[]> {
+  const { data, error } = await supabase.from(TRASH_TABLE).select('*').order('deleted_at', { ascending: false }).limit(1000);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r) => {
+    const rec = (r.receipt ?? {}) as Record<string, unknown>;
+    const record = toRecord({ ...rec, id: r.id });
+    record.toplam_kdv = round2(record.kdv_yuzde1 + record.kdv_yuzde10 + record.kdv_yuzde20);
+    return { id: String(r.id), deleted_at: String(r.deleted_at), receipt: record };
+  });
+}
+
+/** Fişi çöp kutusundan geri alır (aynı kimlik, tarih ve fotoğrafla) */
+export async function restoreFromTrash(item: TrashItem): Promise<void> {
+  const r = item.receipt;
+  const { error } = await supabase.from(TABLE).insert({
+    id: r.id,
+    created_at: r.created_at,
+    firma_adi: r.firma_adi,
+    tarih: r.tarih,
+    toplam_tutar: r.toplam_tutar,
+    kdv_yuzde1: r.kdv_yuzde1,
+    kdv_yuzde10: r.kdv_yuzde10,
+    kdv_yuzde20: r.kdv_yuzde20,
+    kategori: r.kategori,
+    image_path: r.image_path,
+  });
+  // 23505: fiş zaten geri alınmış (ör. önceki deneme yarım kaldı) → yalnızca çöp kaydı silinir
+  if (error && error.code !== '23505') throw new Error(`Geri alınamadı: ${error.message}`);
+  await supabase.from(TRASH_TABLE).delete().eq('id', item.id);
+  invalidateFirmCategories();
+}
+
+/** Fişleri ve fotoğraflarını kalıcı olarak siler */
+export async function purgeTrash(items: TrashItem[]): Promise<void> {
+  if (!items.length) return;
+  const { error } = await supabase
+    .from(TRASH_TABLE)
+    .delete()
+    .in(
+      'id',
+      items.map((i) => i.id),
+    );
+  if (error) throw new Error(`Silinemedi: ${error.message}`);
+  const photos = items.map((i) => i.receipt.image_path).filter((p): p is string => !!p);
+  // Fotoğraf silinemese bile kayıt silinmiştir; yalnızca yer kaplar
+  if (photos.length) await supabase.storage.from(RECEIPT_IMAGES_BUCKET).remove(photos);
+}
+
+/** Süresi (30 gün) dolanları kalıcı olarak siler. Açılışta çağrılır; hata fırlatmaz. */
+export async function purgeExpiredTrash(): Promise<number> {
+  try {
+    if ((await trashReady()) !== true) return 0;
+    const { data, error } = await supabase.from(TRASH_TABLE).select('id').lt('deleted_at', trashCutoff()).limit(500);
+    if (error || !data?.length) return 0;
+    const expired = (await listTrash()).filter((i) => data.some((d) => String(d.id) === i.id));
+    await purgeTrash(expired);
+    return expired.length;
+  } catch {
+    return 0;
   }
 }
 

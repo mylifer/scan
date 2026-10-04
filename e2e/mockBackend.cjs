@@ -49,7 +49,7 @@ function filterRows(rows, sp) {
  */
 async function installBackend(page, opts = {}) {
   const state = {
-    db: { receipts: [...(opts.receipts ?? [])], receipt_drafts: [] },
+    db: { receipts: [...(opts.receipts ?? [])], receipt_drafts: [], receipt_trash: [] },
     storage: new Map(),
     log: [],
     geminiCalls: 0,
@@ -107,6 +107,7 @@ async function installBackend(page, opts = {}) {
       if (m === 'POST') {
         const body = JSON.parse(req.postData());
         const row = { id: `id${++n}`, created_at: new Date(Date.now() + n).toISOString(), user_id: state.userId, status: 'pending', scheduled_for: null, result: null, error: null, ...body };
+        if (t === 'receipt_trash') row.deleted_at = body.deleted_at ?? new Date().toISOString();
         if (t === 'receipts') row.toplam_kdv = (row.kdv_yuzde1 ?? 0) + (row.kdv_yuzde10 ?? 0) + (row.kdv_yuzde20 ?? 0);
         state.db[t].push(row);
         state.log.push(`INSERT ${t}`);

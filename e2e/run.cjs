@@ -178,6 +178,37 @@ test('firma adları: farklı yazımlar tek ada birleştirilir', async (b) => {
   await close();
 });
 
+test('çöp kutusu: silinen fiş Son Silinenler’e gider, fotoğrafı korunur, geri alınır', async (b) => {
+  const { page, backend, errors, close } = await open(b, { receipts: thisMonth(), schema: 5 });
+  await page.getByText('OPET PETROLCÜLÜK A.Ş.').click();
+  await page.waitForTimeout(1200);
+  await page.getByText('Fişi Sil').first().click();
+  await page.waitForTimeout(500);
+  assert.ok((await page.getByText(/30 gün içinde Ayarlar’dan geri alabilirsiniz/).count()) === 1, 'onayda geri alınabilir denmeli');
+  await page.getByText('Fişi Sil').last().click();
+  await page.waitForTimeout(1500);
+  assert.ok(!backend.db.receipts.some((r) => r.id === 'b'), 'fiş listeden çıkmalı');
+  assert.equal(backend.db.receipt_trash.length, 1, 'çöp kutusuna taşınmalı');
+  assert.ok(!backend.log.some((l) => l.startsWith('STORAGE DELETE')), 'fotoğraf silinmemeli');
+
+  await page.getByLabel('Ayarlar').click();
+  await page.waitForTimeout(800);
+  await page.getByText('Son Silinenler', { exact: true }).click();
+  await page.waitForTimeout(1200);
+  assert.ok((await page.getByText(/30 gün sonra kalıcı olarak silinecek/).count()) === 1);
+  await page.getByText('OPET PETROLCÜLÜK A.Ş.').click();
+  await page.waitForTimeout(400);
+  await page.getByText('Geri Al', { exact: true }).click();
+  await page.waitForTimeout(1500);
+  const back = backend.db.receipts.find((r) => r.id === 'b');
+  assert.ok(back, 'fiş geri gelmeli');
+  assert.equal(back.image_path, 'u/b.jpg', 'fotoğraf bağlantısı korunmalı');
+  assert.equal(backend.db.receipt_trash.length, 0);
+  assert.ok((await page.getByText('Son Silinen Yok').count()) === 1);
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 test('muhasebe paketi geçerli bir ZIP üretir (Excel + fotoğraflar)', async (b) => {
   const { page, errors, close } = await open(b, { receipts: thisMonth() });
   const row = page.getByText('Muhasebe Paketi (ZIP)');

@@ -37,6 +37,7 @@ import { resumePendingUploads } from '../services/drafts/uploadQueue';
 import { updateMonthlySummary } from '../services/reminders/monthlySummary';
 import { monthOffset } from '../lib/monthlySummaryPlan';
 import { categoriesReady } from '../services/supabase/schema';
+import { purgeExpiredTrash } from '../services/supabase/receiptsRepository';
 import type { Kategori, ReceiptRecord } from '../types/receipt';
 
 const PAGE = 25;
@@ -51,6 +52,8 @@ export default function DashboardScreen() {
   const budget = useMonthlyBudget();
   // Önceki oturumda (uygulama kapanınca) yüklenemeden kalan toplu çekim fotoğraflarını yüklemeye devam et
   useEffect(() => {
+    // Süresi (30 gün) dolan silinmiş fişleri kalıcı olarak temizle
+    purgeExpiredTrash();
     resumePendingUploads()
       .then((n) => {
         if (n) showToast(`Önceki çekimden kalan ${n} fotoğraf yükleniyor`, 'info', 3500);
@@ -134,9 +137,9 @@ export default function DashboardScreen() {
 
   async function deleteReceipt(r: ReceiptRecord) {
     try {
-      await remove(r);
+      const result = await remove(r);
       haptics.success();
-      showToast('Fiş silindi', 'info');
+      showToast(result === 'trash' ? 'Fiş Son Silinenler’e taşındı' : 'Fiş silindi', 'info');
     } catch (e) {
       showAlert('Silinemedi', errorMessage(e));
     }

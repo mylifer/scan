@@ -25,6 +25,7 @@ import {
   recordToData,
   updateReceipt,
 } from '../../services/supabase/receiptsRepository';
+import { trashReady } from '../../services/supabase/schema';
 import type { ReceiptRecord } from '../../types/receipt';
 import { useSingleFlight } from '../../hooks/useSingleFlight';
 import { useConfirmLeave } from '../../hooks/useConfirmLeave';
@@ -135,14 +136,18 @@ export default function ReceiptDetailScreen() {
     }
   }
 
-  function remove() {
+  async function remove() {
     if (!record) return;
-    confirmDestructive(record.firma_adi, 'Bu fiş ve fotoğrafı kalıcı olarak silinecek.', 'Fişi Sil', async () => {
+    const trash = (await trashReady()) === true;
+    const message = trash
+      ? 'Fiş Son Silinenler’e taşınacak; 30 gün içinde Ayarlar’dan geri alabilirsiniz.'
+      : 'Bu fiş ve fotoğrafı kalıcı olarak silinecek.';
+    confirmDestructive(record.firma_adi, message, 'Fişi Sil', async () => {
       try {
-        await deleteReceipt(record);
+        const result = await deleteReceipt(record);
         allowLeave();
         router.back();
-        showToast('Fiş silindi', 'info');
+        showToast(result === 'trash' ? 'Fiş Son Silinenler’e taşındı' : 'Fiş silindi', 'info');
       } catch (e) {
         showAlert('Silinemedi', errorMessage(e));
       }
