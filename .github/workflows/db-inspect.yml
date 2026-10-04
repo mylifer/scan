@@ -1,0 +1,68 @@
+# Supabase veritabanının içeriğini YALNIZCA OKUYARAK listeler (tablolar, satır sayıları, fonksiyonlar,
+# tetikleyiciler, depolama alanları, Edge Function'lar). Hiçbir şeyi değiştirmez.
+# Sonuçlar uyarı notu olarak yazılır. Yalnızca bu dosya değişince ya da elle çalışır.
+name: Veritabanı envanteri
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/pos-receipt-scanner-app-tk3b0z]
+    paths: ['.github/workflows/db-inspect.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: fzhagwcysltvpcgdfrnl
+    steps:
+      - name: Envanter (salt okunur)
+        shell: python
+        run: |
+          import json, os, urllib.request, urllib.error
+          tok = os.environ.get("SUPABASE_ACCESS_TOKEN", "")
+          ref = os.environ["PROJECT_REF"]
+          if not tok:
+              print("::warning title=token::SUPABASE_ACCESS_TOKEN tanimli degil"); raise SystemExit(0)
+          def api(method, path, body=None):
+              req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}{path}", method=method,
+                  data=json.dumps(body).encode() if body else None,
+                  headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json", "User-Agent": "db-inspect"})
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r: return json.loads(r.read() or b"null")
+              except urllib.error.HTTPError as e:
+                  return {"error": e.code, "body": e.read().decode()[:300]}
+          def note(title, rows):
+              text = rows if isinstance(rows, str) else json.dumps(rows, ensure_ascii=False)
+              text = text.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
+              for i in range(0, max(len(text), 1), 3500):
+                  print(f"::warning title={title} {i//3500}::{text[i:i+3500]}")
+          SYS = "('pg_catalog','information_schema','auth','storage','realtime','supabase_functions','extensions','graphql','graphql_public','pgsodium','pgsodium_masks','vault','net','cron','supabase_migrations','_realtime','pgbouncer','_analytics')"
+          Q = {
+            "schemas": "select nspname from pg_namespace where nspname not like 'pg_%' and nspname <> 'information_schema' order by 1",
+            "tables": f"select n.nspname||'.'||c.relname as t, c.relkind, (select count(*) from pg_policy p where p.polrelid=c.oid) as policies from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind in ('r','v','m','p') and n.nspname not in {SYS} order by 1",
+            "functions": f"select n.nspname||'.'||p.proname||'('||pg_get_function_identity_arguments(p.oid)||')' as f from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname not in {SYS} and n.nspname not like 'pg_%' order by 1",
+            "types": f"select n.nspname||'.'||t.typname, t.typtype from pg_type t join pg_namespace n on n.oid=t.typnamespace where n.nspname not in {SYS} and n.nspname not like 'pg_%' and t.typtype in ('e','d','c') and not exists (select 1 from pg_class c where c.reltype=t.oid) order by 1",
+            "triggers": "select tgrelid::regclass::text as t, tgname, pg_get_triggerdef(oid) from pg_trigger where not tgisinternal and tgrelid::regclass::text not like 'realtime.%' and tgrelid::regclass::text not like 'storage.%' and tgrelid::regclass::text not like 'supabase_functions.%' and tgrelid::regclass::text not like 'cron.%' order by 1,2",
+            "policies": "select schemaname||'.'||tablename as t, policyname, cmd from pg_policies where schemaname not in ('realtime') order by 1,2",
+            "buckets": "select id, public, (select count(*) from storage.objects o where o.bucket_id=b.id) as objects from storage.buckets b order by 1",
+            "storage_top": "select bucket_id, split_part(name,'/',1) as top, count(*) from storage.objects group by 1,2 order by 1,2 limit 50",
+            "extensions": "select extname from pg_extension order by 1",
+            "users": "select count(*) as users from auth.users",
+            "views_seq": f"select n.nspname||'.'||c.relname, c.relkind from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind in ('S') and n.nspname not in {SYS} order by 1",
+          }
+          for k, q in Q.items():
+              note(k, api("POST", "/database/query", {"query": q}))
+          exact = api("POST", "/database/query", {"query": f"select string_agg(format('select %L as t, count(*) from %I.%I', n.nspname||'.'||c.relname, n.nspname, c.relname), ' union all ') as q from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind='r' and n.nspname not in {SYS} and n.nspname not like 'pg_%'"})
+          try:
+              q = exact[0]["q"]
+              note("row_counts", api("POST", "/database/query", {"query": q}) if q else [])
+          except Exception:
+              note("row_counts", str(exact)[:500])
+          fns = api("GET", "/functions")
+          note("edge_functions", [{"slug": f.get("slug"), "status": f.get("status")} for f in fns] if isinstance(fns, list) else fns)
+          sec = api("GET", "/secrets")
+          note("secret_names", [s.get("name") for s in sec] if isinstance(sec, list) else sec)
