@@ -1,4 +1,4 @@
-import { type ErrorBoundaryProps, Stack } from 'expo-router';
+import { type ErrorBoundaryProps, router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -15,7 +15,8 @@ import { showAlert } from '../lib/alert';
 import { errorMessage } from '../lib/errors';
 import { largeTitle, stackScreenOptions } from '../lib/navigation';
 import { useTheme } from '../lib/theme';
-import { setupNotifications } from '../services/reminders/notificationSetup';
+import { setupNotifications, subscribeNotificationTaps } from '../services/reminders/notificationSetup';
+import { MONTHLY_SUMMARY_KIND } from '../lib/monthlySummaryPlan';
 import { refreshTaxReminders } from '../services/reminders/taxReminders';
 
 // Bildirim davranışı uygulama açılışında bir kez ayarlanır (vergi hatırlatıcısı ön planda da görünsün);
@@ -26,6 +27,17 @@ void refreshTaxReminders();
 function RootNavigator() {
   const theme = useTheme();
   const { session, loading, recovering, linkError } = useAuth();
+
+  // Aylık özet bildirimine dokunulunca o ayın özetini aç (giriş yapılmışsa)
+  const signedIn = !!session;
+  useEffect(() => {
+    if (!signedIn) return;
+    return subscribeNotificationTaps((data) => {
+      if (data.kind === MONTHLY_SUMMARY_KIND && typeof data.month === 'string') {
+        router.navigate({ pathname: '/', params: { ay: data.month } });
+      }
+    });
+  }, [signedIn]);
 
   // Geçersiz/süresi dolmuş sıfırlama bağlantısı: bir kez bildir
   useEffect(() => {

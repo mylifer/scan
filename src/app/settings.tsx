@@ -8,13 +8,14 @@ import { useAuth } from '../hooks/useAuth';
 import { confirmDestructive, showActionSheet } from '../lib/actionSheet';
 import { showAlert } from '../lib/alert';
 import { errorMessage } from '../lib/errors';
-import { formatBytes, formatTL } from '../lib/format';
+import { formatBytes, formatTL, monthRange } from '../lib/format';
 import { haptics } from '../lib/haptics';
 import { tabular, type as t, useTheme } from '../lib/theme';
 import { VERSION_LABEL } from '../lib/version';
 import { useMonthlyBudget } from '../lib/budget';
 import { showToast } from '../lib/toast';
 import { disableReminder, enableReminder, isReminderEnabled, remindersSupported } from '../services/reminders/taxReminders';
+import { disableMonthlySummary, enableMonthlySummary, isMonthlySummaryEnabled } from '../services/reminders/monthlySummary';
 import { applyRestore, createBackup, previewRestore } from '../services/backup/backup';
 import { pickBackupFile } from '../services/backup/pickBackupFile';
 import { buildReceiptsWorkbook, exportFilename, shareXlsx, shareZipStream } from '../services/export/exportReceipts';
@@ -39,9 +40,33 @@ export default function SettingsScreen() {
   const budget = useMonthlyBudget();
   const [reminder, setReminder] = useState(false);
 
+  const [monthly, setMonthly] = useState(false);
   useEffect(() => {
-    if (remindersSupported) isReminderEnabled().then(setReminder);
+    if (!remindersSupported) return;
+    isReminderEnabled().then(setReminder);
+    isMonthlySummaryEnabled().then(setMonthly);
   }, []);
+
+  async function toggleMonthly(on: boolean) {
+    setMonthly(on);
+    try {
+      if (on) {
+        const s = await getSummary(monthRange(0));
+        if (!(await enableMonthlySummary({ total: s.toplamGider, kdv: s.toplamKdv, count: s.fisSayisi }))) {
+          setMonthly(false);
+          showAlert('Bildirim izni gerekli', 'Aylık özet için Ayarlar → Bildirimler bölümünden bu uygulamaya (Expo Go) izin verin.');
+          return;
+        }
+        haptics.success();
+        showToast('Her ayın 1’inde geçen ayın özeti gelecek');
+      } else {
+        await disableMonthlySummary();
+      }
+    } catch (e) {
+      setMonthly(!on);
+      showAlert('Aylık özet ayarlanamadı', errorMessage(e));
+    }
+  }
 
   async function toggleReminder(on: boolean) {
     setReminder(on);
@@ -180,7 +205,7 @@ export default function SettingsScreen() {
         header="Takip"
         footer={
           remindersSupported
-            ? 'Hatırlatıcı; KDV, geçici vergi ve yıllık gelir vergisi son günlerinden 3 gün önce ve son gün bildirim gönderir. Hafta sonu ve bayram kaymaları hesaba katılır.'
+            ? 'Hatırlatıcı; KDV, geçici vergi ve yıllık gelir vergisi son günlerinden 3 gün önce ve son gün bildirim gönderir. Hafta sonu ve bayram kaymaları hesaba katılır. Aylık özet, her ayın 1’inde geçen ayın gider, KDV ve fiş sayısını bildirir.'
             : undefined
         }>
         <ListRow
@@ -194,6 +219,13 @@ export default function SettingsScreen() {
             title="Vergi Hatırlatıcısı"
             icon={{ sf: 'bell.badge.fill', ion: 'notifications', color: theme.red }}
             accessory={<Switch value={reminder} onValueChange={toggleReminder} accessibilityLabel="Vergi hatırlatıcısı" />}
+          />
+        ) : null}
+        {remindersSupported ? (
+          <ListRow
+            title="Aylık Özet Bildirimi"
+            icon={{ sf: 'chart.bar.doc.horizontal.fill', ion: 'bar-chart', color: theme.indigo }}
+            accessory={<Switch value={monthly} onValueChange={toggleMonthly} accessibilityLabel="Aylık özet bildirimi" />}
           />
         ) : null}
         <ListRow

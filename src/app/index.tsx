@@ -1,4 +1,4 @@
-import { router, Stack } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
 
@@ -34,6 +34,8 @@ import { compareWithPreviousMonth } from '../lib/trend';
 import { VERSION_LABEL } from '../lib/version';
 import { reloadApp, useWebUpdateAvailable } from '../lib/webUpdate';
 import { resumePendingUploads } from '../services/drafts/uploadQueue';
+import { updateMonthlySummary } from '../services/reminders/monthlySummary';
+import { monthOffset } from '../lib/monthlySummaryPlan';
 import { categoriesReady } from '../services/supabase/schema';
 import type { Kategori, ReceiptRecord } from '../types/receipt';
 
@@ -110,6 +112,21 @@ export default function DashboardScreen() {
       current: offset === 0 ? { day: now.getDate(), daysInMonth: new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() } : null,
     });
   }, [s, isMonth, offset, previousCategories]);
+
+  // Aylık özet bildirimi bu ayın güncel rakamlarıyla yeniden kurulur (kapalıysa hiçbir şey yapmaz)
+  const thisMonth = isMonth && offset === 0 ? s : null;
+  useEffect(() => {
+    if (thisMonth) updateMonthlySummary({ total: thisMonth.toplamGider, kdv: thisMonth.toplamKdv, count: thisMonth.fisSayisi });
+  }, [thisMonth]);
+
+  // Bildirimden gelindiyse (?ay=2026-09) o ayı aç
+  const { ay } = useLocalSearchParams<{ ay?: string }>();
+  useEffect(() => {
+    if (!ay) return;
+    const o = monthOffset(ay);
+    if (o !== null) goToMonth(o);
+    router.setParams({ ay: undefined });
+  }, [ay, goToMonth]);
 
   const readyDrafts = drafts.filter((d) => d.status === 'ready').length;
   const nextScheduled = drafts.find((d) => d.status === 'scheduled' && d.scheduled_for)?.scheduled_for;

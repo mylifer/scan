@@ -64,6 +64,17 @@ test('öne çıkanlar: önceki ayla kategori kıyası', async (b) => {
   await close();
 });
 
+test('bildirimden gelen ?ay= bağlantısı o ayın özetini açar', async (b) => {
+  const prev = isoDate(-1, 10).slice(0, 7);
+  const { page, errors, close } = await open(b, { receipts: thisMonth() }, `?ay=${prev}`);
+  const text = await page.locator('body').innerText();
+  assert.ok(text.includes('KÖFTECİ YUSUF'), 'geçen ayın fişi görünmeli');
+  assert.ok(!text.includes('OPET PETROLCÜLÜK A.Ş.'), 'bu ayın fişi görünmemeli');
+  assert.ok(!page.url().includes('ay='), 'parametre temizlenmeli');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 test('hızlı ay geçişinde geç dönen eski istek listeyi ezmez', async (b) => {
   const lastMonthFrom = isoDate(-1, 1);
   const { page, errors, close } = await open(b, {
