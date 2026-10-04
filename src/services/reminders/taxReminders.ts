@@ -50,8 +50,14 @@ export async function enableReminder(): Promise<boolean> {
   if (!Notifications) return false;
   const permission = await Notifications.requestPermissionsAsync();
   if (!permission.granted) return false;
-  await schedule();
-  await AsyncStorage.setItem(KEY, '1');
+  try {
+    await schedule();
+    await AsyncStorage.setItem(KEY, '1');
+  } catch (e) {
+    // Yarım kalan plan kurulu kalmasın (ayar kapalı görünürken bildirim gelmesin)
+    await disableReminder().catch(() => {});
+    throw e;
+  }
   return true;
 }
 
