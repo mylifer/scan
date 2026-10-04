@@ -17,8 +17,8 @@ describe('çöp kutusu süresi', () => {
   });
   it('kesim anı 30 gün önce', () => assert.equal(trashCutoff(now), '2026-09-04T12:00:00.000Z'));
   it('etiket', () => {
-    assert.equal(trashLeftLabel(0), 'Bugün kalıcı olarak silinecek');
-    assert.equal(trashLeftLabel(1), 'Yarın kalıcı olarak silinecek');
-    assert.equal(trashLeftLabel(12), '12 gün sonra kalıcı olarak silinecek');
+    assert.equal(trashLeftLabel(0), 'Bugün silinecek');
+    assert.equal(trashLeftLabel(1), 'Yarın silinecek');
+    assert.equal(trashLeftLabel(12), '12 gün kaldı');
   });
 });

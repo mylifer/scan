@@ -18,7 +18,7 @@ export function trashCutoff(now = new Date()): string {
 }
 
 export function trashLeftLabel(days: number): string {
-  if (days <= 0) return 'Bugün kalıcı olarak silinecek';
-  if (days === 1) return 'Yarın kalıcı olarak silinecek';
-  return `${days} gün sonra kalıcı olarak silinecek`;
+  if (days <= 0) return 'Bugün silinecek';
+  if (days === 1) return 'Yarın silinecek';
+  return `${days} gün kaldı`;
 }
