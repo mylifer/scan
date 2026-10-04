@@ -1,5 +1,5 @@
 import { amountToInput, normalizeTrDate, parseAmount, todayTr, trDateToIso } from './format';
-import type { ReceiptData } from '../types/receipt';
+import { KATEGORI_ETIKETLERI, type Kategori, type ReceiptData } from '../types/receipt';
 
 /** Formda tutarlar metin olarak tutulur ki kullanıcı "12,5" gibi ara değerler yazabilsin. */
 export interface ReceiptFormValues {
@@ -85,5 +85,31 @@ export function formWarnings(v: ReceiptFormValues, today = new Date()): string[]
     warnings.push('KDV, toplamın %16,7’sinden fazla görünüyor (en yüksek oran %20). Matrah ile KDV karışmış olabilir.');
   }
   if (total > 0 && kdv === 0) warnings.push('Hiç KDV girilmedi. POS fişlerinde genellikle KDV bulunur.');
+  const unusual = unusualRates(v.kategori, { 1: parseAmount(v.kdvYuzde1), 10: parseAmount(v.kdvYuzde10), 20: parseAmount(v.kdvYuzde20) });
+  if (unusual.length) {
+    const list = unusual.map((r) => `%${r}`).join(' ve ');
+    warnings.push(`${KATEGORI_ETIKETLERI[v.kategori]} fişlerinde ${list} KDV pek görülmez. Tutarın doğru dilime yazıldığını ve kategoriyi kontrol edin.`);
+  }
   return warnings;
+}
+
+type Rate = 1 | 10 | 20;
+
+/**
+ * Kategoride pek görülmeyen KDV dilimleri (yalnızca emin olunan durumlar; uyarıdır, kaydı engellemez):
+ * akaryakıt, araç bakım ve iletişim %20; restoran, konaklama ve giyimde %1 beklenmez
+ * (yemek/konaklama/giyim %10, alkol ve bazı ürünler %20). Market gibi karışık kategoriler kontrol edilmez.
+ */
+const UNUSUAL_RATES: Partial<Record<Kategori, Rate[]>> = {
+  akaryakıt: [1, 10],
+  'araç bakım': [1, 10],
+  iletişim: [1, 10],
+  restoran: [1],
+  konaklama: [1],
+  giyim: [1],
+  teknoloji: [1],
+};
+
+export function unusualRates(kategori: Kategori, amounts: Record<Rate, number>): Rate[] {
+  return (UNUSUAL_RATES[kategori] ?? []).filter((r) => amounts[r] > 0);
 }
