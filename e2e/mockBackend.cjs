@@ -117,7 +117,8 @@ async function installBackend(page, opts = {}) {
         const rows = filterRows(state.db[t], url.searchParams);
         rows.forEach((r) => Object.assign(r, body));
         state.log.push(`PATCH ${t} ${body.status ?? Object.keys(body).join(',')}`);
-        return single ? json(route, rows[0]) : route.fulfill({ status: 204, body: '' });
+        if (single) return json(route, rows[0]);
+        return (req.headers()['prefer'] || '').includes('return=representation') ? json(route, rows) : route.fulfill({ status: 204, body: '' });
       }
       if (m === 'DELETE') {
         const rows = filterRows(state.db[t], url.searchParams);

@@ -255,6 +255,12 @@ export default function SettingsScreen() {
           )}
         </ListRow>
         <ListRow
+          title="Firma Adlarını Birleştir"
+          icon={{ sf: 'building.2.fill', ion: 'business', color: theme.indigo }}
+          onPress={() => router.push('/merge-firms')}
+          chevron
+        />
+        <ListRow
           title="Tüm Fişleri Excel'e Aktar"
           icon={{ sf: 'tablecells.fill', ion: 'grid', color: theme.green }}
           onPress={exportAll}

@@ -156,6 +156,28 @@ test('vergi takvimi: önümüzdeki son günler, muhtasar isteğe bağlı', async
   await close();
 });
 
+test('firma adları: farklı yazımlar tek ada birleştirilir', async (b) => {
+  const { page, backend, errors, close } = await open(b, {
+    receipts: [
+      ...thisMonth(),
+      receipt('m2', 'Migros', isoDate(0, 1), 50),
+      receipt('m3', 'MIGROS', isoDate(-1, 3), 60),
+    ],
+  });
+  await page.getByLabel('Ayarlar').click();
+  await page.waitForTimeout(800);
+  await page.getByText('Firma Adlarını Birleştir').click();
+  await page.waitForTimeout(1200);
+  assert.ok((await page.getByText('1 firmada farklı yazım bulundu').count()) === 1);
+  await page.getByText('Birleştir (2 fiş)').click();
+  await page.waitForTimeout(1500);
+  const names = new Set(backend.db.receipts.filter((r) => r.id.startsWith('m') || r.id === 'a').map((r) => r.firma_adi));
+  assert.deepEqual([...names], ['MİGROS TİCARET A.Ş.'], 'hepsi tek ad olmalı');
+  assert.ok((await page.getByText('Birleştirilecek Firma Yok').count()) === 1, 'liste boşalmalı');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 test('muhasebe paketi geçerli bir ZIP üretir (Excel + fotoğraflar)', async (b) => {
   const { page, errors, close } = await open(b, { receipts: thisMonth() });
   const row = page.getByText('Muhasebe Paketi (ZIP)');

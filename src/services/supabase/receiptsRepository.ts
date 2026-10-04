@@ -284,6 +284,31 @@ export async function insertRestoredReceipt(
   invalidateFirmCategories();
 }
 
+/** Tüm firma adları ve fiş sayıları (yalnızca firma_adi sütunu çekilir). */
+export async function getFirmNameCounts(): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    const { data, error } = await supabase.from(TABLE).select('firma_adi').order('id').range(offset, offset + PAGE_SIZE - 1);
+    if (error) throw new Error(error.message);
+    for (const r of data ?? []) {
+      const name = String(r.firma_adi ?? '');
+      counts.set(name, (counts.get(name) ?? 0) + 1);
+    }
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+  return counts;
+}
+
+/** `from` adlarıyla kayıtlı fişlerin firma adını `to` yapar. @returns değişen fiş sayısı */
+export async function renameFirms(from: string[], to: string): Promise<number> {
+  const names = from.filter((n) => n !== to);
+  if (!names.length) return 0;
+  const { data, error } = await supabase.from(TABLE).update({ firma_adi: to.trim() }).in('firma_adi', names).select('id');
+  if (error) throw new Error(`Firma adları birleştirilemedi: ${error.message}`);
+  invalidateFirmCategories();
+  return data?.length ?? 0;
+}
+
 /** Tüm zamanlardaki fiş sayısı (satırları indirmeden). */
 export async function countReceipts(): Promise<number> {
   const { count, error } = await supabase.from(TABLE).select('id', { count: 'exact', head: true });

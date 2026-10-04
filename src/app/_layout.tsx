@@ -65,6 +65,7 @@ function RootNavigator() {
         <Stack.Screen name="setup-categories" options={{ title: 'Yeni Kategoriler' }} />
         <Stack.Screen name="budget" options={{ title: 'Aylık Bütçe', presentation: 'modal' }} />
         <Stack.Screen name="tax-calendar" options={{ title: 'Vergi Takvimi' }} />
+        <Stack.Screen name="merge-firms" options={{ title: 'Firma Adları' }} />
         <Stack.Screen name="batch" options={{ title: 'Toplu Tarama', ...largeTitle }} />
         <Stack.Screen name="batch-review" options={{ title: 'İncele' }} />
         <Stack.Screen name="receipt/[id]" options={{ title: 'Fiş' }} />
