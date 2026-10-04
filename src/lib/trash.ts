@@ -3,11 +3,13 @@ export const TRASH_DAYS = 30;
 
 const DAY = 86_400_000;
 
-/** Kalıcı silinmeye kalan tam gün (0 = bugün siliniyor) */
+/** Kalıcı silinmeye kalan takvim günü, yerel saatle (0 = bugün, 1 = yarın) */
 export function trashDaysLeft(deletedAt: string, now = new Date()): number {
   const t = Date.parse(deletedAt);
   if (!Number.isFinite(t)) return 0;
-  return Math.max(0, Math.ceil((t + TRASH_DAYS * DAY - now.getTime()) / DAY));
+  const expiry = new Date(t + TRASH_DAYS * DAY);
+  const startOf = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  return Math.max(0, Math.round((startOf(expiry) - startOf(now)) / DAY));
 }
 
 /** Bu andan önce silinenlerin süresi dolmuştur (ISO) */
