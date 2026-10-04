@@ -16,6 +16,11 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.32.0 — `(yayında)`
+- **Hızlı çekim:** "Fiş Tara"da fotoğrafı çektikten sonra kamera açık kalır; fiş arka planda Gemini'ye gider, siz hemen sonrakini çekersiniz. Üstte "3 fiş · 1 okunuyor · 2 hazır" gibi durum, köşedeki küçük resimde son fişin durumu görünür
+- **İncele:** okunan fişleri sırayla açar; okunmakta olanlar hazır oldukça sıraya eklenir. Çıkarsanız okuma arka planda sürer, fişler ana sayfadaki Taslaklar'da bekler
+- Toplu Tarama'da "İncele ve Kaydet" artık okuma sürerken de kullanılabilir
+
 ## 1.31.0 — `c063a3d`
 - **Tüm Fişler** (ana sayfa → Tüm Fişler): bugüne kadar girilen bütün fişler, aylara göre gruplu; toplam gider ve KDV, arama ve sıralama
 - **Firmalar** (ana sayfa → Firmalar): fiş girilen tüm firmalar, toplam harcama, fiş sayısı ve son fiş tarihiyle; aranabilir, sıralanabilir
