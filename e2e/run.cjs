@@ -205,6 +205,20 @@ test('çöp kutusu: silinen fiş Son Silinenler’e gider, fotoğrafı korunur, 
   assert.equal(back.image_path, 'u/b.jpg', 'fotoğraf bağlantısı korunmalı');
   assert.equal(backend.db.receipt_trash.length, 0);
   assert.ok((await page.getByText('Son Silinen Yok').count()) === 1);
+
+  // Kalıcı silme: fotoğrafı başka fiş kullanmıyorsa o da silinir
+  backend.db.receipt_trash.push({ id: 'z', deleted_at: new Date().toISOString(), receipt: { ...thisMonth()[0], id: 'z', image_path: 'u/z.jpg' } });
+  backend.db.receipt_trash.push({ id: 'y', deleted_at: new Date().toISOString(), receipt: { ...thisMonth()[0], id: 'y', image_path: 'u/b.jpg' } });
+  await page.goBack();
+  await page.waitForTimeout(600);
+  await page.getByText('Son Silinenler', { exact: true }).click();
+  await page.waitForTimeout(1200);
+  await page.getByText('Tümünü Sil').click();
+  await page.waitForTimeout(300);
+  await page.getByText('Tümünü Kalıcı Olarak Sil').click();
+  await page.waitForTimeout(1500);
+  assert.equal(backend.db.receipt_trash.length, 0);
+  assert.ok(backend.log.includes('STORAGE DELETE 1'), `yalnızca sahipsiz fotoğraf silinmeli: ${backend.log.filter((l) => l.startsWith('STORAGE')).join(',')}`);
   assert.deepEqual(errors, []);
   await close();
 });

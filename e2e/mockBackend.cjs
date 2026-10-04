@@ -125,7 +125,7 @@ async function installBackend(page, opts = {}) {
         const rows = filterRows(state.db[t], url.searchParams);
         state.db[t] = state.db[t].filter((r) => !rows.includes(r));
         state.log.push(`DELETE ${t}`);
-        return route.fulfill({ status: 204, body: '' });
+        return (req.headers()['prefer'] || '').includes('return=representation') ? json(route, rows) : route.fulfill({ status: 204, body: '' });
       }
     }
     if (path.startsWith('/storage/v1/object/list')) return json(route, []);

@@ -306,10 +306,27 @@ export async function getFirmNameCounts(): Promise<Map<string, number>> {
 export async function renameFirms(from: string[], to: string): Promise<number> {
   const names = from.filter((n) => n !== to);
   if (!names.length) return 0;
-  const { data, error } = await supabase.from(TABLE).update({ firma_adi: to.trim() }).in('firma_adi', names).select('id');
-  if (error) throw new Error(`Firma adları birleştirilemedi: ${error.message}`);
-  invalidateFirmCategories();
-  return data?.length ?? 0;
+  // Çift tırnak içeren adlar "in" filtresini bozar; onlar tek tek güncellenir
+  const plain = names.filter((n) => !n.includes('"'));
+  const quoted = names.filter((n) => n.includes('"'));
+  let changed = 0;
+  try {
+    if (plain.length) {
+      const { data, error } = await supabase.from(TABLE).update({ firma_adi: to.trim() }).in('firma_adi', plain).select('id');
+      if (error) throw error;
+      changed += data?.length ?? 0;
+    }
+    for (const n of quoted) {
+      const { data, error } = await supabase.from(TABLE).update({ firma_adi: to.trim() }).eq('firma_adi', n).select('id');
+      if (error) throw error;
+      changed += data?.length ?? 0;
+    }
+  } catch (e) {
+    throw new Error(`Firma adları birleştirilemedi: ${errorMessage(e)}`);
+  } finally {
+    invalidateFirmCategories();
+  }
+  return changed;
 }
 
 /** Seçilen fişlerin kategorisini değiştirir. @returns değişen fiş sayısı */
@@ -414,8 +431,12 @@ export function recordToData(r: ReceiptRecord): ReceiptData {
  * fotoğrafı saklanır; kurulu değilse fiş ve fotoğrafı kalıcı olarak silinir.
  */
 export async function deleteReceipt(receipt: ReceiptRecord): Promise<'trash' | 'deleted'> {
-  if ((await trashReady()) === true) {
-    const { toplam_kdv: _generated, ...row } = receipt;
+  const trash = await trashReady();
+  // Belirsizse (bağlantı hatası) kalıcı silmeye düşülmez
+  if (trash === null) throw new Error('Silinemedi: bağlantı kurulamadı. İnternetinizi kontrol edip tekrar deneyin.');
+  if (trash) {
+    // Ekrandaki kopya değil veritabanındaki güncel kayıt saklanır (ör. fotoğraf başka cihazda değiştiyse)
+    const { toplam_kdv: _generated, ...row } = await getReceipt(receipt.id);
     // Önceki yarım kalmış bir denemeden kalan kayıt varsa çakışmasın
     await supabase.from(TRASH_TABLE).delete().eq('id', receipt.id);
     const { error: trashError } = await supabase.from(TRASH_TABLE).insert({ id: receipt.id, receipt: row });
@@ -473,24 +494,40 @@ export async function restoreFromTrash(item: TrashItem): Promise<void> {
   });
   // 23505: fiş zaten geri alınmış (ör. önceki deneme yarım kaldı) → yalnızca çöp kaydı silinir
   if (error && error.code !== '23505') throw new Error(`Geri alınamadı: ${error.message}`);
-  await supabase.from(TRASH_TABLE).delete().eq('id', item.id);
   invalidateFirmCategories();
+  const { error: trashError } = await supabase.from(TRASH_TABLE).delete().eq('id', item.id);
+  if (trashError) throw new Error(`Fiş geri alındı ama Son Silinenler'den kaldırılamadı: ${trashError.message}`);
 }
 
-/** Fişleri ve fotoğraflarını kalıcı olarak siler */
+/**
+ * Fişleri ve fotoğraflarını kalıcı olarak siler. Fotoğraf yalnızca gerçekten silinen çöp kayıtları için
+ * ve hiçbir canlı fiş onu kullanmıyorsa silinir (ör. fiş başka cihazda geri alındıysa fotoğrafı korunur).
+ */
 export async function purgeTrash(items: TrashItem[]): Promise<void> {
   if (!items.length) return;
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from(TRASH_TABLE)
     .delete()
     .in(
       'id',
       items.map((i) => i.id),
-    );
+    )
+    .select('id, receipt');
   if (error) throw new Error(`Silinemedi: ${error.message}`);
-  const photos = items.map((i) => i.receipt.image_path).filter((p): p is string => !!p);
-  // Fotoğraf silinemese bile kayıt silinmiştir; yalnızca yer kaplar
-  if (photos.length) await supabase.storage.from(RECEIPT_IMAGES_BUCKET).remove(photos);
+  const paths = [
+    ...new Set(
+      (data ?? [])
+        .map((r) => (r.receipt as { image_path?: unknown } | null)?.image_path)
+        .filter((p): p is string => typeof p === 'string' && !!p),
+    ),
+  ];
+  if (!paths.length) return;
+  const { data: live, error: liveError } = await supabase.from(TABLE).select('image_path').in('image_path', paths);
+  // Kontrol edilemezse fotoğraf silinmez (yalnızca yer kaplar; veri kaybı olmasın)
+  if (liveError) return;
+  const used = new Set((live ?? []).map((r) => String(r.image_path)));
+  const orphans = paths.filter((p) => !used.has(p));
+  if (orphans.length) await supabase.storage.from(RECEIPT_IMAGES_BUCKET).remove(orphans);
 }
 
 /** Süresi (30 gün) dolanları kalıcı olarak siler. Açılışta çağrılır; hata fırlatmaz. */
