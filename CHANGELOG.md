@@ -16,6 +16,11 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.31.0 — `(yayında)`
+- **Tüm Fişler** (ana sayfa → Tüm Fişler): bugüne kadar girilen bütün fişler, aylara göre gruplu; toplam gider ve KDV, arama ve sıralama
+- **Firmalar** (ana sayfa → Firmalar): fiş girilen tüm firmalar, toplam harcama, fiş sayısı ve son fiş tarihiyle; aranabilir, sıralanabilir
+- **Firma Detayı:** firmaya dokununca o firmanın toplamı, KDV alacağı, KDV dağılımı (%1/%10/%20), ortalama fiş, ilk/son fiş tarihi ve tüm fişleri
+
 ## 1.30.0 — `9018e9b`
 - **Son Silinenler (çöp kutusu):** Silinen fiş 30 gün boyunca Ayarlar → Son Silinenler'de durur, fotoğrafıyla birlikte geri alınabilir; süre dolunca kalıcı silinir. Veritabanı güncellemesi yapıldı (005)
 - **Firma Adlarını Birleştir** (Ayarlar → Veriler): "MİGROS TİCARET A.Ş.", "Migros", "MIGROS" gibi yazımları tek ada toplar; hangi adın kullanılacağını ve hangi yazımların dahil olacağını siz seçersiniz
