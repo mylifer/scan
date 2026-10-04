@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { MONTHLY_SUMMARY_ID, MONTHLY_SUMMARY_KIND, type MonthTotals, planMonthlySummary } from '../../lib/monthlySummaryPlan';
+import { MONTHLY_SUMMARY_KIND, MONTHLY_SUMMARY_PREFIX, monthlySummaryId, type MonthTotals, planMonthlySummary } from '../../lib/monthlySummaryPlan';
 import { loadNotifications } from './loadNotifications';
 
 /**
@@ -30,9 +30,11 @@ async function schedule(totals: MonthTotals): Promise<void> {
   const Notifications = loadNotifications();
   if (!Notifications) return;
   const n = planMonthlySummary(totals);
-  await Notifications.cancelScheduledNotificationAsync(MONTHLY_SUMMARY_ID).catch(() => {});
+  // Yalnızca bu ayın özeti yenilenir; ör. 1 Ekim sabahı açılışta bekleyen "Eylül özeti" yerinde kalır
+  const id = monthlySummaryId(n.month);
+  await Notifications.cancelScheduledNotificationAsync(id).catch(() => {});
   await Notifications.scheduleNotificationAsync({
-    identifier: MONTHLY_SUMMARY_ID,
+    identifier: id,
     content: { title: n.title, body: n.body, data: { kind: MONTHLY_SUMMARY_KIND, month: n.month } },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: n.date },
   });
@@ -53,7 +55,14 @@ export async function enableMonthlySummary(totals: MonthTotals): Promise<boolean
 export function disableMonthlySummary(): Promise<void> {
   return serial(async () => {
     await AsyncStorage.setItem(KEY, '0').catch(() => {});
-    await loadNotifications()?.cancelScheduledNotificationAsync(MONTHLY_SUMMARY_ID).catch(() => {});
+    const Notifications = loadNotifications();
+    if (!Notifications) return;
+    const pending = await Notifications.getAllScheduledNotificationsAsync().catch(() => []);
+    await Promise.all(
+      pending
+        .filter((p) => p.identifier.startsWith(MONTHLY_SUMMARY_PREFIX))
+        .map((p) => Notifications.cancelScheduledNotificationAsync(p.identifier).catch(() => {})),
+    );
   });
 }
 

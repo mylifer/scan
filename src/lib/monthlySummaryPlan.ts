@@ -5,7 +5,9 @@ import { formatTL } from './format';
  * İçinde bulunulan ayın rakamlarıyla, izleyen ayın 1'i 10:00'a kurulur. Uygulama her açıldığında ve
  * fiş eklenip ana sayfaya dönüldüğünde yeniden kurulduğu için rakamlar güncel kalır.
  */
-export const MONTHLY_SUMMARY_ID = 'monthly-summary';
+/** Her ayın özeti ayrı kimlikle kurulur: bu ayınki yenilenirken geçen ayın bekleyen özeti silinmesin */
+export const MONTHLY_SUMMARY_PREFIX = 'monthly-summary';
+export const monthlySummaryId = (month: string) => `${MONTHLY_SUMMARY_PREFIX}-${month}`;
 export const MONTHLY_SUMMARY_KIND = 'monthly-summary';
 
 const AYLAR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];

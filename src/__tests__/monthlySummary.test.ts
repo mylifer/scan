@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { monthOffset, planMonthlySummary } from '../lib/monthlySummaryPlan';
+import { monthlySummaryId, monthOffset, planMonthlySummary } from '../lib/monthlySummaryPlan';
 
 describe('aylık özet bildirimi', () => {
   it('ayın rakamlarıyla izleyen ayın 1i 10:00', () => {
@@ -15,6 +15,12 @@ describe('aylık özet bildirimi', () => {
     const n = planMonthlySummary({ total: 0, kdv: 0, count: 0 }, new Date(2026, 11, 31, 23, 59));
     assert.equal(n.date.getTime(), new Date(2027, 0, 1, 10, 0).getTime());
     assert.match(n.body, /Aralık 2026 için hiç fiş eklenmedi/);
+  });
+  it('her ayın kimliği ayrı (bu ay yenilenirken geçen ayınki silinmez)', () => {
+    const sep = planMonthlySummary({ total: 1, kdv: 0, count: 1 }, new Date(2026, 8, 30, 20, 0));
+    const oct = planMonthlySummary({ total: 0, kdv: 0, count: 0 }, new Date(2026, 9, 1, 8, 0));
+    assert.notEqual(monthlySummaryId(sep.month), monthlySummaryId(oct.month));
+    assert.ok(sep.date > new Date(2026, 9, 1, 8, 0), 'Eylül özeti 1 Ekim 08:00 itibarıyla hâlâ bekliyor');
   });
   it('ay farkı', () => {
     const now = new Date(2026, 10, 1, 10, 0);
