@@ -2,6 +2,8 @@ import { prepareDraftImage } from '../image/prepareReceiptImages';
 import { revokeBlobUrl } from '../../lib/pendingPhoto';
 import { supabase } from '../supabase/client';
 import { addDraft } from '../supabase/draftsRepository';
+import type { ReceiptDraft } from '../../types/receipt';
+import { autoScan } from './draftProcessor';
 import { loadPending, markFailed, type PendingPhoto, persistPhoto, removePending } from './pendingStore';
 
 /**
@@ -41,21 +43,23 @@ async function currentOwner(): Promise<string> {
   return (await supabase.auth.getSession()).data.session?.user.id ?? '';
 }
 
-/** Kuyruğa bir iş ekler: `source` küçültülüp taslak olarak yüklenir */
-function schedule(source: Promise<{ uri: string; width: number; pending: PendingPhoto | null }>): Promise<boolean> {
+/** Kuyruğa bir iş ekler: `source` küçültülüp taslak olarak yüklenir. @returns oluşan taslak ya da null */
+function schedule(source: Promise<{ uri: string; width: number; pending: PendingPhoto | null }>, scan = false): Promise<ReceiptDraft | null> {
   set({ pending: state.pending + 1 });
   const job = chain.then(async () => {
     const { uri, width, pending } = await source;
     try {
-      await addDraft(await prepareDraftImage(uri, width));
+      const draft = await addDraft(await prepareDraftImage(uri, width));
       if (pending) await removePending(pending.key);
       set({ pending: state.pending - 1, completed: state.completed + 1 });
-      return true;
+      // Hızlı çekim: yüklenir yüklenmez okumaya al (kullanıcı bu sırada sonrakini çeker)
+      if (scan) autoScan(draft);
+      return draft;
     } catch {
       // Kalıcı kopya bir sonraki açılışta tekrar denenir (en fazla MAX_ATTEMPTS kez)
       if (pending) await markFailed(pending.key);
       set({ pending: state.pending - 1, failed: state.failed + 1 });
-      return false;
+      return null;
     } finally {
       // Web'de seçilen fotoğrafın tam çözünürlüklü kopyası yüklendikten sonra bellekte kalmasın
       revokeBlobUrl(uri);
@@ -65,14 +69,17 @@ function schedule(source: Promise<{ uri: string; width: number; pending: Pending
   return job;
 }
 
-/** Fotoğrafı kuyruğa ekler; küçültme + yükleme sırayla yapılır (bellek dostu). */
-export function enqueueDraftUpload(uri: string, width: number): Promise<boolean> {
+/**
+ * Fotoğrafı kuyruğa ekler; küçültme + yükleme sırayla yapılır (bellek dostu).
+ * @param options.scan yüklenince hemen yapay zekâyla okunsun (hızlı çekim)
+ */
+export function enqueueDraftUpload(uri: string, width: number, options: { scan?: boolean } = {}): Promise<ReceiptDraft | null> {
   // Kalıcı kopya hemen (kuyruğu beklemeden) alınır: uygulama şimdi kapansa bile fotoğraf kaybolmaz
   const source = currentOwner()
     .then((owner) => persistPhoto(uri, width, owner))
     .catch(() => null)
     .then((pending) => ({ uri: pending?.uri ?? uri, width, pending }));
-  return schedule(source);
+  return schedule(source, options.scan);
 }
 
 let resumed = false;
