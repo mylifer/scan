@@ -1,5 +1,5 @@
 import { normalizeTrDate, parseAmount, todayTr } from '../../lib/format';
-import { KATEGORILER, type Kategori, type ReceiptData } from '../../types/receipt';
+import { KATEGORILER, type Kategori, RECEIPT_FIELDS, type ReceiptData, type ReceiptField } from '../../types/receipt';
 import { VisionServiceError } from './VisionService';
 
 /**
@@ -10,7 +10,7 @@ import { VisionServiceError } from './VisionService';
 export function parseReceiptJson(raw: string): ReceiptData {
   const obj = extractJsonObject(raw);
 
-  return {
+  const data: ReceiptData = {
     firmaAdi: typeof obj.firmaAdi === 'string' ? obj.firmaAdi.trim() : '',
     tarih: (typeof obj.tarih === 'string' && normalizeTrDate(obj.tarih)) || todayTr(),
     toplamTutar: parseAmount(obj.toplamTutar),
@@ -19,6 +19,16 @@ export function parseReceiptJson(raw: string): ReceiptData {
     kdvYuzde20: parseAmount(obj.kdvYuzde20),
     kategori: normalizeKategori(obj.kategori),
   };
+  const uncertain = uncertainFields(obj.eminOlunmayanlar);
+  if (uncertain.length) data.eminOlunmayanlar = uncertain;
+  return data;
+}
+
+/** Bilinen alan adlarını süzer (tekrarsız, form sırasıyla) */
+function uncertainFields(value: unknown): ReceiptField[] {
+  if (!Array.isArray(value)) return [];
+  const names = new Set(value.filter((v): v is string => typeof v === 'string').map((v) => v.trim()));
+  return RECEIPT_FIELDS.filter((f) => names.has(f));
 }
 
 function extractJsonObject(raw: string): Record<string, unknown> {

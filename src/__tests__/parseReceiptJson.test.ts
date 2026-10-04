@@ -32,4 +32,10 @@ describe('parseReceiptJson', () => {
     assert.throws(() => parseReceiptJson('Üzgünüm, okuyamadım'), VisionServiceError);
     assert.throws(() => parseReceiptJson('[1,2]'), VisionServiceError);
   });
+  it('emin olunamayan alanları süzer; yoksa alan hiç eklenmez', () => {
+    const d = parseReceiptJson('{"firmaAdi":"X","toplamTutar":10,"eminOlunmayanlar":["toplamTutar","uydurma","tarih","toplamTutar"]}');
+    assert.deepEqual(d.eminOlunmayanlar, ['tarih', 'toplamTutar']);
+    assert.equal('eminOlunmayanlar' in parseReceiptJson('{"firmaAdi":"X","eminOlunmayanlar":[]}'), false);
+    assert.equal('eminOlunmayanlar' in parseReceiptJson('{"firmaAdi":"X","eminOlunmayanlar":"tarih"}'), false);
+  });
 });

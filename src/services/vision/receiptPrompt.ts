@@ -1,4 +1,4 @@
-import { KATEGORILER } from '../../types/receipt';
+import { KATEGORILER, RECEIPT_FIELDS } from '../../types/receipt';
 
 /** Tüm sağlayıcıların ortak kullandığı system prompt. */
 export const RECEIPT_SYSTEM_PROMPT = `- Sen Türkiye'deki maliye standartlarına uygun POS fişlerini okuyan bir uzman muhasebe asistanısın.
@@ -7,7 +7,8 @@ export const RECEIPT_SYSTEM_PROMPT = `- Sen Türkiye'deki maliye standartlarına
 - Kategori rehberi: akaryakıt (benzin, motorin, LPG), restoran (yemek, kafe), market (gıda, süpermarket), teknoloji (elektronik, bilgisayar, yazılım), ofis gideri (kırtasiye, temizlik, ofis malzemesi), ulaşım (taksi, otopark, otoyol/köprü, toplu taşıma, bilet), araç bakım (servis, lastik, yedek parça, oto yıkama), konaklama (otel, pansiyon), iletişim (telefon, internet, GSM), faturalar (elektrik, su, doğalgaz), kargo (kargo, posta, kurye), giyim (kıyafet, ayakkabı, iş kıyafeti), diğer (hiçbirine uymayanlar).
 - Eğer fişte bazı KDV dilimleri yoksa değerlerini 0 yap. TOPLAM ve TOPKDV satırlarını asla karıştırma.
 - kdvYuzde1, kdvYuzde10 ve kdvYuzde20 alanlarına matrahı değil, o dilime ait KDV TUTARINI yaz.
-- Sayılarda ondalık ayırıcı olarak nokta kullan (ör. 1234.56), binlik ayırıcı kullanma.`;
+- Sayılarda ondalık ayırıcı olarak nokta kullan (ör. 1234.56), binlik ayırıcı kullanma.
+- eminOlunmayanlar (string dizisi): fişte silik, kesik, buruşuk ya da okunaksız olduğu için değerini tahmin ettiğin alanların adlarını yaz (${RECEIPT_FIELDS.join(', ')}). Net okuduğun alanları yazma; hepsinden eminsen boş dizi [] ver. Kategori fişte yazmadığı için yalnızca firmadan anlaşılamıyorsa ekle.`;
 
 export const RECEIPT_USER_PROMPT = 'Bu POS fişini oku ve kurallara uygun JSON döndür.';
 
@@ -22,7 +23,8 @@ export const RECEIPT_JSON_SCHEMA = {
     kdvYuzde10: { type: 'number' },
     kdvYuzde20: { type: 'number' },
     kategori: { type: 'string', enum: [...KATEGORILER] },
+    eminOlunmayanlar: { type: 'array', items: { type: 'string', enum: [...RECEIPT_FIELDS] } },
   },
-  required: ['firmaAdi', 'tarih', 'toplamTutar', 'kdvYuzde1', 'kdvYuzde10', 'kdvYuzde20', 'kategori'],
+  required: ['firmaAdi', 'tarih', 'toplamTutar', 'kdvYuzde1', 'kdvYuzde10', 'kdvYuzde20', 'kategori', 'eminOlunmayanlar'],
   additionalProperties: false,
 } as const;

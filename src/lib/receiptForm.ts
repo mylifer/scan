@@ -1,5 +1,5 @@
 import { amountToInput, normalizeTrDate, parseAmount, todayTr, trDateToIso } from './format';
-import { KATEGORI_ETIKETLERI, type Kategori, type ReceiptData } from '../types/receipt';
+import { KATEGORI_ETIKETLERI, type Kategori, type ReceiptData, type ReceiptField } from '../types/receipt';
 
 /** Formda tutarlar metin olarak tutulur ki kullanıcı "12,5" gibi ara değerler yazabilsin. */
 export interface ReceiptFormValues {
@@ -10,6 +10,8 @@ export interface ReceiptFormValues {
   kdvYuzde10: string;
   kdvYuzde20: string;
   kategori: ReceiptData['kategori'];
+  /** Yapay zekânın emin olamadığı alanlar; kullanıcı alanı değiştirince listeden çıkar */
+  belirsiz?: ReceiptField[];
 }
 
 export function toFormValues(d: ReceiptData): ReceiptFormValues {
@@ -21,7 +23,19 @@ export function toFormValues(d: ReceiptData): ReceiptFormValues {
     kdvYuzde10: amountToInput(d.kdvYuzde10),
     kdvYuzde20: amountToInput(d.kdvYuzde20),
     kategori: d.kategori,
+    ...(d.eminOlunmayanlar?.length ? { belirsiz: [...d.eminOlunmayanlar] } : {}),
   };
+}
+
+/** Bir alan düzenlenince o alanın "emin değilim" işaretini kaldırır */
+export function setFormField<K extends keyof ReceiptFormValues>(v: ReceiptFormValues, key: K, value: ReceiptFormValues[K]): ReceiptFormValues {
+  const next = { ...v, [key]: value };
+  if (v.belirsiz?.includes(key as ReceiptField)) {
+    const rest = v.belirsiz.filter((f) => f !== key);
+    if (rest.length) next.belirsiz = rest;
+    else delete next.belirsiz;
+  }
+  return next;
 }
 
 /** Boş form (tarih her çağrıda bugünün tarihi) */

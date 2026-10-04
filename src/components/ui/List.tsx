@@ -143,16 +143,23 @@ const styles = StyleSheet.create({
 interface FieldRowProps {
   label: string;
   isLast?: boolean;
+  /** Değer kontrol edilmeli (ör. yapay zekâ emin değil): etiket turuncu ve soru işaretli */
+  highlight?: boolean;
   children: ReactNode;
 }
 
 /** Form satırı: solda etiket, sağda düzenlenebilir değer (Kişiler > Düzenle gibi). */
-export function FieldRow({ label, isLast, children }: FieldRowProps) {
+export function FieldRow({ label, isLast, highlight, children }: FieldRowProps) {
   const theme = useTheme();
   return (
-    <View>
+    <View
+      style={highlight ? { backgroundColor: theme.dark ? 'rgba(255,159,10,0.14)' : 'rgba(255,149,0,0.10)' } : undefined}
+      accessibilityHint={highlight ? 'Net okunamadı, fişle karşılaştırın' : undefined}>
       <View style={[styles.row, { minHeight: 44 }]}>
-        <Text style={[t.body, { color: theme.label, width: 96 }]}>{label}</Text>
+        <View style={{ width: 96, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Text style={[t.body, { color: highlight ? theme.orange : theme.label }]}>{label}</Text>
+          {highlight && <Icon sf="questionmark.circle.fill" ion="help-circle" size={15} color={theme.orange} />}
+        </View>
         <View style={{ flex: 1, alignItems: 'flex-end', justifyContent: 'center' }}>{children}</View>
       </View>
       {!isLast && <View style={[styles.separator, { marginLeft: 16, backgroundColor: theme.separator }]} />}

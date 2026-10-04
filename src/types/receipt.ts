@@ -35,6 +35,10 @@ export const KATEGORI_ETIKETLERI: Record<Kategori, string> = {
   diğer: 'Diğer',
 };
 
+/** Fiş formundaki alanlar (okuma sırasında emin olunamayanları işaretlemek için) */
+export const RECEIPT_FIELDS = ['firmaAdi', 'tarih', 'toplamTutar', 'kdvYuzde1', 'kdvYuzde10', 'kdvYuzde20', 'kategori'] as const;
+export type ReceiptField = (typeof RECEIPT_FIELDS)[number];
+
 /** Görüntü okuma servisinin döndürdüğü, form üzerinde düzenlenen fiş verisi. */
 export interface ReceiptData {
   firmaAdi: string;
@@ -45,6 +49,8 @@ export interface ReceiptData {
   kdvYuzde10: number;
   kdvYuzde20: number;
   kategori: Kategori;
+  /** Yapay zekânın fişte net okuyamadığı alanlar (yalnızca okuma sonucunda; kaydedilmez) */
+  eminOlunmayanlar?: ReceiptField[];
 }
 
 /** Supabase'deki kayıt (receipts tablosu). */

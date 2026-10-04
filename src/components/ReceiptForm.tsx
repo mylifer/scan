@@ -3,10 +3,10 @@ import { Platform, StyleSheet, Text, TextInput, type TextInputProps, View } from
 
 import { showActionSheet } from '../lib/actionSheet';
 import { formatTL, normalizeTrDate, parseAmount, round2, todayTr } from '../lib/format';
-import { formWarnings, type ReceiptFormValues } from '../lib/receiptForm';
+import { formWarnings, type ReceiptFormValues, setFormField } from '../lib/receiptForm';
 import { haptics } from '../lib/haptics';
 import { categoryMeta, fontFamily, tabular, type as t, useTheme } from '../lib/theme';
-import { KATEGORILER } from '../types/receipt';
+import { KATEGORILER, type ReceiptField } from '../types/receipt';
 import { Icon } from './ui/Icon';
 import { FieldRow, ListRow, ListSection } from './ui/List';
 
@@ -19,7 +19,8 @@ interface Props {
 
 export function ReceiptForm({ values, onChange }: Props) {
   const theme = useTheme();
-  const set = <K extends keyof ReceiptFormValues>(key: K, value: ReceiptFormValues[K]) => onChange({ ...values, [key]: value });
+  const set = <K extends keyof ReceiptFormValues>(key: K, value: ReceiptFormValues[K]) => onChange(setFormField(values, key, value));
+  const unsure = (f: ReceiptField) => values.belirsiz?.includes(f) ?? false;
   const toplamKdv = round2(parseAmount(values.kdvYuzde1) + parseAmount(values.kdvYuzde10) + parseAmount(values.kdvYuzde20));
   const kdvTooHigh = toplamKdv > parseAmount(values.toplamTutar) && parseAmount(values.toplamTutar) > 0;
   const meta = categoryMeta[values.kategori];
@@ -41,6 +42,14 @@ export function ReceiptForm({ values, onChange }: Props) {
 
   return (
     <>
+      {!!values.belirsiz?.length && (
+        <View style={[styles.warning, { backgroundColor: theme.dark ? 'rgba(255,159,10,0.16)' : 'rgba(255,149,0,0.12)' }]}>
+          <Icon sf="questionmark.circle.fill" ion="help-circle" size={18} color={theme.orange} />
+          <Text style={[t.subhead, { color: theme.label, flex: 1 }]}>
+            Turuncu işaretli {values.belirsiz.length === 1 ? 'alan' : `${values.belirsiz.length} alan`} fişte net okunamadı. Fişle karşılaştırıp gerekirse düzeltin.
+          </Text>
+        </View>
+      )}
       {warnings.length > 0 && (
         <View style={[styles.warning, { backgroundColor: theme.dark ? 'rgba(255,159,10,0.16)' : 'rgba(255,149,0,0.12)' }]}>
           <Icon sf="exclamationmark.triangle.fill" ion="warning" size={18} color={theme.orange} />
@@ -54,23 +63,24 @@ export function ReceiptForm({ values, onChange }: Props) {
         </View>
       )}
       <ListSection header="Fiş">
-        <FieldRow label="Firma">
+        <FieldRow label="Firma" highlight={unsure('firmaAdi')}>
           <Input value={values.firmaAdi} onChangeText={(v) => set('firmaAdi', v)} placeholder="Firma adı" autoCapitalize="characters" />
         </FieldRow>
-        <FieldRow label="Tarih">
+        <FieldRow label="Tarih" highlight={unsure('tarih')}>
           <DateField value={values.tarih} onChange={(v) => set('tarih', v)} />
         </FieldRow>
         <ListRow
           title="Kategori"
           icon={{ sf: meta.sf, ion: meta.ion, color: theme[meta.color] as string }}
           value={meta.label}
+          valueColor={unsure('kategori') ? theme.orange : undefined}
           chevron
           onPress={pickCategory}
         />
       </ListSection>
 
       <ListSection header="Tutar (₺)">
-        <FieldRow label="Toplam">
+        <FieldRow label="Toplam" highlight={unsure('toplamTutar')}>
           <AmountInput value={values.toplamTutar} onChangeText={(v) => set('toplamTutar', v)} bold />
         </FieldRow>
       </ListSection>
@@ -82,13 +92,13 @@ export function ReceiptForm({ values, onChange }: Props) {
             {kdvTooHigh ? 'Toplam KDV, toplam tutardan büyük. TOPLAM ile TOPKDV karışmış olabilir.' : `Toplam KDV: ${formatTL(toplamKdv)}`}
           </Text>
         }>
-        <FieldRow label="%1">
+        <FieldRow label="%1" highlight={unsure('kdvYuzde1')}>
           <AmountInput value={values.kdvYuzde1} onChangeText={(v) => set('kdvYuzde1', v)} />
         </FieldRow>
-        <FieldRow label="%10">
+        <FieldRow label="%10" highlight={unsure('kdvYuzde10')}>
           <AmountInput value={values.kdvYuzde10} onChangeText={(v) => set('kdvYuzde10', v)} />
         </FieldRow>
-        <FieldRow label="%20">
+        <FieldRow label="%20" highlight={unsure('kdvYuzde20')}>
           <AmountInput value={values.kdvYuzde20} onChangeText={(v) => set('kdvYuzde20', v)} />
         </FieldRow>
       </ListSection>

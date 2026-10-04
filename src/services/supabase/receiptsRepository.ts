@@ -207,7 +207,9 @@ export async function applyLearnedCategory(data: ReceiptData): Promise<{ data: R
     if (!rows) return { data, learned: false };
     const kategori = learnedCategoryFor(rows, data.firmaAdi);
     if (!kategori || kategori === data.kategori) return { data, learned: false };
-    return { data: { ...data, kategori }, learned: true };
+    // Kategori artık kullanıcının önceki seçiminden geliyor: "emin değilim" işareti kalkar
+    const eminOlunmayanlar = data.eminOlunmayanlar?.filter((f) => f !== 'kategori');
+    return { data: { ...data, kategori, eminOlunmayanlar: eminOlunmayanlar?.length ? eminOlunmayanlar : undefined }, learned: true };
   } catch {
     return { data, learned: false };
   }

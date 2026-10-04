@@ -230,6 +230,29 @@ test('toplu tarama: galeriden 3 fotoğraf → tara → incele → kaydet', async
   await close();
 });
 
+test('emin olunamayan alan turuncu işaretlenir, düzeltince işaret kalkar', async (b) => {
+  const { page, errors, close } = await open(b, {
+    receipts: [],
+    gemini: () => ({ firmaAdi: 'SİLİK FİRMA', tarih: isoDate(0, 2).split('-').reverse().join('.'), toplamTutar: 100, kdvYuzde1: 0, kdvYuzde10: 0, kdvYuzde20: 16.67, kategori: 'market', eminOlunmayanlar: ['toplamTutar'] }),
+  });
+  await page.getByLabel('Toplu tarama').click();
+  await page.waitForTimeout(1000);
+  await page.locator('input[multiple]').setInputFiles([path.join(__dirname, 'fixtures', 'fis.jpg')]);
+  await page.waitForTimeout(3000);
+  await page.getByText(/Şimdi Tara/).click();
+  await page.waitForTimeout(5000);
+  await page.getByText(/İncele ve Kaydet/).click();
+  await page.waitForTimeout(1500);
+  assert.ok((await page.getByText(/Turuncu işaretli alan fişte net okunamadı/).count()) === 1, 'uyarı görünmeli');
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT });
+  const amount = page.locator('input[value="100,00"]');
+  await amount.fill('120,00');
+  await page.waitForTimeout(300);
+  assert.equal(await page.getByText(/Turuncu işaretli/).count(), 0, 'düzeltilince uyarı kalkmalı');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 test('şifremi unuttum: sıfırlama e-postası web adresine yönlendirmeyle istenir', async (b) => {
   const { page, backend, close } = await open(b, { loggedOut: true });
   const dialogs = [];

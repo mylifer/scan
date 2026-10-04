@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { emptyForm, formWarnings, fromFormValues, toFormValues, validateForm } from '../lib/receiptForm';
+import { emptyForm, formWarnings, fromFormValues, setFormField, toFormValues, validateForm } from '../lib/receiptForm';
 
 const ok = { firmaAdi: 'A101', tarih: '14.09.2026', toplamTutar: 120, kdvYuzde1: 0, kdvYuzde10: 0, kdvYuzde20: 20, kategori: 'market' as const };
 
@@ -47,5 +47,19 @@ describe('kategoriye göre KDV dilimi kontrolü', () => {
   });
   it('iki alışılmadık dilim birlikte söylenir', () => {
     assert.ok(formWarnings({ ...base, kategori: 'iletişim', kdvYuzde1: '1,00', kdvYuzde10: '2,00' }, today).some((w) => w.includes('%1 ve %10')));
+  });
+});
+
+describe('emin olunamayan alanlar', () => {
+  it('forma taşınır, düzenlenen alanın işareti kalkar, kayda girmez', () => {
+    const v = toFormValues({ ...ok, eminOlunmayanlar: ['tarih', 'toplamTutar'] });
+    assert.deepEqual(v.belirsiz, ['tarih', 'toplamTutar']);
+    const v2 = setFormField(v, 'toplamTutar', '130,00');
+    assert.deepEqual(v2.belirsiz, ['tarih']);
+    assert.deepEqual(v.belirsiz, ['tarih', 'toplamTutar'], 'önceki değer değişmez');
+    const v3 = setFormField(v2, 'tarih', '15.09.2026');
+    assert.equal('belirsiz' in v3, false);
+    assert.equal('eminOlunmayanlar' in fromFormValues(v), false);
+    assert.equal('belirsiz' in toFormValues(ok), false);
   });
 });
