@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.31.0 — `(yayında)`
+## 1.31.0 — `c063a3d`
 - **Tüm Fişler** (ana sayfa → Tüm Fişler): bugüne kadar girilen bütün fişler, aylara göre gruplu; toplam gider ve KDV, arama ve sıralama
 - **Firmalar** (ana sayfa → Firmalar): fiş girilen tüm firmalar, toplam harcama, fiş sayısı ve son fiş tarihiyle; aranabilir, sıralanabilir
 - **Firma Detayı:** firmaya dokununca o firmanın toplamı, KDV alacağı, KDV dağılımı (%1/%10/%20), ortalama fiş, ilk/son fiş tarihi ve tüm fişleri
