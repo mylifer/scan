@@ -197,8 +197,10 @@ export default function DashboardScreen() {
         ]
       : []),
   ];
-  const selectedList = filtered.filter((r) => selected.has(r.id));
-  const allSelected = filtered.length > 0 && selectedList.length === filtered.length;
+  // Seçim yalnızca ekranda görünen fişlerle sınırlı ("N fiş daha göster" arkasındakiler seçilmez)
+  const visibleList = filtered.slice(0, visible);
+  const selectedList = visibleList.filter((r) => selected.has(r.id));
+  const allSelected = visibleList.length > 0 && selectedList.length === visibleList.length;
 
   function toggle(id: string) {
     haptics.select();
@@ -285,7 +287,7 @@ export default function DashboardScreen() {
             selecting ? (
               <HeaderTextButton
                 title={allSelected ? 'Seçimi Kaldır' : 'Tümünü Seç'}
-                onPress={() => setSelected(allSelected ? new Set() : new Set(filtered.map((r) => r.id)))}
+                onPress={() => setSelected(allSelected ? new Set() : new Set(visibleList.map((r) => r.id)))}
               />
             ) : (
               <HeaderIconButton icon={{ sf: 'person.crop.circle', ion: 'person-circle-outline' }} onPress={() => router.push('/settings')} label="Ayarlar" />
