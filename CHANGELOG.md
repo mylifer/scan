@@ -16,6 +16,13 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.32.1 — `(yayında)`
+- Gemini kotası dolup okuma durunca kamerada bazı fişlerin "okunuyor" işareti dönmeye devam ediyordu; artık "okunamadı" görünüyor
+- Hızlı çekim sürerken Toplu Tarama açılırsa okunmuş fişler tekrar "Şimdi Tara"ya düşüp ikinci kez okunabiliyordu (boşuna kota); liste artık canlı güncelleniyor
+- Tüm Fişler ve Firma Detayı'nda "daha göster" ile açılan fişler, bir fişe girip geri dönünce kapanmıyor
+- Tüm Fişler'in çevrimdışı kopyası binlerce fişte de saklanıyor
+- Adında "%25" gibi ifadeler geçen firmaların detay sayfası boş açılıyordu
+
 ## 1.32.0 — `f804819`
 - **Hızlı çekim:** "Fiş Tara"da fotoğrafı çektikten sonra kamera açık kalır; fiş arka planda Gemini'ye gider, siz hemen sonrakini çekersiniz. Üstte "3 fiş · 1 okunuyor · 2 hazır" gibi durum, köşedeki küçük resimde son fişin durumu görünür
 - **İncele:** okunan fişleri sırayla açar; okunmakta olanlar hazır oldukça sıraya eklenir. Çıkarsanız okuma arka planda sürer, fişler ana sayfadaki Taslaklar'da bekler
