@@ -8,6 +8,7 @@ import {
   isDue,
   processDrafts,
   type ProcessorState,
+  subscribeDraftStatus,
   subscribeProcessor,
 } from '../services/drafts/draftProcessor';
 import { DraftsNotSetUpError, listDrafts } from '../services/supabase/draftsRepository';
@@ -58,14 +59,29 @@ export function useDrafts() {
     [refresh],
   );
 
+  // Taslaklar başka yerde (hızlı çekim) okunurken liste güncel kalsın: okunmuş fiş tekrar "Şimdi Tara"ya
+  // ya da "Planla"ya düşüp ikinci kez okunmasın. Art arda gelen olaylar tek yenilemede toplanır.
   useEffect(() => {
     mounted.current = true;
-    const unsub = subscribeProcessor(setProcessor);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const soon = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => refresh(), 400);
+    };
+    let wasRunning = getProcessorState().running;
+    const unsubProcessor = subscribeProcessor((s) => {
+      setProcessor(s);
+      if (wasRunning !== s.running) soon();
+      wasRunning = s.running;
+    });
+    const unsubDrafts = subscribeDraftStatus(soon);
     return () => {
       mounted.current = false;
-      unsub();
+      if (timer) clearTimeout(timer);
+      unsubProcessor();
+      unsubDrafts();
     };
-  }, []);
+  }, [refresh]);
 
   useFocusEffect(
     useCallback(() => {
