@@ -2,10 +2,28 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 
 import { errorMessage } from '../lib/errors';
+import { round2 } from '../lib/format';
 import { readCache, writeCache } from '../lib/offlineCache';
 import { getSummary } from '../services/supabase/receiptsRepository';
 import type { ReceiptRecord } from '../types/receipt';
 import { useAuth } from './useAuth';
+
+/** Önbellekte fiş başına dizi (alan adları tekrar edilmez; ~2 kat daha çok fiş sığar). Fotoğraf yolu gerekmez. */
+type Packed = [string, string, string, string, number, number, number, number, string];
+const pack = (r: ReceiptRecord): Packed => [r.id, r.created_at, r.firma_adi, r.tarih, r.toplam_tutar, r.kdv_yuzde1, r.kdv_yuzde10, r.kdv_yuzde20, r.kategori];
+const unpack = (p: Packed): ReceiptRecord => ({
+  id: p[0],
+  created_at: p[1],
+  firma_adi: p[2],
+  tarih: p[3],
+  toplam_tutar: p[4],
+  kdv_yuzde1: p[5],
+  kdv_yuzde10: p[6],
+  kdv_yuzde20: p[7],
+  toplam_kdv: round2(p[5] + p[6] + p[7]),
+  kategori: p[8] as ReceiptRecord['kategori'],
+  image_path: null,
+});
 
 /**
  * Bugüne kadarki tüm fişler (Tüm Fişler, Firmalar ve Firma Detayı ekranları için).
@@ -22,15 +40,15 @@ export function useAllReceipts() {
     const req = ++latest.current;
     setLoading(true);
     if (owner) {
-      const cached = await readCache<ReceiptRecord[]>('receipts', owner);
-      if (req === latest.current && cached) setReceipts((cur) => cur ?? cached.value);
+      const cached = await readCache<Packed[]>('receipts:v2', owner);
+      if (req === latest.current && cached) setReceipts((cur) => cur ?? cached.value.map(unpack));
     }
     try {
       const { fisler } = await getSummary();
       if (req !== latest.current) return;
       setReceipts(fisler);
       setError(null);
-      if (owner) writeCache('receipts', owner, fisler);
+      if (owner) writeCache('receipts:v2', owner, fisler.map(pack));
     } catch (e) {
       if (req === latest.current) setError(errorMessage(e));
     } finally {
