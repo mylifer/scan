@@ -338,6 +338,16 @@ export async function updateReceiptsCategory(ids: string[], kategori: Kategori):
   return data?.length ?? 0;
 }
 
+/** En son eklenen fişler (eklenme zamanına göre, fiş tarihine göre değil) */
+export async function getRecentReceipts(limit = 30): Promise<ReceiptRecord[]> {
+  const { data, error } = await supabase.from(TABLE).select('*').order('created_at', { ascending: false }).order('id').limit(limit);
+  if (error) throw new Error(error.message);
+  return (data ?? [])
+    .map(toRecord)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, limit);
+}
+
 /** Tüm zamanlardaki fiş sayısı (satırları indirmeden). */
 export async function countReceipts(): Promise<number> {
   const { count, error } = await supabase.from(TABLE).select('id', { count: 'exact', head: true });

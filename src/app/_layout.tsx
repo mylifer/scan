@@ -67,6 +67,7 @@ function RootNavigator() {
         <Stack.Screen name="tax-calendar" options={{ title: 'Vergi Takvimi' }} />
         <Stack.Screen name="merge-firms" options={{ title: 'Firma Adları' }} />
         <Stack.Screen name="trash" options={{ title: 'Son Silinenler' }} />
+        <Stack.Screen name="recent" options={{ title: 'Son Eklenenler' }} />
         <Stack.Screen name="receipts" options={{ title: 'Tüm Fişler', ...largeTitle }} />
         <Stack.Screen name="firms" options={{ title: 'Firmalar', ...largeTitle }} />
         <Stack.Screen name="firm/[key]" options={{ title: 'Firma' }} />
