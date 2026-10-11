@@ -33,7 +33,8 @@ import { showToast } from '../lib/toast';
 import { compareWithPreviousMonth } from '../lib/trend';
 import { VERSION_LABEL } from '../lib/version';
 import { reloadApp, useWebUpdateAvailable } from '../lib/webUpdate';
-import { resumePendingUploads } from '../services/drafts/uploadQueue';
+import { enqueueDraftUpload, resumePendingUploads } from '../services/drafts/uploadQueue';
+import { pickPhotos } from '../services/image/pickPhotos';
 import { updateMonthlySummary } from '../services/reminders/monthlySummary';
 import { monthOffset } from '../lib/monthlySummaryPlan';
 import { categoriesReady } from '../services/supabase/schema';
@@ -135,6 +136,34 @@ export default function DashboardScreen() {
     if (o !== null) goToMonth(o);
     router.setParams({ ay: undefined });
   }, [ay, goToMonth]);
+
+  /** Birden fazla fiş: arka arkaya çekim ya da galeriden çoklu seçim; okuma arka planda başlar */
+  async function addFromGallery() {
+    try {
+      const photos = await pickPhotos();
+      if (!photos.length) return;
+      photos.forEach((p) => enqueueDraftUpload(p.uri, p.width, { scan: true }));
+      showToast(`${photos.length} fiş okunuyor; hazır oldukça incelemeye gelecek`, 'info', 3500);
+      router.push('/batch-review');
+    } catch (e) {
+      showAlert('Fotoğraflar seçilemedi', errorMessage(e));
+    }
+  }
+
+  function addMultiple() {
+    if (Platform.OS === 'web') {
+      addFromGallery();
+      return;
+    }
+    showActionSheet({
+      title: 'Birden Fazla Fiş',
+      message: 'Fişler arka planda okunur; siz bu sırada sonrakini ekleyebilirsiniz. Okunanları sırayla kontrol edip kaydedersiniz.',
+      options: [
+        { label: 'Arka Arkaya Çek', onPress: () => router.push('/camera') },
+        { label: 'Galeriden Seç (en fazla 50)', onPress: addFromGallery },
+      ],
+    });
+  }
 
   const readyDrafts = drafts.filter((d) => d.status === 'ready').length;
   const nextScheduled = drafts.find((d) => d.status === 'scheduled' && d.scheduled_for)?.scheduled_for;
@@ -417,6 +446,12 @@ export default function DashboardScreen() {
 
             <ListSection>
               <ListRow
+                title="Son Eklenenler"
+                icon={{ sf: 'clock.fill', ion: 'time', color: theme.orange }}
+                onPress={() => router.push('/recent')}
+                chevron
+              />
+              <ListRow
                 title="Tüm Fişler"
                 icon={{ sf: 'doc.text.fill', ion: 'document-text', color: theme.blue }}
                 onPress={() => router.push('/receipts')}
@@ -526,7 +561,14 @@ export default function DashboardScreen() {
             variant="gray"
             icon={{ sf: 'square.and.pencil', ion: 'create-outline' }}
             onPress={() => router.push('/manual')}
-            style={{ paddingHorizontal: 18 }}
+            style={{ paddingHorizontal: 16 }}
+          />
+          <Button
+            title="Çoklu"
+            variant="gray"
+            icon={{ sf: 'square.stack.3d.up', ion: 'albums-outline' }}
+            onPress={addMultiple}
+            style={{ paddingHorizontal: 16 }}
           />
           <Button title="Fiş Tara" icon={{ sf: 'camera.fill', ion: 'camera' }} onPress={() => router.push('/camera')} style={{ flex: 1 }} />
         </View>

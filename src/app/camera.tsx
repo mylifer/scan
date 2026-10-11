@@ -109,6 +109,8 @@ export default function CameraScreen() {
       setCapturing(false);
       const key = nextKey.current++;
       setShots((s) => [...s, { key, uri: photo.uri, status: 'uploading' }]);
+      // İlk çekimde akışı bir kez anlat
+      if (key === 0 && !batch) showToast('Fiş okunuyor. Sıradakini çekin; bitince sağ alttaki İncele’ye basın.', 'info', 4000);
       enqueueDraftUpload(photo.uri, photo.width, { scan: !batch }).then((draft) => {
         if (!draft) showToast('Fotoğraf yüklenemedi; uygulama yeniden açılınca tekrar denenir', 'error');
         setShots((list) =>
@@ -134,7 +136,7 @@ export default function CameraScreen() {
   const pill = batch
     ? `Toplu çekim · ${shots.length}`
     : shots.length === 0
-      ? 'Fişi çerçeveye hizalayın'
+      ? 'Fişi çekin · ardından sıradakini çekebilirsiniz'
       : [`${shots.length} fiş`, readingCount && `${readingCount} okunuyor`, readyCount && `${readyCount} hazır`, failedCount && `${failedCount} okunamadı`]
           .filter(Boolean)
           .join(' · ');

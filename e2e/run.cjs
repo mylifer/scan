@@ -296,6 +296,36 @@ test('tüm fişler, firmalar ve firma detayı', async (b) => {
   await close();
 });
 
+test('son eklenenler: eklenme sırasına göre (fiş tarihine göre değil)', async (b) => {
+  const { page, errors, close } = await open(b, {
+    receipts: [...thisMonth(), receipt('late', 'GEÇ GİRİLEN ESKİ FİŞ', isoDate(-2, 3), 99, { created_at: new Date().toISOString() })],
+  });
+  await page.getByText('Son Eklenenler', { exact: true }).click();
+  await page.waitForTimeout(1200);
+  const rows = await page.getByRole('button', { name: /· fiş / }).allInnerTexts();
+  assert.ok(rows[0].includes('GEÇ GİRİLEN ESKİ FİŞ'), `ilk satır en son eklenen olmalı: ${rows[0]}`);
+  assert.ok(rows[0].includes('Bugün'), rows[0]);
+  assert.equal(rows.length, 5);
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('çoklu: galeriden birden fazla fiş seçilir, okunur ve sırayla kaydedilir', async (b) => {
+  const { page, backend, errors, close } = await open(b, { receipts: [] });
+  const photo = path.join(__dirname, 'fixtures', 'fis.jpg');
+  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByText('Çoklu', { exact: true }).click()]);
+  await chooser.setFiles([photo, photo]);
+  // Okuma arka planda; ilk fiş hazır olunca form açılır
+  for (let i = 0; i < 2; i++) {
+    await page.getByText('Kaydet', { exact: true }).click({ timeout: 20000 });
+    await page.waitForTimeout(1500);
+  }
+  assert.equal(backend.db.receipts.length, 2, '2 fiş kaydedilmeli');
+  assert.equal(backend.geminiCalls, 2);
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 test('muhasebe paketi geçerli bir ZIP üretir (Excel + fotoğraflar)', async (b) => {
   const { page, errors, close } = await open(b, { receipts: thisMonth() });
   const row = page.getByText('Muhasebe Paketi (ZIP)');
