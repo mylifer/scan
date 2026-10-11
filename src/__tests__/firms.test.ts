@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { aggregateFirms, firmKey, summarizeFirm } from '../lib/firms';
+import { aggregateFirms, firmKey, firmKeyFromParam, firmKeyToParam, summarizeFirm } from '../lib/firms';
 
 const r = (firma_adi: string, tarih: string, toplam_tutar: number, kdv20 = 0, kdv10 = 0) => ({
   firma_adi,
@@ -37,5 +37,17 @@ describe('firma listesi', () => {
     const s = summarizeFirm(rows.filter((x) => firmKey(x.firma_adi) === 'MİGROS'));
     assert.deepEqual(s, { count: 3, total: 350.3, kdv: 58.38, kdv1: 0, kdv10: 0, kdv20: 58.38, average: 116.77, first: '2026-08-15', last: '2026-10-01' });
     assert.deepEqual(summarizeFirm([]), { count: 0, total: 0, kdv: 0, kdv1: 0, kdv10: 0, kdv20: 0, average: 0, first: null, last: null });
+  });
+});
+
+describe('firma adres parametresi', () => {
+  it('her ad bozulmadan gidip gelir; yalnızca onaltılık karakter içerir', () => {
+    for (const k of ['ŞOK %25', '%100 DOĞAL', 'A/B & C', 'İĞÜŞÖÇ ığüşöç', 'KAFE ☕']) {
+      const p = firmKeyToParam(k);
+      assert.match(p, /^[0-9a-f]+$/);
+      assert.equal(firmKeyFromParam(p), k);
+    }
+    assert.equal(firmKeyFromParam(undefined), '');
+    assert.equal(firmKeyFromParam('zz'), '');
   });
 });

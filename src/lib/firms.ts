@@ -10,6 +10,26 @@ export function firmKey(name: string): string {
   return name.trim().replace(/\s+/g, ' ').toLocaleUpperCase('tr-TR');
 }
 
+/**
+ * Firma anahtarını adres parametresi olarak taşınabilir hâle getirir (UTF-8 onaltılık).
+ * Yönlendirici parametreyi iki kez çözdüğü için "%25" gibi içerikler bozuluyordu; onaltılık metin hiç değişmez.
+ */
+export function firmKeyToParam(key: string): string {
+  // encodeURIComponent UTF-8 baytlarını %XX olarak verir; kalan ASCII karakterler de onaltılığa çevrilir
+  return encodeURIComponent(key).replace(/%([0-9A-F]{2})|([\s\S])/g, (_, hex: string | undefined, ch: string | undefined) =>
+    hex ? hex.toLowerCase() : ch!.charCodeAt(0).toString(16).padStart(2, '0'),
+  );
+}
+
+export function firmKeyFromParam(param: string | undefined): string {
+  if (!param || !/^(?:[0-9a-f]{2})+$/.test(param)) return '';
+  try {
+    return decodeURIComponent(param.replace(/../g, '%$&'));
+  } catch {
+    return '';
+  }
+}
+
 type Row = Pick<ReceiptRecord, 'firma_adi' | 'tarih' | 'toplam_tutar' | 'toplam_kdv' | 'kdv_yuzde1' | 'kdv_yuzde10' | 'kdv_yuzde20'>;
 
 export interface FirmListItem {

@@ -254,13 +254,17 @@ test('toplu düzenleme: seçilen fişlerin kategorisi değişir, toplu silinir',
 
 test('tüm fişler, firmalar ve firma detayı', async (b) => {
   const { page, errors, close } = await open(b, {
-    receipts: [...thisMonth(), receipt('m2', 'Migros ', isoDate(-3, 4), 62.7, { kdv_yuzde10: 5.7, toplam_kdv: 5.7, kdv_yuzde20: 0 })],
+    receipts: [
+      ...thisMonth(),
+      receipt('m2', 'Migros ', isoDate(-3, 4), 62.7, { kdv_yuzde10: 5.7, toplam_kdv: 5.7, kdv_yuzde20: 0 }),
+      receipt('p1', 'ŞOK %25 İNDİRİM', isoDate(0, 1), 10),
+    ],
   });
   await page.getByText('Tüm Fişler', { exact: true }).click();
   await page.waitForTimeout(1200);
   let text = await page.locator('body').innerText();
   for (const f of ['MİGROS TİCARET A.Ş.', 'OPET PETROLCÜLÜK A.Ş.', 'KÖFTECİ YUSUF', 'ESKİ AY FİRMASI']) assert.ok(text.includes(f), `${f} görünmeli`);
-  assert.ok(text.includes('2.397,00'), 'tüm zamanların toplamı');
+  assert.ok(text.includes('2.407,00'), 'tüm zamanların toplamı');
   await page.getByPlaceholder('Firma ya da tutar ara').last().fill('köfteci');
   await page.waitForTimeout(300);
   text = await page.locator('body').innerText();
@@ -271,7 +275,13 @@ test('tüm fişler, firmalar ve firma detayı', async (b) => {
   await page.getByText('Firmalar', { exact: true }).click();
   await page.waitForTimeout(1200);
   text = await page.locator('body').innerText();
-  assert.ok(text.includes('FİRMALAR · 5') || text.includes('FİRMALAR · 4'), text.slice(0, 300));
+  assert.ok(text.includes('FİRMALAR · 6') || text.includes('FİRMALAR · 5'), text.slice(0, 300));
+  // "%25" içeren ad da doğru firmayı açar (yönlendirici parametreyi iki kez çözüyordu)
+  await page.getByRole('button', { name: /ŞOK %25 İNDİRİM 1 fiş/ }).click();
+  await page.waitForTimeout(1200);
+  assert.ok((await page.getByText('Ortalama Fiş').count()) >= 1, '%25 içeren firma açılmalı');
+  await page.goBack();
+  await page.waitForTimeout(800);
   await page.getByRole('button', { name: /OPET PETROLCÜLÜK A\.Ş\. 1 fiş/ }).click();
   await page.waitForTimeout(1200);
   text = await page.locator('body').innerText();

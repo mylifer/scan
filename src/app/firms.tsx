@@ -7,7 +7,7 @@ import { ListRow, ListSection } from '../components/ui/List';
 import { SearchField } from '../components/ui/SearchField';
 import { useAllReceipts } from '../hooks/useAllReceipts';
 import { showActionSheet } from '../lib/actionSheet';
-import { aggregateFirms } from '../lib/firms';
+import { aggregateFirms, firmKeyToParam } from '../lib/firms';
 import { formatTL, shortTrDate } from '../lib/format';
 import { haptics } from '../lib/haptics';
 import { normalizeForSearch } from '../lib/search';
@@ -97,7 +97,7 @@ export default function FirmsScreen() {
                   value={formatTL(f.total)}
                   valueColor={theme.label}
                   chevron
-                  onPress={() => router.push({ pathname: '/firm/[key]', params: { key: f.key } })}
+                  onPress={() => router.push({ pathname: '/firm/[key]', params: { key: firmKeyToParam(f.key) } })}
                 />
               ))
             )}
