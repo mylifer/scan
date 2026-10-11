@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.32.1 — `(yayında)`
+## 1.32.1 — `2412ed4`
 - Gemini kotası dolup okuma durunca kamerada bazı fişlerin "okunuyor" işareti dönmeye devam ediyordu; artık "okunamadı" görünüyor
 - Hızlı çekim sürerken Toplu Tarama açılırsa okunmuş fişler tekrar "Şimdi Tara"ya düşüp ikinci kez okunabiliyordu (boşuna kota); liste artık canlı güncelleniyor
 - Tüm Fişler ve Firma Detayı'nda "daha göster" ile açılan fişler, bir fişe girip geri dönünce kapanmıyor
