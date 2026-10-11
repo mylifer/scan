@@ -16,6 +16,11 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.33.0 — `(yayında)`
+- **Son Eklenenler** (ana sayfa): uygulamaya en son eklediğiniz 30 fiş, eklenme zamanıyla (fiş üzerindeki tarihten bağımsız)
+- **Çoklu** düğmesi (ana sayfanın altında): "Arka Arkaya Çek" ya da "Galeriden Seç (en fazla 50)". Fişler arka planda okunur, okunanlar sırayla incelemeye gelir
+- Kamerada ilk fişten sonra "Sıradakini çekin; bitince İncele'ye basın" ipucu
+
 ## 1.32.1 — `2412ed4`
 - Gemini kotası dolup okuma durunca kamerada bazı fişlerin "okunuyor" işareti dönmeye devam ediyordu; artık "okunamadı" görünüyor
 - Hızlı çekim sürerken Toplu Tarama açılırsa okunmuş fişler tekrar "Şimdi Tara"ya düşüp ikinci kez okunabiliyordu (boşuna kota); liste artık canlı güncelleniyor
