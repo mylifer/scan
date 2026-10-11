@@ -73,6 +73,12 @@ export async function processDrafts(drafts: ReceiptDraft[], onItemDone?: () => v
   if (state.running || !drafts.length) return 0;
   set({ running: true, done: 0, total: drafts.length, stoppedReason: null });
   let ok = 0;
+  /** Sonucu (hazır/hatalı) bildirilen taslaklar; erken durunca kalanlar "okunamadı" bildirilir */
+  const finished = new Set<string>();
+  const report = (id: string, status: DraftScanStatus) => {
+    finished.add(id);
+    emitDraft(id, status);
+  };
   try {
     for (let i = 0; i < drafts.length; i++) {
       const d = drafts[i];
@@ -86,7 +92,7 @@ export async function processDrafts(drafts: ReceiptDraft[], onItemDone?: () => v
         result = (await applyLearnedCategory(await getVisionService().analyzeReceipt(image))).data;
       } catch (e) {
         await updateDraft(d.id, { status: 'failed', error: errorMessage(e) }).catch(() => {});
-        emitDraft(d.id, 'failed');
+        report(d.id, 'failed');
         // Kota/yoğunluk ya da bağlantı kopukluğu: kalanları denemek boşuna; olduğu gibi bırak
         if ((e instanceof VisionServiceError && (e.kind === 'quota' || e.kind === 'busy')) || isNetworkError(e)) {
           set({ stoppedReason: e instanceof VisionServiceError ? e.message : errorMessage(e), done: i + 1 });
@@ -104,9 +110,9 @@ export async function processDrafts(drafts: ReceiptDraft[], onItemDone?: () => v
           updateDraft(d.id, { status: 'ready', result, scheduled_for: null, error: null }),
         );
         ok++;
-        emitDraft(d.id, 'ready');
+        report(d.id, 'ready');
       } catch (e) {
-        emitDraft(d.id, 'failed');
+        report(d.id, 'failed');
         set({ stoppedReason: `Sonuç kaydedilemedi: ${errorMessage(e)}`, done: i + 1 });
         onItemDone?.();
         break;
@@ -115,6 +121,8 @@ export async function processDrafts(drafts: ReceiptDraft[], onItemDone?: () => v
       onItemDone?.();
     }
   } finally {
+    // Kota/bağlantı nedeniyle erken durulduysa sıradakiler okunmadı: izleyen ekranlarda dönen işaret kalmasın
+    drafts.filter((d) => !finished.has(d.id)).forEach((d) => emitDraft(d.id, 'failed'));
     set({ running: false });
   }
   return ok;
