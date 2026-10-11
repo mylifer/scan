@@ -23,13 +23,9 @@ interface Props {
  * tutara göre sıralıyken düz liste. 50'şer gösterilir. Fişe dokununca detay açılır.
  */
 export function ReceiptList({ receipts, sort, header, headerAction }: Props) {
+  // Arama/sıralama değişince baştan gösterilmesi için çağıran `key` verir; veri yenilenince (ekrana dönüş)
+  // açılmış "daha göster" sayfaları korunur
   const [visible, setVisible] = useState(PAGE);
-  // Liste değişince (arama, sıralama) baştan göster
-  const [shownFor, setShownFor] = useState(receipts);
-  if (shownFor !== receipts) {
-    setShownFor(receipts);
-    setVisible(PAGE);
-  }
 
   const shown = receipts.slice(0, visible);
   const row = (r: ReceiptRecord) => <ReceiptRow key={r.id} receipt={r} onPress={() => router.push({ pathname: '/receipt/[id]', params: { id: r.id } })} />;

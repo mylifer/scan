@@ -8,7 +8,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { ListRow, ListSection } from '../../components/ui/List';
 import { useAllReceipts } from '../../hooks/useAllReceipts';
 import { showActionSheet } from '../../lib/actionSheet';
-import { firmKey, summarizeFirm } from '../../lib/firms';
+import { firmKey, firmKeyFromParam, summarizeFirm } from '../../lib/firms';
 import { formatTL, shortTrDate } from '../../lib/format';
 import { haptics } from '../../lib/haptics';
 import { SORT_OPTIONS, type SortKey, sortReceipts } from '../../lib/sort';
@@ -17,7 +17,7 @@ import { useTheme } from '../../lib/theme';
 /** Bir firmanın tüm fişleri, toplam ve KDV tutarları. */
 export default function FirmDetailScreen() {
   const theme = useTheme();
-  const { key } = useLocalSearchParams<{ key: string }>();
+  const key = firmKeyFromParam(useLocalSearchParams<{ key: string }>().key);
   const { receipts, error, loading, refresh } = useAllReceipts();
   const [sort, setSort] = useState<SortKey>('newest');
 
@@ -81,6 +81,7 @@ export default function FirmDetailScreen() {
       </ListSection>
 
       <ReceiptList
+        key={sort}
         receipts={sorted}
         sort={sort}
         header={`Fişler · ${sorted.length}`}

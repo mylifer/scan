@@ -84,6 +84,7 @@ export default function AllReceiptsScreen() {
             </ListSection>
           ) : (
             <ReceiptList
+              key={`${query}|${sort}`}
               receipts={filtered}
               sort={sort}
               header={`Fişler · ${filtered.length}`}
