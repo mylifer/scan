@@ -30,6 +30,32 @@ EAS Update ile yeni sürümü yayınlar; telefonda uygulamayı kapatıp açmak y
 Açma bağlantısı: `exp://u.expo.dev/e4446685-6bd2-4e1c-b0d0-cb1c025e1905?channel-name=production`
 Gerekli secret'lar: `EXPO_TOKEN`, `GEMINI_API_KEY`.
 
+## iPhone uygulaması (TestFlight, Apple Developer hesabıyla)
+
+App Store'da yayınlamadan, gerçek bir uygulama olarak (Expo Go olmadan) kendi iPhone'unuzda kullanmak için.
+TestFlight'taki **dahili test** Apple incelemesi gerektirmez ve uygulama kimseye görünmez.
+
+1. **App Store Connect API anahtarı:** appstoreconnect.apple.com → Users and Access → Integrations →
+   App Store Connect API → Team Keys → **+** (rol: *App Manager*). `.p8` dosyasını indirin (yalnızca bir kez
+   indirilebilir), **Key ID** ve sayfanın üstündeki **Issuer ID**'yi not edin.
+2. **Team ID:** developer.apple.com/account → Membership details → *Team ID* (10 karakter).
+3. **Bundle ID:** developer.apple.com → Certificates, Identifiers & Profiles → Identifiers → **+** →
+   App IDs → App → Bundle ID (Explicit): `com.adba.fistarayici`.
+4. **Uygulama kaydı:** App Store Connect → Apps → **+** → New App → iOS, ad: *Fiş Tarayıcı*, Bundle ID:
+   `com.adba.fistarayici`, SKU: `fistarayici`. Oluşunca App Information sayfasındaki sayısal **Apple ID**'yi alın.
+5. **GitHub secret'ları** (Settings → Secrets and variables → Actions):
+   `ASC_API_KEY_P8` (.p8 dosyasının tüm içeriği), `ASC_KEY_ID`, `ASC_ISSUER_ID`, `APPLE_TEAM_ID`,
+   `ASC_APP_ID` (4. adımdaki sayı). Şirket hesabıysa ayrıca `APPLE_TEAM_TYPE=COMPANY_OR_ORGANIZATION`.
+6. **Derleme:** Actions → *iPhone uygulaması* → Run workflow → action: **build**. Derleme ~20–30 dk,
+   ardından Apple'ın işlemesi ~10–30 dk sürer.
+7. **iPhone'a kurulum:** App Store'dan **TestFlight** uygulamasını indirin, Apple Developer hesabınızın
+   Apple ID'siyle giriş yapın. App Store Connect → uygulama → TestFlight → Internal Testing grubunda kendinizin
+   olduğundan emin olun. Uygulama TestFlight'ta görünür → **Install**.
+
+Sonraki kod değişiklikleri her push'ta EAS Update ile gelir (uygulamayı kapatıp açmak yeterli); yeniden
+derleme yalnızca yerel kodlu yeni bir paket eklenince gerekir. TestFlight derlemeleri **90 gün** geçerlidir;
+süre dolmadan **build**'i tekrar çalıştırın. Apple Developer üyeliği yıllık yenilenmezse uygulama açılmaz.
+
 ## Sürümler ve geri dönüş
 
 Her sürüm ve commit kodu [CHANGELOG.md](CHANGELOG.md) içindedir. Eski bir sürüme dönmek için Actions'ta

@@ -5,8 +5,12 @@
 #   - push: her değişiklik EAS Update ile yayınlanır; Expo Go'da hesabınızla giriş yapınca proje listelenir
 #   Gerekli secret'lar: EXPO_TOKEN, GEMINI_API_KEY
 #
-# İleride TestFlight'a geçilirse: app.json'da runtimeVersion policy'yi "appVersion" yapın ve
-#   "build" eylemini kullanın (ek secret'lar: ASC_API_KEY_P8, ASC_KEY_ID, ASC_ISSUER_ID, APPLE_TEAM_ID)
+# TestFlight yolu (Apple Developer hesabı ile, App Store'a çıkmadan kendi iPhone'unuzda):
+#   "build" eylemini çalıştırın. Ek secret'lar: ASC_API_KEY_P8, ASC_KEY_ID, ASC_ISSUER_ID, APPLE_TEAM_ID,
+#   ASC_APP_ID (App Store Connect'teki uygulamanın sayısal Apple ID'si). İsteğe bağlı: APPLE_TEAM_TYPE
+#   (varsayılan INDIVIDUAL; şirket hesabıysa COMPANY_OR_ORGANIZATION).
+#   runtimeVersion "sdkVersion" politikasında kalır: böylece her push'taki EAS Update hem Expo Go'ya hem
+#   TestFlight uygulamasına gider. Yerel kodlu (native) yeni bir paket eklenirse "build" yeniden çalıştırılmalı.
 name: iPhone uygulaması
 
 on:
@@ -94,13 +98,20 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_TEAM_TYPE: ${{ secrets.APPLE_TEAM_TYPE }}
+          ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
         run: |
+          for v in ASC_API_KEY_P8 ASC_KEY_ID ASC_ISSUER_ID APPLE_TEAM_ID ASC_APP_ID; do
+            if [ -z "${!v}" ]; then echo "::error::$v secret'ı tanımlı değil (README → iPhone uygulaması (TestFlight))"; exit 1; fi
+          done
+          # Otomatik TestFlight gönderimi, API anahtarıyla çalışırken uygulama kimliğini eas.json'da ister
+          node -e 'const fs=require("fs");const e=JSON.parse(fs.readFileSync("eas.json"));e.submit.production.ios.ascAppId=process.env.ASC_APP_ID;fs.writeFileSync("eas.json",JSON.stringify(e,null,2)+"\n")'
           printf '%s' "$ASC_API_KEY_P8" > "$RUNNER_TEMP/asc.p8"
           echo "EXPO_ASC_API_KEY_PATH=$RUNNER_TEMP/asc.p8" >> "$GITHUB_ENV"
           echo "EXPO_ASC_KEY_ID=$ASC_KEY_ID" >> "$GITHUB_ENV"
           echo "EXPO_ASC_ISSUER_ID=$ASC_ISSUER_ID" >> "$GITHUB_ENV"
           echo "EXPO_APPLE_TEAM_ID=$APPLE_TEAM_ID" >> "$GITHUB_ENV"
-          echo "EXPO_APPLE_TEAM_TYPE=INDIVIDUAL" >> "$GITHUB_ENV"
+          echo "EXPO_APPLE_TEAM_TYPE=${APPLE_TEAM_TYPE:-INDIVIDUAL}" >> "$GITHUB_ENV"
       - name: Gizli anahtarları EAS'e aktar
         if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'build'
         run: |
