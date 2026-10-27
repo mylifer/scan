@@ -25,14 +25,11 @@ export interface EmbeddedPhoto {
 export type PhotoMap = Map<string, EmbeddedPhoto | 'failed'>;
 
 const FISLER = 'Fişler';
-const FOTOGRAFLAR = 'Fotoğraflar';
 /** Fişler sayfasında küçük resim sütunu ve satır yüksekliği */
 const PHOTO_COL = 9; // J
 const PHOTO_COL_WIDTH = 11;
 const PHOTO_ROW_PT = 60;
 const THUMB_MARGIN_PT = 2;
-/** Fotoğraflar sayfasında sabit satır yüksekliği (resimlerin kaç satır kapladığı buna göre hesaplanır) */
-const PHOTO_SHEET_ROW_PT = 15;
 
 /**
  * Dönemin fişlerini muhasebeciye gönderilecek bir Excel dosyası olarak üretir.
@@ -50,7 +47,7 @@ export interface PhotoWorkbookResult {
 }
 
 /**
- * Fotoğraflı Excel: her fiş satırında küçük resim, tıklanınca "Fotoğraflar" sayfasında tam boyutlu hâline gider.
+ * Fotoğraflı Excel: her fiş satırında küçük resim, tıklanınca kendi sayfasında ("Fiş 1"…) tam boyutlu hâline gider.
  * Fotoğraf dosyaya bir kez girer (küçük resim ve tam boyut aynı görseli kullanır). Akış olarak üretilir:
  * her fotoğraf indirilir indirilmez dosyaya yazılıp bellekten bırakılır.
  */
@@ -99,7 +96,7 @@ export async function writeReceiptsWorkbookWithPhotos(
   return { photos: photos.size - failed, failed };
 }
 
-/** Çalışma kitabının sayfaları; `photos` verilirse küçük resim sütunu ve "Fotoğraflar" sayfası eklenir. */
+/** Çalışma kitabının sayfaları; `photos` verilirse küçük resim sütunu ve her fotoğraf için bir sayfa eklenir. */
 export function receiptsSheets(summary: WorkbookInput, periodLabel: string, photos?: PhotoMap): SheetSpec[] {
   const fisler = [...summary.fisler].sort((a, b) => a.tarih.localeCompare(b.tarih) || a.created_at.localeCompare(b.created_at));
   const withPhotos = !!photos?.size;
@@ -139,7 +136,7 @@ export function receiptsSheets(summary: WorkbookInput, periodLabel: string, phot
   ]);
 
   const fislerSheet: SheetSpec = { name: FISLER, rows, widths: [12, 34, 14, 14, 12, 12, 12, 14, 14], freezeRows: 1 };
-  const photoSheet = withPhotos ? photoSheets(fisler, photos!, fislerSheet) : null;
+  const photoPages = withPhotos ? photoSheets(fisler, photos!, fislerSheet) : [];
 
   const total = summary.toplamGider || 1;
   const ozet: Row[] = [
@@ -170,29 +167,25 @@ export function receiptsSheets(summary: WorkbookInput, periodLabel: string, phot
     fislerSheet,
     { name: 'Özet', rows: ozet, widths: [22, 16, 10] },
     ...(months ? [{ name: 'Aylar', rows: months, widths: [16, 8, 14, 12, 12, 12, 14, 14], freezeRows: 1 }] : []),
-    ...(photoSheet ? [photoSheet] : []),
+    ...photoPages,
   ];
 }
 
 /**
- * Fişler sayfasına küçük resimleri ekler (yerinde) ve tam boyutlu fotoğrafların olduğu sayfayı döner.
- * Her fotoğraf bloğu: başlık (tarih · firma · tutar), "Fişlere dön" bağlantısı, gerçek boyutunda fotoğraf.
+ * Fişler sayfasına küçük resimleri ekler (yerinde) ve her fotoğraf için ayrı bir sayfa döner ("Fiş 1", "Fiş 2"…).
+ * Ayrı sayfa: Excel bir bağlantıyı izlerken hedef hücreyi ekranın üstüne getirmiyor, yalnızca görünür kılıyor;
+ * fotoğraflar tek sayfada alt alta olunca önceki fotoğraf görünüyor ("kayma"). Kendi sayfasında her zaman en üstten açılır.
+ * Her sayfa: başlık (tarih · firma · tutar), "Fişlere dön" bağlantısı, gerçek boyutunda fotoğraf.
  */
-function photoSheets(fisler: WorkbookInput['fisler'], photos: PhotoMap, sheet: SheetSpec): SheetSpec | null {
+function photoSheets(fisler: WorkbookInput['fisler'], photos: PhotoMap, sheet: SheetSpec): SheetSpec[] {
   const thumbs: SheetImage[] = [];
   const thumbLinks: SheetLink[] = [];
   const thumbHeights: Record<number, number> = {};
-  const rows: (Row | undefined)[] = [];
-  const rowHeights: Record<number, number> = {};
-  const images: SheetImage[] = [];
-  const links: SheetLink[] = [];
-  const rowEmu = PHOTO_SHEET_ROW_PT * EMU_PER_PT;
+  const sheets: SheetSpec[] = [];
   const margin = THUMB_MARGIN_PT * EMU_PER_PT;
   const colEmu = colWidthPx(PHOTO_COL_WIDTH) * EMU_PER_PX;
   const boxH = PHOTO_ROW_PT * EMU_PER_PT - 2 * margin;
   const boxW = colEmu - 2 * margin;
-  let at = 0; // Fotoğraflar sayfasında sıradaki boş satır
-  let no = 0;
 
   fisler.forEach((r, i) => {
     const row = i + 1; // Fişler sayfasında (başlıktan sonra) satır indeksi
@@ -202,11 +195,11 @@ function photoSheets(fisler: WorkbookInput['fisler'], photos: PhotoMap, sheet: S
       sheet.rows[row]![PHOTO_COL] = { v: 'indirilemedi', s: 'muted' };
       return;
     }
-    no++;
-    const target = cellRef(FOTOGRAFLAR, at, 0);
+    const name = `Fiş ${sheets.length + 1}`;
+    const target = cellRef(name, 0, 0);
     const tooltip = 'Tam boyutlu fotoğrafı aç';
 
-    // Küçük resim: satır yüksekliğine sığdırılır, hücrede ortalanır; tıklanınca tam boyutuna gider
+    // Küçük resim: satır yüksekliğine sığdırılır, hücrede ortalanır; tıklanınca fotoğrafın sayfasına gider
     const scale = Math.min(boxH / photo.height, boxW / photo.width);
     const w = photo.width * scale;
     const h = photo.height * scale;
@@ -215,22 +208,22 @@ function photoSheets(fisler: WorkbookInput['fisler'], photos: PhotoMap, sheet: S
     thumbLinks.push({ row, col: PHOTO_COL, location: target, tooltip });
 
     // Tam boyut: gerçek piksel boyutunda (%100 yakınlaştırmada)
-    rows[at] = [{ v: `${no}. ${formatDate(r.tarih)} · ${r.firma_adi} · ${formatTL(r.toplam_tutar)}`, s: 'title' }];
-    rowHeights[at] = 20;
-    rows[at + 1] = [{ v: '← Fişlere dön', s: 'link' }];
-    links.push({ row: at + 1, col: 0, location: cellRef(FISLER, row, 0) });
-    const height = photo.height * EMU_PER_PX;
-    images.push({ media: photo.media, row: at + 2, col: 0, width: photo.width * EMU_PER_PX, height, descr: r.firma_adi });
-    // Başlık satırı 20 pt (varsayılandan 5 pt fazla) olsa da resim ondan sonra başladığı için hesaba girmez
-    at += 2 + Math.ceil(height / rowEmu) + 2;
+    sheets.push({
+      name,
+      rows: [[{ v: `${formatDate(r.tarih)} · ${r.firma_adi} · ${formatTL(r.toplam_tutar)}`, s: 'title' }], [{ v: '← Fişlere dön', s: 'link' }]],
+      rowHeights: { 0: 20 },
+      links: [{ row: 1, col: 0, location: cellRef(FISLER, row, 0) }],
+      images: [{ media: photo.media, row: 2, col: 0, width: photo.width * EMU_PER_PX, height: photo.height * EMU_PER_PX, descr: r.firma_adi }],
+    });
   });
 
   sheet.widths = [...(sheet.widths ?? []), PHOTO_COL_WIDTH];
-  if (!no) return null; // hepsi indirilemedi: yalnızca "indirilemedi" notları kalır
-  sheet.rowHeights = thumbHeights;
-  sheet.images = thumbs;
-  sheet.links = thumbLinks;
-  return { name: FOTOGRAFLAR, rows, rowHeights, defaultRowHeight: PHOTO_SHEET_ROW_PT, images, links };
+  if (sheets.length) {
+    sheet.rowHeights = thumbHeights;
+    sheet.images = thumbs;
+    sheet.links = thumbLinks;
+  }
+  return sheets;
 }
 
 /** "2026-09-14" → "14.09.2026" */

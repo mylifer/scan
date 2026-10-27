@@ -69,7 +69,7 @@ describe('xlsx', () => {
   });
 
   it('hücre adresi: sayfa adı tırnaklı, tırnak ikilenir', () => {
-    assert.equal(cellRef('Fotoğraflar', 4, 0), "'Fotoğraflar'!A5");
+    assert.equal(cellRef('Fiş 1', 4, 0), "'Fiş 1'!A5");
     assert.equal(cellRef("Ali'nin", 0, 9), "'Ali''nin'!J1");
   });
 });
@@ -113,7 +113,7 @@ describe('fotoğraflı Excel', () => {
     return { result, files: unzipSync(all) };
   }
 
-  it('her fotoğraf dosyaya bir kez girer; küçük resim tam boyuta, tam boyut fişe bağlanır', async () => {
+  it('her fotoğraf dosyaya bir kez girer; küçük resim kendi sayfasına, o sayfa fişe bağlanır', async () => {
     const fisler = [
       r({ id: 'b', firma_adi: 'İKİNCİ', tarih: '2026-09-20', image_path: 'b.jpg' }),
       r({ id: 'a', firma_adi: 'BİRİNCİ', tarih: '2026-09-02', image_path: 'a.jpg' }),
@@ -122,21 +122,25 @@ describe('fotoğraflı Excel', () => {
     const { result, files } = await build(fisler, async () => fakeJpeg(900, 1800));
     assert.deepEqual(result, { photos: 2, failed: 0 });
     assert.equal(Object.keys(files).filter((f) => f.startsWith('xl/media/')).length, 2);
-    assert.ok(strFromU8(files['xl/workbook.xml']).includes('name="Fotoğraflar"'));
+    const wb = strFromU8(files['xl/workbook.xml']);
+    assert.ok(wb.includes('name="Fiş 1"') && wb.includes('name="Fiş 2"'), 'her fotoğrafa bir sayfa');
 
     const fisSheet = strFromU8(files['xl/worksheets/sheet1.xml']);
     assert.ok(fisSheet.includes('Fotoğraf'), 'başlık sütunu');
     assert.ok(fisSheet.includes('<row r="2" ht="60" customHeight="1">'), 'fotoğraflı satır yükseltilir');
     assert.ok(!fisSheet.includes('<row r="3" ht='), 'fotoğrafsız satır normal yükseklikte');
-    assert.ok(fisSheet.includes(`<hyperlink ref="J2" location="'Fotoğraflar'!A1"`), 'ilk (en eski) fiş ilk fotoğrafa gider');
+    assert.ok(fisSheet.includes(`<hyperlink ref="J2" location="'Fiş 1'!A1"`), 'ilk (en eski) fiş ilk sayfaya gider');
+    assert.ok(fisSheet.includes(`<hyperlink ref="J4" location="'Fiş 2'!A1"`), 'fotoğrafsız satır atlanır');
     assert.ok(fisSheet.includes('<drawing r:id="rId1"/>'));
 
     const thumbRels = strFromU8(files['xl/drawings/_rels/drawing1.xml.rels']);
-    assert.ok(thumbRels.includes(`Target="#'Fotoğraflar'!A1"`), 'küçük resme tıklayınca tam boyuta gider');
+    assert.ok(thumbRels.includes(`Target="#'Fiş 1'!A1"`), 'küçük resme tıklayınca kendi sayfasına gider');
 
-    const photoSheet = strFromU8(files['xl/worksheets/sheet3.xml']);
-    assert.ok(photoSheet.includes('BİRİNCİ'));
-    assert.ok(photoSheet.includes(`location="'Fişler'!A2"`), 'fişlere dön bağlantısı');
+    // Sayfalar: Fişler, Özet, Fiş 1, Fiş 2
+    const first = strFromU8(files['xl/worksheets/sheet3.xml']);
+    assert.ok(first.includes('BİRİNCİ'));
+    assert.ok(first.includes(`location="'Fişler'!A2"`), 'fişlere dön bağlantısı');
+    assert.ok(strFromU8(files['xl/worksheets/sheet4.xml']).includes(`location="'Fişler'!A4"`));
     // Tam boyut: 900×1800 px → EMU (1 px = 9525)
     assert.ok(strFromU8(files['xl/drawings/drawing2.xml']).includes(`<xdr:ext cx="${900 * 9525}" cy="${1800 * 9525}"/>`));
   });
@@ -153,7 +157,7 @@ describe('fotoğraflı Excel', () => {
 
   it('hiç fotoğraf indirilemezse fotoğraf sayfası eklenmez', async () => {
     const { files } = await build([r({ id: 'a', image_path: 'a.jpg' })], async () => new Uint8Array([1, 2, 3]));
-    assert.ok(!strFromU8(files['xl/workbook.xml']).includes('Fotoğraflar'));
+    assert.ok(!strFromU8(files['xl/workbook.xml']).includes('Fiş 1'));
     assert.ok(strFromU8(files['xl/worksheets/sheet1.xml']).includes('indirilemedi'));
   });
 });
