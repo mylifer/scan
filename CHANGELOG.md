@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.33.1 — `(yayında)`
+## 1.33.1 — `9af8ac6`
 - Expo SDK 58'e geçildi: Expo Go'nun yeni sürümü SDK 57 projelerini açmıyordu ("Project is incompatible with this version of Expo Go")
 
 ## 1.33.0 — `781fd32`
