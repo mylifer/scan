@@ -1,4 +1,7 @@
-import SegmentedControl from '@react-native-segmented-control/segmented-control';
+import NativeSegmentedControl, {
+  type SegmentedControlProps,
+} from '@react-native-segmented-control/segmented-control';
+import type { ComponentType } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { capitalizeTr } from '../../lib/format';
@@ -6,6 +9,10 @@ import { haptics } from '../../lib/haptics';
 import type { Period } from '../../lib/period';
 import { type Theme, type as t, useTheme } from '../../lib/theme';
 import { Icon } from '../ui/Icon';
+
+// RN 0.88 tipleri artık `NativeMethods` dışa aktarmıyor; paketin sınıf tipi bu
+// yüzden JSX'te kullanılamıyor. Çalışma zamanı aynı, yalnızca tipi düzeltiyoruz.
+const SegmentedControl = NativeSegmentedControl as unknown as ComponentType<SegmentedControlProps>;
 
 interface Props {
   period: Period;
