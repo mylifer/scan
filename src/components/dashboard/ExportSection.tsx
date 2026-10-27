@@ -9,14 +9,16 @@ import type { PeriodRange } from '../../lib/period';
 import { useTheme } from '../../lib/theme';
 import { showToast } from '../../lib/toast';
 import { buildAccountingPackage } from '../../services/export/exportPackage';
-import { buildReceiptsWorkbook, exportFilename, shareXlsx, shareZipStream } from '../../services/export/exportReceipts';
+import { buildReceiptsWorkbook, exportFilename, shareXlsx, shareXlsxStream, shareZipStream, writeReceiptsWorkbookWithPhotos } from '../../services/export/exportReceipts';
+import { downloadBytes } from '../../services/supabase/storageFiles';
 import type { PeriodSummary } from '../../services/supabase/receiptsRepository';
 import { ListRow, ListSection } from '../ui/List';
 
 /** Dönemin fişlerini Excel ya da Excel + fotoğraflar (ZIP) olarak paylaşma. */
 export function ExportSection({ summary: s, label, range }: { summary: PeriodSummary; label: string; range: PeriodRange | undefined }) {
   const theme = useTheme();
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState<{ done: number; total: number } | null>(null);
+  const photoCount = s.fisler.filter((r) => r.image_path).length;
   const [packing, setPacking] = useState<{ done: number; total: number } | null>(null);
 
   async function exportPackage() {
@@ -35,16 +37,26 @@ export function ExportSection({ summary: s, label, range }: { summary: PeriodSum
     }
   }
 
+  /** Excel: fiş fotoğrafları da içine eklenir (küçük resim + tıklanınca tam boyut) */
   async function exportExcel() {
     if (exporting) return;
-    setExporting(true);
+    setExporting({ done: 0, total: 0 });
     try {
-      await shareXlsx(buildReceiptsWorkbook(s, capitalizeTr(label)), exportFilename(range));
-      haptics.success();
+      const name = exportFilename(range);
+      if (!photoCount) {
+        await shareXlsx(buildReceiptsWorkbook(s, capitalizeTr(label)), name);
+        haptics.success();
+        return;
+      }
+      const { failed } = await shareXlsxStream(name, (sink) =>
+        writeReceiptsWorkbookWithPhotos(s, capitalizeTr(label), sink, downloadBytes, (done, total) => setExporting({ done, total })),
+      );
+      if (failed) showToast(`${failed} fotoğraf indirilemedi; Excel onlarsız oluşturuldu`, 'error', 4000);
+      else haptics.success();
     } catch (e) {
       showAlert('Dışa aktarılamadı', errorMessage(e));
     } finally {
-      setExporting(false);
+      setExporting(null);
     }
   }
 
@@ -52,10 +64,14 @@ export function ExportSection({ summary: s, label, range }: { summary: PeriodSum
     <ListSection footer="Muhasebecinize e-posta, WhatsApp ya da Dosyalar ile gönderebilirsiniz.">
       <ListRow
         title="Excel'e Aktar"
-        subtitle={`${capitalizeTr(label)} · ${s.fisSayisi} fiş`}
+        subtitle={
+          exporting?.total
+            ? `Fotoğraflar ekleniyor ${exporting.done}/${exporting.total}`
+            : `${capitalizeTr(label)} · ${s.fisSayisi} fiş${photoCount ? ' · fotoğraflı' : ''}`
+        }
         icon={{ sf: 'tablecells.fill', ion: 'grid', color: theme.green }}
         onPress={exportExcel}
-        disabled={exporting}
+        disabled={!!exporting}
         accessory={exporting ? <ActivityIndicator /> : undefined}
         chevron={!exporting}
       />
@@ -66,7 +82,7 @@ export function ExportSection({ summary: s, label, range }: { summary: PeriodSum
             ? packing.total
               ? `Fotoğraflar indiriliyor ${packing.done}/${packing.total}`
               : 'Hazırlanıyor…'
-            : `Excel + ${s.fisler.filter((r) => r.image_path).length} fiş fotoğrafı`
+            : `Excel + ${photoCount} fiş fotoğrafı (ayrı dosyalar)`
         }
         icon={{ sf: 'archivebox.fill', ion: 'archive', color: theme.orange }}
         onPress={exportPackage}

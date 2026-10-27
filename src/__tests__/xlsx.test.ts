@@ -3,8 +3,9 @@ import { describe, it } from 'node:test';
 
 import { strFromU8, unzipSync } from 'fflate';
 
-import { buildXlsx, colName } from '../lib/xlsx';
-import { buildReceiptsWorkbook, monthlyRows } from '../services/export/receiptsWorkbook';
+import { imageSize } from '../lib/imageSize';
+import { buildXlsx, cellRef, colName } from '../lib/xlsx';
+import { buildReceiptsWorkbook, monthlyRows, writeReceiptsWorkbookWithPhotos } from '../services/export/receiptsWorkbook';
 import type { ReceiptRecord } from '../types/receipt';
 
 const r = (over: Partial<ReceiptRecord>): ReceiptRecord => ({
@@ -65,5 +66,94 @@ describe('xlsx', () => {
     assert.equal(rows[2][0], 'Ekim 2026');
     assert.equal((rows[3][1] as { v: number }).v, 3);
     assert.equal((rows[3][6] as { v: number }).v, 40.5);
+  });
+
+  it('hücre adresi: sayfa adı tırnaklı, tırnak ikilenir', () => {
+    assert.equal(cellRef('Fotoğraflar', 4, 0), "'Fotoğraflar'!A5");
+    assert.equal(cellRef("Ali'nin", 0, 9), "'Ali''nin'!J1");
+  });
+});
+
+/** Yalnızca başlığı olan sahte JPEG: APP0 + SOF0 (genişlik × yükseklik) */
+function fakeJpeg(width: number, height: number): Uint8Array {
+  const app0 = [0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00];
+  const sof = [0xff, 0xc0, 0x00, 0x11, 0x08, height >> 8, height & 255, width >> 8, width & 255, 0x03, 1, 0x22, 0, 2, 0x11, 1, 3, 0x11, 1];
+  return new Uint8Array([0xff, 0xd8, ...app0, ...sof, 0xff, 0xd9]);
+}
+
+describe('imageSize', () => {
+  it('JPEG boyutunu okur', () => {
+    assert.deepEqual(imageSize(fakeJpeg(900, 1850)), { width: 900, height: 1850, ext: 'jpeg' });
+  });
+
+  it('PNG boyutunu okur', () => {
+    const png = new Uint8Array(24);
+    png.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 3, 0x84, 0, 0, 1, 0x2c]);
+    assert.deepEqual(imageSize(png), { width: 900, height: 300, ext: 'png' });
+  });
+
+  it('tanınmayan dosyada null', () => {
+    assert.equal(imageSize(new Uint8Array([1, 2, 3, 4, 5])), null);
+    assert.equal(imageSize(new Uint8Array([0xff, 0xd8, 0xff, 0xda, 0, 2, 0, 0, 0, 0, 0, 0])), null);
+  });
+});
+
+describe('fotoğraflı Excel', () => {
+  const summary = (fisler: ReceiptRecord[]) => ({ toplamGider: 0, toplamKdv: 0, kdv1: 0, kdv10: 0, kdv20: 0, kategoriToplamlari: [], fisler });
+
+  async function build(fisler: ReceiptRecord[], fetch: (p: string) => Promise<Uint8Array>) {
+    const chunks: Uint8Array[] = [];
+    const result = await writeReceiptsWorkbookWithPhotos(summary(fisler), 'Eylül', (c) => chunks.push(c), fetch);
+    const all = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0));
+    let at = 0;
+    for (const c of chunks) {
+      all.set(c, at);
+      at += c.length;
+    }
+    return { result, files: unzipSync(all) };
+  }
+
+  it('her fotoğraf dosyaya bir kez girer; küçük resim tam boyuta, tam boyut fişe bağlanır', async () => {
+    const fisler = [
+      r({ id: 'b', firma_adi: 'İKİNCİ', tarih: '2026-09-20', image_path: 'b.jpg' }),
+      r({ id: 'a', firma_adi: 'BİRİNCİ', tarih: '2026-09-02', image_path: 'a.jpg' }),
+      r({ id: 'c', firma_adi: 'FOTOĞRAFSIZ', tarih: '2026-09-10' }),
+    ];
+    const { result, files } = await build(fisler, async () => fakeJpeg(900, 1800));
+    assert.deepEqual(result, { photos: 2, failed: 0 });
+    assert.equal(Object.keys(files).filter((f) => f.startsWith('xl/media/')).length, 2);
+    assert.ok(strFromU8(files['xl/workbook.xml']).includes('name="Fotoğraflar"'));
+
+    const fisSheet = strFromU8(files['xl/worksheets/sheet1.xml']);
+    assert.ok(fisSheet.includes('Fotoğraf'), 'başlık sütunu');
+    assert.ok(fisSheet.includes('<row r="2" ht="60" customHeight="1">'), 'fotoğraflı satır yükseltilir');
+    assert.ok(!fisSheet.includes('<row r="3" ht='), 'fotoğrafsız satır normal yükseklikte');
+    assert.ok(fisSheet.includes(`<hyperlink ref="J2" location="'Fotoğraflar'!A1"`), 'ilk (en eski) fiş ilk fotoğrafa gider');
+    assert.ok(fisSheet.includes('<drawing r:id="rId1"/>'));
+
+    const thumbRels = strFromU8(files['xl/drawings/_rels/drawing1.xml.rels']);
+    assert.ok(thumbRels.includes(`Target="#'Fotoğraflar'!A1"`), 'küçük resme tıklayınca tam boyuta gider');
+
+    const photoSheet = strFromU8(files['xl/worksheets/sheet3.xml']);
+    assert.ok(photoSheet.includes('BİRİNCİ'));
+    assert.ok(photoSheet.includes(`location="'Fişler'!A2"`), 'fişlere dön bağlantısı');
+    // Tam boyut: 900×1800 px → EMU (1 px = 9525)
+    assert.ok(strFromU8(files['xl/drawings/drawing2.xml']).includes(`<xdr:ext cx="${900 * 9525}" cy="${1800 * 9525}"/>`));
+  });
+
+  it('indirilemeyen fotoğraf dosyayı bozmaz, hücrede not düşülür', async () => {
+    const fisler = [r({ id: 'a', image_path: 'a.jpg' }), r({ id: 'b', tarih: '2026-09-03', image_path: 'yok.jpg' })];
+    const { result, files } = await build(fisler, async (p) => {
+      if (p === 'yok.jpg') throw new Error('404');
+      return fakeJpeg(800, 1200);
+    });
+    assert.deepEqual(result, { photos: 1, failed: 1 });
+    assert.ok(strFromU8(files['xl/worksheets/sheet1.xml']).includes('indirilemedi'));
+  });
+
+  it('hiç fotoğraf indirilemezse fotoğraf sayfası eklenmez', async () => {
+    const { files } = await build([r({ id: 'a', image_path: 'a.jpg' })], async () => new Uint8Array([1, 2, 3]));
+    assert.ok(!strFromU8(files['xl/workbook.xml']).includes('Fotoğraflar'));
+    assert.ok(strFromU8(files['xl/worksheets/sheet1.xml']).includes('indirilemedi'));
   });
 });

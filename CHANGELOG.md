@@ -16,6 +16,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.34.0 — `(yayında)`
+- **Fotoğraflı Excel:** "Excel'e Aktar" artık fiş fotoğraflarını da Excel'in içine koyuyor. Her fişin yanında küçük fotoğrafı var; fotoğrafa tıklayınca "Fotoğraflar" sayfasında tam boyutu açılıyor, oradan "← Fişlere dön" ile geri dönülüyor. Muhasebeciye tek dosya göndermek yeterli
+- İndirilemeyen fotoğraf olursa Excel yine oluşuyor, o fişin yanında "indirilemedi" yazıyor
+
 ## 1.33.1 — `9af8ac6`
 - Expo SDK 58'e geçildi: Expo Go'nun yeni sürümü SDK 57 projelerini açmıyordu ("Project is incompatible with this version of Expo Go")
 

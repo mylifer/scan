@@ -2,7 +2,7 @@ import { File, FileMode, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 
-export { buildReceiptsWorkbook } from './receiptsWorkbook';
+export { buildReceiptsWorkbook, writeReceiptsWorkbookWithPhotos } from './receiptsWorkbook';
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -17,11 +17,20 @@ export function shareXlsx(bytes: Uint8Array, filename: string): Promise<void> {
  * ZIP'i parça parça üretip paylaşır: iPhone'da parçalar doğrudan önbellekteki dosyaya eklenir,
  * web'de tek bir büyük diziye birleştirilmeden Blob'a verilir (bellekte ikinci kopya oluşmaz).
  */
-export async function shareZipStream<R>(filename: string, build: (sink: (chunk: Uint8Array) => void) => Promise<R>): Promise<R> {
+export function shareZipStream<R>(filename: string, build: (sink: (chunk: Uint8Array) => void) => Promise<R>): Promise<R> {
+  return shareStream(filename, ZIP_MIME, 'public.zip-archive', build);
+}
+
+/** Fotoğraflı Excel gibi büyük .xlsx dosyalarını parça parça üretip paylaşır (bkz. shareZipStream). */
+export function shareXlsxStream<R>(filename: string, build: (sink: (chunk: Uint8Array) => void) => Promise<R>): Promise<R> {
+  return shareStream(filename, XLSX_MIME, 'org.openxmlformats.spreadsheetml.sheet', build);
+}
+
+async function shareStream<R>(filename: string, mimeType: string, uti: string, build: (sink: (chunk: Uint8Array) => void) => Promise<R>): Promise<R> {
   if (Platform.OS === 'web') {
     const chunks: Uint8Array[] = [];
     const result = await build((c) => chunks.push(c));
-    downloadBlob(new Blob(chunks as BlobPart[], { type: ZIP_MIME }), filename);
+    downloadBlob(new Blob(chunks as BlobPart[], { type: mimeType }), filename);
     return result;
   }
   const file = new File(Paths.cache, filename);
@@ -39,7 +48,7 @@ export async function shareZipStream<R>(filename: string, build: (sink: (chunk: 
     throw e;
   }
   handle.close();
-  await shareCachedFile(file, filename, ZIP_MIME, 'public.zip-archive');
+  await shareCachedFile(file, filename, mimeType, uti);
   return result;
 }
 
