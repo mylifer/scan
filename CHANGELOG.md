@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.34.0 — `(yayında)`
+## 1.34.0 — `4b68eab`
 - **Fotoğraflı Excel:** "Excel'e Aktar" artık fiş fotoğraflarını da Excel'in içine koyuyor. Her fişin yanında küçük fotoğrafı var; fotoğrafa tıklayınca "Fotoğraflar" sayfasında tam boyutu açılıyor, oradan "← Fişlere dön" ile geri dönülüyor. Muhasebeciye tek dosya göndermek yeterli
 - İndirilemeyen fotoğraf olursa Excel yine oluşuyor, o fişin yanında "indirilemedi" yazıyor
 
