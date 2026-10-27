@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.34.1 — `(yayında)`
+## 1.34.1 — `9fc825d`
 - Muhasebe Paketi (ZIP) Mac'te çift tıklayınca açılmıyordu ("Hata 0 - Tanımsız hata"); artık Arşiv İzlencesi dahil her programla açılıyor. Fotoğraflı Excel dosyası da aynı yöntemle yazılıyor
 
 ## 1.34.0 — `4b68eab`
