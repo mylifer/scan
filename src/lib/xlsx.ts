@@ -1,4 +1,6 @@
-import { strToU8, Zip, ZipDeflate, ZipPassThrough, zipSync } from 'fflate';
+import { strToU8, zipSync } from 'fflate';
+
+import { ZipStream } from './zipStream';
 
 /**
  * Bağımlılıksız, küçük bir .xlsx yazıcı (fflate ile zip). React Native'de Blob'dan
@@ -94,36 +96,24 @@ export function buildXlsx(sheets: SheetSpec[]): Uint8Array {
  * sayfalar en sonda finish ile yazılır. Çıktı parça parça `sink`e gider (dosya ya da bellek).
  */
 export class XlsxWriter {
-  private zip: Zip;
-  private error: Error | null = null;
+  private zip: ZipStream;
   private media: ('jpeg' | 'png')[] = [];
 
   constructor(sink: (chunk: Uint8Array) => void) {
-    this.zip = new Zip((err, chunk) => {
-      if (err) this.error = err;
-      else sink(chunk);
-    });
+    this.zip = new ZipStream(sink);
   }
 
   /** Görseli dosyaya ekler, sayfalarda kullanılacak numarasını döner. JPEG/PNG zaten sıkıştırılmış olduğundan yeniden sıkıştırılmaz. */
   addImage(bytes: Uint8Array, ext: 'jpeg' | 'png'): number {
     this.media.push(ext);
     const id = this.media.length;
-    this.add(`xl/media/image${id}.${ext}`, bytes, false);
+    this.zip.add(`xl/media/image${id}.${ext}`, bytes, false);
     return id;
   }
 
   finish(sheets: SheetSpec[]): void {
-    for (const [name, xml] of workbookParts(sheets, this.media)) this.add(name, strToU8(xml), true);
+    for (const [name, xml] of workbookParts(sheets, this.media)) this.zip.add(name, strToU8(xml), true);
     this.zip.end();
-    if (this.error) throw this.error;
-  }
-
-  private add(name: string, data: Uint8Array, compress: boolean) {
-    const entry = compress ? new ZipDeflate(name, { level: 6 }) : new ZipPassThrough(name);
-    this.zip.add(entry);
-    entry.push(data, true);
-    if (this.error) throw this.error;
   }
 }
 

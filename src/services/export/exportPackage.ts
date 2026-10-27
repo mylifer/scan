@@ -1,5 +1,4 @@
-import { Zip, ZipDeflate, ZipPassThrough } from 'fflate';
-
+import { ZipStream } from '../../lib/zipStream';
 import { downloadBytes } from '../supabase/storageFiles';
 import type { PeriodSummary } from '../supabase/receiptsRepository';
 import { photoFileNames } from './packageNames';
@@ -27,19 +26,12 @@ export async function buildAccountingPackage(
   sink: ChunkSink,
   onProgress?: (done: number, total: number) => void,
 ): Promise<PackageResult> {
-  let zipError: Error | null = null;
   /** İlk hatada diğer indirme işçileri de dursun (yarım dosyaya yazmaya devam etmesinler) */
   let aborted = false;
-  const zip = new Zip((err, chunk) => {
-    if (err) zipError = err;
-    else sink(chunk);
-  });
+  const zip = new ZipStream(sink);
   const add = (name: string, data: Uint8Array, compress: boolean) => {
     try {
-      const entry = compress ? new ZipDeflate(name, { level: 6 }) : new ZipPassThrough(name);
-      zip.add(entry);
-      entry.push(data, true);
-      if (zipError) throw zipError;
+      zip.add(name, data, compress);
     } catch (e) {
       aborted = true;
       throw e;
@@ -71,6 +63,5 @@ export async function buildAccountingPackage(
   }
   await Promise.all(Array.from({ length: Math.min(4, withPhoto.length) }, worker));
   zip.end();
-  if (zipError) throw zipError;
   return { photos: withPhoto.length - failed, failed };
 }
