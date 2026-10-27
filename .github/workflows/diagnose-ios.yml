@@ -35,7 +35,7 @@ jobs:
       - name: Expo Go'nun gördüğü manifest
         run: |
           curl -sS -D headers.txt -o manifest.txt "https://u.expo.dev/e4446685-6bd2-4e1c-b0d0-cb1c025e1905?channel-name=production" \
-            -H "expo-runtime-version: exposdk:57.0.0" -H "expo-platform: ios" -H "expo-protocol-version: 1" \
+            -H "expo-runtime-version: exposdk:58.0.0" -H "expo-platform: ios" -H "expo-protocol-version: 1" \
             -H "accept: multipart/mixed,application/expo+json,application/json" || true
           echo "::warning::MANIFEST status: $(head -1 headers.txt | tr -d '\r')"
           node -e '

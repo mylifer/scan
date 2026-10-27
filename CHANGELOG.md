@@ -16,6 +16,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.33.1 — `(yayında)`
+- Expo SDK 58'e geçildi: Expo Go'nun yeni sürümü SDK 57 projelerini açmıyordu ("Project is incompatible with this version of Expo Go")
+
 ## 1.33.0 — `781fd32`
 - **Son Eklenenler** (ana sayfa): uygulamaya en son eklediğiniz 30 fiş, eklenme zamanıyla (fiş üzerindeki tarihten bağımsız)
 - **Çoklu** düğmesi (ana sayfanın altında): "Arka Arkaya Çek" ya da "Galeriden Seç (en fazla 50)". Fişler arka planda okunur, okunanlar sırayla incelemeye gelir
