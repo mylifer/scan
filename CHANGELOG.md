@@ -16,6 +16,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.34.4 — `3e59de5`
+- Vergi hatırlatıcısı ve aylık özet bildirimlerinde başlığın altında artık **"Fiş Tarayıcı"** yazıyor. Uygulama Expo Go içinde çalıştığı için iPhone bildirimi Expo Go adı ve simgesiyle gösteriyor (bu, Expo Go'nun sınırı); alt başlık bildirimin bu uygulamadan geldiğini belli ediyor. Zaten kurulu bildirimler uygulama bir kez açılınca yenilenir
+
 ## 1.34.3 — `095fc91`
 - Fotoğraflı Excel: fotoğraf sayfasındaki "← Fişlere dön" artık belirgin bir düğme (mavi çerçeveli, büyük yazı) ve fotoğrafı aşağı kaydırınca da en üstte sabit kalıyor
 
