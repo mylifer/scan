@@ -16,6 +16,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.34.4 — `(yayında)`
+- Fotoğraflı Excel ve Muhasebe Paketi: dosyanın sonu bazen eksik yazılıyordu; Excel açarken "bazı öğelerde sorun" uyarısı veriyordu. Artık dosya eksiksiz yazılıyor
+
 ## 1.34.3 — `095fc91`
 - Fotoğraflı Excel: fotoğraf sayfasındaki "← Fişlere dön" artık belirgin bir düğme (mavi çerçeveli, büyük yazı) ve fotoğrafı aşağı kaydırınca da en üstte sabit kalıyor
 
