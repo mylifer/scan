@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.34.3 — `KOD`
+## 1.34.3 — `095fc91`
 - Fotoğraflı Excel: fotoğraf sayfasındaki "← Fişlere dön" artık belirgin bir düğme (mavi çerçeveli, büyük yazı) ve fotoğrafı aşağı kaydırınca da en üstte sabit kalıyor
 
 ## 1.34.2 — `bb022c0`
