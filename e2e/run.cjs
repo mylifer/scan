@@ -123,6 +123,22 @@ test('elle fiş ekleme: kaydetmeden çıkış sorulur, kaydedince sorulmaz', asy
   await close();
 });
 
+test('elle fiş ekleme: "Kaydetmeden Çık" formu kapatır, hata vermez', async (b) => {
+  const { page, backend, errors, close } = await open(b, { receipts: [] });
+  await page.getByText('Elle', { exact: true }).click();
+  await page.waitForTimeout(800);
+  await page.locator('input[placeholder="Firma adı"]').fill('ATILACAK LTD');
+  await page.getByText('Vazgeç', { exact: true }).first().click();
+  await page.waitForTimeout(600);
+  await page.getByText('Kaydetmeden Çık', { exact: true }).last().click();
+  await page.waitForTimeout(1200);
+  assert.equal(await page.locator('input[placeholder="Firma adı"]').count(), 0, 'form kapanmalı');
+  assert.ok(!backend.db.receipts.some((r) => r.firma_adi === 'ATILACAK LTD'), 'fiş kaydedilmemeli');
+  assert.ok((await page.locator('body').innerText()).includes('Giderler'), 'ana sayfaya dönülmeli');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 test('aylık bütçe: "15.000" on beş bin olarak kaydedilir', async (b) => {
   const { page, close } = await open(b, { receipts: thisMonth() });
   await page.getByLabel('Ayarlar').click();

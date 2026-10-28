@@ -60,6 +60,13 @@ jobs:
       - name: Kod denetimi (lint)
         run: npx expo lint
       - run: npx expo export --platform web --output-dir dist
+      - name: HTML paket betiklerini içeriyor mu
+        # +html.tsx headNodes/bodyNodes yazmazsa HTML'de <script> kalmaz ve site boş açılır
+        run: |
+          if ! grep -q '<script[^>]*src="[^"]*/entry-[^"]*\.js"' dist/index.html; then
+            echo "::error::dist/index.html entry-*.js betiğini içermiyor (src/app/+html.tsx useServerDocumentContext kullanmalı)"
+            exit 1
+          fi
       - name: Sürüm dosyası (uygulama yeni sürümü buradan anlar)
         run: echo "{\"commit\":\"$EXPO_PUBLIC_APP_VERSION\"}" > dist/version.json
       - uses: actions/upload-pages-artifact@v3

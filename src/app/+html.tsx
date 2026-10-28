@@ -1,10 +1,13 @@
-import { ScrollViewStyleReset } from 'expo-router/html';
+import { ScrollViewStyleReset, useServerDocumentContext } from 'expo-router/html';
 import type { PropsWithChildren } from 'react';
 
 /** Web sürümünün HTML iskeleti: iPhone'da "Ana Ekrana Ekle" ile uygulama gibi açılması için. */
 export default function Root({ children }: PropsWithChildren) {
+  // SDK 58+: stiller, meta etiketleri ve JS paketlerinin <script> etiketleri buradan gelir;
+  // headNodes/bodyNodes yazılmazsa dışa aktarılan HTML boş sayfa açar
+  const { headNodes, bodyNodes, htmlAttributes, bodyAttributes } = useServerDocumentContext();
   return (
-    <html lang="tr">
+    <html lang="tr" {...htmlAttributes}>
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
@@ -27,8 +30,12 @@ export default function Root({ children }: PropsWithChildren) {
               '*{scrollbar-width:none}*::-webkit-scrollbar{display:none}',
           }}
         />
+        {headNodes}
       </head>
-      <body>{children}</body>
+      <body {...bodyAttributes}>
+        {children}
+        {bodyNodes}
+      </body>
     </html>
   );
 }
