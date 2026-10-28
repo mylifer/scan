@@ -5,8 +5,9 @@ name: Canlı deneme
 on:
   workflow_dispatch:
   push:
-    branches: [claude/pos-receipt-scanner-app-tk3b0z]
-    paths: ['.github/workflows/smoke-test.yml', 'supabase/functions/**']
+    # Ana dal: fonksiyon değişince; geliştirme dalları (claude/…): deneme betiği değişince, birleştirmeden önce
+    branches: [claude/pos-receipt-scanner-app-tk3b0z, 'claude/**']
+    paths: ['.github/workflows/smoke-test.yml', 'scripts/smoke-live.mts', 'supabase/functions/**']
 
 permissions:
   contents: read
