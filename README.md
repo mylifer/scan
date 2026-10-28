@@ -3,16 +3,17 @@
 Türkiye'deki POS fişlerini kamerayla okuyup gider ve KDV takibi yapan Expo (React Native) uygulaması.
 
 - **Kamera:** Tam ekran, dokunarak netleme, flaş, fiş hizalama çerçevesi
-- **Yapay zekâ ile okuma:** Varsayılan Gemini (`gemini-2.5-flash`, yoğunlukta yedek modellere geçer). Claude'a geçmek için `.env` dosyasında tek satırı değiştirmeniz yeterli
+- **Yapay zekâ ile okuma:** Gemini (`gemini-2.5-flash`, yoğunlukta yedek modellere geçer), Supabase fonksiyonu (`supabase/functions/analyze-receipt`) üzerinden; anahtar uygulamada bulunmaz. Fiş no ve satıcının VKN/TCKN'si de okunur
 - **Düzenlenebilir form:** Okunan değerleri kontrol edip düzeltme, kaydetmeden önce doğrulama (TOPLAM/TOPKDV karışıklığı kontrolü)
 - **Supabase:** E-posta ile giriş, `receipts` tablosu (RLS açık), sıkıştırılmış fiş görselleri (~50–120 KB)
 - **Toplu tarama:** Arka arkaya çekim / galeriden çoklu seçim → taslaklar Supabase'de saklanır → topluca veya planlanan saatte taranır → tek tek kontrol edilip kaydedilir (`supabase/migrations/002_receipt_drafts.sql` gerekir)
 - **Ana sayfa:** Aylık / Yıllık / Tüm Zamanlar; toplam gider, KDV alacağı (%1 / %10 / %20), geçen ayla karşılaştırma, aylık bütçe çubuğu, son 12 ay grafiği, kategori dağılımı, arama, kategori filtresi, sıralama, aylara göre gruplama, kaydırarak silme; internetsizken son veriler gösterilir
-- **13 kategori** ve **kategori hafızası:** bir firmayı hangi kategoriyle kaydettiyseniz sonraki fişleri de öyle gelir (`supabase/migrations/004_giyim_category.sql`)
+- **25 hazır kategori + kendi kategorileriniz** (Ayarlar → Kategoriler; seçicide yazıp tek dokunuşla eklenir) ve **kategori hafızası:** bir firmayı hangi kategoriyle kaydettiyseniz sonraki fişleri de öyle gelir (`supabase/migrations/006_receipt_extras.sql`)
+- **Fiş no, VKN/TCKN, not ve etiketler:** VKN/TCKN kontrol hanesi doğrulanır; mükerrer fiş uyarısı fiş no ve VKN'yi de kullanır; arama not ve etiketlerde (#proje) de çalışır
 - **Fiş ekleme:** Kamera, galeri, toplu çekim ya da **elle** (fotoğrafsız; sonradan fotoğraf eklenebilir)
 - **Fiş detayı:** Düzenleme, tam ekran yakınlaştırılabilir fotoğraf, paylaşma, mükerrer fiş ve şüpheli KDV uyarıları
 - **Dışa aktarma:** Excel (.xlsx; her fişin yanında fotoğrafı, tıklayınca kendi sayfasında tam boyutu; çok aylı dönemlerde "Aylar" sayfası) ve Muhasebe Paketi (Excel + tüm fotoğraflar, ZIP; akış olarak üretilir)
-- **Ayarlar:** Hesap, aylık bütçe, KDV hatırlatıcısı (iPhone, her ayın 25'i), depolama kullanımı, yapay zekâ modeli, sürüm bilgisi
+- **Ayarlar:** Hesap, aylık bütçe, KDV hatırlatıcısı (iPhone, her ayın 25'i), depolama kullanımı, kategoriler, yapay zekâ modeli, hata kayıtları, sürüm bilgisi
 
 ## iPhone'da kullanım (web sürümü)
 
@@ -20,7 +21,8 @@ Uygulama her güncellemede otomatik olarak **https://mylifer.github.io/scan/** a
 iPhone'da Safari ile açıp Paylaş → **Ana Ekrana Ekle** diyerek uygulama gibi kullanabilirsiniz.
 Yayın için GitHub repo ayarlarında şunlar gerekir:
 
-- **Settings → Secrets and variables → Actions** altında `GEMINI_API_KEY` secret'ı
+- **Settings → Secrets and variables → Actions** altında `SUPABASE_ACCESS_TOKEN` ve `GEMINI_API_KEY` secret'ları
+  (Gemini anahtarı yalnızca "Supabase fonksiyonunu yayınla" iş akışında Supabase'e yazılır; uygulamaya gömülmez)
 - **Settings → Pages → Source: GitHub Actions**
 
 ## iPhone uygulaması (Expo Go, ücretsiz)
@@ -28,7 +30,7 @@ Yayın için GitHub repo ayarlarında şunlar gerekir:
 Uygulama App Store'daki ücretsiz **Expo Go** içinde çalışır. Her güncellemede `.github/workflows/ios.yml`
 EAS Update ile yeni sürümü yayınlar; telefonda uygulamayı kapatıp açmak yeterlidir.
 Açma bağlantısı: `exp://u.expo.dev/e4446685-6bd2-4e1c-b0d0-cb1c025e1905?channel-name=production`
-Gerekli secret'lar: `EXPO_TOKEN`, `GEMINI_API_KEY`.
+Gerekli secret: `EXPO_TOKEN`.
 
 ## iPhone uygulaması (TestFlight)
 
@@ -41,7 +43,7 @@ işlemesi 5-15 dakika daha sürer.
 
 - İmza sertifikası ve profili ilk derlemede otomatik oluşturuldu (EAS'te saklı).
 - TestFlight'a gönderim için uygulama numarası App Store Connect anahtarıyla otomatik bulunur.
-- Gerekli GitHub secret'ları: `EXPO_TOKEN`, `GEMINI_API_KEY`, `ASC_API_KEY_P8` (.p8 dosyasının içeriği),
+- Gerekli GitHub secret'ları: `EXPO_TOKEN`, `ASC_API_KEY_P8` (.p8 dosyasının içeriği),
   `ASC_KEY_ID`, `ASC_ISSUER_ID`, `APPLE_TEAM_ID` (App Store Connect API anahtarı, Admin rolünde).
 
 **Diğer eylemler:** `submit` son derlemeyi yeniden TestFlight'a gönderir, `logs` son derlemenin EAS
@@ -118,16 +120,16 @@ Yeni bir sağlayıcı eklemek için `VisionService` arayüzünü uygulayan bir s
 ## ⚠️ Güvenlik notu
 
 Veritabanı ve fotoğraflar satır düzeyinde güvenlikle (RLS) korunur: her kullanıcı yalnızca kendi fişlerini görür.
-Açık kalan iki nokta ve yapılması önerilenler:
+Gemini anahtarı yalnızca Supabase'de gizli değer olarak durur; fişler `supabase/functions/analyze-receipt` ile
+okunur ve bu fonksiyonu yalnızca giriş yapmış kullanıcılar çağırabilir. Yayın iş akışları pakette bir Google API
+anahtarı bulursa yayını durdurur. Önerilenler:
 
 1. **Yeni hesap açılışını kapatın.** Uygulamayı yalnızca siz kullanıyorsanız: Supabase → Authentication →
    Sign In / Providers → **Allow new users to sign up** kapalı. Böylece başkaları hesap açıp depolamanızı kullanamaz.
-2. **Gemini anahtarı uygulama paketindedir** (`EXPO_PUBLIC_*` değişkenleri pakete gömülür). Web sürümünü açan
-   biri anahtarı çıkarıp ücretsiz kotanızı tüketebilir; ücretsiz planda para kaybı olmaz. Kalıcı çözüm hazır:
-   `supabase/functions/analyze-receipt` (anahtar sunucuda kalır, yalnızca giriş yapmış kullanıcılar çağırabilir).
-   Etkinleştirmek için: GitHub'a `SUPABASE_ACCESS_TOKEN` secret'ı ekleyin → Actions'ta **"Supabase fonksiyonunu
-   yayınla"** → iki yayın iş akışında `EXPO_PUBLIC_VISION_PROVIDER: edge` yapıp `EXPO_PUBLIC_GEMINI_API_KEY`
-   satırını kaldırın. Faturalandırmayı açarsanız Google AI Studio'da harcama sınırı da koyun.
+2. **Eski Gemini anahtarını yenileyin.** 1.36.0'dan önceki sürümlerde anahtar web paketinin içindeydi; bir kez
+   açığa çıkmış sayılır. Google AI Studio'da yeni anahtar oluşturup eskisini silin → GitHub'da `GEMINI_API_KEY`
+   secret'ını güncelleyin → Actions'ta **"Supabase fonksiyonunu yayınla"** iş akışını çalıştırın. Faturalandırmayı
+   açarsanız Google AI Studio'da harcama sınırı da koyun.
 
 ## Depolama (Supabase Free Plan)
 

@@ -1,5 +1,6 @@
 import { formatTL, round2 } from './format';
-import { type Kategori, KATEGORI_ETIKETLERI, type ReceiptRecord } from '../types/receipt';
+import { categoryLabel } from './categories';
+import type { Kategori, ReceiptRecord } from '../types/receipt';
 
 /**
  * Aylık içgörü özeti: kural tabanlı, yapay zekâ kullanmaz (kota harcamaz).
@@ -48,7 +49,7 @@ export function monthlyInsights({ fisler, toplamGider, toplamKdv, previous, curr
       .filter((c) => c.diff >= MIN_CHANGE_TL && (c.b === 0 || (c.diff / c.b) * 100 >= MIN_CHANGE_PCT))
       .sort((x, y) => y.diff - x.diff)[0];
     if (up) {
-      const label = KATEGORI_ETIKETLERI[up.k];
+      const label = categoryLabel(up.k);
       out.push({
         kind: 'category-up',
         text:
@@ -64,7 +65,7 @@ export function monthlyInsights({ fisler, toplamGider, toplamKdv, previous, curr
       if (down) {
         out.push({
           kind: 'category-down',
-          text: `${KATEGORI_ETIKETLERI[down.k]} harcaması geçen aya göre ${formatTL(-down.diff)} azaldı (${pct((-down.diff / down.b) * 100)}).`,
+          text: `${categoryLabel(down.k)} harcaması geçen aya göre ${formatTL(-down.diff)} azaldı (${pct((-down.diff / down.b) * 100)}).`,
         });
       }
     }

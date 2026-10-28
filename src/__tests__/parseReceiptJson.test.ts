@@ -23,7 +23,25 @@ describe('parseReceiptJson', () => {
     assert.equal(parseReceiptJson('{"kategori":"kurye"}').kategori, 'kargo');
     assert.equal(parseReceiptJson('{"kategori":"Giyim"}').kategori, 'giyim');
     assert.equal(parseReceiptJson('{"kategori":"ayakkabı"}').kategori, 'giyim');
-    assert.equal(parseReceiptJson('{"kategori":"çiçekçi"}').kategori, 'diğer');
+    assert.equal(parseReceiptJson('{"kategori":"çiçekçi"}').kategori, 'hediye');
+    assert.equal(parseReceiptJson('{"kategori":"eczane"}').kategori, 'sağlık');
+    assert.equal(parseReceiptJson('{"kategori":"Yapı Marketi"}').kategori, 'yapı market');
+    assert.equal(parseReceiptJson('{"kategori":"kuaför"}').kategori, 'kişisel bakım');
+    assert.equal(parseReceiptJson('{"kategori":"bilinmeyen şey"}').kategori, 'diğer');
+  });
+  it('kullanıcının kendi kategorisini harf farkı gözetmeden tanır', () => {
+    const list = ['market', 'Proje X', 'diğer'];
+    assert.equal(parseReceiptJson('{"kategori":"proje x"}', list).kategori, 'Proje X');
+    assert.equal(parseReceiptJson('{"kategori":"Proje Y"}', list).kategori, 'diğer');
+  });
+  it('fiş no ve VKN/TCKN okunur; geçersiz uzunluktaki VKN atılır, boşlar hiç eklenmez', () => {
+    const d = parseReceiptJson('{"firmaAdi":"X","fisNo":"FİŞ NO: 0045","vkn":"390 038 3669"}');
+    assert.equal(d.fisNo, '0045');
+    assert.equal(d.vkn, '3900383669');
+    assert.equal(parseReceiptJson('{"vkn":"12345678901"}').vkn, '12345678901');
+    const empty = parseReceiptJson('{"firmaAdi":"X","fisNo":"","vkn":"12345"}');
+    assert.equal('fisNo' in empty, false);
+    assert.equal('vkn' in empty, false);
   });
   it('geçersiz tarihte bugünün tarihini kullanır', () => {
     assert.match(parseReceiptJson('{"tarih":"yok"}').tarih, /^\d{2}\.\d{2}\.\d{4}$/);

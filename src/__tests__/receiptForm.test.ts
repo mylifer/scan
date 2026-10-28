@@ -63,3 +63,18 @@ describe('emin olunamayan alanlar', () => {
     assert.equal('belirsiz' in toFormValues(ok), false);
   });
 });
+
+describe('ek alanlar', () => {
+  it('fiş no, VKN, not ve etiketler gidiş-dönüşte korunur; boşlar veriye eklenmez', () => {
+    const full = { ...ok, fisNo: '0045', vkn: '3900383669', notlar: 'not', etiketler: ['a', 'b'] };
+    assert.deepEqual(fromFormValues(toFormValues(full)), full);
+    assert.equal(toFormValues(full).etiketler, 'a, b');
+    const d = fromFormValues({ ...toFormValues(ok), fisNo: '  ', vkn: '', notlar: ' ', etiketler: ' , ' });
+    assert.deepEqual(d, ok);
+  });
+  it('hatalı VKN kaydı engeller, kontrol hanesi tutmayan VKN uyarır', () => {
+    assert.ok(validateForm({ ...toFormValues(ok), vkn: '123' }).some((e) => e.includes('VKN')));
+    assert.ok(formWarnings({ ...toFormValues(ok), vkn: '3900383668' }).some((w) => w.includes('geçerli görünmüyor')));
+    assert.ok(!formWarnings({ ...toFormValues(ok), vkn: '3900383669' }).some((w) => w.includes('VKN')));
+  });
+});

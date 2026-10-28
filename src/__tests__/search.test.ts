@@ -45,3 +45,16 @@ describe('firma kategorisi hafızası', () => {
     assert.equal(learnedCategoryFor(rows, ''), null);
   });
 });
+
+describe('ek alanlarda arama', () => {
+  const r = { firma_adi: 'MİGROS', toplam_tutar: 120, fis_no: '0045', vkn: '3900383669', notlar: 'Ahmet Bey ile toplantı', etiketler: ['X Projesi'] };
+  it('not, etiket (# ile de), fiş no ve VKN bulunur', () => {
+    assert.ok(matchesReceipt(r, 'toplanti'));
+    assert.ok(matchesReceipt(r, 'proje'));
+    assert.ok(matchesReceipt(r, '#x projesi'));
+    assert.ok(matchesReceipt(r, '0045'));
+    assert.ok(matchesReceipt(r, '3900383'));
+    assert.equal(matchesReceipt(r, 'yok böyle'), false);
+  });
+  it('ek alanı olmayan eski kayıtlar sorun çıkarmaz', () => assert.equal(matchesReceipt({ firma_adi: 'A', toplam_tutar: 1 }, 'proje'), false));
+});

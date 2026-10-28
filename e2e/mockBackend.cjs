@@ -49,7 +49,7 @@ function filterRows(rows, sp) {
  */
 async function installBackend(page, opts = {}) {
   const state = {
-    db: { receipts: [...(opts.receipts ?? [])], receipt_drafts: [], receipt_trash: [] },
+    db: { receipts: [...(opts.receipts ?? [])], receipt_drafts: [], receipt_trash: [], receipt_categories: [...(opts.categories ?? []).map((ad, i) => ({ id: `cat${i}`, ad, created_at: new Date(i).toISOString() }))], app_errors: [] },
     storage: new Map(),
     log: [],
     geminiCalls: 0,
@@ -91,7 +91,7 @@ async function installBackend(page, opts = {}) {
     }
     if (path.startsWith('/auth/v1/logout')) return route.fulfill({ status: 204, body: '' });
     if (path.startsWith('/rest/v1/rpc/receipt_schema_version')) {
-      const v = opts.schema ?? 4;
+      const v = opts.schema ?? 6;
       return v ? json(route, v) : json(route, { code: 'PGRST202', message: 'Could not find the function' }, 404);
     }
     const rest = path.match(/^\/rest\/v1\/(\w+)/);

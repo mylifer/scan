@@ -2,7 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 
 import type { ReceiptData } from '../../types/receipt';
 import { parseReceiptJson } from './parseReceiptJson';
-import { RECEIPT_JSON_SCHEMA, RECEIPT_SYSTEM_PROMPT, RECEIPT_USER_PROMPT } from './receiptPrompt';
+import { receiptJsonSchema, receiptSystemPrompt, RECEIPT_USER_PROMPT } from './receiptPrompt';
 import { type ReceiptImage, type VisionService, VisionServiceError } from './VisionService';
 
 /**
@@ -75,9 +75,9 @@ export class GeminiVisionAdapter implements VisionService {
         },
       ],
       config: {
-        systemInstruction: RECEIPT_SYSTEM_PROMPT,
+        systemInstruction: receiptSystemPrompt(),
         responseMimeType: 'application/json',
-        responseJsonSchema: RECEIPT_JSON_SCHEMA,
+        responseJsonSchema: receiptJsonSchema(),
         temperature: 0,
         abortSignal: signal,
       },

@@ -1,7 +1,7 @@
 import { supabase } from './client';
 
-/** 004 kurulumu (giyim dahil tüm kategoriler) */
-const CATEGORIES_SCHEMA_VERSION = 4;
+/** 006 kurulumu: kendi kategorileri ve yeni hazır kategoriler, fiş no/VKN/not/etiket alanları, hata kayıtları */
+const EXTRAS_SCHEMA_VERSION = 6;
 /** 005 kurulumu (çöp kutusu; 004'ü de kapsar) */
 const TRASH_SCHEMA_VERSION = 5;
 
@@ -23,10 +23,10 @@ async function schemaVersion(min: number): Promise<number | null> {
   return error.code === 'PGRST202' || /could not find the function/i.test(error.message) ? 0 : null;
 }
 
-/** Yeni kategoriler için 004 kurulumu yapıldı mı? true / false; belirsizse null. */
+/** 006 kurulumu (kategoriler, ek alanlar, hata kayıtları) yapıldı mı? true / false; belirsizse null. */
 export async function categoriesReady(): Promise<boolean | null> {
-  const v = await schemaVersion(CATEGORIES_SCHEMA_VERSION);
-  return v === null ? null : v >= CATEGORIES_SCHEMA_VERSION;
+  const v = await schemaVersion(EXTRAS_SCHEMA_VERSION);
+  return v === null ? null : v >= EXTRAS_SCHEMA_VERSION;
 }
 
 /** Çöp kutusu (005) kurulu mu? true / false; belirsizse null. */

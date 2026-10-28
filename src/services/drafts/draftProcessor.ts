@@ -1,4 +1,5 @@
 import { errorMessage, isNetworkError } from '../../lib/errors';
+import { reportError } from '../errorLog';
 import type { ReceiptData, ReceiptDraft } from '../../types/receipt';
 import { DRAFT_WIDTH, prepareAiImage } from '../image/prepareReceiptImages';
 import { downloadDraftImage, updateDraft } from '../supabase/draftsRepository';
@@ -99,6 +100,7 @@ export async function processDrafts(drafts: ReceiptDraft[], onItemDone?: () => v
           onItemDone?.();
           break;
         }
+        reportError('toplu tarama', e);
         set({ done: i + 1 });
         onItemDone?.();
         continue;

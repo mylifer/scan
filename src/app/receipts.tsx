@@ -76,7 +76,7 @@ export default function AllReceiptsScreen() {
         <>
           <SummaryCard total={totals.total} kdv={totals.kdv} count={filtered.length} compare={null} />
           <View style={{ marginHorizontal: 16, marginBottom: 16 }}>
-            <SearchField value={query} onChangeText={setQuery} placeholder="Firma ya da tutar ara" />
+            <SearchField value={query} onChangeText={setQuery} placeholder="Firma, tutar, etiket ya da not ara" />
           </View>
           {filtered.length === 0 ? (
             <ListSection>

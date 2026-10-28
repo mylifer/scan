@@ -10,6 +10,7 @@ import { errorMessage } from '../lib/errors';
 import { haptics } from '../lib/haptics';
 import { type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
+import { reportError } from '../services/errorLog';
 import { saveReceipt } from '../services/supabase/receiptsRepository';
 import { useSingleFlight } from '../hooks/useSingleFlight';
 import { useConfirmLeave } from '../hooks/useConfirmLeave';
@@ -42,6 +43,7 @@ export default function ManualReceiptScreen() {
         showToast('Fiş kaydedildi');
       } catch (e) {
         haptics.error();
+        reportError('elle fiş kaydetme', e);
         showAlert('Kaydedilemedi', errorMessage(e));
       } finally {
         setSaving(false);

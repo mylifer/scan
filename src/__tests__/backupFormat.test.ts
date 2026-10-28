@@ -16,6 +16,10 @@ const rec = (id: string, firma_adi: string, tarih: string, toplam_tutar: number,
   toplam_kdv: round(toplam_tutar / 6),
   kategori: 'market',
   image_path,
+  fis_no: null,
+  vkn: null,
+  notlar: null,
+  etiketler: [],
 });
 const round = (n: number) => Math.round(n * 100) / 100;
 
@@ -39,7 +43,7 @@ describe('yedek biçimi', () => {
     (bad.receipts[0] as { tarih: string }).tarih = '03.09.2026';
     assert.throws(() => parseManifest(JSON.stringify(bad)), /1\. fiş geçersiz/);
     const badCat = buildManifest([rec('a', 'X', '2026-09-03', 10)], new Set(), '', '');
-    (badCat.receipts[0] as { kategori: string }).kategori = 'uydurma';
+    (badCat.receipts[0] as { kategori: string }).kategori = '   ';
     assert.throws(() => parseManifest(JSON.stringify(badCat)), /geçersiz/);
     const traversal = buildManifest([rec('a', 'X', '2026-09-03', 10)], new Set(['a']), '', '');
     traversal.receipts[0]!.photo = '../../etc/passwd';

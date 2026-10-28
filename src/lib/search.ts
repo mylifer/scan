@@ -13,14 +13,15 @@ export function normalizeForSearch(text: string): string {
     .trim();
 }
 
-type Searchable = Pick<ReceiptRecord, 'firma_adi' | 'toplam_tutar'>;
+type Searchable = Pick<ReceiptRecord, 'firma_adi' | 'toplam_tutar'> & Partial<Pick<ReceiptRecord, 'fis_no' | 'vkn' | 'notlar' | 'etiketler'>>;
 
 /**
  * Sorgu için eşleştirici üretir: sorgu bir kez normalleştirilir, liste filtrelenirken her satırda tekrar edilmez.
- * Firma adında ya da tutarda (ör. "337" → ₺337,30) arar. Boş sorgu her şeyle eşleşir.
+ * Firma adında, notta, etiketlerde ("#proje" de olur), fiş no / VKN'de ya da tutarda (ör. "337" → ₺337,30) arar.
+ * Boş sorgu her şeyle eşleşir.
  */
 export function receiptMatcher(query: string): (r: Searchable) => boolean {
-  const q = normalizeForSearch(query);
+  const q = normalizeForSearch(query.replace(/^\s*#/, ''));
   if (!q) return () => true;
   // Tutar araması: "337", "337,3", "337.30", "1.500" gibi girdiler
   const digits = q.replace(/\s/g, '');
@@ -28,7 +29,11 @@ export function receiptMatcher(query: string): (r: Searchable) => boolean {
   const typed = digits.replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.'); // binlik noktalarını at
   return (r) => {
     if (normalizeForSearch(r.firma_adi).includes(q)) return true;
+    if (r.notlar && normalizeForSearch(r.notlar).includes(q)) return true;
+    if (r.etiketler?.some((t) => normalizeForSearch(t).includes(q))) return true;
     if (!isAmount) return false;
+    // Fiş no ve VKN rakamla aranır (tutarla aynı girdi biçimi)
+    if (/^\d{3,}$/.test(digits) && (r.fis_no?.includes(digits) || r.vkn?.includes(digits))) return true;
     const amount = r.toplam_tutar.toFixed(2); // "1500.00"
     return amount.startsWith(typed) || amount.replace('.', ',').startsWith(digits);
   };

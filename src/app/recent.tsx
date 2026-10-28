@@ -72,7 +72,7 @@ export default function RecentScreen() {
           header={`Son eklenen ${items.length} fiş`}
           footer="Fişler uygulamaya eklenme zamanına göre listelenir (solda eklenme zamanı, ardından fiş tarihi). Bütün fişler için Tüm Fişler'e bakın.">
           {items.map((r) => {
-            const meta = categoryMeta[r.kategori] ?? categoryMeta['diğer'];
+            const meta = categoryMeta(r.kategori);
             return (
               <ListRow
                 key={r.id}

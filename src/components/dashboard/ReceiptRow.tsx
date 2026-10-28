@@ -18,13 +18,13 @@ interface RowProps {
 
 export function ReceiptRow({ receipt: r, onPress, isLast, selected }: RowProps) {
   const theme = useTheme();
-  const meta = categoryMeta[r.kategori] ?? categoryMeta['diğer'];
+  const meta = categoryMeta(r.kategori);
   const selecting = selected !== undefined;
   return (
     <ListRow
       icon={{ sf: meta.sf, ion: meta.ion, color: theme[meta.color] as string }}
       title={r.firma_adi}
-      subtitle={`${shortTrDate(r.tarih)} · KDV ${formatTL(r.toplam_kdv)}`}
+      subtitle={`${shortTrDate(r.tarih)} · KDV ${formatTL(r.toplam_kdv)}${r.etiketler?.length ? ` · ${r.etiketler.map((t) => `#${t}`).join(' ')}` : ''}`}
       value={formatTL(r.toplam_tutar)}
       valueColor={theme.label}
       chevron={!selecting}

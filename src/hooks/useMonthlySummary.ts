@@ -39,7 +39,9 @@ export function useMonthlySummary() {
     if (!isLatest()) return;
     // Önce cihazdaki son veriyi göster (anında açılış, çevrimdışı kullanım); ağdan gelen veri üzerine yazar
     if (cached) {
-      setData((d) => (d?.key === key ? d : { key, summary: cached.value.summary, previous: cached.value.previous ?? null }));
+      // Eski sürümün önbelleğinde ek alanlar (fiş no, etiketler…) yok: eksikler boş değerle tamamlanır
+      const summary = { ...cached.value.summary, fisler: cached.value.summary.fisler.map(withExtras) };
+      setData((d) => (d?.key === key ? d : { key, summary, previous: cached.value.previous ?? null }));
       if (cached.value.trend) setTrend(cached.value.trend);
     }
     try {
@@ -98,4 +100,8 @@ export function useMonthlySummary() {
     prev: () => setPeriod((p) => stepPeriod(p, -1)),
     next: () => setPeriod((p) => stepPeriod(p, 1)),
   };
+}
+
+function withExtras(r: ReceiptRecord): ReceiptRecord {
+  return { ...r, fis_no: r.fis_no ?? null, vkn: r.vkn ?? null, notlar: r.notlar ?? null, etiketler: Array.isArray(r.etiketler) ? r.etiketler : [] };
 }

@@ -18,6 +18,7 @@ import { Toolbar, useToolbarHeight } from '../components/ui/Toolbar';
 import { useDrafts } from '../hooks/useDrafts';
 import { useMonthlySummary } from '../hooks/useMonthlySummary';
 import { confirmDestructive, showActionSheet } from '../lib/actionSheet';
+import { showCategoryPicker } from '../lib/categoryPicker';
 import { showAlert } from '../lib/alert';
 import { errorMessage } from '../lib/errors';
 import { formatTL } from '../lib/format';
@@ -39,7 +40,7 @@ import { updateMonthlySummary } from '../services/reminders/monthlySummary';
 import { monthOffset } from '../lib/monthlySummaryPlan';
 import { categoriesReady } from '../services/supabase/schema';
 import { deleteReceipt as deleteReceiptRecord, purgeExpiredTrash, updateReceiptsCategory } from '../services/supabase/receiptsRepository';
-import { ESKI_KATEGORILER, type Kategori, KATEGORILER, type ReceiptRecord } from '../types/receipt';
+import { ESKI_KATEGORILER, type Kategori, type ReceiptRecord } from '../types/receipt';
 
 const PAGE = 25;
 
@@ -196,7 +197,7 @@ export default function DashboardScreen() {
     return totals;
   }, [filtered, grouping]);
   const categoryFooter = category
-    ? `Yalnızca ${categoryMeta[category].label} kategorisi gösteriliyor. Kategoriye tekrar dokunarak filtreyi kaldırabilirsiniz.`
+    ? `Yalnızca ${categoryMeta(category).label} kategorisi gösteriliyor. Kategoriye tekrar dokunarak filtreyi kaldırabilirsiniz.`
     : undefined;
   const controlRows = [
     ...(filtering
@@ -265,18 +266,15 @@ export default function DashboardScreen() {
   function bulkCategory() {
     const ids = selectedList.map((r) => r.id);
     if (!ids.length) return;
-    showActionSheet({
+    showCategoryPicker({
       title: `${ids.length} fişin kategorisi`,
-      options: KATEGORILER.map((k) => ({
-        label: categoryMeta[k].label,
-        onPress: async () => {
-          if (!ESKI_KATEGORILER.includes(k) && (await categoriesReady()) === false) {
-            showAlert('Kurulum gerekli', 'Bu kategoriyi kullanmak için önce ana sayfadaki "Yeni kategorileri etkinleştir" adımını tamamlayın.');
-            return;
-          }
-          await bulk(async () => `${await updateReceiptsCategory(ids, k)} fiş ${categoryMeta[k].label} yapıldı`);
-        },
-      })),
+      onSelect: async (k) => {
+        if (!ESKI_KATEGORILER.includes(k) && (await categoriesReady()) === false) {
+          showAlert('Kurulum gerekli', 'Bu kategoriyi kullanmak için önce ana sayfadaki "Veritabanını güncelle" adımını tamamlayın.');
+          return;
+        }
+        await bulk(async () => `${await updateReceiptsCategory(ids, k)} fiş ${categoryMeta(k).label} yapıldı`);
+      },
     });
   }
 
@@ -339,7 +337,7 @@ export default function DashboardScreen() {
           ...(Platform.OS === 'ios'
             ? {
                 headerSearchBarOptions: {
-                  placeholder: 'Firma ya da tutar ara',
+                  placeholder: 'Firma, tutar, etiket ya da not ara',
                   // iOS 26 arama çubuğunu varsayılan olarak alta taşıyor ve "Fiş Tara" çubuğunun üstüne biniyor;
                   // başlığın altında (klasik yerinde) sabit kalsın
                   placement: 'stacked' as const,
@@ -391,8 +389,8 @@ export default function DashboardScreen() {
         {needsCategorySetup && (
           <ListSection>
             <ListRow
-              title="Yeni kategorileri etkinleştir"
-              subtitle="Ulaşım, Faturalar, Giyim ve fazlası"
+              title="Veritabanını güncelle"
+              subtitle="Yeni kategoriler, fiş no, VKN, not ve etiketler"
               icon={{ sf: 'tag.fill', ion: 'pricetag', color: theme.purple }}
               onPress={() => router.push('/setup-categories')}
               chevron
@@ -499,7 +497,7 @@ export default function DashboardScreen() {
 
                   {Platform.OS !== 'ios' && (
                     <View style={{ marginHorizontal: 16, marginBottom: 12 }}>
-                      <SearchField value={query} onChangeText={setQuery} placeholder="Firma ya da tutar ara" />
+                      <SearchField value={query} onChangeText={setQuery} placeholder="Firma, tutar, etiket ya da not ara" />
                     </View>
                   )}
                   <ListSection

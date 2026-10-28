@@ -17,7 +17,8 @@ import { showToast } from '../lib/toast';
 import { prepareDraftImage, prepareReceiptImages } from '../services/image/prepareReceiptImages';
 import { addDraft } from '../services/supabase/draftsRepository';
 import { applyLearnedCategory, saveReceipt } from '../services/supabase/receiptsRepository';
-import { getVisionService } from '../services/vision';
+import { reportError } from '../services/errorLog';
+import { getVisionService, VisionServiceError } from '../services/vision';
 import { useSingleFlight } from '../hooks/useSingleFlight';
 import { useConfirmLeave } from '../hooks/useConfirmLeave';
 
@@ -53,6 +54,8 @@ export default function ReviewScreen() {
       haptics.success();
     } catch (e) {
       if (controller.signal.aborted) return;
+      // Yoğunluk ve kota beklenen durumlar: yalnızca diğer okuma hataları kaydedilir
+      if (!(e instanceof VisionServiceError && e.kind !== 'other')) reportError('fiş okuma', e);
       setError(errorMessage(e));
       setPhase('error');
       haptics.error();
@@ -90,6 +93,7 @@ export default function ReviewScreen() {
         }
       } catch (e) {
         haptics.error();
+        reportError('fiş kaydetme', e);
         showAlert('Kaydedilemedi', errorMessage(e));
       } finally {
         setSaving(false);

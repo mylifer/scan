@@ -3,6 +3,7 @@ import { File } from 'expo-file-system';
 import { Platform } from 'react-native';
 
 import { receiptImageName, round2, trDateToIso } from '../../lib/format';
+import { isLikelyDuplicate } from '../../lib/receiptExtras';
 import { learnedCategoryFor } from '../../lib/search';
 import { buildMonthlySeries, type MonthPoint } from '../../lib/trend';
 import type { Kategori, ReceiptData, ReceiptRecord } from '../../types/receipt';
@@ -13,6 +14,16 @@ import { trashReady } from './schema';
 const TABLE = 'receipts';
 const TRASH_TABLE = 'receipt_trash';
 export const RECEIPT_IMAGES_BUCKET = 'receipt-images';
+
+/** Fiş no, VKN, not ve etiket sütunları (006 kurulumu); boş değerler null/[] olarak yazılır */
+function extraColumns(data: Pick<ReceiptData, 'fisNo' | 'vkn' | 'notlar' | 'etiketler'>) {
+  return {
+    fis_no: data.fisNo?.trim() || null,
+    vkn: data.vkn?.trim() || null,
+    notlar: data.notlar?.trim() || null,
+    etiketler: data.etiketler ?? [],
+  };
+}
 
 export interface SaveResult {
   record: ReceiptRecord;
@@ -47,6 +58,7 @@ export async function saveReceipt(data: ReceiptData, archiveUri?: string): Promi
       kdv_yuzde20: round2(data.kdvYuzde20),
       kategori: data.kategori,
       image_path: imagePath,
+      ...extraColumns(data),
     })
     .select()
     .single();
@@ -189,15 +201,32 @@ export async function getCategoryTotals(range: { from: string; to: string }): Pr
   return [...totals.entries()].map(([kategori, toplam]) => ({ kategori, toplam: round2(toplam) }));
 }
 
-/** Aynı tarih ve tutarda kayıtlı fişler (mükerrer kayıt uyarısı için). */
+/**
+ * Aynı fiş olabilecek kayıtlar (mükerrer kayıt uyarısı için): aynı tarihli fişler arasından
+ * fiş no / VKN / tutar karşılaştırmasıyla seçilir (bkz. isLikelyDuplicate).
+ */
 export async function findPossibleDuplicates(data: ReceiptData, excludeId?: string): Promise<ReceiptRecord[]> {
   const tarih = trDateToIso(data.tarih);
   if (!tarih) return [];
-  let query = supabase.from(TABLE).select('*').eq('tarih', tarih).eq('toplam_tutar', round2(data.toplamTutar)).limit(3);
+  let query = supabase.from(TABLE).select('*').eq('tarih', tarih).order('created_at', { ascending: false }).limit(200);
   if (excludeId) query = query.neq('id', excludeId);
   const { data: rows, error } = await query;
   if (error) return []; // kontrol başarısızsa kaydı engelleme
-  return (rows ?? []).map(toRecord);
+  const key = { toplam_tutar: data.toplamTutar, fis_no: data.fisNo, vkn: data.vkn };
+  return (rows ?? []).map(toRecord).filter((r) => isLikelyDuplicate(key, r)).slice(0, 3);
+}
+
+/** Kullanıcının daha önce kullandığı etiketler, en çok kullanılandan aza (formda öneri olarak) */
+export async function getKnownTags(limit = 30): Promise<string[]> {
+  const { data, error } = await supabase.from(TABLE).select('etiketler').order('created_at', { ascending: false }).limit(500);
+  if (error || !data) return [];
+  const counts = new Map<string, number>();
+  for (const row of data) {
+    for (const tag of Array.isArray(row.etiketler) ? (row.etiketler as unknown[]) : []) {
+      if (typeof tag === 'string' && tag) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([t]) => t);
 }
 
 /**
@@ -242,7 +271,7 @@ async function recentFirmCategories(): Promise<FirmCategory[] | null> {
 }
 
 /** Fiş eklenince/değişince/silinince kategori hafızası yeniden okunsun */
-function invalidateFirmCategories() {
+export function invalidateFirmCategories() {
   firmCacheGeneration++;
   firmCategoryCache = null;
 }
@@ -254,7 +283,8 @@ function invalidateFirmCategories() {
  */
 export async function insertRestoredReceipt(
   userId: string,
-  r: Pick<ReceiptRecord, 'firma_adi' | 'tarih' | 'toplam_tutar' | 'kdv_yuzde1' | 'kdv_yuzde10' | 'kdv_yuzde20' | 'kategori' | 'created_at'>,
+  r: Pick<ReceiptRecord, 'firma_adi' | 'tarih' | 'toplam_tutar' | 'kdv_yuzde1' | 'kdv_yuzde10' | 'kdv_yuzde20' | 'kategori' | 'created_at'> &
+    Partial<Pick<ReceiptRecord, 'fis_no' | 'vkn' | 'notlar' | 'etiketler'>>,
   photo: Uint8Array | null,
 ): Promise<void> {
   let imagePath: string | null = null;
@@ -277,6 +307,11 @@ export async function insertRestoredReceipt(
     kdv_yuzde20: round2(r.kdv_yuzde20),
     kategori: r.kategori,
     image_path: imagePath,
+    // Eski yedeklerde bu alanlar yok: varsa yazılır (006 öncesi veritabanında sütun hatası olmasın)
+    ...(r.fis_no ? { fis_no: r.fis_no } : {}),
+    ...(r.vkn ? { vkn: r.vkn } : {}),
+    ...(r.notlar ? { notlar: r.notlar } : {}),
+    ...(r.etiketler?.length ? { etiketler: r.etiketler } : {}),
     // Sıralama korunsun: fişin ilk eklendiği an
     ...(r.created_at ? { created_at: r.created_at } : {}),
   });
@@ -412,6 +447,7 @@ export async function updateReceipt(id: string, data: ReceiptData): Promise<Rece
       kdv_yuzde10: round2(data.kdvYuzde10),
       kdv_yuzde20: round2(data.kdvYuzde20),
       kategori: data.kategori,
+      ...extraColumns(data),
     })
     .eq('id', id)
     .select()
@@ -432,6 +468,10 @@ export function recordToData(r: ReceiptRecord): ReceiptData {
     kdvYuzde10: r.kdv_yuzde10,
     kdvYuzde20: r.kdv_yuzde20,
     kategori: r.kategori,
+    ...(r.fis_no ? { fisNo: r.fis_no } : {}),
+    ...(r.vkn ? { vkn: r.vkn } : {}),
+    ...(r.notlar ? { notlar: r.notlar } : {}),
+    ...(r.etiketler.length ? { etiketler: [...r.etiketler] } : {}),
   };
 }
 
@@ -501,6 +541,10 @@ export async function restoreFromTrash(item: TrashItem): Promise<void> {
     kdv_yuzde20: r.kdv_yuzde20,
     kategori: r.kategori,
     image_path: r.image_path,
+    ...(r.fis_no ? { fis_no: r.fis_no } : {}),
+    ...(r.vkn ? { vkn: r.vkn } : {}),
+    ...(r.notlar ? { notlar: r.notlar } : {}),
+    ...(r.etiketler.length ? { etiketler: r.etiketler } : {}),
   });
   // 23505: fiş zaten geri alınmış (ör. önceki deneme yarım kaldı) → yalnızca çöp kaydı silinir
   if (error && error.code !== '23505') throw new Error(`Geri alınamadı: ${error.message}`);
@@ -568,5 +612,9 @@ function toRecord(row: Record<string, unknown>): ReceiptRecord {
     toplam_kdv: Number(row.toplam_kdv ?? 0),
     kategori: row.kategori as Kategori,
     image_path: (row.image_path as string | null) ?? null,
+    fis_no: typeof row.fis_no === 'string' && row.fis_no ? row.fis_no : null,
+    vkn: typeof row.vkn === 'string' && row.vkn ? row.vkn : null,
+    notlar: typeof row.notlar === 'string' && row.notlar ? row.notlar : null,
+    etiketler: Array.isArray(row.etiketler) ? row.etiketler.filter((t): t is string => typeof t === 'string') : [],
   };
 }

@@ -22,12 +22,12 @@ export function CategorySection({ items, selected, onSelect }: Props) {
       <View style={styles.barWrap}>
         <View style={[styles.bar, { backgroundColor: theme.tertiaryFill }]}>
           {items.map((k) => (
-            <View key={k.kategori} style={{ flex: k.toplam, backgroundColor: theme[categoryMeta[k.kategori].color] as string }} />
+            <View key={k.kategori} style={{ flex: k.toplam, backgroundColor: theme[categoryMeta(k.kategori).color] as string }} />
           ))}
         </View>
       </View>
       {items.map((k) => {
-        const meta = categoryMeta[k.kategori];
+        const meta = categoryMeta(k.kategori);
         return (
           <ListRow
             key={k.kategori}

@@ -1,5 +1,7 @@
 import { amountToInput, normalizeTrDate, parseAmount, todayTr, trDateToIso } from './format';
-import { KATEGORI_ETIKETLERI, type Kategori, type ReceiptData, type ReceiptField } from '../types/receipt';
+import { categoryLabel } from './categories';
+import { cleanFisNo, cleanNote, cleanTaxId, parseTags, tagsToInput, taxIdError, taxIdWarning } from './receiptExtras';
+import type { Kategori, ReceiptData, ReceiptField } from '../types/receipt';
 
 /** Formda tutarlar metin olarak tutulur ki kullanıcı "12,5" gibi ara değerler yazabilsin. */
 export interface ReceiptFormValues {
@@ -10,6 +12,11 @@ export interface ReceiptFormValues {
   kdvYuzde10: string;
   kdvYuzde20: string;
   kategori: ReceiptData['kategori'];
+  fisNo: string;
+  vkn: string;
+  notlar: string;
+  /** Virgülle ayrılmış etiketler */
+  etiketler: string;
   /** Yapay zekânın emin olamadığı alanlar; kullanıcı alanı değiştirince listeden çıkar */
   belirsiz?: ReceiptField[];
 }
@@ -23,6 +30,10 @@ export function toFormValues(d: ReceiptData): ReceiptFormValues {
     kdvYuzde10: amountToInput(d.kdvYuzde10),
     kdvYuzde20: amountToInput(d.kdvYuzde20),
     kategori: d.kategori,
+    fisNo: d.fisNo ?? '',
+    vkn: d.vkn ?? '',
+    notlar: d.notlar ?? '',
+    etiketler: tagsToInput(d.etiketler),
     ...(d.eminOlunmayanlar?.length ? { belirsiz: [...d.eminOlunmayanlar] } : {}),
   };
 }
@@ -47,10 +58,14 @@ export const emptyForm = (): ReceiptFormValues => ({
   kdvYuzde10: '0,00',
   kdvYuzde20: '0,00',
   kategori: 'ofis gideri',
+  fisNo: '',
+  vkn: '',
+  notlar: '',
+  etiketler: '',
 });
 
 export function fromFormValues(v: ReceiptFormValues): ReceiptData {
-  return {
+  const data: ReceiptData = {
     firmaAdi: v.firmaAdi.trim(),
     tarih: normalizeTrDate(v.tarih) ?? v.tarih.trim(),
     toplamTutar: parseAmount(v.toplamTutar),
@@ -59,6 +74,16 @@ export function fromFormValues(v: ReceiptFormValues): ReceiptData {
     kdvYuzde20: parseAmount(v.kdvYuzde20),
     kategori: v.kategori,
   };
+  // Ek alanlar yalnızca doluysa eklenir (boşsa kayıtta null/[] olarak yazılır)
+  const fisNo = cleanFisNo(v.fisNo ?? '');
+  const vkn = cleanTaxId(v.vkn ?? '');
+  const notlar = cleanNote(v.notlar);
+  const etiketler = parseTags(v.etiketler ?? '');
+  if (fisNo) data.fisNo = fisNo;
+  if (vkn) data.vkn = vkn;
+  if (notlar) data.notlar = notlar;
+  if (etiketler.length) data.etiketler = etiketler;
+  return data;
 }
 
 /** Kaydetmeden önce kontrol; hata yoksa boş dizi döner. */
@@ -71,6 +96,8 @@ export function validateForm(v: ReceiptFormValues): string[] {
   if (d.kdvYuzde1 + d.kdvYuzde10 + d.kdvYuzde20 > d.toplamTutar) {
     errors.push('Toplam KDV, toplam tutardan büyük olamaz. TOPLAM ile TOPKDV karışmış olabilir.');
   }
+  const taxError = taxIdError(v.vkn ?? '');
+  if (taxError) errors.push(taxError);
   return errors;
 }
 
@@ -102,8 +129,10 @@ export function formWarnings(v: ReceiptFormValues, today = new Date()): string[]
   const unusual = unusualRates(v.kategori, { 1: parseAmount(v.kdvYuzde1), 10: parseAmount(v.kdvYuzde10), 20: parseAmount(v.kdvYuzde20) });
   if (unusual.length) {
     const list = unusual.map((r) => `%${r}`).join(' ve ');
-    warnings.push(`${KATEGORI_ETIKETLERI[v.kategori]} fişlerinde ${list} KDV pek görülmez. Tutarın doğru dilime yazıldığını ve kategoriyi kontrol edin.`);
+    warnings.push(`${categoryLabel(v.kategori)} fişlerinde ${list} KDV pek görülmez. Tutarın doğru dilime yazıldığını ve kategoriyi kontrol edin.`);
   }
+  const taxWarning = taxIdWarning(v.vkn ?? '');
+  if (taxWarning) warnings.push(taxWarning);
   return warnings;
 }
 

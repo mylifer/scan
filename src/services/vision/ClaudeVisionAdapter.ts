@@ -1,7 +1,7 @@
 import { errorMessage } from '../../lib/errors';
 import type { ReceiptData } from '../../types/receipt';
 import { parseReceiptJson } from './parseReceiptJson';
-import { RECEIPT_SYSTEM_PROMPT, RECEIPT_USER_PROMPT } from './receiptPrompt';
+import { receiptSystemPrompt, RECEIPT_USER_PROMPT } from './receiptPrompt';
 import { type ReceiptImage, type VisionService, VisionServiceError } from './VisionService';
 
 export const DEFAULT_CLAUDE_MODEL = 'claude-sonnet-5';
@@ -40,7 +40,7 @@ export class ClaudeVisionAdapter implements VisionService {
         body: JSON.stringify({
           model: this.model,
           max_tokens: 1024,
-          system: RECEIPT_SYSTEM_PROMPT,
+          system: receiptSystemPrompt(),
           messages: [
             {
               role: 'user',

@@ -108,7 +108,7 @@ export default function TrashScreen() {
       <ListSection footer={`Fişler silindikten ${TRASH_DAYS} gün sonra fotoğraflarıyla birlikte kalıcı olarak silinir. Geri almak için fişe dokunun.`}>
         {items.map((item) => {
           const r = item.receipt;
-          const meta = categoryMeta[r.kategori] ?? categoryMeta['diğer'];
+          const meta = categoryMeta(r.kategori);
           return (
             <ListRow
               key={item.id}
