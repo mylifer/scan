@@ -16,6 +16,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.35.2 — `302643a`
+- TestFlight derlemesi artık GitHub'dan tek tıkla yapılıyor (bilgisayar gerekmez). Uygulamanın teknik adı Türkçe harfsiz "FisTarayici" oldu; telefonda görünen adı yine "Fiş Tarayıcı"
+
 ## 1.35.1 — `a0eac38`
 - Fotoğraflı Excel ve Muhasebe Paketi: dosyanın sonu bazen eksik yazılıyordu; Excel açarken "bazı öğelerde sorun" uyarısı veriyordu. Artık dosya eksiksiz yazılıyor
 
