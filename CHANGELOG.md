@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.34.4 — `(yayında)`
+## 1.34.4 — `9ed1260`
 - Fotoğraflı Excel ve Muhasebe Paketi: dosyanın sonu bazen eksik yazılıyordu; Excel açarken "bazı öğelerde sorun" uyarısı veriyordu. Artık dosya eksiksiz yazılıyor
 
 ## 1.34.3 — `095fc91`
