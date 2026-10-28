@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.36.0 — `KOD`
+## 1.36.0 — `2073e0b`
 - **Yeni uygulama simgesi:** fiş, tarama köşeleri ve yeşil tarama çizgisi. iPhone, Android ve web (ana ekrana ekleme) simgelerinin hepsi yenilendi. TestFlight'ta görünmesi için yeni derleme gerekir; Expo Go kendi simgesini göstermeye devam eder
 - Android'de simgenin arkasında ikinci, büyük bir fiş görünüyordu; artık yalnızca mavi zemin var
 
