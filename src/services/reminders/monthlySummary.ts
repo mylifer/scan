@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { MONTHLY_SUMMARY_KIND, MONTHLY_SUMMARY_PREFIX, monthlySummaryId, type MonthTotals, planMonthlySummary } from '../../lib/monthlySummaryPlan';
-import { loadNotifications } from './loadNotifications';
+import { loadNotifications, NOTIFICATION_SUBTITLE } from './loadNotifications';
 
 /**
  * Aylık özet bildirimi: her ayın 1'i 10:00'da geçen ayın gider, KDV ve fiş sayısı.
@@ -35,7 +35,7 @@ async function schedule(totals: MonthTotals): Promise<void> {
   await Notifications.cancelScheduledNotificationAsync(id).catch(() => {});
   await Notifications.scheduleNotificationAsync({
     identifier: id,
-    content: { title: n.title, body: n.body, data: { kind: MONTHLY_SUMMARY_KIND, month: n.month } },
+    content: { title: n.title, subtitle: NOTIFICATION_SUBTITLE, body: n.body, data: { kind: MONTHLY_SUMMARY_KIND, month: n.month } },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: n.date },
   });
 }

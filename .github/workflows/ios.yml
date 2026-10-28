@@ -1,23 +1,29 @@
 # iPhone uygulaması
 #
-# Varsayılan (ücretsiz) yol: Expo Go + EAS Update
-#   - "setup": Expo projesini oluşturur/bağlar, app.json'a proje kimliğini yazıp commit'ler (bir kez)
-#   - push: her değişiklik EAS Update ile yayınlanır; Expo Go'da hesabınızla giriş yapınca proje listelenir
-#   Gerekli secret'lar: EXPO_TOKEN, GEMINI_API_KEY
+# İki yol birlikte çalışır:
+#   1) Expo Go + EAS Update (ücretsiz): her push EAS Update ile yayınlanır.
+#   2) TestFlight: "build" eylemi yeni bir derleme yapıp TestFlight'a gönderir.
+#      runtimeVersion "sdkVersion" politikasında kaldığı için aynı EAS Update hem Expo Go'ya hem
+#      TestFlight uygulamasına gider; yeni derleme yalnızca yerel (native) değişiklikte gerekir.
 #
-# İleride TestFlight'a geçilirse: app.json'da runtimeVersion policy'yi "appVersion" yapın ve
-#   "build" eylemini kullanın (ek secret'lar: ASC_API_KEY_P8, ASC_KEY_ID, ASC_ISSUER_ID, APPLE_TEAM_ID)
+#   - "setup": Expo projesini oluşturur/bağlar (bir kez, yapıldı)
+#   - "secrets": Gemini anahtarını ve sürüm etiketini EAS ortamına aktarır (derlemelerden önce bir kez)
+#   - "build": TestFlight'a yeni derleme. Apple sertifikaları ilk kez bilgisayarda etkileşimli
+#     "eas build" ile oluşturulmalıdır (EAS bunu etkileşimsiz yapamaz); sonrası buradan çalışır.
+#     eas.json'daki submit.production.ios.ascAppId gerekir.
+#   Gerekli secret'lar: EXPO_TOKEN, GEMINI_API_KEY
+#   İsteğe bağlı (süresi dolan sertifikayı CI'da yenilemek için): ASC_API_KEY_P8, ASC_KEY_ID, ASC_ISSUER_ID, APPLE_TEAM_ID
 name: iPhone uygulaması
 
 on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'setup (bir kez) | update (güncellemeyi elle yayınla) | build (yalnızca TestFlight yolunda)'
+        description: 'update (güncellemeyi elle yayınla) | build (TestFlight) | secrets (anahtarları EAS''e aktar) | setup (bir kez)'
         required: true
         default: update
         type: choice
-        options: [update, setup, build]
+        options: [update, build, secrets, setup]
       ref:
         description: 'Geri dönüş (update ile): yayınlanacak commit (CHANGELOG.md''deki kısa kod). Boş = en son sürüm.'
         required: false
@@ -35,6 +41,7 @@ concurrency:
 env:
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
   HAS_EXPO: ${{ secrets.EXPO_TOKEN != '' }}
+  HAS_ASC: ${{ secrets.ASC_API_KEY_P8 != '' }}
   EXPO_PUBLIC_SUPABASE_URL: https://fzhagwcysltvpcgdfrnl.supabase.co
   EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_7gu66leZ4qgYJPcOpcsh7g_yss8NOyN
   EXPO_PUBLIC_VISION_PROVIDER: gemini
@@ -86,8 +93,8 @@ jobs:
           git push
 
       # ---------- build: TestFlight'a yeni sürüm ----------
-      - name: App Store Connect anahtarını hazırla
-        if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'build'
+      - name: App Store Connect anahtarını hazırla (varsa)
+        if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'build' && env.HAS_ASC == 'true'
         # Gizli değerler komut metnine gömülmez, ortam değişkeniyle aktarılır (tırnak/$ içeren değerler kabuğu bozmasın)
         env:
           ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
@@ -102,7 +109,7 @@ jobs:
           echo "EXPO_APPLE_TEAM_ID=$APPLE_TEAM_ID" >> "$GITHUB_ENV"
           echo "EXPO_APPLE_TEAM_TYPE=INDIVIDUAL" >> "$GITHUB_ENV"
       - name: Gizli anahtarları EAS'e aktar
-        if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'build'
+        if: env.HAS_EXPO == 'true' && (github.event.inputs.action == 'build' || github.event.inputs.action == 'secrets')
         run: |
           npx eas-cli env:set --name EXPO_PUBLIC_GEMINI_API_KEY --value "$EXPO_PUBLIC_GEMINI_API_KEY" \
             --environment production --visibility sensitive --non-interactive

@@ -30,6 +30,26 @@ EAS Update ile yeni sürümü yayınlar; telefonda uygulamayı kapatıp açmak y
 Açma bağlantısı: `exp://u.expo.dev/e4446685-6bd2-4e1c-b0d0-cb1c025e1905?channel-name=production`
 Gerekli secret'lar: `EXPO_TOKEN`, `GEMINI_API_KEY`.
 
+## iPhone uygulaması (TestFlight)
+
+Uygulama kendi adı ve simgesiyle TestFlight'tan da kurulabilir. Expo Go'ya giden güncellemeler TestFlight
+uygulamasına da gider; yeni derleme yalnızca yerel (native) bir paket eklendiğinde gerekir.
+
+**İlk kurulum (bir kez, bilgisayarda; Node.js 22 gerekir):**
+
+```bash
+git clone https://github.com/mylifer/scan.git && cd scan && npm ci
+npx eas-cli@latest login
+npx eas-cli@latest build --platform ios --profile production --auto-submit
+```
+
+Sorulara varsayılan cevapları verin: Apple hesabıyla giriş yapın, sertifika ve provisioning profile
+oluşturulmasını, App Store Connect API anahtarı oluşturulmasını kabul edin. Derleme ~15-20 dakika sürer,
+ardından TestFlight'a yüklenir. Bitince App Store Connect'te uygulamanın **Apple ID** numarasını
+(Uygulama Bilgileri → Genel Bilgiler) `eas.json` → `submit.production.ios.ascAppId` alanına yazın.
+
+**Sonraki derlemeler:** Actions → "iPhone uygulaması" → `action: build`.
+
 ## Sürümler ve geri dönüş
 
 Her sürüm ve commit kodu [CHANGELOG.md](CHANGELOG.md) içindedir. Eski bir sürüme dönmek için Actions'ta
