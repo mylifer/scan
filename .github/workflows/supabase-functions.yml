@@ -44,8 +44,9 @@ jobs:
       - name: Fonksiyon çalışıyor mu? (girişsiz istek reddedilmeli)
         # Yayındaysa giriş yapılmamış istek 401 alır; 404 fonksiyonun yayınlanmadığını gösterir
         run: |
+          # Uygulamanın herkese açık anahtarıyla ama oturumsuz istek: fonksiyonun içindeki kontrol reddetmeli
           CODE=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://$PROJECT_REF.supabase.co/functions/v1/analyze-receipt" \
-            -H 'Content-Type: application/json' -d '{}')
+            -H 'apikey: sb_publishable_7gu66leZ4qgYJPcOpcsh7g_yss8NOyN' -H 'Content-Type: application/json' -d '{}')
           echo "Girişsiz istek: HTTP $CODE"
           [ "$CODE" = "401" ] || { echo "::error::Beklenen 401, gelen $CODE"; exit 1; }
           npx --yes supabase@latest secrets list --project-ref "$PROJECT_REF" | grep -q GEMINI_API_KEY \
