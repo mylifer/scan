@@ -11,7 +11,7 @@ import { errorMessage } from '../lib/errors';
 import { formatBytes, formatTL, monthRange } from '../lib/format';
 import { haptics } from '../lib/haptics';
 import { tabular, type as t, useTheme } from '../lib/theme';
-import { VERSION_LABEL } from '../lib/version';
+import { HOST_APP_NAME, VERSION_LABEL } from '../lib/version';
 import { useMonthlyBudget } from '../lib/budget';
 import { showToast } from '../lib/toast';
 import { disableReminder, enableReminder, isReminderEnabled, remindersSupported } from '../services/reminders/taxReminders';
@@ -55,7 +55,7 @@ export default function SettingsScreen() {
         const s = await getSummary(monthRange(0));
         if (!(await enableMonthlySummary({ total: s.toplamGider, kdv: s.toplamKdv, count: s.fisSayisi }))) {
           setMonthly(false);
-          showAlert('Bildirim izni gerekli', 'Aylık özet için Ayarlar → Bildirimler bölümünden bu uygulamaya (Expo Go) izin verin.');
+          showAlert('Bildirim izni gerekli', `Aylık özet için iPhone Ayarlar → Bildirimler → ${HOST_APP_NAME} bölümünden izin verin.`);
           return;
         }
         haptics.success();
@@ -75,7 +75,7 @@ export default function SettingsScreen() {
       if (on) {
         if (!(await enableReminder())) {
           setReminder(false);
-          showAlert('Bildirim izni gerekli', 'Hatırlatıcı için Ayarlar → Bildirimler bölümünden bu uygulamaya (Expo Go) izin verin.');
+          showAlert('Bildirim izni gerekli', `Hatırlatıcı için iPhone Ayarlar → Bildirimler → ${HOST_APP_NAME} bölümünden izin verin.`);
           return;
         }
         haptics.success();

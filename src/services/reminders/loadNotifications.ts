@@ -1,5 +1,7 @@
 import type * as NotificationsModule from 'expo-notifications';
 
+import { IN_EXPO_GO } from '../../lib/version';
+
 let cached: typeof NotificationsModule | null | undefined;
 
 /**
@@ -21,7 +23,7 @@ export function loadNotifications(): typeof NotificationsModule | null {
 }
 
 /**
- * iOS alt başlığı: uygulama Expo Go içinde çalıştığı için iOS bildirimi "Expo Go" adı ve simgesiyle gösterir
- * (bu koddan değiştirilemez). Bildirimin Fiş Tarayıcı'dan geldiği alt başlıktan anlaşılsın.
+ * iOS alt başlığı: Expo Go içinde iOS bildirimi "Expo Go" adı ve simgesiyle gösterir (koddan değiştirilemez);
+ * bildirimin Fiş Tarayıcı'dan geldiği alt başlıktan anlaşılsın. Kendi derlemesinde (TestFlight) ad zaten görünür.
  */
-export const NOTIFICATION_SUBTITLE = 'Fiş Tarayıcı';
+export const NOTIFICATION_SUBTITLE = IN_EXPO_GO ? 'Fiş Tarayıcı' : undefined;
