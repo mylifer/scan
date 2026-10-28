@@ -132,7 +132,19 @@ jobs:
           fi
       - name: Derle ve TestFlight'a gönder
         if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'build'
-        run: npx eas-cli build --platform ios --profile production --non-interactive ${{ env.ASC_APP_FOUND == 'true' && '--auto-submit' || '' }}
+        run: |
+          if [ "$HAS_ASC" != "true" ]; then
+            npx eas-cli build --platform ios --profile production --non-interactive
+            exit 0
+          fi
+          # EAS eksik imza bilgilerini (App Store sertifikası/profili) yalnızca etkileşimli modda oluşturur.
+          # Sahte bir terminal açılır ve her soruya varsayılan cevap (Enter) verilir; Apple girişi API anahtarıyla
+          # soru sorulmadan yapılır. Bilgiler bir kez oluşunca sonraki derlemelerde soru çıkmaz.
+          (while sleep 3; do printf '\r'; done) | CI=false script -qefc \
+            "npx eas-cli build --platform ios --profile production" /dev/null
+          if [ "$ASC_APP_FOUND" = "true" ]; then
+            npx eas-cli submit --platform ios --profile production --latest --non-interactive
+          fi
       - name: Son derlemeyi TestFlight'a gönder
         if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'submit'
         run: |
