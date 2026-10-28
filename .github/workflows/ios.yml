@@ -10,9 +10,9 @@
 #   - "secrets": Gemini anahtarını ve sürüm etiketini EAS ortamına aktarır (derlemelerden önce bir kez)
 #   - "build": TestFlight'a yeni derleme. Apple sertifikaları ilk kez bilgisayarda etkileşimli
 #     "eas build" ile oluşturulmalıdır (EAS bunu etkileşimsiz yapamaz); sonrası buradan çalışır.
-#     eas.json'daki submit.production.ios.ascAppId gerekir.
+#     TestFlight'a gönderim için uygulama numarası (ascAppId) App Store Connect anahtarıyla otomatik bulunur.
 #   Gerekli secret'lar: EXPO_TOKEN, GEMINI_API_KEY
-#   İsteğe bağlı (süresi dolan sertifikayı CI'da yenilemek için): ASC_API_KEY_P8, ASC_KEY_ID, ASC_ISSUER_ID, APPLE_TEAM_ID
+#   "build" için ayrıca: ASC_API_KEY_P8, ASC_KEY_ID, ASC_ISSUER_ID, APPLE_TEAM_ID (App Store Connect API anahtarı, Admin)
 name: iPhone uygulaması
 
 on:
@@ -115,6 +115,14 @@ jobs:
             --environment production --visibility sensitive --non-interactive
           npx eas-cli env:set --name EXPO_PUBLIC_APP_VERSION --value "$EXPO_PUBLIC_APP_VERSION" \
             --environment production --visibility plaintext --non-interactive
+      - name: TestFlight uygulama numarasını bul (ascAppId)
+        if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'build' && env.HAS_ASC == 'true'
+        # eas.json'da numara yoksa App Store Connect'ten paket kimliğiyle bulunur (yalnızca bu derleme için yazılır)
+        run: |
+          node -e 'const e=require("./eas.json");process.exit(e.submit?.production?.ios?.ascAppId?1:0)' || exit 0
+          ID=$(node scripts/asc-app-id.mjs)
+          echo "Apple Kimliği: $ID"
+          ID="$ID" node -e 'const fs=require("fs");const e=JSON.parse(fs.readFileSync("eas.json"));e.submit.production.ios.ascAppId=process.env.ID;fs.writeFileSync("eas.json",JSON.stringify(e,null,2)+"\n")'
       - name: Derle ve TestFlight'a gönder
         if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'build'
         run: npx eas-cli build --platform ios --profile production --non-interactive --auto-submit
