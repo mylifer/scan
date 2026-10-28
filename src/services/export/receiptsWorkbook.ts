@@ -175,7 +175,7 @@ export function receiptsSheets(summary: WorkbookInput, periodLabel: string, phot
  * Fişler sayfasına küçük resimleri ekler (yerinde) ve her fotoğraf için ayrı bir sayfa döner ("Fiş 1", "Fiş 2"…).
  * Ayrı sayfa: Excel bir bağlantıyı izlerken hedef hücreyi ekranın üstüne getirmiyor, yalnızca görünür kılıyor;
  * fotoğraflar tek sayfada alt alta olunca önceki fotoğraf görünüyor ("kayma"). Kendi sayfasında her zaman en üstten açılır.
- * Her sayfa: başlık (tarih · firma · tutar), "Fişlere dön" bağlantısı, gerçek boyutunda fotoğraf.
+ * Her sayfa: başlık (tarih · firma · tutar), sabit duran "Fişlere dön" düğmesi, gerçek boyutunda fotoğraf.
  */
 function photoSheets(fisler: WorkbookInput['fisler'], photos: PhotoMap, sheet: SheetSpec): SheetSpec[] {
   const thumbs: SheetImage[] = [];
@@ -210,10 +210,13 @@ function photoSheets(fisler: WorkbookInput['fisler'], photos: PhotoMap, sheet: S
     // Tam boyut: gerçek piksel boyutunda (%100 yakınlaştırmada)
     sheets.push({
       name,
-      rows: [[{ v: `${formatDate(r.tarih)} · ${r.firma_adi} · ${formatTL(r.toplam_tutar)}`, s: 'title' }], [{ v: '← Fişlere dön', s: 'link' }]],
-      rowHeights: { 0: 20 },
+      rows: [[{ v: `${formatDate(r.tarih)} · ${r.firma_adi} · ${formatTL(r.toplam_tutar)}`, s: 'title' }], [{ v: '←  Fişlere dön', s: 'button' }]],
+      rowHeights: { 0: 22, 1: 30, 2: 6 }, // 2: düğme ile fotoğraf arasında boşluk
+      widths: [24],
+      // Başlık ve düğme sabit: uzun fotoğrafı aşağı kaydırınca da "Fişlere dön" görünür kalır
+      freezeRows: 2,
       links: [{ row: 1, col: 0, location: cellRef(FISLER, row, 0) }],
-      images: [{ media: photo.media, row: 2, col: 0, width: photo.width * EMU_PER_PX, height: photo.height * EMU_PER_PX, descr: r.firma_adi }],
+      images: [{ media: photo.media, row: 3, col: 0, width: photo.width * EMU_PER_PX, height: photo.height * EMU_PER_PX, descr: r.firma_adi }],
     });
   });
 

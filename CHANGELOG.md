@@ -16,6 +16,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.34.3 — `KOD`
+- Fotoğraflı Excel: fotoğraf sayfasındaki "← Fişlere dön" artık belirgin bir düğme (mavi çerçeveli, büyük yazı) ve fotoğrafı aşağı kaydırınca da en üstte sabit kalıyor
+
 ## 1.34.2 — `bb022c0`
 - Fotoğraflı Excel: küçük fotoğrafa tıklayınca bazen başka bir fişin fotoğrafı görünüyordu (kayma). Artık her fişin fotoğrafı kendi sayfasında ("Fiş 1", "Fiş 2"…) ve tıklayınca doğrudan o fotoğraf açılıyor
 

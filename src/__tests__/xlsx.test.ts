@@ -140,6 +140,8 @@ describe('fotoğraflı Excel', () => {
     const first = strFromU8(files['xl/worksheets/sheet3.xml']);
     assert.ok(first.includes('BİRİNCİ'));
     assert.ok(first.includes(`location="'Fişler'!A2"`), 'fişlere dön bağlantısı');
+    assert.ok(first.includes('<c r="A2" s="10" t="inlineStr">'), 'fişlere dön düğme görünümünde');
+    assert.ok(first.includes('ySplit="2"'), 'başlık ve düğme kaydırınca sabit kalır');
     assert.ok(strFromU8(files['xl/worksheets/sheet4.xml']).includes(`location="'Fişler'!A4"`));
     // Tam boyut: 900×1800 px → EMU (1 px = 9525)
     assert.ok(strFromU8(files['xl/drawings/drawing2.xml']).includes(`<xdr:ext cx="${900 * 9525}" cy="${1800 * 9525}"/>`));
