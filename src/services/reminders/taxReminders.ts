@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { localDate, planTaxReminders, REMINDER_PREFIX } from '../../lib/taxReminderPlan';
-import { loadNotifications } from './loadNotifications';
+import { loadNotifications, NOTIFICATION_SUBTITLE } from './loadNotifications';
 
 /**
  * Vergi takvimi hatırlatıcıları: KDV, geçici vergi ve yıllık gelir vergisi son günlerinden
@@ -48,7 +48,7 @@ async function schedule(): Promise<number> {
   for (const r of plan) {
     await Notifications.scheduleNotificationAsync({
       identifier: r.id,
-      content: { title: r.title, body: r.body },
+      content: { title: r.title, subtitle: NOTIFICATION_SUBTITLE, body: r.body },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: localDate(r) },
     });
   }

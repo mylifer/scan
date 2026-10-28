@@ -19,3 +19,9 @@ export function loadNotifications(): typeof NotificationsModule | null {
   }
   return cached;
 }
+
+/**
+ * iOS alt başlığı: uygulama Expo Go içinde çalıştığı için iOS bildirimi "Expo Go" adı ve simgesiyle gösterir
+ * (bu koddan değiştirilemez). Bildirimin Fiş Tarayıcı'dan geldiği alt başlıktan anlaşılsın.
+ */
+export const NOTIFICATION_SUBTITLE = 'Fiş Tarayıcı';
