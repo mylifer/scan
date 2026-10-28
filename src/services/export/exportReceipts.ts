@@ -37,11 +37,13 @@ async function shareStream<R>(filename: string, mimeType: string, uti: string, b
   if (file.exists) file.delete();
   file.create();
   // Tek bir dosya tanıtıcısı: her parçada dosyayı yeniden açmaz; yazma hatası (ör. disk dolu)
-  // yakalanabilir bir hata olarak döner (write(append) iOS'ta yakalanamayan istisna atabiliyor)
+  // yakalanabilir bir hata olarak döner (write(append) iOS'ta yakalanamayan istisna atabiliyor).
+  // writeBytesSync: writeBytes Promise döndürür; beklenmezse close() kuyruktaki son parçaları
+  // keser ve dosyanın sonu (ZIP içindekiler tablosu) eksik kalır, Excel "onarım" ister.
   const handle = file.open(FileMode.WriteOnly);
   let result: R;
   try {
-    result = await build((c) => handle.writeBytes(c));
+    result = await build((c) => handle.writeBytesSync(c));
   } catch (e) {
     handle.close();
     if (file.exists) file.delete();
