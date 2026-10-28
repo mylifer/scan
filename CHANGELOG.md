@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.37.0 — `KOD`
+## 1.37.0 — `added62`
 - **Güvenlik:** Fişler artık uygulamanın Supabase sunucusundaki fonksiyonla okunuyor. Gemini anahtarı web sürümünün ve iPhone uygulamasının içinde bulunmuyor; yayın sırasında pakette anahtar bulunursa yayın durduruluyor. Fonksiyonu yalnızca giriş yapmış kullanıcı çağırabiliyor (oturum sunucuda doğrulanıyor). Yayın öncesi canlı sistemde geçici bir test hesabıyla uçtan uca deneniyor. (Not: 1.30.0'dan eski bir sürüme geri dönülürse fiş okuma çalışmaz.)
 - **Fiş no ve VKN/TCKN:** Yapay zekâ fişteki fiş numarasını ve firmanın vergi/TC kimlik numarasını da okuyor; formda düzeltilebiliyor. VKN/TCKN'nin kontrol hanesi doğrulanıyor, tutmazsa uyarı çıkıyor (okuma hatası olabilir)
 - **Daha güvenilir mükerrer uyarısı:** Fiş no ve VKN varsa onlarla karşılaştırılıyor. Aynı gün aynı tutarlı iki ayrı fiş (farklı fiş no) artık yanlışlıkla "zaten kayıtlı" sayılmıyor; tutarı yanlış okunmuş aynı fiş ise yakalanıyor
