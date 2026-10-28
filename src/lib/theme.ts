@@ -1,6 +1,7 @@
 import { Platform, type TextStyle, useColorScheme } from 'react-native';
 
-import { type Kategori, KATEGORI_ETIKETLERI as L } from '../types/receipt';
+import { type HazirKategori, type Kategori, KATEGORI_ETIKETLERI as L } from '../types/receipt';
+import { categoryLabel, isBuiltinCategory } from './categories';
 
 /** iOS sistem renkleri (UIKit semantic colors), açık ve koyu mod. */
 const light = {
@@ -100,7 +101,9 @@ export interface SymbolSpec {
   ion: string;
 }
 
-export const categoryMeta: Record<Kategori, SymbolSpec & { color: keyof Theme; label: string }> = {
+export type CategoryMeta = SymbolSpec & { color: keyof Theme; label: string };
+
+const BUILTIN_META: Record<HazirKategori, CategoryMeta> = {
   akaryakıt: { sf: 'fuelpump.fill', ion: 'speedometer', color: 'orange', label: L['akaryakıt'] },
   restoran: { sf: 'fork.knife', ion: 'restaurant', color: 'pink', label: L['restoran'] },
   market: { sf: 'cart.fill', ion: 'cart', color: 'green', label: L['market'] },
@@ -113,5 +116,28 @@ export const categoryMeta: Record<Kategori, SymbolSpec & { color: keyof Theme; l
   faturalar: { sf: 'bolt.fill', ion: 'flash', color: 'yellow', label: L['faturalar'] },
   kargo: { sf: 'shippingbox.fill', ion: 'cube', color: 'mint', label: L['kargo'] },
   giyim: { sf: 'tshirt.fill', ion: 'shirt', color: 'red', label: L['giyim'] },
+  sağlık: { sf: 'cross.case.fill', ion: 'medkit', color: 'red', label: L['sağlık'] },
+  eğitim: { sf: 'graduationcap.fill', ion: 'school', color: 'indigo', label: L['eğitim'] },
+  kira: { sf: 'house.fill', ion: 'home', color: 'brown', label: L['kira'] },
+  sigorta: { sf: 'shield.fill', ion: 'shield-checkmark', color: 'teal', label: L['sigorta'] },
+  abonelik: { sf: 'repeat.circle.fill', ion: 'repeat', color: 'purple', label: L['abonelik'] },
+  reklam: { sf: 'megaphone.fill', ion: 'megaphone', color: 'orange', label: L['reklam'] },
+  'vergi ve harç': { sf: 'building.columns.fill', ion: 'library', color: 'gray', label: L['vergi ve harç'] },
+  'banka masrafı': { sf: 'creditcard.fill', ion: 'card', color: 'green', label: L['banka masrafı'] },
+  'yapı market': { sf: 'hammer.fill', ion: 'hammer', color: 'yellow', label: L['yapı market'] },
+  'kişisel bakım': { sf: 'scissors', ion: 'cut', color: 'pink', label: L['kişisel bakım'] },
+  hediye: { sf: 'gift.fill', ion: 'gift', color: 'red', label: L['hediye'] },
+  eğlence: { sf: 'ticket.fill', ion: 'ticket', color: 'cyan', label: L['eğlence'] },
   diğer: { sf: 'ellipsis', ion: 'ellipsis-horizontal', color: 'gray', label: L['diğer'] },
 };
+
+/** Kullanıcının kendi kategorilerine adından türetilen sabit renk */
+const CUSTOM_COLORS: (keyof Theme)[] = ['blue', 'green', 'orange', 'purple', 'pink', 'teal', 'indigo', 'brown', 'cyan', 'mint', 'red'];
+
+/** Kategorinin simgesi, rengi ve görünen adı (kullanıcının kendi kategorisinde etiket simgesi) */
+export function categoryMeta(k: Kategori): CategoryMeta {
+  if (isBuiltinCategory(k)) return BUILTIN_META[k];
+  let hash = 0;
+  for (const ch of k) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
+  return { sf: 'tag.fill', ion: 'pricetag', color: CUSTOM_COLORS[Math.abs(hash) % CUSTOM_COLORS.length], label: categoryLabel(k) };
+}

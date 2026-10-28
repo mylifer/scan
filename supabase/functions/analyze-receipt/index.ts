@@ -1,11 +1,13 @@
 // Supabase Edge Function: fiş fotoğrafını Gemini ile okur. Gemini anahtarı sunucuda (Supabase secret)
-// durur, uygulama paketine girmez. Yalnızca giriş yapmış kullanıcılar çağırabilir (verify_jwt varsayılan).
+// durur, uygulama paketine girmez. Yalnızca giriş yapmış kullanıcılar çağırabilir: yeni API anahtarlarıyla
+// ağ geçidi herkese açık (publishable) anahtarı da kabul ettiği için oturum burada ayrıca doğrulanır.
 //
 // Kurulum: GitHub Actions → "Supabase fonksiyonunu yayınla" iş akışı (SUPABASE_ACCESS_TOKEN secret'ı gerekir)
 // ya da: supabase functions deploy analyze-receipt && supabase secrets set GEMINI_API_KEY=...
 // Uygulamada kullanmak için: EXPO_PUBLIC_VISION_PROVIDER=edge
 
 const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY') ?? '';
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 /** İstemcideki zincirle aynı: asıl model yoğunsa sırayla yedekler */
 const MODELS = ['gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest'];
 const TRANSIENT = new Set([429, 500, 502, 503, 504]);
@@ -30,6 +32,21 @@ function reply(status: number, body: unknown) {
   return new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 }
 
+/** İstekteki oturum geçerli bir kullanıcıya mı ait? (Supabase Auth'a sorulur) */
+async function signedIn(req: Request): Promise<boolean> {
+  const auth = req.headers.get('authorization') ?? '';
+  const apikey = req.headers.get('apikey') ?? '';
+  if (!SUPABASE_URL || !/^Bearer\s+ey/i.test(auth)) return false;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers: { authorization: auth, apikey } });
+    if (!res.ok) return false;
+    const user = await res.json().catch(() => null);
+    return typeof user?.id === 'string' && user.role === 'authenticated';
+  } catch {
+    return false;
+  }
+}
+
 async function generate(model: string, b: Body) {
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
@@ -49,6 +66,7 @@ async function generate(model: string, b: Body) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return reply(405, { message: 'Yalnızca POST' });
+  if (!(await signedIn(req))) return reply(401, { message: 'Giriş yapmanız gerekiyor.' });
   if (!GEMINI_KEY) return reply(500, { message: 'Sunucuda GEMINI_API_KEY tanımlı değil.' });
 
   let b: Body;

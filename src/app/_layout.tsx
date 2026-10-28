@@ -5,6 +5,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { CategoryPickerHost } from '../components/CategoryPickerHost';
 import { ResetPassword } from '../components/ResetPassword';
 import { ToastHost } from '../components/ToastHost';
 import { ActionSheetHost } from '../components/ui/ActionSheetHost';
@@ -18,15 +19,25 @@ import { useTheme } from '../lib/theme';
 import { setupNotifications, subscribeNotificationTaps } from '../services/reminders/notificationSetup';
 import { MONTHLY_SUMMARY_KIND } from '../lib/monthlySummaryPlan';
 import { refreshTaxReminders } from '../services/reminders/taxReminders';
+import { installGlobalErrorHandlers, reportError } from '../services/errorLog';
+import { loadCustomCategories } from '../services/supabase/categoriesRepository';
 
 // Bildirim davranışı uygulama açılışında bir kez ayarlanır (vergi hatırlatıcısı ön planda da görünsün);
 // açıksa hatırlatıcı planı 6 ay ileriye yenilenir
 setupNotifications();
 void refreshTaxReminders();
+// Beklenmeyen hatalar Ayarlar → Hata Kayıtları'na yazılır
+installGlobalErrorHandlers();
 
 function RootNavigator() {
   const theme = useTheme();
   const { session, loading, recovering, linkError } = useAuth();
+
+  // Kullanıcının kendi kategorileri (giriş yapılınca yüklenir; çıkışta yalnızca hazır kategoriler kalır)
+  const userId = session?.user.id ?? '';
+  useEffect(() => {
+    void loadCustomCategories(userId);
+  }, [userId]);
 
   // Aylık özet bildirimine dokunulunca o ayın özetini aç (giriş yapılmışsa)
   const signedIn = !!session;
@@ -62,7 +73,7 @@ function RootNavigator() {
         <Stack.Screen name="camera" options={{ headerShown: false, animation: 'fade', presentation: 'fullScreenModal' }} />
         <Stack.Screen name="review" options={{ title: 'Fişi Kontrol Et' }} />
         <Stack.Screen name="manual" options={{ title: 'Elle Fiş Ekle', presentation: 'modal' }} />
-        <Stack.Screen name="setup-categories" options={{ title: 'Yeni Kategoriler' }} />
+        <Stack.Screen name="setup-categories" options={{ title: 'Veritabanı Güncellemesi' }} />
         <Stack.Screen name="budget" options={{ title: 'Aylık Bütçe', presentation: 'modal' }} />
         <Stack.Screen name="tax-calendar" options={{ title: 'Vergi Takvimi' }} />
         <Stack.Screen name="merge-firms" options={{ title: 'Firma Adları' }} />
@@ -72,6 +83,8 @@ function RootNavigator() {
         <Stack.Screen name="firms" options={{ title: 'Firmalar', ...largeTitle }} />
         <Stack.Screen name="firm/[key]" options={{ title: 'Firma' }} />
         <Stack.Screen name="setup-trash" options={{ title: 'Çöp Kutusu' }} />
+        <Stack.Screen name="categories" options={{ title: 'Kategoriler' }} />
+        <Stack.Screen name="errors" options={{ title: 'Hata Kayıtları' }} />
         <Stack.Screen name="batch" options={{ title: 'Toplu Tarama', ...largeTitle }} />
         <Stack.Screen name="batch-review" options={{ title: 'İncele' }} />
         <Stack.Screen name="receipt/[id]" options={{ title: 'Fiş' }} />
@@ -90,6 +103,7 @@ function RootNavigator() {
  */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const theme = useTheme();
+  useEffect(() => reportError('ekran çöktü', error), [error]);
   return (
     <View style={{ flex: 1, justifyContent: 'center', backgroundColor: theme.background, padding: 20 }}>
       <EmptyState
@@ -112,6 +126,7 @@ export default function RootLayout() {
           <RootNavigator />
           <ToastHost />
           <ActionSheetHost />
+          <CategoryPickerHost />
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

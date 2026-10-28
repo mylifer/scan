@@ -1,13 +1,13 @@
 # Veritabanı kurulumlarını (supabase/migrations) Supabase'e uygular. Kurulumlar yalnızca ekleme yapar,
 # mevcut fişlere dokunmaz ve tekrar çalıştırılabilir (if not exists / or replace).
-# Yalnızca bu dosya ya da 005 kurulumu değişince ya da elle çalışır.
+# Yalnızca bu dosya ya da en son kurulum (006) değişince ya da elle çalışır.
 name: Veritabanı kurulumu
 
 on:
   workflow_dispatch:
   push:
     branches: [claude/pos-receipt-scanner-app-tk3b0z]
-    paths: ['.github/workflows/db-migrate.yml', 'supabase/migrations/005_receipt_trash.sql']
+    paths: ['.github/workflows/db-migrate.yml', 'supabase/migrations/006_receipt_extras.sql']
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ jobs:
       PROJECT_REF: fzhagwcysltvpcgdfrnl
     steps:
       - uses: actions/checkout@v4
-      - name: 005 — çöp kutusu
+      - name: 006 — fiş no/VKN/not/etiket, kendi kategorileri, hata kayıtları (005'i de kapsar)
         shell: python
         run: |
           import json, os, urllib.request, urllib.error
@@ -35,6 +35,11 @@ jobs:
                   with urllib.request.urlopen(req, timeout=60) as r: return json.loads(r.read() or b"null")
               except urllib.error.HTTPError as e:
                   print(f"::error::{e.code} {e.read().decode()[:500]}"); raise SystemExit(1)
-          query(open("supabase/migrations/005_receipt_trash.sql", encoding="utf-8").read())
-          v = query("select public.receipt_schema_version() as v, to_regclass('public.receipt_trash') is not null as trash")
+          query(open("supabase/migrations/006_receipt_extras.sql", encoding="utf-8").read())
+          v = query("select public.receipt_schema_version() as v, to_regclass('public.receipt_categories') is not null as categories, "
+                    "to_regclass('public.app_errors') is not null as errors, "
+                    "(select count(*) from information_schema.columns where table_schema = 'public' and table_name = 'receipts' "
+                    "and column_name in ('fis_no', 'vkn', 'notlar', 'etiketler')) as new_columns")
+          if not v or v[0].get("v") != 6 or v[0].get("new_columns") != 4:
+              print(f"::error::Kurulum doğrulanamadı: {json.dumps(v)}"); raise SystemExit(1)
           print(f"::warning title=sonuc::{json.dumps(v)}")

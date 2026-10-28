@@ -262,6 +262,12 @@ export default function SettingsScreen() {
           chevron
         />
         <ListRow
+          title="Kategoriler"
+          icon={{ sf: 'tag.fill', ion: 'pricetag', color: theme.purple }}
+          onPress={() => router.push('/categories')}
+          chevron
+        />
+        <ListRow
           title="Firma Adlarını Birleştir"
           icon={{ sf: 'building.2.fill', ion: 'business', color: theme.indigo }}
           onPress={() => router.push('/merge-firms')}
@@ -300,7 +306,7 @@ export default function SettingsScreen() {
         />
       </ListSection>
 
-      <ListSection header="Yapay Zekâ" footer="Fiş fotoğrafları okunmak üzere bu sağlayıcıya gönderilir. Model yoğunsa uygulama otomatik olarak yedek modellere geçer.">
+      <ListSection header="Yapay Zekâ" footer={vision?.providerName.includes('sunucu') ? 'Fiş fotoğrafları uygulamanın sunucusu üzerinden okunur; yapay zekâ anahtarı uygulamanın içinde bulunmaz. Model yoğunsa otomatik olarak yedek modellere geçilir.' : 'Fiş fotoğrafları okunmak üzere bu sağlayıcıya gönderilir. Model yoğunsa uygulama otomatik olarak yedek modellere geçer.'}>
         <ListRow title="Sağlayıcı" value={vision?.providerName ?? 'Tanımsız'} icon={{ sf: 'sparkles', ion: 'sparkles', color: theme.purple }} />
         <ListRow title="Model" value={vision?.modelLabel ?? '—'} />
       </ListSection>
@@ -308,6 +314,12 @@ export default function SettingsScreen() {
       <ListSection header="Uygulama">
         <ListRow title="Sürüm" value={VERSION_LABEL} icon={{ sf: 'info.circle.fill', ion: 'information-circle', color: theme.gray }} />
         <ListRow title="Sürüm Geçmişi" icon={{ sf: 'clock.arrow.circlepath', ion: 'time', color: theme.indigo }} onPress={() => Linking.openURL(`${REPO_URL}/blob/claude/pos-receipt-scanner-app-tk3b0z/CHANGELOG.md`)} chevron />
+        <ListRow
+          title="Hata Kayıtları"
+          icon={{ sf: 'ladybug.fill', ion: 'bug', color: theme.orange }}
+          onPress={() => router.push('/errors')}
+          chevron
+        />
         <ListRow title="Web Sürümünü Aç" icon={{ sf: 'safari.fill', ion: 'globe', color: theme.blue }} onPress={() => Linking.openURL('https://mylifer.github.io/scan/')} chevron />
       </ListSection>
 

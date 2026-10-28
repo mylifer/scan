@@ -1,5 +1,7 @@
 import { round2 } from './format';
-import { type Kategori, KATEGORILER, type ReceiptRecord } from '../types/receipt';
+import { cleanCategoryName } from './categories';
+import { cleanFisNo, cleanNote, cleanTaxId, parseTags } from './receiptExtras';
+import type { Kategori, ReceiptRecord } from '../types/receipt';
 
 /**
  * Tam yedek dosyası biçimi (ZIP):
@@ -9,7 +11,8 @@ import { type Kategori, KATEGORILER, type ReceiptRecord } from '../types/receipt
  * kaç kez varsa o kadarı atlanır; böylece aynı yedek iki kez yüklense de kopya oluşmaz.
  */
 export const BACKUP_FORMAT = 'fis-tarayici-yedek';
-export const BACKUP_VERSION = 1;
+/** 2: fiş no, VKN, not, etiketler ve kendi kategorileri eklendi (1 numaralı yedekler de okunur) */
+export const BACKUP_VERSION = 2;
 export const MANIFEST_NAME = 'yedek.json';
 
 export interface BackupReceipt {
@@ -22,6 +25,10 @@ export interface BackupReceipt {
   kdv_yuzde10: number;
   kdv_yuzde20: number;
   kategori: Kategori;
+  fis_no?: string | null;
+  vkn?: string | null;
+  notlar?: string | null;
+  etiketler?: string[];
   /** ZIP içindeki fotoğraf yolu; fotoğraf yoksa ya da yedeklenemediyse null */
   photo: string | null;
 }
@@ -57,6 +64,10 @@ export function buildManifest(
       kdv_yuzde10: r.kdv_yuzde10,
       kdv_yuzde20: r.kdv_yuzde20,
       kategori: r.kategori,
+      fis_no: r.fis_no,
+      vkn: r.vkn,
+      notlar: r.notlar,
+      etiketler: r.etiketler,
       photo: photos.has(r.id) ? photoEntryName(r.id) : null,
     })),
   };
@@ -95,7 +106,8 @@ export function parseManifest(text: string): BackupManifest {
       k1 !== null &&
       k10 !== null &&
       k20 !== null &&
-      (KATEGORILER as readonly string[]).includes(r.kategori as string);
+      typeof r.kategori === 'string' &&
+      !!cleanCategoryName(r.kategori);
     if (!ok) throw new Error(`Yedekteki ${i + 1}. fiş geçersiz; dosya bozulmuş olabilir.`);
     receipts.push({
       id: String(r.id ?? ''),
@@ -106,11 +118,25 @@ export function parseManifest(text: string): BackupManifest {
       kdv_yuzde1: k1,
       kdv_yuzde10: k10,
       kdv_yuzde20: k20,
-      kategori: r.kategori as Kategori,
+      kategori: cleanCategoryName(r.kategori as string),
+      ...extrasOf(r),
       photo: typeof r.photo === 'string' && r.photo.startsWith('fotograflar/') ? r.photo : null,
     });
   });
   return { format: BACKUP_FORMAT, version: m.version, createdAt: String(m.createdAt ?? ''), appVersion: String(m.appVersion ?? ''), receipts };
+}
+
+/** Yedekteki ek alanlar (eski yedeklerde yok; bozuk değerler atılır) */
+function extrasOf(r: Partial<BackupReceipt>): Pick<BackupReceipt, 'fis_no' | 'vkn' | 'notlar' | 'etiketler'> {
+  const fis = cleanFisNo(r.fis_no ?? '');
+  const vkn = cleanTaxId(r.vkn ?? '');
+  const not = cleanNote(typeof r.notlar === 'string' ? r.notlar : '');
+  return {
+    fis_no: fis || null,
+    vkn: vkn.length === 10 || vkn.length === 11 ? vkn : null,
+    notlar: not || null,
+    etiketler: Array.isArray(r.etiketler) ? parseTags(r.etiketler) : [],
+  };
 }
 
 /** Aynı fiş anahtarı: firma (büyük/küçük harf ve boşluk farkı yok sayılır) + tarih + tutar */

@@ -25,6 +25,7 @@ import {
   recordToData,
   updateReceipt,
 } from '../../services/supabase/receiptsRepository';
+import { reportError } from '../../services/errorLog';
 import { trashReady } from '../../services/supabase/schema';
 import type { ReceiptRecord } from '../../types/receipt';
 import { useSingleFlight } from '../../hooks/useSingleFlight';
@@ -71,8 +72,10 @@ export default function ReceiptDetailScreen() {
       setSaving(true);
       try {
         const data = fromFormValues(values);
-        // Yalnızca tarih ya da tutar değiştiyse mükerrer kontrolü yap
-        const keyChanged = !!initial && (values.tarih !== initial.tarih || values.toplamTutar !== initial.toplamTutar);
+        // Yalnızca tarih, tutar, fiş no ya da VKN değiştiyse mükerrer kontrolü yap
+        const keyChanged =
+          !!initial &&
+          (values.tarih !== initial.tarih || values.toplamTutar !== initial.toplamTutar || values.fisNo !== initial.fisNo || values.vkn !== initial.vkn);
         if (keyChanged && !(await confirmIfDuplicate(data, record.id))) return;
         await updateReceipt(record.id, data);
         allowLeave();
@@ -80,6 +83,7 @@ export default function ReceiptDetailScreen() {
         showToast('Değişiklikler kaydedildi');
       } catch (e) {
         haptics.error();
+        reportError('fiş güncelleme', e);
         showAlert('Kaydedilemedi', errorMessage(e));
       } finally {
         setSaving(false);

@@ -1,12 +1,16 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Platform, StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
+import { type ReactNode, useEffect, useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
 
-import { showActionSheet } from '../lib/actionSheet';
+import { showCategoryPicker } from '../lib/categoryPicker';
 import { formatTL, normalizeTrDate, parseAmount, round2, todayTr } from '../lib/format';
 import { formWarnings, type ReceiptFormValues, setFormField } from '../lib/receiptForm';
 import { haptics } from '../lib/haptics';
 import { categoryMeta, fontFamily, tabular, type as t, useTheme } from '../lib/theme';
-import { KATEGORILER, type ReceiptField } from '../types/receipt';
+import { MAX_NOTE_LENGTH, parseTags } from '../lib/receiptExtras';
+import { normalizeForSearch } from '../lib/search';
+import { getKnownTags } from '../services/supabase/receiptsRepository';
+import type { ReceiptField } from '../types/receipt';
 import { Icon } from './ui/Icon';
 import { FieldRow, ListRow, ListSection } from './ui/List';
 
@@ -23,19 +27,30 @@ export function ReceiptForm({ values, onChange }: Props) {
   const unsure = (f: ReceiptField) => values.belirsiz?.includes(f) ?? false;
   const toplamKdv = round2(parseAmount(values.kdvYuzde1) + parseAmount(values.kdvYuzde10) + parseAmount(values.kdvYuzde20));
   const kdvTooHigh = toplamKdv > parseAmount(values.toplamTutar) && parseAmount(values.toplamTutar) > 0;
-  const meta = categoryMeta[values.kategori];
+  const meta = categoryMeta(values.kategori);
 
   function pickCategory() {
-    showActionSheet({
-      title: 'Kategori',
-      options: KATEGORILER.map((k) => ({
-        label: categoryMeta[k].label,
-        onPress: () => {
-          haptics.select();
-          set('kategori', k);
-        },
-      })),
-    });
+    showCategoryPicker({ selected: values.kategori, onSelect: (k) => set('kategori', k) });
+  }
+
+  // Daha önce kullanılan etiketler (öneri olarak; alınamazsa öneri gösterilmez)
+  const [knownTags, setKnownTags] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    getKnownTags()
+      .then((tags) => {
+        if (alive) setKnownTags(tags);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const currentTags = parseTags(values.etiketler);
+  const suggestions = knownTags.filter((tag) => !currentTags.some((c) => normalizeForSearch(c) === normalizeForSearch(tag))).slice(0, 12);
+  function addTag(tag: string) {
+    haptics.select();
+    set('etiketler', [...currentTags, tag].join(', '));
   }
 
   const warnings = formWarnings(values);
@@ -102,8 +117,63 @@ export function ReceiptForm({ values, onChange }: Props) {
           <AmountInput value={values.kdvYuzde20} onChangeText={(v) => set('kdvYuzde20', v)} />
         </FieldRow>
       </ListSection>
+
+      <ListSection
+        header="Ek Bilgiler"
+        footer="Fiş no ve VKN, aynı fişin iki kez kaydedilmesini daha güvenilir yakalar. Etiketleri virgülle ayırın; aramada da kullanılır.">
+        <FieldRow label="Fiş No" highlight={unsure('fisNo')}>
+          <Input
+            value={values.fisNo}
+            onChangeText={(v) => set('fisNo', v)}
+            placeholder="ör. 0045"
+            keyboardType="numbers-and-punctuation"
+            autoCapitalize="characters"
+            maxLength={40}
+          />
+        </FieldRow>
+        <FieldRow label="VKN/TCKN" highlight={unsure('vkn')}>
+          <Input value={values.vkn} onChangeText={(v) => set('vkn', v)} placeholder="10 ya da 11 hane" keyboardType="number-pad" maxLength={14} style={tabular} />
+        </FieldRow>
+        <FieldRow label="Etiketler">
+          <Input value={values.etiketler} onChangeText={(v) => set('etiketler', v)} placeholder="ör. X projesi, müşteri yemeği" autoCapitalize="none" />
+        </FieldRow>
+        {suggestions.length > 0 ? (
+          <Plain>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.chips}>
+              {suggestions.map((tag) => (
+                <Pressable
+                  key={tag}
+                  onPress={() => addTag(tag)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${tag} etiketini ekle`}
+                  style={({ pressed }) => [styles.chip, { backgroundColor: pressed ? theme.highlight : theme.tertiaryFill }]}>
+                  <Text style={[t.subhead, { color: theme.blue }]}>+ {tag}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </Plain>
+        ) : null}
+        <Plain>
+          <View style={styles.noteRow}>
+            <TextInput
+              value={values.notlar}
+              onChangeText={(v) => set('notlar', v)}
+              placeholder="Not ekleyin"
+              placeholderTextColor={theme.tertiaryLabel}
+              multiline
+              maxLength={MAX_NOTE_LENGTH}
+              style={[t.body, styles.note, { color: theme.label }]}
+            />
+          </View>
+        </Plain>
+      </ListSection>
     </>
   );
+}
+
+/** ListSection satırlara isLast verir; düz içerikte bu özellik görünüme aktarılmasın */
+function Plain({ children }: { children: ReactNode; isLast?: boolean }) {
+  return <>{children}</>;
 }
 
 function Input(props: TextInputProps) {
@@ -156,5 +226,9 @@ function DateField({ value, onChange }: { value: string; onChange: (v: string) =
 const styles = StyleSheet.create({
   input: { textAlign: 'right', paddingVertical: 11, minWidth: 120, width: '100%', fontFamily, ...Platform.select({ web: { outlineWidth: 0 } }) },
   footer: { marginHorizontal: 16, marginTop: 7 },
+  chips: { gap: 8, paddingHorizontal: 16, paddingVertical: 8 },
+  chip: { borderRadius: 14, paddingHorizontal: 12, paddingVertical: 5 },
+  noteRow: { paddingHorizontal: 16, paddingVertical: 4 },
+  note: { minHeight: 66, paddingVertical: 8, textAlignVertical: 'top', fontFamily, ...Platform.select({ web: { outlineWidth: 0 } }) },
   warning: { flexDirection: 'row', gap: 10, marginHorizontal: 16, marginBottom: 20, padding: 12, borderRadius: 12 },
 });

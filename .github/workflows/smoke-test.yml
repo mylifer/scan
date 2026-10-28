@@ -1,0 +1,38 @@
+# Canlı sistemde uçtan uca deneme: geçici bir test kullanıcısıyla örnek fişi sunucu fonksiyonuna okutur,
+# yeni alanlarla kayıt yazıp okur, sonra test kullanıcısını verileriyle birlikte siler (scripts/smoke-live.mts).
+name: Canlı deneme
+
+on:
+  workflow_dispatch:
+  push:
+    # Ana dal: fonksiyon değişince; geliştirme dalları (claude/…): deneme betiği değişince, birleştirmeden önce
+    branches: [claude/pos-receipt-scanner-app-tk3b0z, 'claude/**']
+    paths: ['.github/workflows/smoke-test.yml', 'scripts/smoke-live.mts', 'supabase/functions/**']
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: fzhagwcysltvpcgdfrnl
+      SUPABASE_URL: https://fzhagwcysltvpcgdfrnl.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_7gu66leZ4qgYJPcOpcsh7g_yss8NOyN
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Yönetici anahtarını al (yalnızca bu çalıştırma için, kayıtta gizlenir)
+        run: |
+          KEYS=$(curl -sf "https://api.supabase.com/v1/projects/$PROJECT_REF/api-keys?reveal=true" -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN")
+          KEY=$(echo "$KEYS" | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{const l=JSON.parse(d);const k=l.find(x=>x.type==="secret"&&x.api_key)||l.find(x=>x.name==="service_role"&&x.api_key);console.log(k?k.api_key:"")})')
+          [ -n "$KEY" ] || { echo "::error::Yönetici anahtarı alınamadı"; exit 1; }
+          echo "::add-mask::$KEY"
+          echo "SUPABASE_ADMIN_KEY=$KEY" >> "$GITHUB_ENV"
+      - name: Uçtan uca deneme
+        run: npx tsx scripts/smoke-live.mts

@@ -16,6 +16,17 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.37.0 — `added62`
+- **Güvenlik:** Fişler artık uygulamanın Supabase sunucusundaki fonksiyonla okunuyor. Gemini anahtarı web sürümünün ve iPhone uygulamasının içinde bulunmuyor; yayın sırasında pakette anahtar bulunursa yayın durduruluyor. Fonksiyonu yalnızca giriş yapmış kullanıcı çağırabiliyor (oturum sunucuda doğrulanıyor). Yayın öncesi canlı sistemde geçici bir test hesabıyla uçtan uca deneniyor. (Not: 1.30.0'dan eski bir sürüme geri dönülürse fiş okuma çalışmaz.)
+- **Fiş no ve VKN/TCKN:** Yapay zekâ fişteki fiş numarasını ve firmanın vergi/TC kimlik numarasını da okuyor; formda düzeltilebiliyor. VKN/TCKN'nin kontrol hanesi doğrulanıyor, tutmazsa uyarı çıkıyor (okuma hatası olabilir)
+- **Daha güvenilir mükerrer uyarısı:** Fiş no ve VKN varsa onlarla karşılaştırılıyor. Aynı gün aynı tutarlı iki ayrı fiş (farklı fiş no) artık yanlışlıkla "zaten kayıtlı" sayılmıyor; tutarı yanlış okunmuş aynı fiş ise yakalanıyor
+- **Not ve etiketler:** Her fişe not ve etiket (ör. "X projesi", "müşteri yemeği") eklenebiliyor; daha önce kullanılan etiketler öneri olarak çıkıyor. Arama not, etiket (#proje), fiş no ve VKN'de de çalışıyor; etiketler fiş satırında görünüyor
+- **12 yeni kategori:** Sağlık, Eğitim, Kira, Sigorta, Abonelik, Reklam, Vergi ve Harç, Banka Masrafı, Yapı Market, Kişisel Bakım, Hediye, Eğlence (toplam 25)
+- **Kendi kategorileriniz:** Kategori seçicide arama yapıp yazdığınız adı tek dokunuşla kategori olarak ekleyebiliyorsunuz. Ayarlar → Kategoriler'den yeniden adlandırma ve silme yapılabiliyor (fişler yeni ada ya da seçtiğiniz kategoriye taşınıyor). Yapay zekâ kendi kategorilerinizi de seçebiliyor
+- Excel'e Fiş No, VKN/TCKN, Etiketler ve Not sütunları eklendi; paylaşım metni ve tam yedek de bu bilgileri içeriyor (eski yedekler okunmaya devam ediyor)
+- **Hata kayıtları:** Uygulamada beklenmeyen bir hata olursa Ayarlar → Hata Kayıtları'nda görünüyor; ayrıntısı kopyalanıp paylaşılabiliyor (internet kesintileri ve yapay zekâ yoğunluğu kaydedilmiyor)
+- Veritabanı güncellemesi (006) GitHub Actions ile otomatik uygulanıyor; yapılmamışsa ana sayfada "Veritabanını güncelle" adımı çıkıyor
+
 ## 1.36.0 — `2073e0b`
 - **Yeni uygulama simgesi:** fiş, tarama köşeleri ve yeşil tarama çizgisi. iPhone, Android ve web (ana ekrana ekleme) simgelerinin hepsi yenilendi. TestFlight'ta görünmesi için yeni derleme gerekir; Expo Go kendi simgesini göstermeye devam eder
 - Android'de simgenin arkasında ikinci, büyük bir fiş görünüyordu; artık yalnızca mavi zemin var

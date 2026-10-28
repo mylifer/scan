@@ -1,7 +1,8 @@
 import { formatTL, round2 } from '../../lib/format';
 import { imageSize } from '../../lib/imageSize';
 import { buildXlsx, cellRef, colWidthPx, EMU_PER_PT, EMU_PER_PX, type Row, type SheetImage, type SheetLink, type SheetSpec, XlsxWriter } from '../../lib/xlsx';
-import { KATEGORI_ETIKETLERI, type ReceiptRecord } from '../../types/receipt';
+import { categoryLabel } from '../../lib/categories';
+import type { ReceiptRecord } from '../../types/receipt';
 
 /** getSummary'nin döndürdüğü özetin, Excel için gereken kısmı (saf veri; React Native bağımlılığı yok) */
 export interface WorkbookInput {
@@ -28,6 +29,9 @@ const FISLER = 'Fişler';
 /** Fişler sayfasında küçük resim sütunu ve satır yüksekliği */
 const PHOTO_COL = 9; // J
 const PHOTO_COL_WIDTH = 11;
+/** Fişler sayfasının sağındaki ek bilgi sütunları */
+const EXTRA_TITLES = ['Fiş No', 'VKN/TCKN', 'Etiketler', 'Not'];
+const EXTRA_WIDTHS = [12, 14, 24, 40];
 const PHOTO_ROW_PT = 60;
 const THUMB_MARGIN_PT = 2;
 
@@ -100,7 +104,8 @@ export async function writeReceiptsWorkbookWithPhotos(
 export function receiptsSheets(summary: WorkbookInput, periodLabel: string, photos?: PhotoMap): SheetSpec[] {
   const fisler = [...summary.fisler].sort((a, b) => a.tarih.localeCompare(b.tarih) || a.created_at.localeCompare(b.created_at));
   const withPhotos = !!photos?.size;
-  const titles = ['Tarih', 'Firma', 'Kategori', 'Toplam', 'KDV %1', 'KDV %10', 'KDV %20', 'Toplam KDV', 'KDV Hariç', ...(withPhotos ? ['Fotoğraf'] : [])];
+  // Fotoğraf sütunu tutarların hemen yanında (J) kalır; ek bilgiler en sağda
+  const titles = ['Tarih', 'Firma', 'Kategori', 'Toplam', 'KDV %1', 'KDV %10', 'KDV %20', 'Toplam KDV', 'KDV Hariç', ...(withPhotos ? ['Fotoğraf'] : []), ...EXTRA_TITLES];
   const header: Row = titles.map((v) => ({ v, s: 'header' as const }));
 
   const rows: Row[] = [header];
@@ -110,13 +115,18 @@ export function receiptsSheets(summary: WorkbookInput, periodLabel: string, phot
     rows.push([
       { v: localDate(r.tarih), s: 'date' },
       r.firma_adi,
-      KATEGORI_ETIKETLERI[r.kategori] ?? r.kategori,
+      categoryLabel(r.kategori),
       { v: r.toplam_tutar, s: 'money' },
       { v: r.kdv_yuzde1, s: 'money' },
       { v: r.kdv_yuzde10, s: 'money' },
       { v: r.kdv_yuzde20, s: 'money' },
       { v: kdv, f: `E${n}+F${n}+G${n}`, s: 'money' },
       { v: round2(r.toplam_tutar - kdv), f: `D${n}-H${n}`, s: 'money' },
+      ...(withPhotos ? [''] : []),
+      r.fis_no ?? '',
+      r.vkn ?? '',
+      (r.etiketler ?? []).join(', '),
+      r.notlar ?? '',
     ]);
   });
 
@@ -133,9 +143,11 @@ export function receiptsSheets(summary: WorkbookInput, periodLabel: string, phot
     sum('H', summary.toplamKdv),
     sum('I', summary.toplamGider - summary.toplamKdv),
     ...(withPhotos ? [{ v: '', s: 'totalLabel' as const }] : []),
+    ...EXTRA_TITLES.map(() => ({ v: '', s: 'totalLabel' as const })),
   ]);
 
-  const fislerSheet: SheetSpec = { name: FISLER, rows, widths: [12, 34, 14, 14, 12, 12, 12, 14, 14], freezeRows: 1 };
+  const widths = [12, 34, 14, 14, 12, 12, 12, 14, 14, ...(withPhotos ? [PHOTO_COL_WIDTH] : []), ...EXTRA_WIDTHS];
+  const fislerSheet: SheetSpec = { name: FISLER, rows, widths, freezeRows: 1 };
   const photoPages = withPhotos ? photoSheets(fisler, photos!, fislerSheet) : [];
 
   const total = summary.toplamGider || 1;
@@ -156,7 +168,7 @@ export function receiptsSheets(summary: WorkbookInput, periodLabel: string, phot
     [],
     [{ v: 'Kategori', s: 'header' }, { v: 'Tutar', s: 'header' }, { v: 'Pay', s: 'header' }],
     ...summary.kategoriToplamlari.map((k): Row => [
-      KATEGORI_ETIKETLERI[k.kategori] ?? k.kategori,
+      categoryLabel(k.kategori),
       { v: k.toplam, s: 'money' },
       { v: k.toplam / total, s: 'percent' },
     ]),
@@ -220,7 +232,6 @@ function photoSheets(fisler: WorkbookInput['fisler'], photos: PhotoMap, sheet: S
     });
   });
 
-  sheet.widths = [...(sheet.widths ?? []), PHOTO_COL_WIDTH];
   if (sheets.length) {
     sheet.rowHeights = thumbHeights;
     sheet.images = thumbs;

@@ -5,11 +5,15 @@
 #   SUPABASE_ACCESS_TOKEN  — supabase.com → Account → Access Tokens → "Generate new token"
 #   GEMINI_API_KEY         — zaten tanımlı
 # Sonra: Actions → "Supabase fonksiyonunu yayınla" → Run workflow.
-# Uygulamayı bu fonksiyona geçirmek için iki iş akışında EXPO_PUBLIC_VISION_PROVIDER: edge yapılır.
+# Uygulama (web ve iPhone) fişleri bu fonksiyonla okur (EXPO_PUBLIC_VISION_PROVIDER: edge).
+# Fonksiyon dosyası değişince de kendiliğinden yayınlanır.
 name: Supabase fonksiyonunu yayınla
 
 on:
   workflow_dispatch:
+  push:
+    branches: [claude/pos-receipt-scanner-app-tk3b0z]
+    paths: ['supabase/functions/**', '.github/workflows/supabase-functions.yml']
 
 permissions:
   contents: read
@@ -37,3 +41,13 @@ jobs:
         run: npx --yes supabase@latest secrets set --project-ref "$PROJECT_REF" GEMINI_API_KEY="$GEMINI_API_KEY"
       - name: Fonksiyonu yayınla
         run: npx --yes supabase@latest functions deploy analyze-receipt --project-ref "$PROJECT_REF"
+      - name: Fonksiyon çalışıyor mu? (girişsiz istek reddedilmeli)
+        # Yayındaysa giriş yapılmamış istek 401 alır; 404 fonksiyonun yayınlanmadığını gösterir
+        run: |
+          # Uygulamanın herkese açık anahtarıyla ama oturumsuz istek: fonksiyonun içindeki kontrol reddetmeli
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://$PROJECT_REF.supabase.co/functions/v1/analyze-receipt" \
+            -H 'apikey: sb_publishable_7gu66leZ4qgYJPcOpcsh7g_yss8NOyN' -H 'Content-Type: application/json' -d '{}')
+          echo "Girişsiz istek: HTTP $CODE"
+          [ "$CODE" = "401" ] || { echo "::error::Beklenen 401, gelen $CODE"; exit 1; }
+          npx --yes supabase@latest secrets list --project-ref "$PROJECT_REF" | grep -q GEMINI_API_KEY \
+            || { echo "::error::Supabase'de GEMINI_API_KEY gizli değeri yok"; exit 1; }

@@ -9,8 +9,13 @@ import type { ReceiptRecord } from '../types/receipt';
 import { useAuth } from './useAuth';
 
 /** Önbellekte fiş başına dizi (alan adları tekrar edilmez; ~2 kat daha çok fiş sığar). Fotoğraf yolu gerekmez. */
-type Packed = [string, string, string, string, number, number, number, number, string];
-const pack = (r: ReceiptRecord): Packed => [r.id, r.created_at, r.firma_adi, r.tarih, r.toplam_tutar, r.kdv_yuzde1, r.kdv_yuzde10, r.kdv_yuzde20, r.kategori];
+type Packed = [string, string, string, string, number, number, number, number, string, string?, string?, string?, string[]?];
+const pack = (r: ReceiptRecord): Packed => {
+  const p: Packed = [r.id, r.created_at, r.firma_adi, r.tarih, r.toplam_tutar, r.kdv_yuzde1, r.kdv_yuzde10, r.kdv_yuzde20, r.kategori];
+  // Ek alanlar yalnızca doluysa yazılır (önbellek küçük kalsın)
+  if (r.fis_no || r.vkn || r.notlar || r.etiketler.length) p.push(r.fis_no ?? '', r.vkn ?? '', r.notlar ?? '', r.etiketler);
+  return p;
+};
 const unpack = (p: Packed): ReceiptRecord => ({
   id: p[0],
   created_at: p[1],
@@ -21,8 +26,12 @@ const unpack = (p: Packed): ReceiptRecord => ({
   kdv_yuzde10: p[6],
   kdv_yuzde20: p[7],
   toplam_kdv: round2(p[5] + p[6] + p[7]),
-  kategori: p[8] as ReceiptRecord['kategori'],
+  kategori: p[8],
   image_path: null,
+  fis_no: p[9] || null,
+  vkn: p[10] || null,
+  notlar: p[11] || null,
+  etiketler: p[12] ?? [],
 });
 
 /**
@@ -40,7 +49,7 @@ export function useAllReceipts() {
     const req = ++latest.current;
     setLoading(true);
     if (owner) {
-      const cached = await readCache<Packed[]>('receipts:v2', owner);
+      const cached = await readCache<Packed[]>('receipts:v3', owner);
       if (req === latest.current && cached) setReceipts((cur) => cur ?? cached.value.map(unpack));
     }
     try {
@@ -48,7 +57,7 @@ export function useAllReceipts() {
       if (req !== latest.current) return;
       setReceipts(fisler);
       setError(null);
-      if (owner) writeCache('receipts:v2', owner, fisler.map(pack));
+      if (owner) writeCache('receipts:v3', owner, fisler.map(pack));
     } catch (e) {
       if (req === latest.current) setError(errorMessage(e));
     } finally {

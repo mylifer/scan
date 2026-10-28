@@ -14,6 +14,8 @@ import { categoriesReady } from '../supabase/schema';
 import { downloadBytes } from '../supabase/storageFiles';
 import { currentUserId, getSummary, insertRestoredReceipt } from '../supabase/receiptsRepository';
 import { ESKI_KATEGORILER } from '../../types/receipt';
+import { findCategory, isBuiltinCategory } from '../../lib/categories';
+import { addCustomCategory } from '../supabase/categoriesRepository';
 
 export interface BackupResult {
   receipts: number;
@@ -112,8 +114,11 @@ export interface RestoreResult {
 export async function applyRestore(preview: RestorePreview, onProgress?: (done: number, total: number) => void): Promise<RestoreResult> {
   // Yeni kategoriler veritabanında etkinleşmeden bu kategorilerdeki fişler kaydedilemez
   if (preview.toInsert.some((r) => !ESKI_KATEGORILER.includes(r.kategori)) && (await categoriesReady()) === false) {
-    throw new Error('Yedekte yeni kategorilerde fişler var. Önce ana sayfadaki "Yeni kategorileri etkinleştir" adımını tamamlayın.');
+    throw new Error('Yedekte yeni kategorilerde fişler var. Önce ana sayfadaki "Veritabanını güncelle" adımını tamamlayın.');
   }
+  // Yedekte bu hesapta olmayan kendi kategorileri varsa önce eklenir (listede ve seçicide görünsünler)
+  const missing = [...new Set(preview.toInsert.map((r) => r.kategori))].filter((k) => !isBuiltinCategory(k) && !findCategory(k));
+  for (const k of missing) await addCustomCategory(k).catch(() => {});
   const userId = await currentUserId();
   const result: RestoreResult = { inserted: 0, failed: 0, photoFailed: 0 };
   const total = preview.toInsert.length;

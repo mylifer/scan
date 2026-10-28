@@ -7,11 +7,11 @@
 #      TestFlight uygulamasına gider; yeni derleme yalnızca yerel (native) değişiklikte gerekir.
 #
 #   - "setup": Expo projesini oluşturur/bağlar (bir kez, yapıldı)
-#   - "secrets": Gemini anahtarını ve sürüm etiketini EAS ortamına aktarır (derlemelerden önce bir kez)
+#   - "secrets": sürüm etiketini EAS ortamına aktarır, eski Gemini anahtarını oradan siler (derlemelerden önce bir kez)
 #   - "build": TestFlight'a yeni derleme. Apple sertifikaları ilk kez bilgisayarda etkileşimli
 #     "eas build" ile oluşturulmalıdır (EAS bunu etkileşimsiz yapamaz); sonrası buradan çalışır.
 #     TestFlight'a gönderim için uygulama numarası (ascAppId) App Store Connect anahtarıyla otomatik bulunur.
-#   Gerekli secret'lar: EXPO_TOKEN, GEMINI_API_KEY
+#   Gerekli secret'lar: EXPO_TOKEN (Gemini anahtarı yalnızca Supabase fonksiyonunda kullanılır)
 #   "build" için ayrıca: ASC_API_KEY_P8, ASC_KEY_ID, ASC_ISSUER_ID, APPLE_TEAM_ID (App Store Connect API anahtarı, Admin)
 name: iPhone uygulaması
 
@@ -44,8 +44,8 @@ env:
   HAS_ASC: ${{ secrets.ASC_API_KEY_P8 != '' }}
   EXPO_PUBLIC_SUPABASE_URL: https://fzhagwcysltvpcgdfrnl.supabase.co
   EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_7gu66leZ4qgYJPcOpcsh7g_yss8NOyN
-  EXPO_PUBLIC_VISION_PROVIDER: gemini
-  EXPO_PUBLIC_GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  # Fişler Supabase fonksiyonu üzerinden okunur; Gemini anahtarı uygulamaya gömülmez
+  EXPO_PUBLIC_VISION_PROVIDER: edge
 
 jobs:
   ios:
@@ -108,11 +108,11 @@ jobs:
           echo "EXPO_ASC_ISSUER_ID=$ASC_ISSUER_ID" >> "$GITHUB_ENV"
           echo "EXPO_APPLE_TEAM_ID=$APPLE_TEAM_ID" >> "$GITHUB_ENV"
           echo "EXPO_APPLE_TEAM_TYPE=INDIVIDUAL" >> "$GITHUB_ENV"
-      - name: Gizli anahtarları EAS'e aktar
+      - name: EAS ortam değişkenleri
         if: env.HAS_EXPO == 'true' && (github.event.inputs.action == 'build' || github.event.inputs.action == 'secrets')
         run: |
-          npx eas-cli env:set --name EXPO_PUBLIC_GEMINI_API_KEY --value "$EXPO_PUBLIC_GEMINI_API_KEY" \
-            --environment production --visibility sensitive --non-interactive
+          # Eski sürümlerin EAS'e yazdığı Gemini anahtarı silinir: derlemeye gömülmesin (yoksa hata vermez)
+          npx eas-cli env:delete --variable-name EXPO_PUBLIC_GEMINI_API_KEY --variable-environment production --non-interactive || true
           npx eas-cli env:set --name EXPO_PUBLIC_APP_VERSION --value "$EXPO_PUBLIC_APP_VERSION" \
             --environment production --visibility plaintext --non-interactive
       - name: TestFlight gönderim ayarları (uygulama numarası ve anahtar)
@@ -174,5 +174,12 @@ jobs:
             echo "Expo projesi henüz bağlanmadı (setup çalıştırılmadı); atlanıyor."
             exit 0
           fi
+          # Eski sürümlerin EAS'e yazdığı Gemini anahtarı güncellemeye karışmasın (yoksa hata vermez)
+          npx eas-cli env:delete --variable-name EXPO_PUBLIC_GEMINI_API_KEY --variable-environment production --non-interactive || true
           npx eas-cli update --channel production \
             --message "$EXPO_PUBLIC_APP_VERSION" --platform ios --non-interactive
+          # Yayınlanan paket (dist) yapay zekâ anahtarı içermemeli
+          if [ -d dist ] && grep -rlE 'AIza[0-9A-Za-z_-]{35}' dist; then
+            echo "::error::Güncelleme paketinde bir Google API anahtarı bulundu. Anahtarı Google AI Studio'da yenileyin."
+            exit 1
+          fi

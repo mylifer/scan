@@ -1,6 +1,6 @@
 import type { ReceiptData } from '../../types/receipt';
 import { parseReceiptJson } from './parseReceiptJson';
-import { RECEIPT_JSON_SCHEMA, RECEIPT_SYSTEM_PROMPT, RECEIPT_USER_PROMPT } from './receiptPrompt';
+import { receiptJsonSchema, receiptSystemPrompt, RECEIPT_USER_PROMPT } from './receiptPrompt';
 import { type ReceiptImage, type VisionService, VisionServiceError } from './VisionService';
 
 /** supabase.functions.invoke ile aynı biçim (testte sahtelenebilsin diye dışarıdan verilir) */
@@ -21,7 +21,7 @@ export class EdgeFunctionVisionAdapter implements VisionService {
 
   async analyzeReceipt(image: ReceiptImage, signal?: AbortSignal): Promise<ReceiptData> {
     const { data, error } = await this.invoke('analyze-receipt', {
-      body: { image: image.base64, mimeType: image.mimeType, system: RECEIPT_SYSTEM_PROMPT, user: RECEIPT_USER_PROMPT, schema: RECEIPT_JSON_SCHEMA },
+      body: { image: image.base64, mimeType: image.mimeType, system: receiptSystemPrompt(), user: RECEIPT_USER_PROMPT, schema: receiptJsonSchema() },
       signal,
     });
     if (error) {

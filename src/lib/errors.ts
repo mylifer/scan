@@ -30,8 +30,12 @@ export function errorMessage(e: unknown): string {
     return 'Fotoğraf çok büyük. Daha yakından ya da daha düşük çözünürlükte çekmeyi deneyin.';
   }
   if (/receipts_kategori_check/.test(lower)) {
-    return 'Bu kategori henüz etkin değil. Ana sayfadaki "Yeni kategorileri etkinleştir" adımını bir kez yapın ya da eski kategorilerden birini seçin.';
+    return 'Bu kategori henüz etkin değil. Ana sayfadaki "Veritabanını güncelle" adımını bir kez yapın ya da eski kategorilerden birini seçin.';
   }
+  if (/(fis_no|vkn|notlar|etiketler|receipt_categories|app_errors).*(does not exist|schema cache|could not find)|(does not exist|could not find).*(fis_no|vkn|notlar|etiketler|receipt_categories|app_errors)/.test(lower)) {
+    return 'Veritabanı güncellemesi henüz yapılmamış. Ana sayfadaki "Veritabanını güncelle" adımını bir kez tamamlayın.';
+  }
+  if (/receipts_vkn_check/.test(lower)) return 'VKN 10, TCKN 11 haneli olmalı ve yalnızca rakam içermeli.';
   if (/invalid login credentials/.test(lower)) return 'E-posta ya da şifre hatalı.';
   if (/rate limit|too many requests|for security purposes, you can only request/.test(lower)) {
     return 'Çok sık istek gönderildi. Birkaç dakika (e-posta için bir saate kadar) bekleyip tekrar deneyin.';

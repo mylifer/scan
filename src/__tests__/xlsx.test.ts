@@ -9,7 +9,7 @@ import { buildReceiptsWorkbook, monthlyRows, writeReceiptsWorkbookWithPhotos } f
 import type { ReceiptRecord } from '../types/receipt';
 
 const r = (over: Partial<ReceiptRecord>): ReceiptRecord => ({
-  id: 'x', created_at: '2026-09-01T00:00:00Z', firma_adi: 'FİRMA', tarih: '2026-09-01', toplam_tutar: 120, kdv_yuzde1: 0, kdv_yuzde10: 0, kdv_yuzde20: 20, toplam_kdv: 20, kategori: 'market', image_path: null, ...over,
+  id: 'x', created_at: '2026-09-01T00:00:00Z', firma_adi: 'FİRMA', tarih: '2026-09-01', toplam_tutar: 120, kdv_yuzde1: 0, kdv_yuzde10: 0, kdv_yuzde20: 20, toplam_kdv: 20, kategori: 'market', image_path: null, fis_no: null, vkn: null, notlar: null, etiketler: [], ...over,
 });
 
 describe('xlsx', () => {

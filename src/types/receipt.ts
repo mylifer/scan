@@ -1,4 +1,7 @@
-/** Sıra, kategori seçicide ve Gemini şemasında kullanılır. Yeni kategori: yeni bir migration ekleyip CATEGORIES_SETUP_SQL'i güncelleyin. */
+/**
+ * Hazır kategoriler. Sıra, kategori seçicide ve yapay zekâ isteminde kullanılır; "diğer" hep sonda.
+ * Kullanıcı bunlara kendi kategorilerini ekleyebilir (receipt_categories tablosu, bkz. lib/categories).
+ */
 export const KATEGORILER = [
   'akaryakıt',
   'restoran',
@@ -12,14 +15,43 @@ export const KATEGORILER = [
   'faturalar',
   'kargo',
   'giyim',
+  'sağlık',
+  'eğitim',
+  'kira',
+  'sigorta',
+  'abonelik',
+  'reklam',
+  'vergi ve harç',
+  'banka masrafı',
+  'yapı market',
+  'kişisel bakım',
+  'hediye',
+  'eğlence',
   'diğer',
 ] as const;
 
-/** 003 kurulumundan önce veritabanının kabul ettiği kategoriler */
-export const ESKI_KATEGORILER: readonly Kategori[] = ['akaryakıt', 'restoran', 'market', 'teknoloji', 'ofis gideri'];
-export type Kategori = (typeof KATEGORILER)[number];
+/** 006 kurulumundan önce veritabanının kabul ettiği kategoriler (004/005 kuralı) */
+export const ESKI_KATEGORILER: readonly string[] = [
+  'akaryakıt',
+  'restoran',
+  'market',
+  'teknoloji',
+  'ofis gideri',
+  'ulaşım',
+  'araç bakım',
+  'konaklama',
+  'iletişim',
+  'faturalar',
+  'kargo',
+  'giyim',
+  'diğer',
+];
 
-export const KATEGORI_ETIKETLERI: Record<Kategori, string> = {
+export type HazirKategori = (typeof KATEGORILER)[number];
+/** Hazır kategorilerden biri ya da kullanıcının kendi eklediği bir kategori adı */
+export type Kategori = string;
+
+export const KATEGORI_ETIKETLERI: Record<HazirKategori, string> = {
   akaryakıt: 'Akaryakıt',
   restoran: 'Restoran',
   market: 'Market',
@@ -32,11 +64,23 @@ export const KATEGORI_ETIKETLERI: Record<Kategori, string> = {
   faturalar: 'Faturalar',
   kargo: 'Kargo',
   giyim: 'Giyim',
+  sağlık: 'Sağlık',
+  eğitim: 'Eğitim',
+  kira: 'Kira',
+  sigorta: 'Sigorta',
+  abonelik: 'Abonelik',
+  reklam: 'Reklam',
+  'vergi ve harç': 'Vergi ve Harç',
+  'banka masrafı': 'Banka Masrafı',
+  'yapı market': 'Yapı Market',
+  'kişisel bakım': 'Kişisel Bakım',
+  hediye: 'Hediye',
+  eğlence: 'Eğlence',
   diğer: 'Diğer',
 };
 
 /** Fiş formundaki alanlar (okuma sırasında emin olunamayanları işaretlemek için) */
-export const RECEIPT_FIELDS = ['firmaAdi', 'tarih', 'toplamTutar', 'kdvYuzde1', 'kdvYuzde10', 'kdvYuzde20', 'kategori'] as const;
+export const RECEIPT_FIELDS = ['firmaAdi', 'tarih', 'toplamTutar', 'kdvYuzde1', 'kdvYuzde10', 'kdvYuzde20', 'kategori', 'fisNo', 'vkn'] as const;
 export type ReceiptField = (typeof RECEIPT_FIELDS)[number];
 
 /** Görüntü okuma servisinin döndürdüğü, form üzerinde düzenlenen fiş verisi. */
@@ -49,6 +93,14 @@ export interface ReceiptData {
   kdvYuzde10: number;
   kdvYuzde20: number;
   kategori: Kategori;
+  /** Fişteki "FİŞ NO" (boşsa yok) */
+  fisNo?: string;
+  /** Fişi kesen firmanın vergi kimlik no (10 hane) ya da TC kimlik no (11 hane) */
+  vkn?: string;
+  /** Kullanıcının notu */
+  notlar?: string;
+  /** Kullanıcının etiketleri (ör. "X projesi", "müşteri yemeği") */
+  etiketler?: string[];
   /** Yapay zekânın fişte net okuyamadığı alanlar (yalnızca okuma sonucunda; kaydedilmez) */
   eminOlunmayanlar?: ReceiptField[];
 }
@@ -67,6 +119,10 @@ export interface ReceiptRecord {
   toplam_kdv: number;
   kategori: Kategori;
   image_path: string | null;
+  fis_no: string | null;
+  vkn: string | null;
+  notlar: string | null;
+  etiketler: string[];
 }
 
 export type DraftStatus = 'pending' | 'scheduled' | 'processing' | 'ready' | 'failed';
