@@ -19,11 +19,11 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'update (güncellemeyi elle yayınla) | build (TestFlight) | secrets (anahtarları EAS''e aktar) | setup (bir kez)'
+        description: 'update (güncellemeyi elle yayınla) | build (TestFlight) | submit (son derlemeyi TestFlight''a gönder) | secrets (anahtarları EAS''e aktar) | setup (bir kez)'
         required: true
         default: update
         type: choice
-        options: [update, build, secrets, setup]
+        options: [update, build, submit, secrets, setup]
       ref:
         description: 'Geri dönüş (update ile): yayınlanacak commit (CHANGELOG.md''deki kısa kod). Boş = en son sürüm.'
         required: false
@@ -94,7 +94,7 @@ jobs:
 
       # ---------- build: TestFlight'a yeni sürüm ----------
       - name: App Store Connect anahtarını hazırla (varsa)
-        if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'build' && env.HAS_ASC == 'true'
+        if: env.HAS_EXPO == 'true' && (github.event.inputs.action == 'build' || github.event.inputs.action == 'submit') && env.HAS_ASC == 'true'
         # Gizli değerler komut metnine gömülmez, ortam değişkeniyle aktarılır (tırnak/$ içeren değerler kabuğu bozmasın)
         env:
           ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
@@ -116,16 +116,30 @@ jobs:
           npx eas-cli env:set --name EXPO_PUBLIC_APP_VERSION --value "$EXPO_PUBLIC_APP_VERSION" \
             --environment production --visibility plaintext --non-interactive
       - name: TestFlight uygulama numarasını bul (ascAppId)
-        if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'build' && env.HAS_ASC == 'true'
-        # eas.json'da numara yoksa App Store Connect'ten paket kimliğiyle bulunur (yalnızca bu derleme için yazılır)
+        if: env.HAS_EXPO == 'true' && (github.event.inputs.action == 'build' || github.event.inputs.action == 'submit') && env.HAS_ASC == 'true'
+        # eas.json'da numara yoksa App Store Connect'ten paket kimliğiyle bulunur (yalnızca bu çalıştırma için yazılır).
+        # Uygulama kaydı henüz yoksa derleme yine yapılır, TestFlight'a gönderim kayıt açılınca "submit" ile yapılır.
         run: |
-          node -e 'const e=require("./eas.json");process.exit(e.submit?.production?.ios?.ascAppId?1:0)' || exit 0
-          ID=$(node scripts/asc-app-id.mjs)
-          echo "Apple Kimliği: $ID"
-          ID="$ID" node -e 'const fs=require("fs");const e=JSON.parse(fs.readFileSync("eas.json"));e.submit.production.ios.ascAppId=process.env.ID;fs.writeFileSync("eas.json",JSON.stringify(e,null,2)+"\n")'
+          if node -e 'const e=require("./eas.json");process.exit(e.submit?.production?.ios?.ascAppId?0:1)'; then
+            echo "ASC_APP_FOUND=true" >> "$GITHUB_ENV"; exit 0
+          fi
+          if ID=$(node scripts/asc-app-id.mjs); then
+            echo "Apple Kimliği: $ID"
+            ID="$ID" node -e 'const fs=require("fs");const e=JSON.parse(fs.readFileSync("eas.json"));e.submit.production.ios.ascAppId=process.env.ID;fs.writeFileSync("eas.json",JSON.stringify(e,null,2)+"\n")'
+            echo "ASC_APP_FOUND=true" >> "$GITHUB_ENV"
+          else
+            echo "::warning::App Store Connect'te uygulama kaydı yok: derleme yapılacak ama TestFlight'a gönderilmeyecek. Kaydı açtıktan sonra 'submit' eylemini çalıştırın."
+          fi
       - name: Derle ve TestFlight'a gönder
         if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'build'
-        run: npx eas-cli build --platform ios --profile production --non-interactive --auto-submit
+        run: npx eas-cli build --platform ios --profile production --non-interactive ${{ env.ASC_APP_FOUND == 'true' && '--auto-submit' || '' }}
+      - name: Son derlemeyi TestFlight'a gönder
+        if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'submit'
+        run: |
+          if [ "$ASC_APP_FOUND" != "true" ]; then
+            echo "::error::App Store Connect'te uygulama kaydı bulunamadı (paket kimliği: com.adba.fistarayici)."; exit 1
+          fi
+          npx eas-cli submit --platform ios --profile production --latest --non-interactive
 
       # ---------- push: kod güncellemesini telefona gönder ----------
       - name: Güncellemeyi yayınla (EAS Update)
