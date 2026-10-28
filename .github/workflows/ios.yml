@@ -115,21 +115,24 @@ jobs:
             --environment production --visibility sensitive --non-interactive
           npx eas-cli env:set --name EXPO_PUBLIC_APP_VERSION --value "$EXPO_PUBLIC_APP_VERSION" \
             --environment production --visibility plaintext --non-interactive
-      - name: TestFlight uygulama numarasını bul (ascAppId)
+      - name: TestFlight gönderim ayarları (uygulama numarası ve anahtar)
         if: env.HAS_EXPO == 'true' && (github.event.inputs.action == 'build' || github.event.inputs.action == 'submit') && env.HAS_ASC == 'true'
-        # eas.json'da numara yoksa App Store Connect'ten paket kimliğiyle bulunur (yalnızca bu çalıştırma için yazılır).
-        # Uygulama kaydı henüz yoksa derleme yine yapılır, TestFlight'a gönderim kayıt açılınca "submit" ile yapılır.
+        # Yalnızca bu çalıştırma için eas.json'a yazılır (commit edilmez):
+        # - ascAppId: yoksa App Store Connect'ten paket kimliğiyle bulunur
+        # - ascApiKeyPath/Id/IssuerId: eas submit etkileşimsiz modda EAS'te saklı anahtar istemesin
         run: |
-          if node -e 'const e=require("./eas.json");process.exit(e.submit?.production?.ios?.ascAppId?0:1)'; then
-            echo "ASC_APP_FOUND=true" >> "$GITHUB_ENV"; exit 0
+          ID=$(node -e 'console.log(require("./eas.json").submit?.production?.ios?.ascAppId ?? "")')
+          if [ -z "$ID" ]; then
+            if ID=$(node scripts/asc-app-id.mjs); then echo "Apple Kimliği: $ID"; else
+              echo "::warning::App Store Connect'te uygulama kaydı yok: derleme yapılacak ama TestFlight'a gönderilmeyecek. Kaydı açtıktan sonra 'submit' eylemini çalıştırın."
+              exit 0
+            fi
           fi
-          if ID=$(node scripts/asc-app-id.mjs); then
-            echo "Apple Kimliği: $ID"
-            ID="$ID" node -e 'const fs=require("fs");const e=JSON.parse(fs.readFileSync("eas.json"));e.submit.production.ios.ascAppId=process.env.ID;fs.writeFileSync("eas.json",JSON.stringify(e,null,2)+"\n")'
-            echo "ASC_APP_FOUND=true" >> "$GITHUB_ENV"
-          else
-            echo "::warning::App Store Connect'te uygulama kaydı yok: derleme yapılacak ama TestFlight'a gönderilmeyecek. Kaydı açtıktan sonra 'submit' eylemini çalıştırın."
-          fi
+          ID="$ID" node -e '
+            const fs=require("fs");const e=JSON.parse(fs.readFileSync("eas.json"));
+            Object.assign(e.submit.production.ios,{ascAppId:process.env.ID,ascApiKeyPath:process.env.EXPO_ASC_API_KEY_PATH,ascApiKeyId:process.env.EXPO_ASC_KEY_ID,ascApiKeyIssuerId:process.env.EXPO_ASC_ISSUER_ID});
+            fs.writeFileSync("eas.json",JSON.stringify(e,null,2)+"\n")'
+          echo "ASC_APP_FOUND=true" >> "$GITHUB_ENV"
       - name: Derle ve TestFlight'a gönder
         if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'build'
         run: |
@@ -140,8 +143,12 @@ jobs:
           # EAS eksik imza bilgilerini (App Store sertifikası/profili) yalnızca etkileşimli modda oluşturur.
           # Sahte bir terminal açılır ve her soruya varsayılan cevap (Enter) verilir; Apple girişi API anahtarıyla
           # soru sorulmadan yapılır. Bilgiler bir kez oluşunca sonraki derlemelerde soru çıkmaz.
-          (while sleep 3; do printf '\r'; done) | CI=false script -qefc \
-            "npx eas-cli build --platform ios --profile production" /dev/null
+          (while sleep 3; do printf '\r' 2>/dev/null || exit 0; done) | CI=false script -qefc \
+            "npx eas-cli build --platform ios --profile production" /dev/null || true
+          # Sahte terminalin çıkış kodu güvenilir değil; sonucu EAS'teki son derlemenin durumundan al
+          STATUS=$(npx eas-cli build:list --platform ios --limit 1 --json --non-interactive | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>console.log(JSON.parse(d)[0]?.status??""))')
+          echo "EAS derleme durumu: $STATUS"
+          [ "$STATUS" = "FINISHED" ] || exit 1
           if [ "$ASC_APP_FOUND" = "true" ]; then
             npx eas-cli submit --platform ios --profile production --latest --non-interactive
           fi
