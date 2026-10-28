@@ -1,14 +1,17 @@
 {
   "cli": {
     "version": ">= 24.0.0",
-    "appVersionSource": "remote"
+    "appVersionSource": "remote",
+    "promptToConfigurePushNotifications": false
   },
   "build": {
     "production": {
       "environment": "production",
       "channel": "production",
       "autoIncrement": true,
-      "ios": { "resourceClass": "default" },
+      "ios": {
+        "resourceClass": "default"
+      },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://fzhagwcysltvpcgdfrnl.supabase.co",
         "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_7gu66leZ4qgYJPcOpcsh7g_yss8NOyN",
