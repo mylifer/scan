@@ -16,8 +16,8 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.36.0 — `4c247ff`
-- **Güvenlik:** Fişler artık uygulamanın Supabase sunucusundaki fonksiyonla okunuyor. Gemini anahtarı web sürümünün ve iPhone uygulamasının içinde bulunmuyor; yayın sırasında pakette anahtar bulunursa yayın durduruluyor. (Not: 1.30.0'dan eski bir sürüme geri dönülürse fiş okuma çalışmaz.)
+## 1.37.0 — `KOD`
+- **Güvenlik:** Fişler artık uygulamanın Supabase sunucusundaki fonksiyonla okunuyor. Gemini anahtarı web sürümünün ve iPhone uygulamasının içinde bulunmuyor; yayın sırasında pakette anahtar bulunursa yayın durduruluyor. Fonksiyonu yalnızca giriş yapmış kullanıcı çağırabiliyor (oturum sunucuda doğrulanıyor). Yayın öncesi canlı sistemde geçici bir test hesabıyla uçtan uca deneniyor. (Not: 1.30.0'dan eski bir sürüme geri dönülürse fiş okuma çalışmaz.)
 - **Fiş no ve VKN/TCKN:** Yapay zekâ fişteki fiş numarasını ve firmanın vergi/TC kimlik numarasını da okuyor; formda düzeltilebiliyor. VKN/TCKN'nin kontrol hanesi doğrulanıyor, tutmazsa uyarı çıkıyor (okuma hatası olabilir)
 - **Daha güvenilir mükerrer uyarısı:** Fiş no ve VKN varsa onlarla karşılaştırılıyor. Aynı gün aynı tutarlı iki ayrı fiş (farklı fiş no) artık yanlışlıkla "zaten kayıtlı" sayılmıyor; tutarı yanlış okunmuş aynı fiş ise yakalanıyor
 - **Not ve etiketler:** Her fişe not ve etiket (ör. "X projesi", "müşteri yemeği") eklenebiliyor; daha önce kullanılan etiketler öneri olarak çıkıyor. Arama not, etiket (#proje), fiş no ve VKN'de de çalışıyor; etiketler fiş satırında görünüyor
@@ -26,6 +26,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 - Excel'e Fiş No, VKN/TCKN, Etiketler ve Not sütunları eklendi; paylaşım metni ve tam yedek de bu bilgileri içeriyor (eski yedekler okunmaya devam ediyor)
 - **Hata kayıtları:** Uygulamada beklenmeyen bir hata olursa Ayarlar → Hata Kayıtları'nda görünüyor; ayrıntısı kopyalanıp paylaşılabiliyor (internet kesintileri ve yapay zekâ yoğunluğu kaydedilmiyor)
 - Veritabanı güncellemesi (006) GitHub Actions ile otomatik uygulanıyor; yapılmamışsa ana sayfada "Veritabanını güncelle" adımı çıkıyor
+
+## 1.36.0 — `2073e0b`
+- **Yeni uygulama simgesi:** fiş, tarama köşeleri ve yeşil tarama çizgisi. iPhone, Android ve web (ana ekrana ekleme) simgelerinin hepsi yenilendi. TestFlight'ta görünmesi için yeni derleme gerekir; Expo Go kendi simgesini göstermeye devam eder
+- Android'de simgenin arkasında ikinci, büyük bir fiş görünüyordu; artık yalnızca mavi zemin var
 
 ## 1.35.2 — `302643a`
 - TestFlight derlemesi artık GitHub'dan tek tıkla yapılıyor (bilgisayar gerekmez). Uygulamanın teknik adı Türkçe harfsiz "FisTarayici" oldu; telefonda görünen adı yine "Fiş Tarayıcı"
