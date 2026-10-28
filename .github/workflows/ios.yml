@@ -145,6 +145,21 @@ jobs:
           if [ "$ASC_APP_FOUND" = "true" ]; then
             npx eas-cli submit --platform ios --profile production --latest --non-interactive
           fi
+      - name: Derleme hatasının ayrıntısı (EAS kaydı)
+        if: failure() && env.HAS_EXPO == 'true' && github.event.inputs.action == 'build'
+        # EAS'teki son iOS derlemesinin kayıt dosyalarını indirip hata çevresini yazdırır
+        run: |
+          npx eas-cli build:list --platform ios --limit 1 --json --non-interactive > "$RUNNER_TEMP/build.json" || exit 0
+          node -e 'const b=require(process.argv[1])[0]||{};console.log("Derleme:",b.id,b.status,b.error?.message??"");for(const u of b.logFiles??[])console.log(u)' "$RUNNER_TEMP/build.json" | tee "$RUNNER_TEMP/build.txt"
+          for u in $(grep '^https' "$RUNNER_TEMP/build.txt"); do curl -sSL "$u"; echo; done > "$RUNNER_TEMP/eas.log" || true
+          node -e '
+            const lines=require("fs").readFileSync(process.argv[1],"utf8").split("\n").map(l=>{try{const j=JSON.parse(l);return `[${j.phase??""}] ${j.msg??""}`}catch{return l}});
+            const hit=lines.findIndex(l=>/CONFIGURE_XCODE_PROJECT|error|Error|failed/.test(l));
+            const from=Math.max(0,lines.findIndex(l=>/CONFIGURE_XCODE_PROJECT/.test(l)));
+            console.log(lines.slice(from,from+150).join("\n"));
+            console.log("----- son 80 satır -----");
+            console.log(lines.slice(-80).join("\n"));
+          ' "$RUNNER_TEMP/eas.log"
       - name: Son derlemeyi TestFlight'a gönder
         if: env.HAS_EXPO == 'true' && github.event.inputs.action == 'submit'
         run: |
