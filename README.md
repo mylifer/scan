@@ -35,20 +35,20 @@ Gerekli secret'lar: `EXPO_TOKEN`, `GEMINI_API_KEY`.
 Uygulama kendi adı ve simgesiyle TestFlight'tan da kurulabilir. Expo Go'ya giden güncellemeler TestFlight
 uygulamasına da gider; yeni derleme yalnızca yerel (native) bir paket eklendiğinde gerekir.
 
-**İlk kurulum (bir kez, bilgisayarda; Node.js 22 gerekir):**
+**Yeni TestFlight sürümü (bilgisayar gerekmez):** GitHub → Actions → "iPhone uygulaması" → Run workflow →
+`action: build`. Derleme ~10-20 dakika sürer ve bitince otomatik olarak TestFlight'a gönderilir; Apple'ın
+işlemesi 5-15 dakika daha sürer.
 
-```bash
-git clone https://github.com/mylifer/scan.git && cd scan && npm ci
-npx eas-cli@latest login
-npx eas-cli@latest build --platform ios --profile production --auto-submit
-```
+- İmza sertifikası ve profili ilk derlemede otomatik oluşturuldu (EAS'te saklı).
+- TestFlight'a gönderim için uygulama numarası App Store Connect anahtarıyla otomatik bulunur.
+- Gerekli GitHub secret'ları: `EXPO_TOKEN`, `GEMINI_API_KEY`, `ASC_API_KEY_P8` (.p8 dosyasının içeriği),
+  `ASC_KEY_ID`, `ASC_ISSUER_ID`, `APPLE_TEAM_ID` (App Store Connect API anahtarı, Admin rolünde).
 
-Sorulara varsayılan cevapları verin: Apple hesabıyla giriş yapın, sertifika ve provisioning profile
-oluşturulmasını, App Store Connect API anahtarı oluşturulmasını kabul edin. Derleme ~15-20 dakika sürer,
-ardından TestFlight'a yüklenir. Bitince App Store Connect'te uygulamanın **Apple ID** numarasını
-(Uygulama Bilgileri → Genel Bilgiler) `eas.json` → `submit.production.ios.ascAppId` alanına yazın.
+**Diğer eylemler:** `submit` son derlemeyi yeniden TestFlight'a gönderir, `logs` son derlemenin EAS
+kaydındaki hataları gösterir.
 
-**Sonraki derlemeler:** Actions → "iPhone uygulaması" → `action: build`.
+Not: Uygulamanın teknik adı Türkçe harfsiz `FisTarayici`'dir (Türkçe harfler derleme araçlarında hedef adını
+bozuyordu); telefonda görünen ad `ios.infoPlist.CFBundleDisplayName` ile "Fiş Tarayıcı"dır.
 
 ## Sürümler ve geri dönüş
 
