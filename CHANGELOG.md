@@ -16,6 +16,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.35.0 — `e2cbc14`
+- **TestFlight hazırlığı:** uygulama artık Expo Go'nun yanında kendi adı ve simgesiyle TestFlight'tan da kurulabilecek. Aynı güncellemeler ikisine birden gider
+- TestFlight uygulamasında bildirim izni uyarısı "Expo Go" yerine "Fiş Tarayıcı" diyor; bildirimlerdeki "Fiş Tarayıcı" alt başlığı yalnızca Expo Go'da ekleniyor (kendi uygulamasında ad zaten görünüyor)
+
 ## 1.34.4 — `3e59de5`
 - Vergi hatırlatıcısı ve aylık özet bildirimlerinde başlığın altında artık **"Fiş Tarayıcı"** yazıyor. Uygulama Expo Go içinde çalıştığı için iPhone bildirimi Expo Go adı ve simgesiyle gösteriyor (bu, Expo Go'nun sınırı); alt başlık bildirimin bu uygulamadan geldiğini belli ediyor. Zaten kurulu bildirimler uygulama bir kez açılınca yenilenir
 
