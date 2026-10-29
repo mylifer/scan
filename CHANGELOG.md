@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.42.0 — `KOD`
+## 1.42.0 — `7c4e522`
 - **e-Fatura detayı:** e-Faturalar'da bir faturaya dokununca kalemler (miktar, birim fiyat, KDV oranı), KDV dökümü, ara toplam ve ödenecek tutar görünür (QNB'den faturanın kendisi okunur)
 - **Giden e-Arşiv faturaları:** Giden sekmesinde e-Fatura ile birlikte e-Arşiv faturaları da listelenir; iptal edilenler işaretlenir ve toplama girmez. e-Arşiv alınamazsa sebebi ekranda yazar
 - e-Arşiv servisinde giriş sorunu olursa gelen faturalar etkilenmez
