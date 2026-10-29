@@ -10,9 +10,10 @@
 import { buildEnvelope, isLoginFault, listRequest, parseFault, parseList, QNB_URL, type Yon } from './soap.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
-const QNB_USER = Deno.env.get('QNB_USER') ?? '';
-const QNB_PASS = Deno.env.get('QNB_PASS') ?? '';
-const QNB_VKN = Deno.env.get('QNB_VKN') ?? '';
+// Baştaki/sondaki boşluk ve satır sonu (ör. secret'a yapıştırırken gelen Enter) şifreyi bozmasın
+const QNB_USER = (Deno.env.get('QNB_USER') ?? '').trim();
+const QNB_PASS = (Deno.env.get('QNB_PASS') ?? '').trim();
+const QNB_VKN = (Deno.env.get('QNB_VKN') ?? '').trim();
 // Virgül, noktalı virgül, boşluk ya da satır sonuyla ayrılabilir; tırnak ve <> yok sayılır
 const ALLOWED = (Deno.env.get('QNB_ALLOWED_EMAILS') ?? '')
   .split(/[\s,;]+/)
