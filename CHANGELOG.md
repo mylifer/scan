@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.41.3 — `KOD`
+## 1.41.3 — `f0cd4bc`
 - e-Faturalar: QNB hesabı bloke olduğunda açık uyarı ("portaldan/destekten açtırın"); sunucu bu durumda 1 saat QNB'ye istek atmaz
 - "Tekrar dene"ye dokununca "Deneniyor…" göstergesi
 
