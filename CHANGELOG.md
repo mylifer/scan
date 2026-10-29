@@ -16,6 +16,11 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.43.0 — `23a9b00`
+- **Fatura PDF'i:** Fatura detayında "PDF'i Aç": iPhone'da paylaşım menüsü (Dosyalar'a kaydet, yazdır, gönder), web'de indirilir
+- **Giden e-Arşiv faturaları:** Sorgu, QNB'nin beklediği alanlarla düzeltildi (mukellefVkn, faturaTarihiBaslangic/Bitis)
+- e-Arşiv faturalarına da dokunulabilir: kalemler, KDV ve PDF
+
 ## 1.42.0 — `7c4e522`
 - **e-Fatura detayı:** e-Faturalar'da bir faturaya dokununca kalemler (miktar, birim fiyat, KDV oranı), KDV dökümü, ara toplam ve ödenecek tutar görünür (QNB'den faturanın kendisi okunur)
 - **Giden e-Arşiv faturaları:** Giden sekmesinde e-Fatura ile birlikte e-Arşiv faturaları da listelenir; iptal edilenler işaretlenir ve toplama girmez. e-Arşiv alınamazsa sebebi ekranda yazar

@@ -82,6 +82,11 @@ async function shareFile(bytes: Uint8Array, filename: string, mimeType: string, 
   await shareCachedFile(file, filename, mimeType, uti);
 }
 
+/** PDF'i web'de indirir, iPhone'da paylaşım menüsünü açar (Önizleme, Dosyalar'a Kaydet, Mail…). */
+export function sharePdf(bytes: Uint8Array, filename: string): Promise<void> {
+  return shareFile(bytes, filename, 'application/pdf', 'com.adobe.pdf');
+}
+
 /** "Fisler_2026-09.xlsx" / "Fisler_Tum_Zamanlar.xlsx" (ext: "zip" için paket adı) */
 export function exportFilename(range?: { fileTag: string }, ext: 'xlsx' | 'zip' = 'xlsx'): string {
   const base = range ? `Fisler_${range.fileTag}` : 'Fisler_Tum_Zamanlar';

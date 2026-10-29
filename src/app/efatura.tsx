@@ -197,11 +197,10 @@ export default function EFaturaScreen() {
                 subtitle={[dayMonth(f.tarih), f.belgeNo, f.tur === 'earsiv' ? 'e-Arşiv' : '', f.iptal ? 'İptal' : ''].filter(Boolean).join(' · ')}
                 value={money(f.tutar, f.paraBirimi)}
                 valueColor={f.iptal ? theme.secondaryLabel : theme.label}
-                // Kalem ve KDV dökümü yalnızca e-Fatura için (UBL indirilir)
-                chevron={f.tur !== 'earsiv' && !!f.ettn}
+                chevron={!!f.ettn}
                 onPress={
-                  f.tur !== 'earsiv' && f.ettn
-                    ? () => router.push({ pathname: '/efatura-detay', params: { yon, ettn: f.ettn, unvan: f.unvan } })
+                  f.ettn
+                    ? () => router.push({ pathname: '/efatura-detay', params: { yon, ettn: f.ettn, unvan: f.unvan, tur: f.tur ?? 'efatura', belgeNo: f.belgeNo } })
                     : undefined
                 }
               />

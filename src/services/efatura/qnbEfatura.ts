@@ -6,7 +6,7 @@ export type { EFatura, FaturaDetay, Yon };
 export type InvokeFn = (
   name: string,
   options: { body: Record<string, unknown> },
-) => Promise<{ data: { faturalar?: EFatura[]; uyari?: string; detay?: FaturaDetay } | null; error: unknown }>;
+) => Promise<{ data: { faturalar?: EFatura[]; uyari?: string; detay?: FaturaDetay; pdf?: string } | null; error: unknown }>;
 
 export class EFaturaError extends Error {
   constructor(
@@ -43,11 +43,20 @@ export async function listEFaturalar(
   return { faturalar: data.faturalar, ...(data.uyari ? { uyari: data.uyari } : {}) };
 }
 
-/** e-Faturanın kalemleri, KDV dökümü ve toplamları (UBL'den) */
-export async function getEFaturaDetay(invoke: InvokeFn, yon: Yon, ettn: string): Promise<FaturaDetay> {
-  const data = await call(invoke, { islem: 'detay', yon, ettn });
+export type Tur = 'efatura' | 'earsiv';
+
+/** Faturanın kalemleri, KDV dökümü ve toplamları (UBL'den) */
+export async function getEFaturaDetay(invoke: InvokeFn, yon: Yon, ettn: string, tur: Tur = 'efatura'): Promise<FaturaDetay> {
+  const data = await call(invoke, { islem: 'detay', yon, ettn, tur });
   if (!data?.detay) throw new EFaturaError('Sunucu beklenmeyen bir yanıt döndürdü.');
   return data.detay;
+}
+
+/** Faturanın PDF'i (base64) */
+export async function getEFaturaPdf(invoke: InvokeFn, yon: Yon, ettn: string, tur: Tur = 'efatura'): Promise<string> {
+  const data = await call(invoke, { islem: 'pdf', yon, ettn, tur });
+  if (typeof data?.pdf !== 'string' || !data.pdf) throw new EFaturaError('Sunucu PDF döndürmedi.');
+  return data.pdf;
 }
 
 /** FunctionsHttpError'da context bir Response'tur: durum kodu ve sunucunun mesajı oradan okunur */

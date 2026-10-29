@@ -5,7 +5,10 @@ import { ActivityIndicator, ScrollView } from 'react-native';
 import { ListRow, ListSection } from '../components/ui/List';
 import { errorMessage } from '../lib/errors';
 import { useTheme } from '../lib/theme';
-import { EFaturaError, type FaturaDetay, getEFaturaDetay, type Yon } from '../services/efatura/qnbEfatura';
+import { base64ToBytes } from '../../supabase/functions/qnb-efatura/soap';
+import { showAlert } from '../lib/alert';
+import { EFaturaError, type FaturaDetay, getEFaturaDetay, getEFaturaPdf, type Tur, type Yon } from '../services/efatura/qnbEfatura';
+import { sharePdf } from '../services/export/exportReceipts';
 import { supabase } from '../services/supabase/client';
 
 /** Aynı fatura yeniden açılınca QNB'ye tekrar sorulmasın */
@@ -48,8 +51,9 @@ function trDate(iso: string): string {
 /** Bir e-Faturanın kalemleri, KDV dökümü ve toplamları (QNB'den UBL indirilir). */
 export default function EFaturaDetayScreen() {
   const theme = useTheme();
-  const params = useLocalSearchParams<{ yon?: string; ettn?: string; unvan?: string }>();
+  const params = useLocalSearchParams<{ yon?: string; ettn?: string; unvan?: string; tur?: string; belgeNo?: string }>();
   const yon: Yon = params.yon === 'giden' ? 'giden' : 'gelen';
+  const tur: Tur = params.tur === 'earsiv' ? 'earsiv' : 'efatura';
   const ettn = params.ettn ?? '';
   const [detay, setDetay] = useState<FaturaDetay | null>(() => cache.get(ettn) ?? null);
   const [error, setError] = useState<{ message: string; login: boolean } | null>(null);
@@ -59,7 +63,7 @@ export default function EFaturaDetayScreen() {
   const load = useCallback(async () => {
     setBusy(true);
     try {
-      const d = await getEFaturaDetay((name, options) => supabase.functions.invoke(name, options), yon, ettn);
+      const d = await getEFaturaDetay((name, options) => supabase.functions.invoke(name, options), yon, ettn, tur);
       cache.set(ettn, d);
       setDetay(d);
       setError(null);
@@ -68,7 +72,21 @@ export default function EFaturaDetayScreen() {
     } finally {
       setBusy(false);
     }
-  }, [yon, ettn]);
+  }, [yon, ettn, tur]);
+
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const openPdf = async () => {
+    setPdfBusy(true);
+    try {
+      const b64 = await getEFaturaPdf((name, options) => supabase.functions.invoke(name, options), yon, ettn, tur);
+      const ad = (detay?.belgeNo || params.belgeNo || ettn).replace(/[^\w-]/g, '_');
+      await sharePdf(base64ToBytes(b64), `${ad}.pdf`);
+    } catch (e) {
+      showAlert('PDF açılamadı', errorMessage(e));
+    } finally {
+      setPdfBusy(false);
+    }
+  };
 
   // İlk açılışta bir kez getir; hata olursa yalnızca elle tekrar denenir
   useEffect(() => {
@@ -96,6 +114,20 @@ export default function EFaturaDetayScreen() {
           />
         </ListSection>
       )}
+
+      {ettn ? (
+        <ListSection>
+          <ListRow
+            title="PDF'i Aç"
+            subtitle={pdfBusy ? 'İndiriliyor…' : 'Paylaş, Dosyalar’a kaydet ya da yazdır'}
+            icon={{ sf: 'doc.richtext.fill', ion: 'document', color: theme.red }}
+            tone="action"
+            disabled={pdfBusy}
+            accessory={pdfBusy ? <ActivityIndicator /> : undefined}
+            onPress={openPdf}
+          />
+        </ListSection>
+      ) : null}
 
       {!detay && !error ? <ActivityIndicator style={{ marginTop: 32 }} /> : null}
 
