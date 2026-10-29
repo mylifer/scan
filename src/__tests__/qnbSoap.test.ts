@@ -213,3 +213,18 @@ describe('e-Arşiv belge ve PDF', () => {
     assert.deepEqual(extractFile(pdf, unzipSync, 'pdf'), pdf, 'zip değilse olduğu gibi');
   });
 });
+
+describe('tarih biçimleri', () => {
+  it('isoDate farklı biçimleri tanır, tanımazsa boş döner', async () => {
+    const { isoDate, parseEarsivPage } = await import('../../supabase/functions/qnb-efatura/soap');
+    assert.equal(isoDate('2026-10-15T10:20:00+03:00'), '2026-10-15');
+    assert.equal(isoDate('20261015'), '2026-10-15');
+    assert.equal(isoDate('15.10.2026 10:20'), '2026-10-15');
+    assert.equal(isoDate(String(Date.UTC(2026, 9, 14, 22, 30))), '2026-10-15', 'epoch ms, Türkiye saati');
+    assert.equal(isoDate('abc'), '');
+    const page = parseEarsivPage('<output><invoiceId>X</invoiceId><issueDate>2026-08-01</issueDate></output>', '2026-10-01', '2026-10-31');
+    assert.equal(page.ham, 1);
+    assert.equal(page.list.length, 0);
+    assert.match(page.ornek ?? '', /issueDate=2026-08-01/);
+  });
+});

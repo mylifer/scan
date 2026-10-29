@@ -19,7 +19,7 @@ const SegmentedControl = NativeSegmentedControl as unknown as ComponentType<Segm
 const YONLER: Yon[] = ['gelen', 'giden'];
 const AY = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
 
-type Donem = { faturalar: EFatura[]; uyari?: string };
+type Donem = { faturalar: EFatura[]; uyari?: string; bilgi?: string };
 
 /** Uygulama açıkken sekme/ay değişince QNB'ye yeniden sorulmasın */
 const cache = new Map<string, Donem>();
@@ -64,6 +64,8 @@ export default function EFaturaScreen() {
   const key = `${yon}:${range.from}`;
   const items = data[key]?.faturalar;
   const uyari = data[key]?.uyari;
+  /** e-Arşiv servisinin kaç kayıt döndürdüğü (liste boşsa nedenini anlamak için) */
+  const bilgi = data[key]?.bilgi;
   const error =
     errors[key] ??
     (loginFailed && !items ? { message: 'QNB girişi daha önce başarısız oldu. Bilgileri kontrol ettikten sonra elle tekrar deneyin.', login: true } : undefined);
@@ -172,7 +174,7 @@ export default function EFaturaScreen() {
         <EmptyState
           icon={{ sf: 'doc.text.magnifyingglass', ion: 'document-text-outline' }}
           title="Fatura Yok"
-          message={`${capitalizeTr(range.label)} döneminde ${yonLabel} e-fatura bulunmuyor.`}
+          message={`${capitalizeTr(range.label)} döneminde ${yonLabel} fatura bulunmuyor.${bilgi ? `\n\n${bilgi}` : ''}`}
         />
       ) : items ? (
         <>

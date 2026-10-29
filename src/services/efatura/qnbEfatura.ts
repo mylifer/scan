@@ -6,7 +6,7 @@ export type { EFatura, FaturaDetay, Yon };
 export type InvokeFn = (
   name: string,
   options: { body: Record<string, unknown> },
-) => Promise<{ data: { faturalar?: EFatura[]; uyari?: string; detay?: FaturaDetay; pdf?: string } | null; error: unknown }>;
+) => Promise<{ data: { faturalar?: EFatura[]; uyari?: string; bilgi?: string; detay?: FaturaDetay; pdf?: string } | null; error: unknown }>;
 
 export class EFaturaError extends Error {
   constructor(
@@ -37,10 +37,10 @@ export async function listEFaturalar(
   yon: Yon,
   baslangic: string,
   bitis: string,
-): Promise<{ faturalar: EFatura[]; uyari?: string }> {
+): Promise<{ faturalar: EFatura[]; uyari?: string; bilgi?: string }> {
   const data = await call(invoke, { yon, baslangic, bitis });
   if (!Array.isArray(data?.faturalar)) throw new EFaturaError('Sunucu beklenmeyen bir yanıt döndürdü.');
-  return { faturalar: data.faturalar, ...(data.uyari ? { uyari: data.uyari } : {}) };
+  return { faturalar: data.faturalar, ...(data.uyari ? { uyari: data.uyari } : {}), ...(data.bilgi ? { bilgi: data.bilgi } : {}) };
 }
 
 export type Tur = 'efatura' | 'earsiv';

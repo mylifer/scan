@@ -34,7 +34,7 @@ import {
   mergeLists,
   parseBase64Return,
   parseEarsivDoc,
-  parseEarsivList,
+  parseEarsivPage,
   parseEarsivResult,
   parseFault,
   parseList,
@@ -134,40 +134,52 @@ async function soap(url: string, op: string, params: Record<string, string>, opt
 
 const compact = (s: string) => s.replace(/-/g, '');
 
+type Sayfa = { list: EFatura[]; ham: number; ornek?: string };
+
 /** e-Arşiv listesinin bir sayfası; QNB iş hatasında mesajı döner */
-async function earsivPage(baslangic: string, bitis: string, start: number): Promise<EFatura[] | string> {
+async function earsivPage(baslangic: string, bitis: string, start: number): Promise<Sayfa | string> {
   const xml = await soap(EARSIV_URL, 'faturaListeSorgula', { input: JSON.stringify(earsivListInput(QNB_VKN, baslangic, bitis, start)) }, { earsiv: true });
   const r = parseEarsivResult(xml);
   if (r.code && r.code !== EARSIV_OK) return `${r.code}: ${(r.text || 'açıklama yok').slice(0, 700)}`;
-  return parseEarsivList(xml, baslangic, bitis);
+  return parseEarsivPage(xml, baslangic, bitis);
 }
 
 /**
  * Giden e-Arşiv faturaları, 100'lük sayfalarla. pagingStart'ın kayıt sırası mı sayfa numarası mı olduğu
  * belgesiz: ilk sayfa doluysa start=1 ile bakılır; sonuç ilk sayfayla büyük ölçüde örtüşüyorsa kayıt
  * sırasıdır. Giriş hatasında gelen ve giden e-Fatura listesi yine gösterilir.
+ * bilgi: QNB'nin kaç kayıt döndürdüğü (liste boşsa nedenini anlamak için).
  */
-async function earsivList(baslangic: string, bitis: string): Promise<{ list: EFatura[]; hata?: string }> {
+async function earsivList(baslangic: string, bitis: string): Promise<{ list: EFatura[]; hata?: string; bilgi?: string }> {
   try {
     const first = await earsivPage(baslangic, bitis, 0);
     if (typeof first === 'string') return { list: [], hata: first };
-    const pages = [first];
-    if (first.length >= EARSIV_PAGE) {
+    const pages: Sayfa[] = [first];
+    if (first.ham >= EARSIV_PAGE) {
       const probe = await earsivPage(baslangic, bitis, 1);
-      if (typeof probe === 'string') return { list: first, hata: probe };
-      const ids = new Set(first.map((f) => f.ettn));
-      const offset = probe.filter((f) => ids.has(f.ettn)).length > EARSIV_PAGE / 2;
+      if (typeof probe === 'string') return { list: first.list, hata: probe };
+      const ids = new Set(first.list.map((f) => f.ettn));
+      const offset = probe.list.filter((f) => ids.has(f.ettn)).length > EARSIV_PAGE / 2;
       let page = offset ? first : probe;
       if (!offset) pages.push(probe);
       // En fazla 20 sayfa (2000 fatura/ay)
-      for (let n = offset ? 1 : 2; page.length >= EARSIV_PAGE && n < 20; n++) {
+      for (let n = offset ? 1 : 2; page.ham >= EARSIV_PAGE && n < 20; n++) {
         const next = await earsivPage(baslangic, bitis, offset ? n * EARSIV_PAGE : n);
-        if (typeof next === 'string') return { list: mergeLists(...pages), hata: next };
+        if (typeof next === 'string') return { list: mergeLists(...pages.map((p) => p.list)), hata: next };
         pages.push(next);
         page = next;
       }
     }
-    return { list: mergeLists(...pages) };
+    const list = mergeLists(...pages.map((p) => p.list));
+    const ham = pages.reduce((n, p) => n + p.ham, 0);
+    const bilgi =
+      ham === 0
+        ? 'QNB e-Arşiv servisi bu dönem için kayıt döndürmedi.'
+        : list.length === 0
+          ? `QNB e-Arşiv servisi ${ham} kayıt döndürdü ama tarihleri dönem dışında görünüyor (${first.ornek ?? '-'}).`
+          : undefined;
+    console.log(`e-Arşiv ${baslangic}..${bitis}: ham=${ham} liste=${list.length} ${first.ornek ?? ''}`);
+    return { list, ...(bilgi ? { bilgi } : {}) };
   } catch (e) {
     return { list: [], hata: e instanceof Error ? e.message : String(e) };
   }
@@ -181,6 +193,7 @@ async function listele(yon: Yon, baslangic: string, bitis: string) {
   return {
     faturalar: mergeLists(efatura, earsiv.list),
     ...(earsiv.hata ? { uyari: `e-Arşiv faturaları alınamadı: ${earsiv.hata}` } : {}),
+    ...(earsiv.bilgi ? { bilgi: earsiv.bilgi } : {}),
   };
 }
 
