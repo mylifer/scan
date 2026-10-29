@@ -266,6 +266,69 @@ async function tutarlariTamamla(list: EFatura[], baslangic: string, bitis: strin
   }
 }
 
+/** YYYY-MM-DD + gün (bugünü geçmez) */
+function sonraki(d: string, gun: number): string {
+  return new Date(Math.min(Date.parse(d) + gun * 86_400_000, Date.now())).toISOString().slice(0, 10);
+}
+
+/**
+ * Giden listesi boşsa ek tarama: QNB'nin belge sayısı, portal (gönderim tarihine göre),
+ * web servis (belge tarihine göre), e-Arşiv (oluşturma zamanına göre). Bulunanlar fatura tarihi
+ * döneme düşüyorsa eklenir; her sorgunun sonucu nota yazılır (tanı için).
+ */
+async function gidenTarama(baslangic: string, bitis: string): Promise<{ list: EFatura[]; notlar: string[] }> {
+  const notlar: string[] = [];
+  const bulunan: EFatura[][] = [];
+  const inRange = (f: EFatura) => !f.tarih || (f.tarih >= baslangic && f.tarih <= bitis);
+  const b = compact(baslangic), e = compact(bitis), e15 = compact(sonraki(bitis, 15));
+  const dene = async (ad: string, fn: () => Promise<EFatura[] | string>) => {
+    try {
+      const r = await fn();
+      if (typeof r === 'string') notlar.push(`${ad}: ${r}`);
+      else {
+        const l = r.filter(inRange);
+        notlar.push(`${ad}: ${l.length}${r.length !== l.length ? ` (dönem dışı ${r.length - l.length})` : ''}`);
+        bulunan.push(l);
+      }
+    } catch (err) {
+      if (err instanceof LoginError) throw err;
+      notlar.push(`${ad}: ${(err instanceof Error ? err.message : String(err)).slice(0, 200)}`);
+    }
+  };
+  await dene('QNB giden belge sayısı', async () => {
+    const xml = await soap(
+      QNB_URL,
+      'toplamBelgeSayisiGetir',
+      { vergiTcKimlikNo: QNB_VKN, belgeTuru: 'FATURA', belgeYonu: 'GIDEN', belgeBaslangicTarihi: b, belgeBitisTarihi: e },
+      { wrap: false },
+    );
+    return xml.match(/<return>(\d+)<\/return>/)?.[1] ?? 'sayı dönmedi';
+  });
+  await dene('portal (gönderim tarihi)', async () =>
+    parseList(
+      await soap(QNB_URL, 'gidenBelgeleriListelePortal', {
+        vergiTcKimlikNo: QNB_VKN,
+        belgeTuru: 'FATURA',
+        belgeVersiyon: '1.0',
+        baslangicGonderimTarihi: b,
+        bitisGonderimTarihi: e15,
+      }),
+      'giden',
+    ),
+  );
+  await dene('web servis (belge tarihi)', async () =>
+    parseList(await soap(QNB_URL, 'gidenBelgeleriListele', { vkn: QNB_VKN, belgeTuru: 'FATURA', baslangicBelgeTarihi: b, bitisBelgeTarihi: e }), 'giden'),
+  );
+  await dene('e-Arşiv (oluşturma zamanı)', async () => {
+    const input = { mukellefVkn: QNB_VKN, creationTimeBaslangic: b, creationTimeBitis: e15, pagingStart: 0, pagingLimit: EARSIV_PAGE };
+    const xml = await soap(EARSIV_URL, 'faturaListeSorgula', { input: JSON.stringify(input) }, { earsiv: true });
+    const r = parseEarsivResult(xml);
+    if (r.code && r.code !== EARSIV_OK) return `${r.code}: ${(r.text || '').slice(0, 200)}`;
+    return parseEarsivPage(xml, '0000-00-00', '9999-12-31').list;
+  });
+  return { list: mergeLists(...bulunan), notlar };
+}
+
 async function listele(yon: Yon, baslangic: string, bitis: string) {
   const { op, params } = listRequest(yon, QNB_VKN, compact(baslangic), compact(bitis));
   const efatura = parseList(await soap(QNB_URL, op, params), yon);
@@ -276,12 +339,19 @@ async function listele(yon: Yon, baslangic: string, bitis: string) {
     portal.hata ? `Portal e-Faturaları alınamadı: ${portal.hata}` : '',
     earsiv.hata ? `e-Arşiv faturaları alınamadı: ${earsiv.hata}` : '',
   ].filter(Boolean);
-  const giden = mergeLists(efatura, portal.list);
+  let giden = mergeLists(efatura, portal.list);
+  let bilgi = earsiv.bilgi ? `e-Fatura: web servis ${efatura.length}, portal ${portal.list.length} kayıt. ${earsiv.bilgi}` : '';
+  if (!giden.length && !earsiv.list.length) {
+    const tarama = await gidenTarama(baslangic, bitis);
+    giden = tarama.list;
+    bilgi = `${bilgi}\n\nEk tarama — ${tarama.notlar.join(' · ')}`.trim();
+    console.log(`giden ek tarama ${baslangic}..${bitis}: ${tarama.notlar.join(' | ')}`);
+  }
   await tutarlariTamamla(giden, baslangic, bitis);
   return {
     faturalar: mergeLists(giden, earsiv.list),
     ...(uyarilar.length ? { uyari: uyarilar.join('\n\n') } : {}),
-    ...(earsiv.bilgi ? { bilgi: `e-Fatura: web servis ${efatura.length}, portal ${portal.list.length} kayıt. ${earsiv.bilgi}` } : {}),
+    ...(bilgi ? { bilgi } : {}),
   };
 }
 
