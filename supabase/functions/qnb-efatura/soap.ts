@@ -108,6 +108,24 @@ export function portalListRequest(vkn: string, baslangic: string, bitis: string)
   };
 }
 
+/** Giden e-Faturaların tutarları (gönderim tarihine göre); parametreler sarmalsız gider */
+export function tutarRequest(vkn: string, baslangic: string, bitis: string): { op: string; params: Record<string, string> } {
+  return {
+    op: 'gidenBelgeTutarBilgileriSorgula',
+    params: { vergiTcKimlikNo: vkn, belgeTuru: 'FATURA', baslangicGonderimTarihi: baslangic, bitisGonderimTarihi: bitis },
+  };
+}
+
+/** gidenBelgeTutarBilgileriSorgula yanıtı → ETTN'ye göre ödenecek tutar */
+export function parseTutarMap(xml: string): Map<string, { tutar: number; paraBirimi: string }> {
+  const out = new Map<string, { tutar: number; paraBirimi: string }>();
+  for (const r of parseReturns(xml)) {
+    const tutar = firstAmount(r, ['odenecekTutar']);
+    if (r.ettn && tutar) out.set(r.ettn, { tutar, paraBirimi: r.odenecekTutarDovizCinsi || 'TRY' });
+  }
+  return out;
+}
+
 /** QNB "X boş olamaz" dediğinde X için kullanılacak değer (bilinmeyen alan için yok) */
 export const PORTAL_DEFAULTS: Record<string, string> = {
   belgeVersiyon: '1.0',
@@ -162,18 +180,39 @@ export function isoDate(v: string | undefined): string {
   return '';
 }
 
+/**
+ * Tutar metni → sayı. "1234.56", "1.234,56", "1,234.56", "1234,56" biçimleri; okunamazsa NaN.
+ */
+export function parseTutar(v: string | undefined): number {
+  let t = (v ?? '').replace(/[^\d.,-]/g, '');
+  if (!t) return NaN;
+  const comma = t.lastIndexOf(','), dot = t.lastIndexOf('.');
+  if (comma > dot) t = t.replace(/\./g, '').replace(',', '.');
+  else if (comma !== -1) t = t.replace(/,/g, '');
+  return Number(t);
+}
+
+/** Verilen alanlardan ilk okunabilen tutar (yoksa 0) */
+function firstAmount(r: Record<string, string>, keys: string[]): number {
+  for (const k of keys) {
+    const n = parseTutar(r[k]);
+    if (Number.isFinite(n)) return n;
+  }
+  return 0;
+}
+
 export function toEFatura(r: Record<string, string>, yon: Yon): EFatura {
   // Giden: gidenBelgeleriListele(Data/DataExt) ve gidenBelgeleriListelePortal(Data) alanları da karşılanır
   const vkn = (yon === 'gelen' ? r.gonderenVknTckn : r.aliciVkn || r.alanVergiTcKimlikNo) ?? '';
   const unvan = (yon === 'gelen' ? r.saticiUnvan || r.gonderenIsim : r.aliciUnvan || r.receiverName) || vkn || 'Bilinmeyen firma';
-  const tutar = Number(r.odenecekTutar ?? r.payableAmount ?? r.tutar ?? '');
+  const tutar = firstAmount(r, ['odenecekTutar', 'payableAmount', 'tutar', 'toplamTutar']);
   return {
     ettn: r.ettn ?? '',
     belgeNo: r.belgeNo || r.invoiceID || r.yerelBelgeNo || '',
     tarih: isoDate(r.belgeTarihi),
     unvan,
     vkn,
-    tutar: Number.isFinite(tutar) ? tutar : 0,
+    tutar,
     paraBirimi: r.odenecekTutarDovizCinsi || r.dovizCinsi || r.currency || 'TRY',
     profil: r.profileId || r.profileID || r.faturaSenaryo || r.belgeTipi || '',
   };
@@ -229,7 +268,7 @@ export function parseEarsivResult(xml: string): { code: string; text: string } {
 export const EARSIV_OK = 'AE00000';
 
 export function earsivToEFatura(r: Record<string, string>): EFatura {
-  const tutar = Number(r.payableAmount ?? r.toplamTutar ?? '');
+  const tutar = firstAmount(r, ['payableAmount', 'toplamTutar']);
   const vkn = r.receiverIdentifier ?? '';
   return {
     ettn: r.uuid ?? '',
@@ -237,7 +276,7 @@ export function earsivToEFatura(r: Record<string, string>): EFatura {
     tarih: isoDate(r.issueDate || r.faturaZamani || r.duzenlenmeZamani),
     unvan: r.receiverName || r.receiverIdentifierTxt || vkn || 'Bilinmeyen alıcı',
     vkn,
-    tutar: Number.isFinite(tutar) ? tutar : 0,
+    tutar,
     paraBirimi: r.currency || 'TRY',
     profil: r.profileId || 'EARSIVFATURA',
     tur: 'earsiv',
