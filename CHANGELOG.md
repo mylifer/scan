@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.49.0
+## 1.49.0 — `7094d8a`
 - **Web sürümü Shadcn UI tasarım diliyle baştan yenilendi:**
   - **Tasarım Sistemi:** Inter tipografisi, zinc/neutral renk paleti, 1 piksellik belirgin kart kenarlıkları ve modern koyu/açık mod uyumu
   - **Shadcn Sidebar (Sol Menü):** Marka başlığı, v1.49.0 rozeti, kategori başlığı, aktif göstergeli ve hover efektli gezinme butonları ve kullanıcı profil alanı
