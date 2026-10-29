@@ -16,6 +16,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.43.3 — `KOD`
+- Giden e-Faturalar: QNB portalından kesilen faturalar da listeleniyor (gidenBelgeleriListelePortal); alıcı unvanı ve tutarıyla
+
 ## 1.43.2 — `7351c23`
 - e-Faturalar: farklı tarih biçimleri (15.10.2026, saatli, epoch) tanınıyor; tarihi tanınmayan e-Arşiv faturası artık listeden düşmüyor
 - Giden listesi boşsa QNB e-Arşiv servisinin kaç kayıt döndürdüğü yazıyor

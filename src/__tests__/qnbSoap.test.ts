@@ -228,3 +228,15 @@ describe('tarih biçimleri', () => {
     assert.match(page.ornek ?? '', /issueDate=2026-08-01/);
   });
 });
+
+describe('giden portal e-Faturaları', () => {
+  it('istek fatura tarihiyle gider, Portal verisi eşlenir', async () => {
+    const { portalListRequest } = await import('../../supabase/functions/qnb-efatura/soap');
+    const { op, params } = portalListRequest('1234567890', '20261001', '20261031');
+    assert.equal(op, 'gidenBelgeleriListelePortal');
+    assert.deepEqual(params, { vergiTcKimlikNo: '1234567890', belgeTuru: 'FATURA', faturaBaslangicTarihi: '20261001', faturaBitisTarihi: '20261031' });
+    const xml = '<return xsi:type="ns2:gidenBelgeleriListelePortalData"><alanVergiTcKimlikNo>2222222222</alanVergiTcKimlikNo><belgeNo>GDN2026000000005</belgeNo><belgeTarihi>20261012</belgeTarihi><currency>TRY</currency><ettn>66666666-6666-6666-6666-666666666666</ettn><receiverName>Müşteri Ltd. Şti.</receiverName><tutar>3600.00</tutar><belgeTipi>TICARIFATURA</belgeTipi></return>';
+    const [f] = parseList(xml, 'giden');
+    assert.deepEqual(f, { ettn: '66666666-6666-6666-6666-666666666666', belgeNo: 'GDN2026000000005', tarih: '2026-10-12', unvan: 'Müşteri Ltd. Şti.', vkn: '2222222222', tutar: 3600, paraBirimi: 'TRY', profil: 'TICARIFATURA' });
+  });
+});
