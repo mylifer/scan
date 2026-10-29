@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.43.3 — `KOD`
+## 1.43.3 — `64af47f`
 - Giden e-Faturalar: QNB portalından kesilen faturalar da listeleniyor (gidenBelgeleriListelePortal); alıcı unvanı ve tutarıyla
 
 ## 1.43.2 — `7351c23`
