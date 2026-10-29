@@ -11,7 +11,8 @@ import { capitalizeTr, formatTL, monthRange } from '../../../lib/format';
 import { haptics } from '../../../lib/haptics';
 import { useWide } from '../../../lib/layout';
 import { type KdvAy, kdvAyHesapla } from '../../../lib/kdvAy';
-import { tabular, type as t, useTheme } from '../../../lib/theme';
+import { fontFamily, tabular, type as t, useShadcnTheme, useTheme } from '../../../lib/theme';
+import { Badge } from '../../../components/web/Badge';
 import { donemGetir, qnbDurum } from '../../../services/efatura/donemCache';
 import { EFaturaError } from '../../../services/efatura/qnbEfatura';
 import { getSummary } from '../../../services/supabase/receiptsRepository';
@@ -30,6 +31,7 @@ function ayAraligi(offset: number) {
  */
 export default function KdvScreen() {
   const theme = useTheme();
+  const st = useShadcnTheme();
   const wide = useWide();
   const [offset, setOffset] = useState(0);
   const [sonuclar, setSonuclar] = useState<Record<string, KdvAy>>({});
@@ -87,9 +89,9 @@ export default function KdvScreen() {
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ paddingTop: wide ? 20 : 12, paddingHorizontal: wide ? 8 : 0, paddingBottom: 40 }}
       refreshControl={<RefreshControl refreshing={false} onRefresh={() => yukle(true)} />}>
-      <View style={[styles.ayRow, wide && styles.ayRowWide, { backgroundColor: theme.card }]}>
+      <View style={[styles.ayRow, wide && [styles.ayRowWide, { backgroundColor: st.card, borderColor: st.border }], { backgroundColor: wide ? st.card : theme.card }]}>
         <AyButon yon="left" label="Önceki ay" onPress={() => setOffset((o) => o - 1)} />
-        <Text style={[t.headline, { color: theme.label }]}>{capitalizeTr(ay.label)}</Text>
+        <Text style={[wide ? styles.periodTextWide : t.headline, { color: wide ? st.cardForeground : theme.label }]}>{capitalizeTr(ay.label)}</Text>
         <AyButon yon="right" label="Sonraki ay" disabled={offset === 0} onPress={() => setOffset((o) => Math.min(0, o + 1))} />
       </View>
 
@@ -130,17 +132,35 @@ export default function KdvScreen() {
               .filter(Boolean)
               .join(' ')}
           />
-          <View style={[styles.sonuc, wide && styles.kartWide, { backgroundColor: theme.label }]}>
-            <Text style={[t.footnote, styles.kartBaslik, { color: theme.background, opacity: 0.75 }]}>{sonucMetni.toLocaleUpperCase('tr-TR')}</Text>
-            <Text style={[styles.buyuk, tabular, { color: theme.background }]}>{formatTL(Math.abs(kdv.sonuc))}</Text>
-            <View style={[styles.ayrinti, { borderTopColor: theme.background, opacity: 0.85 }]}>
+          <View
+            style={[
+              styles.sonuc,
+              wide && [styles.kartWide, { backgroundColor: st.card, borderColor: st.border, borderWidth: 1 }],
+              { backgroundColor: wide ? st.card : theme.label },
+            ]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+              <Text style={[t.footnote, styles.kartBaslik, { color: wide ? st.mutedForeground : theme.background, opacity: wide ? 1 : 0.75 }]}>
+                {sonucMetni.toLocaleUpperCase('tr-TR')}
+              </Text>
+              {wide && (
+                <Badge variant={kdv.sonuc > 0 ? 'destructive' : 'success'}>
+                  {kdv.sonuc > 0 ? 'Ödenecek' : 'Devreden'}
+                </Badge>
+              )}
+            </View>
+            <Text style={[styles.buyuk, tabular, { color: wide ? st.cardForeground : theme.background }]}>
+              {formatTL(Math.abs(kdv.sonuc))}
+            </Text>
+            <View style={[styles.ayrinti, { borderTopColor: wide ? st.border : theme.background, opacity: wide ? 1 : 0.85 }]}>
               <View style={styles.satir}>
-                <Text style={[t.subhead, { color: theme.background }]}>Beyan edeceğim KDV</Text>
-                <Text style={[t.subhead, tabular, { color: theme.background }]}>{formatTL(kdv.kestigim.beyan)}</Text>
+                <Text style={[t.subhead, { color: wide ? st.mutedForeground : theme.background }]}>Beyan edeceğim KDV</Text>
+                <Text style={[t.subhead, tabular, { color: wide ? st.cardForeground : theme.background, fontWeight: '600' }]}>{formatTL(kdv.kestigim.beyan)}</Text>
               </View>
               <View style={styles.satir}>
-                <Text style={[t.subhead, { color: theme.background }]}>Düşebileceğim KDV</Text>
-                <Text style={[t.subhead, tabular, { color: theme.background }]}>{kdv.dusulebilir >= 0 ? `−${formatTL(kdv.dusulebilir)}` : formatTL(-kdv.dusulebilir)}</Text>
+                <Text style={[t.subhead, { color: wide ? st.mutedForeground : theme.background }]}>Düşebileceğim KDV</Text>
+                <Text style={[t.subhead, tabular, { color: wide ? st.cardForeground : theme.background, fontWeight: '600' }]}>
+                  {kdv.dusulebilir >= 0 ? `−${formatTL(kdv.dusulebilir)}` : formatTL(-kdv.dusulebilir)}
+                </Text>
               </View>
             </View>
           </View>
@@ -182,29 +202,49 @@ function Kart({
   not?: string;
 }) {
   const theme = useTheme();
+  const st = useShadcnTheme();
   const wide = useWide();
   return (
-    <View style={[styles.kart, wide && styles.kartWide, { backgroundColor: theme.card }]}>
-      <Text style={[t.footnote, styles.kartBaslik, { color: theme.secondaryLabel }]}>{baslik.toLocaleUpperCase('tr-TR')}</Text>
-      <Text style={[t.subhead, { color: theme.secondaryLabel }]}>{aciklama}</Text>
-      <Text style={[styles.buyuk, tabular, { color: theme.label }]}>{formatTL(tutar)}</Text>
-      <View style={[styles.ayrinti, { borderTopColor: theme.separator }]}>
+    <View
+      style={[
+        styles.kart,
+        wide && [styles.kartWide, { backgroundColor: st.card, borderColor: st.border, borderWidth: 1 }],
+        { backgroundColor: wide ? st.card : theme.card },
+      ]}>
+      <Text style={[t.footnote, styles.kartBaslik, { color: wide ? st.mutedForeground : theme.secondaryLabel }]}>
+        {baslik.toLocaleUpperCase('tr-TR')}
+      </Text>
+      <Text style={[t.subhead, { color: wide ? st.mutedForeground : theme.secondaryLabel }]}>{aciklama}</Text>
+      <Text style={[styles.buyuk, tabular, { color: wide ? st.cardForeground : theme.label }]}>{formatTL(tutar)}</Text>
+      <View style={[styles.ayrinti, { borderTopColor: wide ? st.border : theme.separator }]}>
         {satirlar.map((s) => (
           <View key={s.ad} style={styles.satir}>
-            <Text style={[t.subhead, { color: s.soluk ? theme.secondaryLabel : theme.label, fontWeight: s.kalin ? '600' : '400', flexShrink: 1 }]}>{s.ad}</Text>
-            <Text style={[t.subhead, tabular, { color: s.soluk ? theme.secondaryLabel : theme.label, fontWeight: s.kalin ? '600' : '400' }]}>
+            <Text style={[t.subhead, { color: s.soluk ? (wide ? st.mutedForeground : theme.secondaryLabel) : wide ? st.cardForeground : theme.label, fontWeight: s.kalin ? '600' : '400', flexShrink: 1 }]}>
+              {s.ad}
+            </Text>
+            <Text
+              style={[
+                t.subhead,
+                tabular,
+                {
+                  color: s.soluk ? (wide ? st.mutedForeground : theme.secondaryLabel) : wide ? st.cardForeground : theme.label,
+                  fontWeight: s.kalin ? '600' : '400',
+                },
+              ]}>
               {s.tutar < 0 ? `−${formatTL(-s.tutar)}` : formatTL(s.tutar)}
             </Text>
           </View>
         ))}
       </View>
-      {not ? <Text style={[t.footnote, { color: theme.secondaryLabel }]}>{not}</Text> : null}
+      {not ? <Text style={[t.footnote, { color: wide ? st.mutedForeground : theme.secondaryLabel, marginTop: 4 }]}>{not}</Text> : null}
     </View>
   );
 }
 
 function AyButon({ yon, label, onPress, disabled }: { yon: 'left' | 'right'; label: string; onPress: () => void; disabled?: boolean }) {
   const theme = useTheme();
+  const st = useShadcnTheme();
+  const wide = useWide();
   return (
     <Pressable
       onPress={() => {
@@ -215,16 +255,27 @@ function AyButon({ yon, label, onPress, disabled }: { yon: 'left' | 'right'; lab
       accessibilityRole="button"
       accessibilityLabel={label}
       hitSlop={8}
-      style={({ pressed }) => ({ opacity: disabled ? 0.25 : pressed ? 0.5 : 1, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' })}>
-      <Icon sf={`chevron.${yon}`} ion={yon === 'left' ? 'chevron-back' : 'chevron-forward'} size={18} color={theme.blue} weight="semibold" />
+      style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
+        {
+          opacity: disabled ? 0.25 : pressed ? 0.5 : 1,
+          width: 36,
+          height: 36,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 6,
+        },
+        hovered && wide && { backgroundColor: st.muted },
+      ]}>
+      <Icon sf={`chevron.${yon}`} ion={yon === 'left' ? 'chevron-back' : 'chevron-forward'} size={16} color={wide ? st.cardForeground : theme.blue} weight="semibold" />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  ayRowWide: { alignSelf: 'flex-start', width: 320, marginBottom: 20 },
+  ayRowWide: { alignSelf: 'flex-start', width: 280, marginBottom: 20, borderWidth: 1, borderRadius: 8, paddingHorizontal: 4 },
+  periodTextWide: { fontFamily, fontSize: 13, fontWeight: '600' },
   cardsWide: { flexDirection: 'row', alignItems: 'stretch', gap: 16, marginBottom: 28 },
-  kartWide: { flex: 1, minWidth: 0 },
+  kartWide: { flex: 1, minWidth: 0, borderRadius: 8, padding: 18 },
   ayRow: { marginHorizontal: 16, marginBottom: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 },
   cards: { marginHorizontal: 16, gap: 12, marginBottom: 20 },
   kart: { borderRadius: 14, padding: 16, gap: 4 },

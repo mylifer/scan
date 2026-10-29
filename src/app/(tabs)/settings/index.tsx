@@ -9,7 +9,8 @@ import { showAlert } from '../../../lib/alert';
 import { errorMessage } from '../../../lib/errors';
 import { formatBytes, formatTL, monthRange } from '../../../lib/format';
 import { haptics } from '../../../lib/haptics';
-import { tabular, type as t, useTheme } from '../../../lib/theme';
+import { useWide } from '../../../lib/layout';
+import { tabular, type as t, useShadcnTheme, useTheme } from '../../../lib/theme';
 import { HOST_APP_NAME, VERSION_LABEL } from '../../../lib/version';
 import { useMonthlyBudget } from '../../../lib/budget';
 import { showToast } from '../../../lib/toast';
@@ -32,6 +33,8 @@ const REPO_URL = 'https://github.com/mylifer/scan';
 
 export default function SettingsScreen() {
   const theme = useTheme();
+  const st = useShadcnTheme();
+  const wide = useWide();
   const { session } = useAuth();
   const [count, setCount] = useState<number | null>(null);
   const [usage, setUsage] = useState<StorageUsage | null>(null);
@@ -203,16 +206,19 @@ export default function SettingsScreen() {
   const ratio = usage ? usage.bytes / STORAGE_QUOTA : 0;
 
   return (
-    <ScrollView style={{ backgroundColor: theme.background }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingTop: 16, paddingBottom: 40 }}>
-      <View style={[styles.account, { backgroundColor: theme.card }]}>
-        <View style={[styles.avatar, { backgroundColor: theme.gray }]}>
-          <Text style={styles.avatarText}>{(email[0] ?? '?').toLocaleUpperCase('tr-TR')}</Text>
+    <ScrollView
+      style={{ backgroundColor: theme.background }}
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={{ paddingTop: wide ? 20 : 16, paddingHorizontal: wide ? 8 : 0, paddingBottom: 40 }}>
+      <View style={[styles.account, wide && [styles.accountWide, { borderColor: st.border, backgroundColor: st.card }], { backgroundColor: wide ? st.card : theme.card }]}>
+        <View style={[styles.avatar, wide && styles.avatarWide, { backgroundColor: wide ? st.muted : theme.gray, borderColor: st.border }]}>
+          <Text style={[styles.avatarText, wide && { color: st.cardForeground, fontSize: 18 }]}>{(email[0] ?? '?').toLocaleUpperCase('tr-TR')}</Text>
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[t.title3, { color: theme.label }]} numberOfLines={1}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={[t.title3, wide && { fontSize: 16, fontWeight: '600' }, { color: wide ? st.cardForeground : theme.label }]} numberOfLines={1}>
             {email || 'Hesap'}
           </Text>
-          <Text style={[t.subhead, { color: theme.secondaryLabel }]}>Supabase hesabı</Text>
+          <Text style={[t.subhead, wide && { fontSize: 13 }, { color: wide ? st.mutedForeground : theme.secondaryLabel }]}>Supabase hesabı</Text>
         </View>
       </View>
 
@@ -373,7 +379,9 @@ function safeVision() {
 
 const styles = StyleSheet.create({
   account: { marginHorizontal: 16, marginBottom: 28, borderRadius: 12, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 },
+  accountWide: { borderRadius: 8, borderWidth: 1, padding: 18, marginBottom: 20 },
   avatar: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center' },
+  avatarWide: { width: 44, height: 44, borderRadius: 22, borderWidth: 1 },
   avatarText: { color: '#fff', fontSize: 26, fontWeight: '600' },
   meterWrap: { paddingLeft: 16 + 29 + 12, paddingRight: 16, paddingBottom: 12, gap: 6 },
   meter: { height: 6, borderRadius: 3, overflow: 'hidden', flexDirection: 'row' },
