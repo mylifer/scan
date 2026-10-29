@@ -1,12 +1,12 @@
-import type { EFatura, Yon } from '../../../supabase/functions/qnb-efatura/soap';
+import type { EFatura, FaturaDetay, Yon } from '../../../supabase/functions/qnb-efatura/soap';
 
-export type { EFatura, Yon };
+export type { EFatura, FaturaDetay, Yon };
 
 /** supabase.functions.invoke ile aynı biçim (testte sahtelenebilsin diye dışarıdan verilir) */
 export type InvokeFn = (
   name: string,
   options: { body: Record<string, unknown> },
-) => Promise<{ data: { faturalar?: EFatura[] } | null; error: unknown }>;
+) => Promise<{ data: { faturalar?: EFatura[]; uyari?: string; detay?: FaturaDetay } | null; error: unknown }>;
 
 export class EFaturaError extends Error {
   constructor(
@@ -19,15 +19,35 @@ export class EFaturaError extends Error {
   }
 }
 
-/** Sunucu fonksiyonu (qnb-efatura) üzerinden dönemin faturalarını getirir. Tarihler YYYY-MM-DD, ikisi de dahil. */
-export async function listEFaturalar(invoke: InvokeFn, yon: Yon, baslangic: string, bitis: string): Promise<EFatura[]> {
-  const { data, error } = await invoke('qnb-efatura', { body: { yon, baslangic, bitis } });
+async function call(invoke: InvokeFn, body: Record<string, unknown>) {
+  const { data, error } = await invoke('qnb-efatura', { body });
   if (error) {
     const { status, message, code } = await describeError(error);
     throw new EFaturaError(friendly(status, message), code === 'qnb_login');
   }
+  return data;
+}
+
+/**
+ * Sunucu fonksiyonu (qnb-efatura) üzerinden dönemin faturalarını getirir. Tarihler YYYY-MM-DD, ikisi de dahil.
+ * Giden'de e-Fatura ve e-Arşiv birlikte gelir; e-Arşiv alınamazsa liste yine döner, sebebi `uyari`dadır.
+ */
+export async function listEFaturalar(
+  invoke: InvokeFn,
+  yon: Yon,
+  baslangic: string,
+  bitis: string,
+): Promise<{ faturalar: EFatura[]; uyari?: string }> {
+  const data = await call(invoke, { yon, baslangic, bitis });
   if (!Array.isArray(data?.faturalar)) throw new EFaturaError('Sunucu beklenmeyen bir yanıt döndürdü.');
-  return data.faturalar;
+  return { faturalar: data.faturalar, ...(data.uyari ? { uyari: data.uyari } : {}) };
+}
+
+/** e-Faturanın kalemleri, KDV dökümü ve toplamları (UBL'den) */
+export async function getEFaturaDetay(invoke: InvokeFn, yon: Yon, ettn: string): Promise<FaturaDetay> {
+  const data = await call(invoke, { islem: 'detay', yon, ettn });
+  if (!data?.detay) throw new EFaturaError('Sunucu beklenmeyen bir yanıt döndürdü.');
+  return data.detay;
 }
 
 /** FunctionsHttpError'da context bir Response'tur: durum kodu ve sunucunun mesajı oradan okunur */

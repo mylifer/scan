@@ -1,13 +1,40 @@
-// Supabase Edge Function: QNB eSolutions'tan gelen/giden e-faturaları listeler (yalnızca okuma).
+// Supabase Edge Function: QNB eSolutions'tan gelen/giden e-faturaları listeler ve fatura detayını getirir
+// (yalnızca okuma).
 // QNB kullanıcı kodu, şifresi ve VKN sunucuda (Supabase secret) durur, uygulamaya girmez.
 //
 // Gerekli secret'lar: QNB_USER, QNB_PASS, QNB_VKN, QNB_ALLOWED_EMAILS (virgülle ayrılmış).
 // QNB_ALLOWED_EMAILS boşsa kimse çağıramaz: faturalar tek bir firmaya ait, her giriş yapan görmesin.
 //
-// İstek: POST { yon: 'gelen' | 'giden', baslangic: 'YYYY-MM-DD', bitis: 'YYYY-MM-DD' }
-// Yanıt: { faturalar: EFatura[] }  ya da hata: { message, code? }  (code: 'qnb_login' → tekrar denemeyin)
+// İstekler (POST):
+//   { yon, baslangic: 'YYYY-MM-DD', bitis: 'YYYY-MM-DD' }  → { faturalar: EFatura[], uyari? }
+//     giden: e-Fatura + e-Arşiv birlikte
+//   { islem: 'detay', yon, ettn }                         → { detay: FaturaDetay }  (yalnızca e-Fatura)
+// Hata: { message, code? }  (code: 'qnb_login' → tekrar denemeyin)
 
-import { buildEnvelope, isLoginFault, listRequest, parseFault, parseList, QNB_URL, type Yon } from './soap.ts';
+import { unzipSync } from 'npm:fflate@0.8.2';
+
+import {
+  base64ToBytes,
+  buildEnvelope,
+  detailRequest,
+  EARSIV_OK,
+  EARSIV_URL,
+  earsivListInputs,
+  ETTN_RE,
+  type EFatura,
+  extractXml,
+  isLoginFault,
+  listRequest,
+  mergeLists,
+  parseBase64Return,
+  parseEarsivList,
+  parseEarsivResult,
+  parseFault,
+  parseList,
+  parseUbl,
+  QNB_URL,
+  type Yon,
+} from './soap.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 // Baştaki/sondaki boşluk ve satır sonu (ör. secret'a yapıştırırken gelen Enter) şifreyi bozmasın
@@ -26,7 +53,8 @@ const MAX_DAYS = 62;
 const LOGIN_COOLDOWN_MS = 15 * 60_000;
 /** Hesap bloke ise daha uzun beklenir */
 const BLOKE_COOLDOWN_MS = 60 * 60_000;
-let loginBlockedUntil = 0;
+/** Servis başına (e-Fatura / e-Arşiv) giriş engeli bitiş zamanı */
+const loginBlockedUntil = new Map<string, number>();
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -61,6 +89,90 @@ function validRange(a: unknown, b: unknown): a is string {
   return Number.isFinite(days) && days >= 0 && days <= MAX_DAYS;
 }
 
+/** QNB girişi reddetti: bu istekte başka hiçbir QNB çağrısı yapılmaz */
+class LoginError extends Error {}
+/** QNB'nin iş hatası (parametre vb.) */
+class QnbError extends Error {}
+
+async function soap(url: string, op: string, params: Record<string, string>, opts: { earsiv?: boolean; wrap?: boolean } = {}): Promise<string> {
+  if (Date.now() < (loginBlockedUntil.get(url) ?? 0)) {
+    throw new LoginError('QNB girişi az önce başarısız oldu. Hesap kilitlenmesin diye bir süre yeniden denenmiyor.');
+  }
+  let xml: string;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/xml; charset=utf-8', SOAPAction: '""' },
+      body: buildEnvelope(op, params, QNB_USER, QNB_PASS, opts),
+      signal: AbortSignal.timeout(60_000),
+    });
+    xml = await res.text();
+  } catch (e) {
+    throw new QnbError(`QNB'ye ulaşılamadı: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  const fault = parseFault(xml);
+  if (!fault) return xml;
+  if (isLoginFault(fault)) {
+    // Bloke hesapta doğru şifre de reddedilir; her deneme blokeyi uzatabilir
+    const bloke = /bloke|locked|kilit/i.test(fault);
+    loginBlockedUntil.set(url, Date.now() + (bloke ? BLOKE_COOLDOWN_MS : LOGIN_COOLDOWN_MS));
+    throw new LoginError(
+      bloke
+        ? `QNB hesabı bloke oldu (${fault}). QNB eSolutions portalından ya da destekten açtırın; açılana kadar tekrar denemeyin.`
+        : `QNB girişi başarısız: ${fault}`,
+    );
+  }
+  throw new QnbError(`QNB hatası: ${fault}`);
+}
+
+const compact = (s: string) => s.replace(/-/g, '');
+
+/**
+ * Giden e-Arşiv faturaları. Girdi alanları belgelenmediği için olası biçimler sırayla denenir;
+ * ilk başarılı yanıt kullanılır. Hiçbiri tutmazsa QNB'nin mesajları uyarı olarak döner.
+ */
+async function earsivList(baslangic: string, bitis: string): Promise<{ list: EFatura[]; hata?: string }> {
+  const hatalar: string[] = [];
+  for (const input of earsivListInputs(QNB_VKN, baslangic, bitis)) {
+    let xml: string;
+    try {
+      xml = await soap(EARSIV_URL, 'faturaListeSorgula', { input: JSON.stringify(input) }, { earsiv: true });
+    } catch (e) {
+      // e-Arşiv girişi reddedilirse (ör. ayrı kullanıcı gerekiyorsa) başka biçim denenmez;
+      // gelen ve giden e-Fatura listesi yine gösterilir
+      if (e instanceof LoginError) return { list: [], hata: e.message };
+      hatalar.push(e instanceof Error ? e.message : String(e));
+      continue;
+    }
+    const r = parseEarsivResult(xml);
+    if (r.code === EARSIV_OK || (!r.code && /<output\b/.test(xml))) {
+      console.log(`e-Arşiv listesi: ${Object.keys(input).join(',')} biçimi çalıştı`);
+      return { list: parseEarsivList(xml, baslangic, bitis) };
+    }
+    hatalar.push(`${r.code || 'kod yok'}: ${r.text || 'açıklama yok'} [${Object.keys(input).join(',')}]`);
+  }
+  console.log('e-Arşiv listesi alınamadı:', hatalar.join(' | '));
+  return { list: [], hata: hatalar.join(' | ') };
+}
+
+async function listele(yon: Yon, baslangic: string, bitis: string) {
+  const { op, params } = listRequest(yon, QNB_VKN, compact(baslangic), compact(bitis));
+  const efatura = parseList(await soap(QNB_URL, op, params), yon);
+  if (yon === 'gelen') return { faturalar: efatura };
+  const earsiv = await earsivList(baslangic, bitis);
+  return {
+    faturalar: mergeLists(efatura, earsiv.list),
+    ...(earsiv.hata ? { uyari: `e-Arşiv faturaları alınamadı: ${earsiv.hata}` } : {}),
+  };
+}
+
+async function detay(yon: Yon, ettn: string) {
+  const { op, params } = detailRequest(yon, QNB_VKN, ettn);
+  const b64 = parseBase64Return(await soap(QNB_URL, op, params, { wrap: false }));
+  if (!b64) throw new QnbError('QNB faturanın içeriğini döndürmedi.');
+  return { detay: parseUbl(extractXml(base64ToBytes(b64), unzipSync)) };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return reply(405, { message: 'Yalnızca POST' });
@@ -77,47 +189,26 @@ Deno.serve(async (req) => {
   if (!QNB_USER || !QNB_PASS || !/^\d{10,11}$/.test(QNB_VKN)) {
     return reply(500, { message: 'Sunucuda QNB bilgileri (QNB_USER, QNB_PASS, QNB_VKN) eksik.' });
   }
-  if (Date.now() < loginBlockedUntil) {
-    return reply(502, { code: 'qnb_login', message: 'QNB girişi az önce başarısız oldu. Hesap kilitlenmesin diye bir süre yeniden denenmiyor.' });
-  }
 
-  let b: { yon?: unknown; baslangic?: unknown; bitis?: unknown };
+  let b: { islem?: unknown; yon?: unknown; baslangic?: unknown; bitis?: unknown; ettn?: unknown };
   try {
     b = await req.json();
   } catch {
     return reply(400, { message: 'Geçersiz istek gövdesi.' });
   }
   if (b.yon !== 'gelen' && b.yon !== 'giden') return reply(400, { message: "yon 'gelen' ya da 'giden' olmalı." });
-  if (!validRange(b.baslangic, b.bitis)) return reply(400, { message: `Tarih aralığı geçersiz (en fazla ${MAX_DAYS} gün).` });
   const yon = b.yon as Yon;
-  const compact = (s: string) => s.replace(/-/g, '');
 
-  const { op, params } = listRequest(yon, QNB_VKN, compact(b.baslangic), compact(b.bitis as string));
-  let xml: string;
   try {
-    const res = await fetch(QNB_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/xml; charset=utf-8', SOAPAction: '""' },
-      body: buildEnvelope(op, params, QNB_USER, QNB_PASS),
-      signal: AbortSignal.timeout(60_000),
-    });
-    xml = await res.text();
-  } catch (e) {
-    return reply(504, { message: `QNB'ye ulaşılamadı: ${e instanceof Error ? e.message : String(e)}` });
-  }
-
-  const fault = parseFault(xml);
-  if (fault) {
-    if (isLoginFault(fault)) {
-      // Bloke hesapta doğru şifre de reddedilir; her deneme blokeyi uzatabilir
-      const bloke = /bloke|locked|kilit/i.test(fault);
-      loginBlockedUntil = Date.now() + (bloke ? BLOKE_COOLDOWN_MS : LOGIN_COOLDOWN_MS);
-      const message = bloke
-        ? `QNB hesabı bloke oldu (${fault}). QNB eSolutions portalından ya da destekten açtırın; açılana kadar tekrar denemeyin.`
-        : `QNB girişi başarısız: ${fault}`;
-      return reply(502, { code: 'qnb_login', message });
+    if (b.islem === 'detay') {
+      if (typeof b.ettn !== 'string' || !ETTN_RE.test(b.ettn)) return reply(400, { message: 'Geçersiz ETTN.' });
+      return reply(200, await detay(yon, b.ettn));
     }
-    return reply(502, { message: `QNB hatası: ${fault}` });
+    if (!validRange(b.baslangic, b.bitis)) return reply(400, { message: `Tarih aralığı geçersiz (en fazla ${MAX_DAYS} gün).` });
+    return reply(200, await listele(yon, b.baslangic, b.bitis as string));
+  } catch (e) {
+    if (e instanceof LoginError) return reply(502, { code: 'qnb_login', message: e.message });
+    const message = e instanceof Error ? e.message : String(e);
+    return reply(/ulaşılamadı/.test(message) ? 504 : 502, { message });
   }
-  return reply(200, { faturalar: parseList(xml, yon) });
 });
