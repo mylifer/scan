@@ -16,6 +16,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.41.3 — `f0cd4bc`
+- e-Faturalar: QNB hesabı bloke olduğunda açık uyarı ("portaldan/destekten açtırın"); sunucu bu durumda 1 saat QNB'ye istek atmaz
+- "Tekrar dene"ye dokununca "Deneniyor…" göstergesi
+
 ## 1.41.2 — `2f12c1d`
 - e-Faturalar: QNB şifresinin sonunda yapıştırırken gelen satır sonu/boşluk girişi bozuyordu; QNB bilgileri artık kenar boşluklarından temizleniyor
 - Yayın iş akışı QNB secret'larının biçimini (değerleri göstermeden) denetliyor

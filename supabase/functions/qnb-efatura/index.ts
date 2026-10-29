@@ -24,6 +24,8 @@ const ALLOWED = (Deno.env.get('QNB_ALLOWED_EMAILS') ?? '')
 const MAX_DAYS = 62;
 /** QNB giriş hatasından sonra bu süre boyunca QNB'ye hiç istek atılmaz (hesap kilitlenmesin) */
 const LOGIN_COOLDOWN_MS = 15 * 60_000;
+/** Hesap bloke ise daha uzun beklenir */
+const BLOKE_COOLDOWN_MS = 60 * 60_000;
 let loginBlockedUntil = 0;
 
 const CORS = {
@@ -107,8 +109,13 @@ Deno.serve(async (req) => {
   const fault = parseFault(xml);
   if (fault) {
     if (isLoginFault(fault)) {
-      loginBlockedUntil = Date.now() + LOGIN_COOLDOWN_MS;
-      return reply(502, { code: 'qnb_login', message: `QNB girişi başarısız: ${fault}` });
+      // Bloke hesapta doğru şifre de reddedilir; her deneme blokeyi uzatabilir
+      const bloke = /bloke|locked|kilit/i.test(fault);
+      loginBlockedUntil = Date.now() + (bloke ? BLOKE_COOLDOWN_MS : LOGIN_COOLDOWN_MS);
+      const message = bloke
+        ? `QNB hesabı bloke oldu (${fault}). QNB eSolutions portalından ya da destekten açtırın; açılana kadar tekrar denemeyin.`
+        : `QNB girişi başarısız: ${fault}`;
+      return reply(502, { code: 'qnb_login', message });
     }
     return reply(502, { message: `QNB hatası: ${fault}` });
   }
