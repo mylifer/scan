@@ -16,6 +16,12 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.45.0 — `KOD`
+- **e-Fatura Özeti (yeni ekran):** e-Faturalar → Genel Özet. İlk faturadan bugüne gelen/giden sayıları, matrah, hesaplanan ve indirilecek KDV, fark, tevkifat, iade faturalarının KDV'si (ayrı), indirilecek KDV'nin oranlara dağılımı, yıllık ve aylık döküm. Olağan dışı yüksek tutarlı giden faturalar ayrıca uyarılır. Geçmiş aylar telefonda saklanır
+- **Aylık listelerde KDV:** Her faturanın KDV'si satırda; Özet'te dönemin KDV toplamı ve matrahı, iade faturaları ayrı
+- Gönderilmemiş taslak faturalar artık listede görünmüyor (QNB kontrolünde hesaba katılıyor)
+- Bazı faturalarda alıcı/satıcı adı yerine VKN görünüyordu; düzeltildi
+
 ## 1.44.0 — `b24caa5`
 - **QNB kontrolü:** Her ay, listedeki e-Fatura sayısı QNB'nin kendi sayımıyla karşılaştırılır (Özet'te "QNB Kontrolü"). Eksik varsa taşınmış eski faturalar kendiliğinden aranır — artık gelen faturalarda da ve listenin bir kısmı eksik olduğunda da. Yine eksik kalırsa uyarı çıkar
 - **Son 12 Ayı Denetle:** e-Faturalar ekranının altında; her ay için gelen/giden sayısını QNB'ninkiyle karşılaştırır
