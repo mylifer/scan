@@ -16,7 +16,8 @@ import { errorMessage } from '../../../lib/errors';
 import { capitalizeTr, monthRange } from '../../../lib/format';
 import { haptics } from '../../../lib/haptics';
 import { useWide } from '../../../lib/layout';
-import { type as t, useTheme } from '../../../lib/theme';
+import { fontFamily, type as t, useShadcnTheme, useTheme } from '../../../lib/theme';
+import { TabsList, TabsTrigger } from '../../../components/web/Tabs';
 import { type EFatura, EFaturaError, type Kontrol, totalsByCurrency, type Yon } from '../../../services/efatura/qnbEfatura';
 import { donemCache as cache, donemGetir, type Donem, qnbDurum } from '../../../services/efatura/donemCache';
 
@@ -80,6 +81,7 @@ function monthBounds(offset: number) {
 /** QNB eSolutions'taki gelen ve giden e-faturalar (yalnızca görüntüleme). */
 export default function EFaturaScreen() {
   const theme = useTheme();
+  const st = useShadcnTheme();
   const wide = useWide();
   const [yon, setYon] = useState<Yon>('gelen');
   const [offset, setOffset] = useState(0);
@@ -224,21 +226,34 @@ export default function EFaturaScreen() {
         />
       }>
       <View style={[styles.controls, wide && styles.controlsWide]}>
-        <View style={wide ? { width: 280 } : undefined}>
-          <SegmentedControl
-            values={['Gelen', 'Giden']}
-            selectedIndex={YONLER.indexOf(yon)}
-            onChange={(e) => {
-              haptics.select();
-              const next = YONLER[e.nativeEvent.selectedSegmentIndex];
-              if (next) setYon(next);
-            }}
-            appearance={theme.dark ? 'dark' : 'light'}
-          />
-        </View>
-        <View style={[styles.monthRow, wide && { width: 280 }]}>
+        {wide ? (
+          <TabsList>
+            <TabsTrigger value="gelen" active={yon === 'gelen'} onPress={() => setYon('gelen')}>
+              Gelen Faturalar
+            </TabsTrigger>
+            <TabsTrigger value="giden" active={yon === 'giden'} onPress={() => setYon('giden')}>
+              Giden Faturalar
+            </TabsTrigger>
+          </TabsList>
+        ) : (
+          <View>
+            <SegmentedControl
+              values={['Gelen', 'Giden']}
+              selectedIndex={YONLER.indexOf(yon)}
+              onChange={(e) => {
+                haptics.select();
+                const next = YONLER[e.nativeEvent.selectedSegmentIndex];
+                if (next) setYon(next);
+              }}
+              appearance={theme.dark ? 'dark' : 'light'}
+            />
+          </View>
+        )}
+        <View style={[styles.monthRow, wide && [styles.monthRowWide, { borderColor: st.border, backgroundColor: st.card }]]}>
           <MonthButton dir="left" label="Önceki ay" onPress={() => setOffset((o) => o - 1)} />
-          <Text style={[t.headline, { color: theme.label }]}>{capitalizeTr(range.label)}</Text>
+          <Text style={[wide ? styles.periodTextWide : t.headline, { color: wide ? st.cardForeground : theme.label }]}>
+            {capitalizeTr(range.label)}
+          </Text>
           <MonthButton dir="right" label="Sonraki ay" disabled={offset === 0} onPress={() => setOffset((o) => Math.min(0, o + 1))} />
         </View>
       </View>
@@ -429,6 +444,8 @@ export default function EFaturaScreen() {
 
 function MonthButton({ dir, label, onPress, disabled }: { dir: 'left' | 'right'; label: string; onPress: () => void; disabled?: boolean }) {
   const theme = useTheme();
+  const st = useShadcnTheme();
+  const wide = useWide();
   return (
     <Pressable
       onPress={() => {
@@ -438,9 +455,19 @@ function MonthButton({ dir, label, onPress, disabled }: { dir: 'left' | 'right';
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
-      hitSlop={12}
-      style={({ pressed }) => ({ opacity: disabled ? 0.25 : pressed ? 0.5 : 1, padding: 6 })}>
-      <Icon sf={`chevron.${dir}`} ion={dir === 'left' ? 'chevron-back' : 'chevron-forward'} size={18} color={theme.blue} weight="semibold" />
+      hitSlop={8}
+      style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
+        {
+          opacity: disabled ? 0.25 : pressed ? 0.5 : 1,
+          width: 34,
+          height: 34,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 6,
+        },
+        hovered && wide && { backgroundColor: st.muted },
+      ]}>
+      <Icon sf={`chevron.${dir}`} ion={dir === 'left' ? 'chevron-back' : 'chevron-forward'} size={16} color={wide ? st.cardForeground : theme.blue} weight="semibold" />
     </Pressable>
   );
 }
@@ -449,4 +476,6 @@ const styles = StyleSheet.create({
   controls: { marginHorizontal: 16, marginBottom: 16, gap: 12 },
   controlsWide: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
   monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  monthRowWide: { width: 280, borderWidth: 1, borderRadius: 8, paddingHorizontal: 4 },
+  periodTextWide: { fontFamily, fontSize: 13, fontWeight: '600' },
 });

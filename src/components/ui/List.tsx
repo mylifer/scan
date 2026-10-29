@@ -1,7 +1,8 @@
 import { Children, cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 
-import { tabular, type as t, useTheme } from '../../lib/theme';
+import { useWide } from '../../lib/layout';
+import { fontFamily, tabular, type as t, useShadcnTheme, useTheme } from '../../lib/theme';
 import { Icon } from './Icon';
 import { IconTile } from './IconTile';
 
@@ -14,29 +15,37 @@ interface SectionProps {
   style?: ViewStyle;
 }
 
-/** iOS "inset grouped" liste bölümü: başlık, yuvarlatılmış kart, dipnot. */
+/** iOS "inset grouped" liste bölümü / Shadcn Kart bölümü */
 export function ListSection({ header, headerAction, footer, children, style }: SectionProps) {
   const theme = useTheme();
+  const st = useShadcnTheme();
+  const wide = useWide();
   const rows = Children.toArray(children).filter(isValidElement) as ReactElement<{ isLast?: boolean }>[];
   return (
-    <View style={[styles.section, style]}>
+    <View style={[styles.section, wide && styles.sectionWide, style]}>
       {header && (
         <View style={styles.headerRow}>
-          <Text style={[t.footnote, styles.header, { color: theme.secondaryLabel }]}>{header.toLocaleUpperCase('tr-TR')}</Text>
+          <Text style={[t.footnote, styles.header, wide && styles.headerWide, { color: wide ? st.mutedForeground : theme.secondaryLabel }]}>
+            {header.toLocaleUpperCase('tr-TR')}
+          </Text>
           {headerAction && (
             <Pressable onPress={headerAction.onPress} hitSlop={10} accessibilityRole="button" accessibilityLabel={headerAction.accessibilityLabel ?? headerAction.label}>
-              {({ pressed }) => <Text style={[t.footnote, styles.headerAction, { color: theme.blue, opacity: pressed ? 0.5 : 1 }]}>{headerAction.label}</Text>}
+              {({ pressed }) => (
+                <Text style={[t.footnote, styles.headerAction, { color: wide ? st.cardForeground : theme.blue, fontWeight: wide ? '600' : '400', opacity: pressed ? 0.5 : 1 }]}>
+                  {headerAction.label}
+                </Text>
+              )}
             </Pressable>
           )}
         </View>
       )}
       {rows.length > 0 && (
-        <View style={[styles.card, { backgroundColor: theme.card }]}>
+        <View style={[styles.card, wide && [styles.cardWide, { borderColor: st.border, borderWidth: 1 }], { backgroundColor: wide ? st.card : theme.card }]}>
           {rows.map((row, i) => cloneElement(row, { key: row.key ?? i, isLast: i === rows.length - 1 }))}
         </View>
       )}
       {typeof footer === 'string' ? (
-        <Text style={[t.footnote, styles.footer, { color: theme.secondaryLabel }]}>{footer}</Text>
+        <Text style={[t.footnote, styles.footer, { color: wide ? st.mutedForeground : theme.secondaryLabel }]}>{footer}</Text>
       ) : (
         footer
       )}
@@ -80,40 +89,40 @@ export function ListRow({
   disabled,
 }: ListRowProps) {
   const theme = useTheme();
-  const titleColor = tone === 'action' ? theme.blue : tone === 'destructive' ? theme.red : theme.label;
+  const st = useShadcnTheme();
+  const wide = useWide();
+  const titleColor = tone === 'action' ? (wide ? st.cardForeground : theme.blue) : tone === 'destructive' ? theme.red : (wide ? st.cardForeground : theme.label);
   const inset = icon ? 16 + 29 + 12 : 16;
   const interactive = !!(onPress || onLongPress);
 
   const content = (
     <>
-      <View style={[styles.row, { minHeight: subtitle ? 60 : 44 }]}>
+      <View style={[styles.row, { minHeight: subtitle ? 58 : 44 }]}>
         {icon && <IconTile {...icon} />}
-        <View style={{ flex: 1, paddingVertical: 11 }}>
-          <Text style={[t.body, { color: disabled ? theme.tertiaryLabel : titleColor }]} numberOfLines={1}>
+        <View style={{ flex: 1, paddingVertical: 10 }}>
+          <Text style={[t.body, wide && styles.titleWide, { color: disabled ? (wide ? st.mutedForeground : theme.tertiaryLabel) : titleColor }]} numberOfLines={1}>
             {title}
           </Text>
           {subtitle && (
-            <Text style={[t.subhead, { color: theme.secondaryLabel, marginTop: 1 }]} numberOfLines={1}>
+            <Text style={[t.subhead, wide && styles.subtitleWide, { color: wide ? st.mutedForeground : theme.secondaryLabel, marginTop: 1 }]} numberOfLines={1}>
               {subtitle}
             </Text>
           )}
         </View>
         {value !== undefined && (
-          <Text style={[t.body, tabular, { color: valueColor ?? theme.secondaryLabel }]} numberOfLines={1}>
+          <Text style={[t.body, tabular, wide && styles.valueWide, { color: valueColor ?? (wide ? st.mutedForeground : theme.secondaryLabel) }]} numberOfLines={1}>
             {value}
           </Text>
         )}
         {accessory}
-        {chevron && <Icon sf="chevron.right" ion="chevron-forward" size={14} color={theme.tertiaryLabel} weight="semibold" />}
+        {chevron && <Icon sf="chevron.right" ion="chevron-forward" size={13} color={wide ? st.mutedForeground : theme.tertiaryLabel} weight="semibold" />}
       </View>
       {children}
-      {!isLast && <View style={[styles.separator, { marginLeft: inset, backgroundColor: theme.separator }]} />}
+      {!isLast && <View style={[styles.separator, { marginLeft: wide ? 16 : inset, backgroundColor: wide ? st.border : theme.separator }]} />}
     </>
   );
 
-  // Dokunulamayan satır düz View: devre dışı bir Pressable web'de aria-disabled taşır ve içerideki
-  // anahtarı (Switch) da erişilebilirlik ağacında devre dışı gösterir. Diğer denetimlere VoiceOver
-  // ile ayrıca ulaşılabilsin diye satır tek öğe olarak okunmaz.
+  // Dokunulamayan satır düz View
   if (!interactive) return <View>{content}</View>;
 
   return (
@@ -123,7 +132,9 @@ export function ListRow({
       disabled={disabled}
       accessibilityRole="button"
       accessibilityState={{ disabled: !!disabled }}
-      style={({ pressed }) => [{ backgroundColor: pressed ? theme.highlight : 'transparent' }]}>
+      style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
+        { backgroundColor: pressed ? (wide ? st.muted : theme.highlight) : (hovered && wide ? st.muted : 'transparent') },
+      ]}>
       {content}
     </Pressable>
   );
@@ -131,12 +142,18 @@ export function ListRow({
 
 const styles = StyleSheet.create({
   section: { marginHorizontal: 16, marginBottom: 28 },
+  sectionWide: { marginHorizontal: 16, marginBottom: 22 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
   header: { marginLeft: 16, marginBottom: 7, flexShrink: 1 },
+  headerWide: { marginLeft: 4, marginBottom: 8, fontSize: 12, fontWeight: '600', letterSpacing: 0.5 },
   headerAction: { marginRight: 16, marginBottom: 7 },
   footer: { marginHorizontal: 16, marginTop: 7 },
   card: { borderRadius: 12, overflow: 'hidden' },
+  cardWide: { borderRadius: 8, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16 },
+  titleWide: { fontFamily, fontSize: 14, fontWeight: '500' },
+  subtitleWide: { fontFamily, fontSize: 12 },
+  valueWide: { fontFamily, fontSize: 13 },
   separator: { height: StyleSheet.hairlineWidth },
 });
 

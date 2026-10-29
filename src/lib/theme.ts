@@ -66,6 +66,61 @@ const dark: typeof light = {
 
 export type Theme = typeof light;
 
+/** Shadcn zinc renk paleti ve tasarım belirteçleri */
+export const shadcnTokens = {
+  light: {
+    background: '#fafafa',
+    foreground: '#09090b',
+    card: '#ffffff',
+    cardForeground: '#09090b',
+    popover: '#ffffff',
+    popoverForeground: '#09090b',
+    primary: '#18181b',
+    primaryForeground: '#fafafa',
+    secondary: '#f4f4f5',
+    secondaryForeground: '#18181b',
+    muted: '#f4f4f5',
+    mutedForeground: '#71717a',
+    accent: '#f4f4f5',
+    accentForeground: '#18181b',
+    destructive: '#ef4444',
+    destructiveForeground: '#ffffff',
+    border: '#e4e4e7',
+    input: '#e4e4e7',
+    ring: '#18181b',
+    radius: 8,
+  },
+  dark: {
+    background: '#09090b',
+    foreground: '#fafafa',
+    card: '#09090b',
+    cardForeground: '#fafafa',
+    popover: '#09090b',
+    popoverForeground: '#fafafa',
+    primary: '#fafafa',
+    primaryForeground: '#18181b',
+    secondary: '#27272a',
+    secondaryForeground: '#fafafa',
+    muted: '#27272a',
+    mutedForeground: '#a1a1aa',
+    accent: '#27272a',
+    accentForeground: '#fafafa',
+    destructive: '#ef4444',
+    destructiveForeground: '#fafafa',
+    border: '#27272a',
+    input: '#27272a',
+    ring: '#d4d4d8',
+    radius: 8,
+  },
+};
+
+export type ShadcnTheme = typeof shadcnTokens.light;
+
+export function useShadcnTheme(): ShadcnTheme {
+  const isDark = useColorScheme() === 'dark';
+  return isDark ? shadcnTokens.dark : shadcnTokens.light;
+}
+
 export function useTheme(): Theme {
   return useColorScheme() === 'dark' ? dark : light;
 }
@@ -88,9 +143,9 @@ export const type = {
 /** Tutarlarda rakamlar hizalı dursun */
 export const tabular: TextStyle = { fontVariant: ['tabular-nums'] };
 
-/** Web'de SF Pro yoksa en yakın sistem yazı tipi */
+/** Web'de Inter ve SF Pro */
 export const fontFamily = Platform.select({
-  web: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif',
+  web: 'Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif',
   default: undefined,
 });
 

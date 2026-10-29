@@ -16,6 +16,15 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.49.0
+- **Web sürümü Shadcn UI tasarım diliyle baştan yenilendi:**
+  - **Tasarım Sistemi:** Inter tipografisi, zinc/neutral renk paleti, 1 piksellik belirgin kart kenarlıkları ve modern koyu/açık mod uyumu
+  - **Shadcn Sidebar (Sol Menü):** Marka başlığı, v1.49.0 rozeti, kategori başlığı, aktif göstergeli ve hover efektli gezinme butonları ve kullanıcı profil alanı
+  - **Shadcn Kartlar ve Özet Kutuları:** Fişler ve e-Faturalar özet kutuları (StatTiles, SummaryCard) Shadcn Card yapısıyla yenilendi; trend yüzdeleri renkli rozet (Badge) olarak gösteriliyor
+  - **e-Fatura Tablosu:** Shadcn Data Table stiline geçirildi; e-Arşiv, İade, İptal ve Hariç etiketleri Shadcn Badge bileşenleriyle netleştirildi, sütun başlıkları ve hover geçişleri modernleştirildi
+  - **Kontroller ve Seçiciler:** Dönem ve Gelen/Giden filtrelerinde Shadcn Tabs bileşeni; arama alanında ⌘K rozetli Shadcn Input stili; modern butonlar (Button)
+  - Mobil (iOS/Android) deneyim korunarak masaüstü web görünümü radikal biçimde modernleştirildi
+
 ## 1.48.0 — `25c8278`
 - **Web sürümü masaüstünde pano olarak açılıyor** (tarayıcı penceresi 1024 pikselden genişse): solda sabit menü (Fişler · e-Faturalar · KDV · Ayarlar), sayfalar ekranın tamamını kullanıyor
   - **Fişler:** solda toplam gider, son 12 ay grafiği ve fiş listesi; sağda fiş ekleme düğmeleri, öne çıkanlar, KDV dağılımı, kategoriler ve dışa aktarma
