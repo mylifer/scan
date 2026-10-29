@@ -364,6 +364,9 @@ export default function DashboardScreen() {
                   autoCapitalize: 'none' as const,
                   hideWhenScrolling: true,
                   obscureBackground: false,
+                  // Koyu temada yazı siyah kalıyordu: renkler temadan
+                  textColor: theme.label,
+                  tintColor: theme.blue,
                   onChangeText: (e: { nativeEvent: { text: string } }) => setQuery(e.nativeEvent.text),
                   onCancelButtonPress: () => setQuery(''),
                 },

@@ -5,13 +5,13 @@ import type { ReceiptRecord } from '../types/receipt';
 export interface KdvAy {
   /** Giden satış faturalarında yazan KDV ve tevkifat */
   kestigim: { faturada: number; tevkifat: number; beyan: number; adet: number };
-  /** Giden iade faturalarının KDV'si (ayrı gösterilir; hesaba katılmaz) */
+  /** Kestiğim iade faturalarının KDV'si: iade ettiğim alışların daha önce indirilen KDV'si, düşülebilirden çıkar */
   iade: { kdv: number; adet: number };
   /** Gelen e-Faturalarda ödenen KDV; eksik: KDV bilgisi gelmeyen fatura sayısı */
   gelenEfatura: { kdv: number; adet: number; eksik: number };
   /** Taranan fişler; eslesen: bir gelen e-Faturayla aynı alışveriş olduğu için sayılmayan fişler */
   fis: { kdv: number; adet: number; eslesen: number };
-  /** gelenEfatura.kdv + fis.kdv */
+  /** gelenEfatura.kdv + fis.kdv − iade.kdv */
   dusulebilir: number;
   /** kestigim.beyan − dusulebilir; pozitif: ödenecek, negatif: sonraki aya devreden */
   sonuc: number;
@@ -29,8 +29,9 @@ function ayniAlisveris(fis: ReceiptRecord, f: EFatura): boolean {
 }
 
 /**
- * Ayın KDV'si. Giden: iptal, taslak ve hariç tutulan (olağan dışı) faturalar sayılmaz; iade faturaları ayrı.
- * Gelen: e-Fatura KDV'si + e-Faturayla eşleşmeyen fişlerin KDV'si. Yalnızca TRY.
+ * Ayın KDV'si. Giden: iptal, taslak ve hariç tutulan (olağan dışı) faturalar sayılmaz.
+ * Düşülebilir: gelen e-Fatura KDV'si + e-Faturayla eşleşmeyen fişlerin KDV'si − kestiğim iade faturalarının KDV'si
+ * (alışı iade edince o alışın KDV'si artık indirilemez). Yalnızca TRY.
  */
 export function kdvAyHesapla(gelen: EFatura[], giden: EFatura[], fisler: ReceiptRecord[], haric: ReadonlySet<string> = new Set()): KdvAy {
   const gecerli = (f: EFatura) => !f.iptal && !f.taslak && f.paraBirimi === 'TRY' && !haric.has(f.ettn.toLowerCase());
@@ -59,11 +60,12 @@ export function kdvAyHesapla(gelen: EFatura[], giden: EFatura[], fisler: Receipt
   }
   fisKdv = r2(fisKdv);
 
+  const iadeKdv = r2(iadeler.reduce((t, f) => t + (f.kdv ?? 0), 0));
   const beyan = r2(faturada - tevkifat);
-  const dusulebilir = r2(gelenKdv + fisKdv);
+  const dusulebilir = r2(gelenKdv + fisKdv - iadeKdv);
   return {
     kestigim: { faturada, tevkifat, beyan, adet: satis.length },
-    iade: { kdv: r2(iadeler.reduce((t, f) => t + (f.kdv ?? 0), 0)), adet: iadeler.length },
+    iade: { kdv: iadeKdv, adet: iadeler.length },
     gelenEfatura: { kdv: gelenKdv, adet: gelenGecerli.length, eksik: gelenGecerli.filter((f) => typeof f.kdv !== 'number').length },
     fis: { kdv: fisKdv, adet: fisAdet, eslesen },
     dusulebilir,

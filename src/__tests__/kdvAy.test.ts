@@ -22,7 +22,7 @@ const fis = (id: string, tarih: string, toplam: number, kdv: number, vkn: string
   ({ id, tarih, toplam_tutar: toplam, toplam_kdv: kdv, vkn }) as unknown as ReceiptRecord;
 
 describe('Aylık KDV', () => {
-  it('Ekim 2026 örneği: tevkifat düşülür, iade ayrı, olağan dışı hariç', () => {
+  it('Ekim 2026 örneği: tevkifat düşülür, kestiğim iade düşülebilirden çıkar, olağan dışı hariç', () => {
     const giden = [
       fatura('s1', 145530, 29400, { tevkifat: 8820, tip: 'TEVKIFAT' }),
       fatura('i1', 9893.99, 899.45, { tip: 'IADE' }),
@@ -34,8 +34,8 @@ describe('Aylık KDV', () => {
     assert.deepEqual(k.kestigim, { faturada: 29400, tevkifat: 8820, beyan: 20580, adet: 1 });
     assert.deepEqual(k.iade, { kdv: 899.45, adet: 1 });
     assert.deepEqual(k.gelenEfatura, { kdv: 220, adet: 3, eksik: 1 });
-    assert.equal(k.dusulebilir, 220);
-    assert.equal(k.sonuc, 20360);
+    assert.equal(k.dusulebilir, -679.45); // 220 − 899,45
+    assert.equal(k.sonuc, 21259.45);
   });
 
   it('e-Faturayla aynı alışveriş olan fiş iki kez sayılmaz', () => {

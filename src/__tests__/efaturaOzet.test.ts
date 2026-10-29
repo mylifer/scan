@@ -39,7 +39,7 @@ describe('e-Fatura özeti', () => {
     assert.equal(genel.satis.tevkifat, 30);
     assert.equal(genel.iade.kdv, 40);
     assert.equal(genel.earsiv.adet, 1, 'iptal e-Arşiv hariç');
-    assert.equal(kdvFarki(genel), 300 + 20 - 30);
+    assert.equal(kdvFarki(genel), 300 + 20 - (30 - 40));
     assert.deepEqual(
       yillar.map((y) => y.donem),
       ['2026', '2025'],

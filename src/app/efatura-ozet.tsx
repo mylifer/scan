@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, Switch } from 'react-native';
 
 import { ListRow, ListSection } from '../components/ui/List';
-import { aylarArasi, ayAraligi, type DonemOzet, HARIC_KEY, kdvFarki, OLAGANDISI_DAHIL_KEY, olaganDisi, ozetle } from '../lib/efaturaOzet';
+import { aylarArasi, ayAraligi, type DonemOzet, HARIC_KEY, indirilecekKdv, kdvFarki, OLAGANDISI_DAHIL_KEY, olaganDisi, ozetle } from '../lib/efaturaOzet';
 import { errorMessage } from '../lib/errors';
 import { capitalizeTr } from '../lib/format';
 import { useTheme } from '../lib/theme';
@@ -186,12 +186,13 @@ export default function EFaturaOzetScreen() {
 
           <ListSection
             header="KDV"
-            footer="Hesaplanan KDV giden satış (ve e-Arşiv) faturalarından, indirilecek KDV gelen e-Faturalardan toplanır. İade faturalarının KDV'si ayrı gösterilir; beyannamede nasıl yer alacağı muhasebe tercihine bağlıdır. Bilgi amaçlıdır, beyanname için muhasebecinize danışın.">
+            footer="Hesaplanan KDV giden satış (ve e-Arşiv) faturalarından, indirilecek KDV gelen e-Faturalardan toplanır. Kestiğim iade faturalarının KDV'si (iade ettiğim alışlar) indirilecek KDV'den düşülür. Bilgi amaçlıdır, beyanname için muhasebecinize danışın.">
             <ListRow title="Hesaplanan KDV" subtitle={`Matrah ${money(g.satis.matrah + g.earsiv.matrah)}`} value={money(g.satis.kdv + g.earsiv.kdv)} valueColor={theme.label} />
             {g.satis.tevkifat ? <ListRow title="Tevkifat (alıcının ödediği)" value={money(g.satis.tevkifat)} /> : null}
-            <ListRow title="İndirilecek KDV" subtitle={`Matrah ${money(g.gelen.matrah)}`} value={money(g.gelen.kdv)} valueColor={theme.label} />
+            <ListRow title="Gelen e-Faturalardaki KDV" subtitle={`Matrah ${money(g.gelen.matrah)}`} value={money(g.gelen.kdv)} valueColor={theme.label} />
+            {g.iade.adet ? <ListRow title="İade ettiğim alışlar" subtitle={`${g.iade.adet} iade faturası`} value={`−${money(g.iade.kdv)}`} /> : null}
+            {g.iade.adet ? <ListRow title="İndirilecek KDV" value={money(indirilecekKdv(g))} valueColor={theme.label} /> : null}
             <ListRow title="Fark (hesaplanan − indirilecek)" value={money(fark)} valueColor={fark > 0 ? theme.red : theme.green} />
-            {g.iade.adet ? <ListRow title="İade faturalarındaki KDV" subtitle={`Matrah ${money(g.iade.matrah)}`} value={money(g.iade.kdv)} /> : null}
           </ListSection>
 
           {Object.keys(g.gelen.oranlar).length ? (
