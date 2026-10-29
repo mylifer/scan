@@ -41,6 +41,9 @@ import {
   parseUbl,
   missingField,
   PORTAL_DEFAULTS,
+  isoDate,
+  parseReturns,
+  parseTutar,
   parseTutarMap,
   portalListRequest,
   tutarRequest,
@@ -239,7 +242,7 @@ async function portalList(baslangic: string, bitis: string): Promise<{ list: EFa
  * en fazla 10 fatura için UBL'deki ödenecek tutar kullanılır. Hata olursa sessizce geçilir.
  */
 async function tutarlariTamamla(list: EFatura[], baslangic: string, bitis: string): Promise<void> {
-  let eksik = list.filter((f) => !f.tutar && f.ettn);
+  let eksik = list.filter((f) => (!f.tutar || !f.unvan) && f.ettn);
   if (!eksik.length) return;
   try {
     const son = new Date(Math.min(Date.parse(bitis) + 10 * 86_400_000, Date.now())).toISOString().slice(0, 10);
@@ -253,12 +256,15 @@ async function tutarlariTamamla(list: EFatura[], baslangic: string, bitis: strin
     if (e instanceof LoginError) return;
     console.log('tutar sorgusu:', e instanceof Error ? e.message : e);
   }
-  eksik = list.filter((f) => !f.tutar && f.ettn).slice(0, 10);
+  eksik = list.filter((f) => (!f.tutar || !f.unvan) && f.ettn).slice(0, 10);
   for (const f of eksik) {
     try {
       const d = parseUbl(new TextDecoder('utf-8').decode(await belge('efatura', 'giden', f.ettn, 'UBL')));
       if (d.odenecek) Object.assign(f, { tutar: d.odenecek, paraBirimi: d.paraBirimi });
       if (!f.unvan || f.unvan === f.vkn) f.unvan = d.aliciUnvan || f.unvan;
+      if (!f.vkn) f.vkn = d.aliciVkn;
+      if (!f.belgeNo) f.belgeNo = d.belgeNo;
+      if (!f.tarih) f.tarih = d.tarih;
     } catch (e) {
       if (e instanceof LoginError) return;
       console.log('UBL tutarı:', e instanceof Error ? e.message : e);
@@ -319,8 +325,47 @@ async function gidenTarama(baslangic: string, bitis: string): Promise<{ list: EF
   await dene('web servis (belge tarihi)', async () =>
     parseList(await soap(QNB_URL, 'gidenBelgeleriListele', { vkn: QNB_VKN, belgeTuru: 'FATURA', baslangicBelgeTarihi: b, bitisBelgeTarihi: e }), 'giden'),
   );
+  // Eski (taşınmış) belgeler listelerde yok; tutar ve durum sorguları ETTN'lerini verebilir
+  await dene('tutar sorgusu (gönderim tarihi)', async () => {
+    const { op, params } = tutarRequest(QNB_VKN, b, e15);
+    return parseReturns(await soap(QNB_URL, op, params, { wrap: false }))
+      .filter((r) => r.ettn)
+      .map((r) => ({
+        ettn: r.ettn!,
+        belgeNo: r.belgeNo ?? '',
+        tarih: isoDate(r.belgeTarihi),
+        unvan: '',
+        vkn: '',
+        tutar: parseTutar(r.odenecekTutar) || 0,
+        paraBirimi: r.odenecekTutarDovizCinsi || 'TRY',
+        profil: '',
+      }));
+  });
+  await dene('durum sorgusu (oluşturulma tarihi)', async () =>
+    parseReturns(
+      await soap(QNB_URL, 'gidenBelgeDurumSorgulaPortal', {
+        vknTckn: QNB_VKN,
+        belgeTuru: 'FATURA',
+        belgeVersiyon: '1.0',
+        baslangicOlusturulmaTarihi: b,
+        bitisOlusturulmaTarihi: e15,
+      }),
+    )
+      .filter((r) => r.ettn)
+      .map((r) => ({
+        ettn: r.ettn!,
+        belgeNo: r.belgeNo ?? '',
+        // Durum kaydında fatura tarihi yok; UBL'den tamamlanır
+        tarih: '',
+        unvan: '',
+        vkn: '',
+        tutar: 0,
+        paraBirimi: 'TRY',
+        profil: '',
+      })),
+  );
   await dene('e-Arşiv (oluşturma zamanı)', async () => {
-    const input = { mukellefVkn: QNB_VKN, creationTimeBaslangic: b, creationTimeBitis: e15, pagingStart: 0, pagingLimit: EARSIV_PAGE };
+    const input = { mukellefVkn: QNB_VKN, creationTimeBaslangic: `${b}000000`, creationTimeBitis: `${e15}235959`, pagingStart: 0, pagingLimit: EARSIV_PAGE };
     const xml = await soap(EARSIV_URL, 'faturaListeSorgula', { input: JSON.stringify(input) }, { earsiv: true });
     const r = parseEarsivResult(xml);
     if (r.code && r.code !== EARSIV_OK) return `${r.code}: ${(r.text || '').slice(0, 200)}`;
@@ -344,6 +389,10 @@ async function listele(yon: Yon, baslangic: string, bitis: string) {
   if (!giden.length && !earsiv.list.length) {
     const tarama = await gidenTarama(baslangic, bitis);
     giden = tarama.list;
+    // Bulunan ETTN'lerin alıcısı, tarihi ve tutarı UBL'den; sonra dönem dışında kalanlar atılır
+    await tutarlariTamamla(giden, baslangic, bitis);
+    giden = giden.filter((f) => !f.tarih || (f.tarih >= baslangic && f.tarih <= bitis));
+    for (const f of giden) f.unvan ||= f.vkn || 'Bilinmeyen alıcı';
     bilgi = `${bilgi}\n\nEk tarama — ${tarama.notlar.join(' · ')}`.trim();
     console.log(`giden ek tarama ${baslangic}..${bitis}: ${tarama.notlar.join(' | ')}`);
   }
@@ -362,9 +411,27 @@ async function belge(tur: Tur, yon: Yon, ettn: string, format: 'UBL' | 'PDF'): P
   const unzipped = (b64: string) => extractFile(base64ToBytes(b64), unzipSync, format === 'PDF' ? 'pdf' : 'xml');
   if (tur === 'efatura') {
     const { op, params } = detailRequest(yon, QNB_VKN, ettn, format);
-    const b64 = parseBase64Return(await soap(QNB_URL, op, params, { wrap: false }));
-    if (!b64) throw new QnbError('QNB faturanın içeriğini döndürmedi.');
-    return unzipped(b64);
+    let ilkHata = '';
+    try {
+      const b64 = parseBase64Return(await soap(QNB_URL, op, params, { wrap: false }));
+      if (b64) return unzipped(b64);
+      ilkHata = 'QNB faturanın içeriğini döndürmedi.';
+    } catch (e) {
+      if (e instanceof LoginError) throw e;
+      ilkHata = e instanceof Error ? e.message : String(e);
+    }
+    // Eski belgeler "taşınan belgeler"e alınıyor; onlar ETTN ile ayrı metottan indirilir
+    try {
+      const tasinan = yon === 'gelen' ? 'gelenTasinanBelgeleriIndir' : 'gidenTasinanBelgeleriIndir';
+      const b64 = parseBase64Return(
+        await soap(QNB_URL, tasinan, { vergiTcKimlikNo: QNB_VKN, ettnler: ettn, belgeFormati: format }, { wrap: false }),
+      );
+      if (b64) return unzipped(b64);
+    } catch (e) {
+      if (e instanceof LoginError) throw e;
+      console.log('taşınan belge:', e instanceof Error ? e.message : e);
+    }
+    throw new QnbError(ilkHata);
   }
   // e-Arşiv: faturaSorgula girdisi belgesiz; olası biçimler sırayla denenir
   const hatalar: string[] = [];
