@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.41.2 — `KOD`
+## 1.41.2 — `2f12c1d`
 - e-Faturalar: QNB şifresinin sonunda yapıştırırken gelen satır sonu/boşluk girişi bozuyordu; QNB bilgileri artık kenar boşluklarından temizleniyor
 - Yayın iş akışı QNB secret'larının biçimini (değerleri göstermeden) denetliyor
 
