@@ -13,9 +13,10 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const QNB_USER = Deno.env.get('QNB_USER') ?? '';
 const QNB_PASS = Deno.env.get('QNB_PASS') ?? '';
 const QNB_VKN = Deno.env.get('QNB_VKN') ?? '';
+// Virgül, noktalı virgül, boşluk ya da satır sonuyla ayrılabilir; tırnak ve <> yok sayılır
 const ALLOWED = (Deno.env.get('QNB_ALLOWED_EMAILS') ?? '')
-  .split(',')
-  .map((s) => s.trim().toLowerCase())
+  .split(/[\s,;]+/)
+  .map((s) => s.replace(/["'<>]/g, '').trim().toLowerCase())
   .filter(Boolean);
 
 /** En uzun sorgu aralığı (uygulama ay ay sorar) */
@@ -63,7 +64,13 @@ Deno.serve(async (req) => {
 
   const email = await userEmail(req);
   if (email === null) return reply(401, { message: 'Giriş yapmanız gerekiyor.' });
-  if (!ALLOWED.includes(email)) return reply(403, { message: 'Bu hesabın e-faturaları görme yetkisi yok.' });
+  if (!ALLOWED.includes(email)) {
+    // Kendi e-postasını görmesi, secret'a neyin yazılacağını gösterir (başkasının bilgisi değil)
+    const hint = ALLOWED.length
+      ? `QNB_ALLOWED_EMAILS içinde ${ALLOWED.length} adres var ama bu hesap yok.`
+      : 'QNB_ALLOWED_EMAILS Supabase’de boş.';
+    return reply(403, { message: `Bu hesabın (${email || 'e-postasız hesap'}) e-faturaları görme yetkisi yok. ${hint}` });
+  }
   if (!QNB_USER || !QNB_PASS || !/^\d{10,11}$/.test(QNB_VKN)) {
     return reply(500, { message: 'Sunucuda QNB bilgileri (QNB_USER, QNB_PASS, QNB_VKN) eksik.' });
   }
