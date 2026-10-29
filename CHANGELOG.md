@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.50.0 — `6f0331e`
+## 1.50.0 — `243b69f`
 - **e-Fatura listesinde satır bazında anında PDF görüntüleme ve açılır pencere (popup):**
   - **Masaüstü Tablosu:** Her fatura satırına özel `PDF Görüntüle` butonu eklendi; tıklanınca faturanın orijinal PDF'i popup pencere içinde açılır.
   - **Dahili Önizleme Penceresi (Modal):** Web tarayıcısında dosyayı bilgisayara/İndirilenler klasörüne indirmeye zorlamadan, tarayıcının yerleşik PDF görüntüleyicisiyle sayfa üzerinde açılır. Firma unvanı, fatura türü (e-Arşiv / e-Fatura / İade), belge no, tarih, tutar bilgileri, cihazına kaydetmek isteyenler için "İndir" butonu ve `Escape` tuşu ile hızlı kapatma desteği sunar.
