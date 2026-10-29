@@ -52,6 +52,8 @@ export default function EFaturaScreen() {
   const [data, setData] = useState<Record<string, EFatura[]>>(() => Object.fromEntries(cache));
   const [errors, setErrors] = useState<Record<string, { message: string; login: boolean }>>({});
   const [pulling, setPulling] = useState(false);
+  /** Elle denenen istek sürüyor mu (dokununca geri bildirim için) */
+  const [busy, setBusy] = useState<string | null>(null);
   /** Aynı dönem için aynı anda tek istek */
   const inflight = useRef(new Set<string>());
 
@@ -65,6 +67,7 @@ export default function EFaturaScreen() {
   const fetchList = useCallback(async (k: string, y: Yon, from: string, to: string) => {
     if (inflight.current.has(k)) return;
     inflight.current.add(k);
+    setBusy(k);
     try {
       const list = await listEFaturalar((name, options) => supabase.functions.invoke(name, options), y, from, to);
       loginFailed = false;
@@ -77,6 +80,7 @@ export default function EFaturaScreen() {
       setErrors((cur) => ({ ...cur, [k]: { message: errorMessage(e), login } }));
     } finally {
       inflight.current.delete(k);
+      setBusy((b) => (b === k ? null : b));
     }
   }, []);
 
@@ -132,7 +136,14 @@ export default function EFaturaScreen() {
               ? `${error.message}\n\nHesabınız kilitlenmesin diye otomatik olarak tekrar denenmez. Sunucu da 15 dakika boyunca QNB’ye istek atmaz.`
               : error.message
           }>
-          <ListRow title={error.login ? 'QNB girişi başarısız' : 'Faturalar alınamadı'} subtitle="Tekrar denemek için dokunun" tone="action" onPress={refresh} />
+          <ListRow
+            title={error.login ? 'QNB girişi başarısız' : 'Faturalar alınamadı'}
+            subtitle={busy === key ? 'Deneniyor…' : 'Tekrar denemek için dokunun'}
+            tone="action"
+            disabled={busy === key}
+            accessory={busy === key ? <ActivityIndicator /> : undefined}
+            onPress={refresh}
+          />
         </ListSection>
       )}
 
