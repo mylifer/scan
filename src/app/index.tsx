@@ -19,6 +19,7 @@ import { useDrafts } from '../hooks/useDrafts';
 import { useMonthlySummary } from '../hooks/useMonthlySummary';
 import { confirmDestructive, showActionSheet } from '../lib/actionSheet';
 import { showCategoryPicker } from '../lib/categoryPicker';
+import { showSentSheet } from '../lib/bulkSent';
 import { showAlert } from '../lib/alert';
 import { errorMessage } from '../lib/errors';
 import { formatTL } from '../lib/format';
@@ -39,7 +40,7 @@ import { pickPhotos } from '../services/image/pickPhotos';
 import { updateMonthlySummary } from '../services/reminders/monthlySummary';
 import { monthOffset } from '../lib/monthlySummaryPlan';
 import { categoriesReady } from '../services/supabase/schema';
-import { deleteReceipt as deleteReceiptRecord, markReceiptsSent, purgeExpiredTrash, updateReceiptsCategory } from '../services/supabase/receiptsRepository';
+import { deleteReceipt as deleteReceiptRecord, purgeExpiredTrash, updateReceiptsCategory } from '../services/supabase/receiptsRepository';
 import { ESKI_KATEGORILER, type Kategori, type ReceiptRecord } from '../types/receipt';
 
 const PAGE = 25;
@@ -294,21 +295,7 @@ export default function DashboardScreen() {
   }
 
   function bulkSent() {
-    const list = selectedList;
-    if (!list.length) return;
-    const ids = list.map((r) => r.id);
-    const unsent = list.filter((r) => !r.muhasebe_gonderildi_at).length;
-    const sent = list.length - unsent;
-    showActionSheet({
-      title: `${list.length} fiş`,
-      message: sent && unsent ? `${sent} tanesi zaten gönderildi olarak işaretli.` : undefined,
-      options: [
-        ...(unsent
-          ? [{ label: `Muhasebeciye Gönderildi (${unsent})`, onPress: () => bulk(async () => `${await markReceiptsSent(ids, true)} fiş gönderildi olarak işaretlendi`) }]
-          : []),
-        ...(sent ? [{ label: `Gönderildi İşaretini Kaldır (${sent})`, onPress: () => bulk(async () => `${await markReceiptsSent(ids, false)} fişin işareti kaldırıldı`) }] : []),
-      ],
-    });
+    showSentSheet(selectedList, bulk);
   }
 
   function bulkDelete() {

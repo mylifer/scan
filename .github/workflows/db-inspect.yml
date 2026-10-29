@@ -52,6 +52,9 @@ jobs:
             "storage_top": "select bucket_id, split_part(name,'/',1) as top, count(*) from storage.objects group by 1,2 order by 1,2 limit 50",
             "extensions": "select extname from pg_extension order by 1",
             "users": "select count(*) as users from auth.users",
+            "schema_version": "select public.receipt_schema_version() as v",
+            "sent_marks": "select count(*) filter (where muhasebe_gonderildi_at is not null) as gonderildi, count(*) as toplam, max(muhasebe_gonderildi_at) as son from public.receipts",
+            "recent_errors": "select created_at, context, left(message, 200) as message, app_version, platform from public.app_errors order by created_at desc limit 15",
             "views_seq": f"select n.nspname||'.'||c.relname, c.relkind from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind in ('S') and n.nspname not in {SYS} order by 1",
           }
           for k, q in Q.items():

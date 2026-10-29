@@ -350,6 +350,24 @@ test('muhasebeciye gönderildi: toplu ve tek tek işaretlenir, dışa aktarımda
   await close();
 });
 
+test('tüm fişler: hepsi seçilip muhasebeciye gönderildi olarak işaretlenir', async (b) => {
+  const { page, backend, errors, close } = await open(b, { receipts: thisMonth() });
+  await page.getByText('Tüm Fişler', { exact: true }).click();
+  await page.waitForTimeout(1200);
+  await page.getByText('Seç', { exact: true }).last().click();
+  await page.waitForTimeout(300);
+  await page.getByText(`Tümünü Seç (${backend.db.receipts.length})`).click();
+  await page.waitForTimeout(300);
+  await page.getByText(`Gönderildi (${backend.db.receipts.length})`).click();
+  await page.waitForTimeout(300);
+  await page.getByText(`Muhasebeciye Gönderildi (${backend.db.receipts.length})`).click();
+  await page.waitForTimeout(1500);
+  assert.ok(backend.db.receipts.every((r) => r.muhasebe_gonderildi_at), 'bütün fişler (farklı aylar dahil) işaretlenmeli');
+  assert.ok((await page.getByText('Yalnızca Gönderilmemişler').count()) >= 1, 'filtre görünmeli');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 test('tüm fişler, firmalar ve firma detayı', async (b) => {
   const { page, errors, close } = await open(b, {
     receipts: [

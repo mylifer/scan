@@ -345,24 +345,38 @@ export async function renameFirms(from: string[], to: string): Promise<number> {
  * Zaten işaretli olanların tarihi değişmez. @returns değişen fiş sayısı
  */
 export async function markReceiptsSent(ids: string[], sent: boolean): Promise<number> {
-  if (!ids.length) return 0;
-  let query = supabase
-    .from(TABLE)
-    .update({ muhasebe_gonderildi_at: sent ? new Date().toISOString() : null })
-    .in('id', ids);
-  query = sent ? query.is('muhasebe_gonderildi_at', null) : query.not('muhasebe_gonderildi_at', 'is', null);
-  const { data, error } = await query.select('id');
-  if (error) throw new Error(`İşaretlenemedi: ${error.message}`);
-  return data?.length ?? 0;
+  const at = sent ? new Date().toISOString() : null;
+  let changed = 0;
+  for (const part of chunks(ids)) {
+    let query = supabase.from(TABLE).update({ muhasebe_gonderildi_at: at }).in('id', part);
+    query = sent ? query.is('muhasebe_gonderildi_at', null) : query.not('muhasebe_gonderildi_at', 'is', null);
+    const { data, error } = await query.select('id');
+    if (error) throw new Error(`İşaretlenemedi: ${error.message}`);
+    changed += data?.length ?? 0;
+  }
+  return changed;
+}
+
+/** Çok sayıda kimlik tek istekte gönderilirse adres çok uzar (URL sınırı); 100'erli gruplara bölünür */
+function chunks<T>(list: T[], size = 100): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
+  return out;
 }
 
 /** Seçilen fişlerin kategorisini değiştirir. @returns değişen fiş sayısı */
 export async function updateReceiptsCategory(ids: string[], kategori: Kategori): Promise<number> {
-  if (!ids.length) return 0;
-  const { data, error } = await supabase.from(TABLE).update({ kategori }).in('id', ids).select('id');
-  if (error) throw new Error(`Kategori değiştirilemedi: ${error.message}`);
-  invalidateFirmCategories();
-  return data?.length ?? 0;
+  let changed = 0;
+  try {
+    for (const part of chunks(ids)) {
+      const { data, error } = await supabase.from(TABLE).update({ kategori }).in('id', part).select('id');
+      if (error) throw new Error(`Kategori değiştirilemedi: ${error.message}`);
+      changed += data?.length ?? 0;
+    }
+  } finally {
+    invalidateFirmCategories();
+  }
+  return changed;
 }
 
 /** En son eklenen fişler (eklenme zamanına göre, fiş tarihine göre değil) */
