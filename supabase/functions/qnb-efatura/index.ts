@@ -39,6 +39,7 @@ import {
   parseFault,
   parseList,
   parseUbl,
+  portalListRequest,
   QNB_URL,
   type Yon,
 } from './soap.ts';
@@ -185,15 +186,33 @@ async function earsivList(baslangic: string, bitis: string): Promise<{ list: EFa
   }
 }
 
+/** Portaldan kesilen giden e-Faturalar; QNB iş hatasında mesaj döner (giriş hatası yukarı atılır) */
+async function portalList(baslangic: string, bitis: string): Promise<{ list: EFatura[]; hata?: string }> {
+  const { op, params } = portalListRequest(QNB_VKN, compact(baslangic), compact(bitis));
+  try {
+    const list = parseList(await soap(QNB_URL, op, params), 'giden').filter((f) => !f.tarih || (f.tarih >= baslangic && f.tarih <= bitis));
+    console.log(`giden portal ${baslangic}..${bitis}: ${list.length}`);
+    return { list };
+  } catch (e) {
+    if (e instanceof LoginError) throw e;
+    return { list: [], hata: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 async function listele(yon: Yon, baslangic: string, bitis: string) {
   const { op, params } = listRequest(yon, QNB_VKN, compact(baslangic), compact(bitis));
   const efatura = parseList(await soap(QNB_URL, op, params), yon);
   if (yon === 'gelen') return { faturalar: efatura };
+  const portal = await portalList(baslangic, bitis);
   const earsiv = await earsivList(baslangic, bitis);
+  const uyarilar = [
+    portal.hata ? `Portal e-Faturaları alınamadı: ${portal.hata}` : '',
+    earsiv.hata ? `e-Arşiv faturaları alınamadı: ${earsiv.hata}` : '',
+  ].filter(Boolean);
   return {
-    faturalar: mergeLists(efatura, earsiv.list),
-    ...(earsiv.hata ? { uyari: `e-Arşiv faturaları alınamadı: ${earsiv.hata}` } : {}),
-    ...(earsiv.bilgi ? { bilgi: earsiv.bilgi } : {}),
+    faturalar: mergeLists(efatura, portal.list, earsiv.list),
+    ...(uyarilar.length ? { uyari: uyarilar.join('\n\n') } : {}),
+    ...(earsiv.bilgi ? { bilgi: `e-Fatura: web servis ${efatura.length}, portal ${portal.list.length} kayıt. ${earsiv.bilgi}` } : {}),
   };
 }
 

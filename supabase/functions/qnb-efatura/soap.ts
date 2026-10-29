@@ -97,6 +97,17 @@ export function listRequest(yon: Yon, vkn: string, baslangic: string, bitis: str
   };
 }
 
+/**
+ * Portaldan kesilen giden e-Faturalar gidenBelgeleriListele'de görünmüyor; gidenBelgeleriListelePortal
+ * fatura tarihine göre listeler (alıcı unvanı ve tutar dahil). Tarihler YYYYAAGG.
+ */
+export function portalListRequest(vkn: string, baslangic: string, bitis: string): { op: string; params: Record<string, string> } {
+  return {
+    op: 'gidenBelgeleriListelePortal',
+    params: { vergiTcKimlikNo: vkn, belgeTuru: 'FATURA', faturaBaslangicTarihi: baslangic, faturaBitisTarihi: bitis },
+  };
+}
+
 /** SOAP Fault varsa mesajı, yoksa null */
 export function parseFault(xml: string): string | null {
   if (!/<(\w+:)?Fault\b/.test(xml)) return null;
@@ -139,18 +150,19 @@ export function isoDate(v: string | undefined): string {
 }
 
 export function toEFatura(r: Record<string, string>, yon: Yon): EFatura {
-  const vkn = (yon === 'gelen' ? r.gonderenVknTckn : r.aliciVkn) ?? '';
-  const unvan = (yon === 'gelen' ? r.saticiUnvan || r.gonderenIsim : r.aliciUnvan) || vkn || 'Bilinmeyen firma';
-  const tutar = Number(r.odenecekTutar ?? r.payableAmount ?? '');
+  // Giden: gidenBelgeleriListele(Data/DataExt) ve gidenBelgeleriListelePortal(Data) alanları da karşılanır
+  const vkn = (yon === 'gelen' ? r.gonderenVknTckn : r.aliciVkn || r.alanVergiTcKimlikNo) ?? '';
+  const unvan = (yon === 'gelen' ? r.saticiUnvan || r.gonderenIsim : r.aliciUnvan || r.receiverName) || vkn || 'Bilinmeyen firma';
+  const tutar = Number(r.odenecekTutar ?? r.payableAmount ?? r.tutar ?? '');
   return {
     ettn: r.ettn ?? '',
-    belgeNo: r.belgeNo ?? '',
+    belgeNo: r.belgeNo || r.invoiceID || r.yerelBelgeNo || '',
     tarih: isoDate(r.belgeTarihi),
     unvan,
     vkn,
     tutar: Number.isFinite(tutar) ? tutar : 0,
-    paraBirimi: r.odenecekTutarDovizCinsi || r.dovizCinsi || 'TRY',
-    profil: r.profileId ?? r.faturaSenaryo ?? '',
+    paraBirimi: r.odenecekTutarDovizCinsi || r.dovizCinsi || r.currency || 'TRY',
+    profil: r.profileId || r.profileID || r.faturaSenaryo || r.belgeTipi || '',
   };
 }
 

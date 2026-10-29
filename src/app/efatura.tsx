@@ -157,7 +157,7 @@ export default function EFaturaScreen() {
       {uyari ? (
         <ListSection footer={uyari}>
           <ListRow
-            title="e-Arşiv faturaları alınamadı"
+            title="Bazı giden faturalar alınamadı"
             icon={{ sf: 'exclamationmark.triangle.fill', ion: 'warning', color: theme.orange }}
             subtitle={busy === key ? 'Deneniyor…' : 'Tekrar denemek için dokunun'}
             tone="action"
