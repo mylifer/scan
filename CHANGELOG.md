@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.45.1 — `KOD`
+## 1.45.1 — `03f263c`
 - e-Fatura Özeti: olağan dışı yüksek tutarlı giden faturalar artık varsayılan olarak toplamlara katılmıyor ("Toplamlara Dahil Et" anahtarıyla geri alınabilir). Aylık listede de KDV ve tutar toplamına girmiyor, satırında "Toplama dahil değil" yazıyor
 
 ## 1.45.0 — `c00fd55`
