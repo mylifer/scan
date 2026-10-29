@@ -126,13 +126,13 @@ export default function EFaturaScreen() {
       </View>
 
       {error && (
-        <ListSection footer={error.login ? 'Hesabınız kilitlenmesin diye otomatik olarak tekrar denenmez. Sunucu da 15 dakika boyunca QNB’ye istek atmaz.' : undefined}>
-          <ListRow
-            title={error.login ? 'QNB girişi başarısız' : 'Faturalar alınamadı'}
-            subtitle={error.message}
-            tone="action"
-            onPress={refresh}
-          />
+        <ListSection
+          footer={
+            error.login
+              ? `${error.message}\n\nHesabınız kilitlenmesin diye otomatik olarak tekrar denenmez. Sunucu da 15 dakika boyunca QNB’ye istek atmaz.`
+              : error.message
+          }>
+          <ListRow title={error.login ? 'QNB girişi başarısız' : 'Faturalar alınamadı'} subtitle="Tekrar denemek için dokunun" tone="action" onPress={refresh} />
         </ListSection>
       )}
 
