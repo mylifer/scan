@@ -5,9 +5,9 @@ import { ActivityIndicator, ScrollView } from 'react-native';
 import { ListRow, ListSection } from '../components/ui/List';
 import { errorMessage } from '../lib/errors';
 import { useTheme } from '../lib/theme';
-import { base64ToBytes } from '../../supabase/functions/qnb-efatura/soap';
 import { showAlert } from '../lib/alert';
-import { EFaturaError, type FaturaDetay, getEFaturaDetay, getEFaturaPdf, type Tur, type Yon } from '../services/efatura/qnbEfatura';
+import { fetchInvoicePdf } from '../services/efatura/pdfCache';
+import { EFaturaError, type FaturaDetay, getEFaturaDetay, type Tur, type Yon } from '../services/efatura/qnbEfatura';
 import { sharePdf } from '../services/export/exportReceipts';
 import { supabase } from '../services/supabase/client';
 
@@ -78,9 +78,9 @@ export default function EFaturaDetayScreen() {
   const openPdf = async () => {
     setPdfBusy(true);
     try {
-      const b64 = await getEFaturaPdf((name, options) => supabase.functions.invoke(name, options), yon, ettn, tur);
+      const cached = await fetchInvoicePdf(yon, ettn, tur);
       const ad = (detay?.belgeNo || params.belgeNo || ettn).replace(/[^\w-]/g, '_');
-      await sharePdf(base64ToBytes(b64), `${ad}.pdf`);
+      await sharePdf(cached.bytes, `${ad}.pdf`);
     } catch (e) {
       showAlert('PDF açılamadı', errorMessage(e));
     } finally {
