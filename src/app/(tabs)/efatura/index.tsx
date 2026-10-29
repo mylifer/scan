@@ -5,6 +5,7 @@ import { type ComponentType, useCallback, useEffect, useRef, useState } from 're
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { EFaturaTable } from '../../../components/efatura/EFaturaTable';
+import { PdfViewerModal } from '../../../components/efatura/PdfViewerModal';
 import { StatTiles } from '../../../components/ui/Columns';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { Icon } from '../../../components/ui/Icon';
@@ -88,6 +89,7 @@ export default function EFaturaScreen() {
   const [data, setData] = useState<Record<string, Donem>>(() => Object.fromEntries(cache));
   const [errors, setErrors] = useState<Record<string, { message: string; login: boolean }>>({});
   const [pulling, setPulling] = useState(false);
+  const [pdfModalFatura, setPdfModalFatura] = useState<EFatura | null>(null);
   /** Genel Özet'te toplamlardan çıkarılan faturalar (olağan dışı yüksek tutar) */
   const [haric, setHaric] = useState<ReadonlySet<string>>(new Set());
   /** Listenin sıralaması (telefonda hatırlanır) */
@@ -211,20 +213,21 @@ export default function EFaturaScreen() {
   const yonLabel = yon === 'gelen' ? 'gelen' : 'giden';
 
   return (
-    <ScrollView
-      style={{ backgroundColor: theme.background }}
-      contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{ paddingTop: wide ? 20 : 16, paddingHorizontal: wide ? 8 : 0, paddingBottom: 40 }}
-      refreshControl={
-        <RefreshControl
-          refreshing={pulling}
-          onRefresh={async () => {
-            setPulling(true);
-            await refresh();
-            setPulling(false);
-          }}
-        />
-      }>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <ScrollView
+        style={{ backgroundColor: theme.background }}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{ paddingTop: wide ? 20 : 16, paddingHorizontal: wide ? 8 : 0, paddingBottom: 40 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={pulling}
+            onRefresh={async () => {
+              setPulling(true);
+              await refresh();
+              setPulling(false);
+            }}
+          />
+        }>
       <View style={[styles.controls, wide && styles.controlsWide]}>
         {wide ? (
           <TabsList>
@@ -360,10 +363,12 @@ export default function EFaturaScreen() {
             <>
               <EFaturaTable
                 items={sortEFaturalar(items, siralama)}
+                yon={yon}
                 siralama={siralama}
                 onSiralama={siralamaDegistir}
                 haric={haric}
                 onOpen={(f) => router.push({ pathname: '/efatura-detay', params: { yon, ettn: f.ettn, unvan: f.unvan, tur: f.tur ?? 'efatura', belgeNo: f.belgeNo } })}
+                onViewPdf={(f) => setPdfModalFatura(f)}
               />
               <Text style={[t.footnote, { color: theme.secondaryLabel, marginHorizontal: 32, marginTop: 7, marginBottom: 28 }]}>
                 {yon === 'gelen'
@@ -398,6 +403,21 @@ export default function EFaturaScreen() {
                     .join(' · ')}
                   value={money(f.tutar, f.paraBirimi)}
                   valueColor={f.iptal ? theme.secondaryLabel : theme.label}
+                  accessory={
+                    f.ettn ? (
+                      <Pressable
+                        onPress={(e) => {
+                          (e as unknown as { stopPropagation?: () => void })?.stopPropagation?.();
+                          setPdfModalFatura(f);
+                        }}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${f.unvan} PDF görüntüle`}
+                        style={({ pressed }) => [{ padding: 6, marginLeft: 6, borderRadius: 6, opacity: pressed ? 0.6 : 1 }]}>
+                        <Icon sf="doc.text.fill" ion="document-text-outline" size={17} color={theme.blue} />
+                      </Pressable>
+                    ) : undefined
+                  }
                   chevron={!!f.ettn}
                   onPress={
                     f.ettn
@@ -439,7 +459,14 @@ export default function EFaturaScreen() {
         ))}
       </ListSection>
     </ScrollView>
-  );
+    <PdfViewerModal
+      visible={!!pdfModalFatura}
+      fatura={pdfModalFatura}
+      yon={yon}
+      onClose={() => setPdfModalFatura(null)}
+    />
+  </View>
+);
 }
 
 function MonthButton({ dir, label, onPress, disabled }: { dir: 'left' | 'right'; label: string; onPress: () => void; disabled?: boolean }) {

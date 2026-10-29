@@ -16,6 +16,13 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.50.0 — `6f0331e`
+- **e-Fatura listesinde satır bazında anında PDF görüntüleme ve açılır pencere (popup):**
+  - **Masaüstü Tablosu:** Her fatura satırına özel `PDF Görüntüle` butonu eklendi; tıklanınca faturanın orijinal PDF'i popup pencere içinde açılır.
+  - **Dahili Önizleme Penceresi (Modal):** Web tarayıcısında dosyayı bilgisayara/İndirilenler klasörüne indirmeye zorlamadan, tarayıcının yerleşik PDF görüntüleyicisiyle sayfa üzerinde açılır. Firma unvanı, fatura türü (e-Arşiv / e-Fatura / İade), belge no, tarih, tutar bilgileri, cihazına kaydetmek isteyenler için "İndir" butonu ve `Escape` tuşu ile hızlı kapatma desteği sunar.
+  - **Sıfır Bekleme & Akıllı Önbellekleme (`pdfCache`):** Fare imleci satırın veya PDF butonunun üzerine geldiğinde (`hover`), PDF arka planda sessizce çekilip hafızada önbelleğe alınır. Butona tıklandığında ağ gecikmesi olmadan (0ms) anında açılır; mükerrer istekler otomatik birleştirilir (deduplication).
+  - **Mobil Desteği:** Dar ekranda (telefon) liste satırına eklenen PDF simgesiyle aynı önizleme penceresine hızlı erişim sağlandı.
+
 ## 1.49.0 — `7094d8a`
 - **Web sürümü Shadcn UI tasarım diliyle baştan yenilendi:**
   - **Tasarım Sistemi:** Inter tipografisi, zinc/neutral renk paleti, 1 piksellik belirgin kart kenarlıkları ve modern koyu/açık mod uyumu

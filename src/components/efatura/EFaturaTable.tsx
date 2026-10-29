@@ -2,7 +2,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { EFaturaSort } from '../../lib/efaturaSort';
 import { fontFamily, tabular, useShadcnTheme } from '../../lib/theme';
-import type { EFatura } from '../../services/efatura/qnbEfatura';
+import { prefetchInvoicePdf } from '../../services/efatura/pdfCache';
+import type { EFatura, Yon } from '../../services/efatura/qnbEfatura';
+import { Icon } from '../ui/Icon';
 import { Badge } from '../web/Badge';
 
 const AY = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
@@ -24,12 +26,13 @@ function para(value: number | undefined, currency: string): string {
 type Sutun = { ad: string; flex: number; sag?: boolean; siralama?: [EFaturaSort, EFaturaSort?] };
 
 const SUTUNLAR: Sutun[] = [
-  { ad: 'Tarih', flex: 1.3, siralama: ['yeni', 'eski'] },
-  { ad: 'Firma', flex: 3.2, siralama: ['firma'] },
-  { ad: 'Belge No', flex: 1.6 },
-  { ad: 'Matrah', flex: 1.3, sag: true },
-  { ad: 'KDV', flex: 1.2, sag: true, siralama: ['kdv-yuksek'] },
-  { ad: 'Tutar', flex: 1.4, sag: true, siralama: ['tutar-yuksek', 'tutar-dusuk'] },
+  { ad: 'Tarih', flex: 1.1, siralama: ['yeni', 'eski'] },
+  { ad: 'Firma', flex: 2.8, siralama: ['firma'] },
+  { ad: 'Belge No', flex: 1.4 },
+  { ad: 'Matrah', flex: 1.1, sag: true },
+  { ad: 'KDV', flex: 1.0, sag: true, siralama: ['kdv-yuksek'] },
+  { ad: 'Tutar', flex: 1.2, sag: true, siralama: ['tutar-yuksek', 'tutar-dusuk'] },
+  { ad: 'İşlem', flex: 1.4, sag: true },
 ];
 
 /**
@@ -37,15 +40,19 @@ const SUTUNLAR: Sutun[] = [
  */
 export function EFaturaTable({
   items,
+  yon,
   siralama,
   onSiralama,
   onOpen,
+  onViewPdf,
   haric,
 }: {
   items: EFatura[];
+  yon: Yon;
   siralama: EFaturaSort;
   onSiralama: (s: EFaturaSort) => void;
   onOpen: (f: EFatura) => void;
+  onViewPdf?: (f: EFatura) => void;
   haric: ReadonlySet<string>;
 }) {
   const t = useShadcnTheme();
@@ -100,6 +107,9 @@ export function EFaturaTable({
           <Pressable
             key={f.ettn || f.belgeNo}
             onPress={f.ettn ? () => onOpen(f) : undefined}
+            onHoverIn={() => {
+              if (f.ettn) prefetchInvoicePdf(yon, f.ettn, f.tur);
+            }}
             disabled={!f.ettn}
             accessibilityRole="button"
             accessibilityLabel={`${f.unvan}, ${para(f.tutar, f.paraBirimi)}`}
@@ -109,14 +119,14 @@ export function EFaturaTable({
               (hovered || pressed) && { backgroundColor: t.muted },
             ]}>
             {/* Tarih */}
-            <View style={[styles.cell, { flex: 1.3 }]}>
+            <View style={[styles.cell, { flex: 1.1 }]}>
               <Text style={[styles.dateText, tabular, { color: renk }]} numberOfLines={1}>
                 {tarihMetni(f.tarih)}
               </Text>
             </View>
 
             {/* Firma ve Rozetler */}
-            <View style={[styles.cell, { flex: 3.2, gap: 4 }]}>
+            <View style={[styles.cell, { flex: 2.8, gap: 4 }]}>
               <Text style={[styles.titleText, { color: renk }]} numberOfLines={1}>
                 {f.unvan}
               </Text>
@@ -145,28 +155,28 @@ export function EFaturaTable({
             </View>
 
             {/* Belge No */}
-            <View style={[styles.cell, { flex: 1.6 }]}>
+            <View style={[styles.cell, { flex: 1.4 }]}>
               <Text style={[styles.monoText, tabular, { color: t.mutedForeground }]} numberOfLines={1}>
                 {f.belgeNo}
               </Text>
             </View>
 
             {/* Matrah */}
-            <View style={[styles.cell, { flex: 1.3 }]}>
+            <View style={[styles.cell, { flex: 1.1 }]}>
               <Text style={[styles.amountText, tabular, styles.sag, { color: t.mutedForeground }]}>
                 {para(f.matrah, f.paraBirimi)}
               </Text>
             </View>
 
             {/* KDV */}
-            <View style={[styles.cell, { flex: 1.2 }]}>
+            <View style={[styles.cell, { flex: 1.0 }]}>
               <Text style={[styles.amountText, tabular, styles.sag, { color: renk }]}>
                 {para(f.kdv, f.paraBirimi)}
               </Text>
             </View>
 
             {/* Tutar */}
-            <View style={[styles.cell, { flex: 1.4 }]}>
+            <View style={[styles.cell, { flex: 1.2 }]}>
               <Text
                 style={[
                   styles.totalText,
@@ -179,6 +189,33 @@ export function EFaturaTable({
                 ]}>
                 {para(f.tutar, f.paraBirimi)}
               </Text>
+            </View>
+
+            {/* İşlem (PDF Görüntüle) */}
+            <View style={[styles.cell, { flex: 1.4, alignItems: 'flex-end', justifyContent: 'center' }]}>
+              {f.ettn && onViewPdf ? (
+                <Pressable
+                  onPress={(e) => {
+                    (e as unknown as { stopPropagation?: () => void })?.stopPropagation?.();
+                    onViewPdf(f);
+                  }}
+                  onHoverIn={() => {
+                    prefetchInvoicePdf(yon, f.ettn, f.tur);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${f.unvan} faturasının PDF'ini görüntüle`}
+                  style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
+                    styles.pdfBtn,
+                    {
+                      backgroundColor: hovered ? t.secondary : t.muted,
+                      borderColor: t.border,
+                      opacity: pressed ? 0.7 : 1,
+                    },
+                  ]}>
+                  <Icon sf="doc.text.fill" ion="document-text-outline" size={13} color={t.cardForeground} />
+                  <Text style={[styles.pdfBtnText, { color: t.cardForeground }]}>PDF Görüntüle</Text>
+                </Pressable>
+              ) : null}
             </View>
           </Pressable>
         );
@@ -250,5 +287,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: 4,
+  },
+  pdfBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  pdfBtnText: {
+    fontFamily,
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
