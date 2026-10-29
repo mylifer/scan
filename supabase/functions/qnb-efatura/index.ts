@@ -11,6 +11,9 @@
 //   { islem: 'detay', yon, ettn, tur? }                   → { detay: FaturaDetay }  (kalemler, KDV)
 //   { islem: 'pdf', yon, ettn, tur? }                     → { pdf: base64 }
 //     tur: 'earsiv' ise e-Arşiv servisinden (faturaSorgula), yoksa e-Fatura'dan (…BelgeIndirExt)
+//   { islem: 'ilk-ay' }                                   → { ilkAy: 'YYYY-MM' | null }  (ilk belgenin ayı)
+//   { islem: 'ozet-gelen', baslangic, bitis }  (≤62 gün)  → { gelen: TutarSatiri[], qnb }
+//   { islem: 'ozet-giden', baslangic, bitis }  (≤6 yıl)   → { giden: TutarSatiri[], earsiv: EFatura[], qnb }
 // Hata: { message, code? }  (code: 'qnb_login' → tekrar denemeyin)
 
 import { unzipSync } from 'npm:fflate@0.8.2';
@@ -45,6 +48,9 @@ import {
   parseReturns,
   parseTutar,
   parseTutarMap,
+  parseTutarRows,
+  gelenTutarRequest,
+  type TutarSatiri,
   portalListRequest,
   tutarRequest,
   QNB_URL,
@@ -241,7 +247,8 @@ async function portalList(baslangic: string, bitis: string): Promise<{ list: EFa
  * 10 gün uzatılır), sonra en fazla 25 fatura için UBL (5'erli paralel). Hata olursa sessizce geçilir.
  */
 async function tutarlariTamamla(list: EFatura[], yon: Yon, baslangic: string, bitis: string): Promise<void> {
-  const eksikler = () => list.filter((f) => (!f.tutar || !f.unvan || !f.tarih) && f.ettn && f.tur !== 'earsiv');
+  const unvansiz = (f: EFatura) => !f.unvan || f.unvan === f.vkn || /^\d{10,11}$/.test(f.unvan);
+  const eksikler = () => list.filter((f) => (!f.tutar || unvansiz(f) || !f.tarih) && f.ettn && f.tur !== 'earsiv');
   if (!eksikler().length) return;
   if (yon === 'giden') {
     try {
@@ -263,7 +270,7 @@ async function tutarlariTamamla(list: EFatura[], yon: Yon, baslangic: string, bi
         const d = parseUbl(new TextDecoder('utf-8').decode(await belge('efatura', yon, f.ettn, 'UBL')));
         const karsi = yon === 'gelen' ? { unvan: d.saticiUnvan, vkn: d.saticiVkn } : { unvan: d.aliciUnvan, vkn: d.aliciVkn };
         if (!f.tutar && d.odenecek) Object.assign(f, { tutar: d.odenecek, paraBirimi: d.paraBirimi });
-        if (!f.unvan || f.unvan === f.vkn) f.unvan = karsi.unvan || f.unvan;
+        if (unvansiz(f)) f.unvan = karsi.unvan || f.unvan;
         f.vkn ||= karsi.vkn;
         f.belgeNo ||= d.belgeNo;
         f.tarih ||= d.tarih;
@@ -413,6 +420,100 @@ async function gidenTarama(baslangic: string, bitis: string): Promise<{ list: EF
   return { list: mergeLists(...bulunan), notlar };
 }
 
+/**
+ * Tutar/KDV satırları. Gelen: fatura tarihine göre; giden: gönderim tarihine göre. QNB tek seferde en fazla
+ * 100 satır döndürdüğü için 100'e ulaşan aralık ikiye bölünüp yeniden sorulur.
+ */
+async function tutarSatirlari(yon: Yon, baslangic: string, bitis: string, derinlik = 0): Promise<TutarSatiri[]> {
+  const { op, params } = yon === 'gelen' ? gelenTutarRequest(QNB_VKN, compact(baslangic), compact(bitis)) : tutarRequest(QNB_VKN, compact(baslangic), compact(bitis));
+  let rows: TutarSatiri[];
+  try {
+    rows = parseTutarRows(await soap(QNB_URL, op, params, { wrap: false }));
+  } catch (e) {
+    if (e instanceof QnbError && /sonuç bulunamadı|bulunamadı/i.test(e.message)) return [];
+    throw e;
+  }
+  if (rows.length < 100 || baslangic >= bitis || derinlik > 8) return rows;
+  const orta = new Date((Date.parse(baslangic) + Date.parse(bitis)) / 2).toISOString().slice(0, 10);
+  const ertesi = new Date(Date.parse(orta) + 86_400_000).toISOString().slice(0, 10);
+  const [a, b] = await Promise.all([tutarSatirlari(yon, baslangic, orta, derinlik + 1), tutarSatirlari(yon, ertesi, bitis, derinlik + 1)]);
+  const seen = new Set<string>();
+  return [...a, ...b].filter((r) => !seen.has(r.ettn.toLowerCase()) && seen.add(r.ettn.toLowerCase()));
+}
+
+/** Listedeki e-Faturalara KDV ve matrahı ekler (QNB tutar bilgisinden). Hata olursa sessizce geçilir. */
+async function kdvEkle(list: EFatura[], yon: Yon, baslangic: string, bitis: string): Promise<void> {
+  if (!list.some((f) => f.tur !== 'earsiv')) return;
+  try {
+    const rows = await tutarSatirlari(yon, baslangic, yon === 'giden' ? sonraki(bitis, 15) : bitis);
+    const map = new Map(rows.map((r) => [r.ettn.toLowerCase(), r]));
+    for (const f of list) {
+      const r = map.get(f.ettn.toLowerCase());
+      if (!r || f.tur === 'earsiv') continue;
+      f.kdv = r.kdv;
+      f.matrah = r.matrah;
+      if (!f.tutar) Object.assign(f, { tutar: r.odenecek, paraBirimi: r.paraBirimi });
+    }
+  } catch (e) {
+    if (e instanceof LoginError) throw e;
+    console.log('KDV bilgisi:', e instanceof Error ? e.message : e);
+  }
+}
+
+/** İlk belgenin ayı: yıllık sayımla ilk dolu yıl, sonra o yılın ayları */
+async function ilkAy(): Promise<string | null> {
+  const buYil = new Date().getFullYear();
+  for (let y = 2015; y <= buYil; y++) {
+    const [ge, gi] = await Promise.all([qnbSayisi('gelen', `${y}-01-01`, `${y}-12-31`), qnbSayisi('giden', `${y}-01-01`, `${y}-12-31`)]);
+    if (!(ge || gi)) continue;
+    for (let m = 1; m <= 12; m++) {
+      const a = `${y}-${String(m).padStart(2, '0')}-01`;
+      const b = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+      const [g1, g2] = await Promise.all([qnbSayisi('gelen', a, b), qnbSayisi('giden', a, b)]);
+      if (g1 || g2) return a.slice(0, 7);
+    }
+  }
+  return null;
+}
+
+async function ozetGelen(baslangic: string, bitis: string) {
+  const [gelen, qnb] = await Promise.all([tutarSatirlari('gelen', baslangic, bitis), qnbSayisi('gelen', baslangic, bitis)]);
+  return { gelen: gelen.filter((r) => !r.tarih || (r.tarih >= baslangic && r.tarih <= bitis)), qnb };
+}
+
+/**
+ * Giden özet: tutar satırları (gönderim tarihi bugüne kadar sorulur, fatura tarihine göre süzülür),
+ * belge tipi (SATIS/IADE) portal listesinden, olmayanlar UBL'den; e-Arşiv faturaları yıl yıl.
+ */
+async function ozetGiden(baslangic: string, bitis: string) {
+  const bugun = new Date().toISOString().slice(0, 10);
+  const [tum, qnb] = await Promise.all([tutarSatirlari('giden', baslangic, bugun), qnbSayisi('giden', baslangic, bitis)]);
+  const giden = tum.filter((r) => !r.tarih || (r.tarih >= baslangic && r.tarih <= bitis));
+  const tipler = new Map<string, string>();
+  const earsiv: EFatura[] = [];
+  let taslak = 0;
+  for (let y = Number(baslangic.slice(0, 4)); y <= Number(bitis.slice(0, 4)); y++) {
+    const a = `${y}-01-01` < baslangic ? baslangic : `${y}-01-01`;
+    const b = `${y}-12-31` > bitis ? bitis : `${y}-12-31`;
+    const portal = await portalList(a, b);
+    for (const f of portal.list) if (f.tip) tipler.set(f.ettn.toLowerCase(), f.tip);
+    taslak += portal.list.filter((f) => f.taslak).length;
+    const e = await earsivList(a, b);
+    earsiv.push(...e.list);
+  }
+  const eksik = giden.filter((r) => !tipler.has(r.ettn.toLowerCase())).slice(0, 30);
+  for (let i = 0; i < eksik.length; i += 5) {
+    await Promise.allSettled(
+      eksik.slice(i, i + 5).map(async (r) => {
+        const d = parseUbl(new TextDecoder('utf-8').decode(await belge('efatura', 'giden', r.ettn, 'UBL')));
+        if (d.tip) tipler.set(r.ettn.toLowerCase(), d.tip);
+      }),
+    );
+  }
+  for (const r of giden) r.tip = tipler.get(r.ettn.toLowerCase()) ?? 'SATIS';
+  return { giden, earsiv: mergeLists(earsiv), qnb, taslak };
+}
+
 const donemde = (baslangic: string, bitis: string) => (f: EFatura) => !f.tarih || (f.tarih >= baslangic && f.tarih <= bitis);
 
 /**
@@ -427,6 +528,8 @@ async function listele(yon: Yon, baslangic: string, bitis: string) {
   const notlar: string[] = [];
   let efatura = liste;
   let earsiv: Awaited<ReturnType<typeof earsivList>> = { list: [] };
+  /** Gönderilmemiş taslaklar: QNB sayısına dahil, listede gösterilmez */
+  let taslak = 0;
 
   if (yon === 'giden') {
     const portal = await portalList(baslangic, bitis);
@@ -436,9 +539,11 @@ async function listele(yon: Yon, baslangic: string, bitis: string) {
     efatura = mergeLists(liste, portal.list);
     notlar.push(`e-Fatura: web servis ${liste.length}, portal ${portal.list.length} kayıt.`);
     if (earsiv.bilgi) notlar.push(earsiv.bilgi);
-    if (qnb === null ? !efatura.length && !earsiv.list.length : efatura.length < qnb) {
+    taslak = efatura.filter((f) => f.taslak).length;
+    efatura = efatura.filter((f) => !f.taslak);
+    if (qnb === null ? !efatura.length && !earsiv.list.length : efatura.length + taslak < qnb) {
       const tarama = await gidenTarama(baslangic, bitis);
-      efatura = mergeLists(efatura, tarama.list);
+      efatura = mergeLists(efatura, tarama.list).filter((f) => !f.taslak);
       notlar.push(`Ek tarama — ${tarama.notlar.join(' · ')}`);
     }
   } else if (qnb !== null && efatura.length < qnb) {
@@ -447,17 +552,19 @@ async function listele(yon: Yon, baslangic: string, bitis: string) {
     notlar.push(`Ek tarama — ${tarama.not}`);
   }
 
+  await kdvEkle(efatura, yon, baslangic, bitis);
   await tutarlariTamamla(efatura, yon, baslangic, bitis);
   efatura = efatura.filter(donemde(baslangic, bitis));
   for (const f of efatura) f.unvan ||= f.vkn || (yon === 'gelen' ? 'Bilinmeyen satıcı' : 'Bilinmeyen alıcı');
 
-  if (qnb !== null && efatura.length < qnb) {
-    uyarilar.push(`QNB bu dönemde ${qnb} ${yon} e-Fatura sayıyor, listede ${efatura.length} var. Eksik ${qnb - efatura.length} fatura bulunamadı.`);
+  if (qnb !== null && efatura.length + taslak < qnb) {
+    const eksik = qnb - efatura.length - taslak;
+    uyarilar.push(`QNB bu dönemde ${qnb} ${yon} e-Fatura sayıyor, listede ${efatura.length}${taslak ? ` (+${taslak} gönderilmemiş taslak)` : ''} var. Eksik ${eksik} fatura bulunamadı.`);
   }
-  console.log(`${yon} ${baslangic}..${bitis}: qnb=${qnb} liste=${efatura.length} ${notlar.join(' | ')}`);
+  console.log(`${yon} ${baslangic}..${bitis}: qnb=${qnb} liste=${efatura.length} taslak=${taslak} ${notlar.join(' | ')}`);
   return {
     faturalar: mergeLists(efatura, earsiv.list),
-    kontrol: { qnb, liste: efatura.length },
+    kontrol: { qnb, liste: efatura.length, taslak },
     ...(uyarilar.length ? { uyari: uyarilar.join('\n\n') } : {}),
     ...(notlar.length && (yon === 'giden' || efatura.length < (qnb ?? 0) || notlar.some((n) => n.startsWith('Ek'))) ? { bilgi: notlar.join('\n\n') } : {}),
   };
@@ -549,6 +656,18 @@ Deno.serve(async (req) => {
     b = await req.json();
   } catch {
     return reply(400, { message: 'Geçersiz istek gövdesi.' });
+  }
+  try {
+    if (b.islem === 'ilk-ay') return reply(200, { ilkAy: await ilkAy() });
+    if (b.islem === 'ozet-gelen' || b.islem === 'ozet-giden') {
+      const a = b.baslangic, z = b.bitis;
+      const gun = typeof a === 'string' && typeof z === 'string' && DATE_RE.test(a) && DATE_RE.test(z) ? (Date.parse(z) - Date.parse(a)) / 86_400_000 : -1;
+      if (gun < 0 || gun > (b.islem === 'ozet-gelen' ? MAX_DAYS : 6 * 366)) return reply(400, { message: 'Tarih aralığı geçersiz.' });
+      return reply(200, b.islem === 'ozet-gelen' ? await ozetGelen(a as string, z as string) : await ozetGiden(a as string, z as string));
+    }
+  } catch (e) {
+    if (e instanceof LoginError) return reply(502, { code: 'qnb_login', message: e.message });
+    return reply(502, { message: e instanceof Error ? e.message : String(e) });
   }
   if (b.yon !== 'gelen' && b.yon !== 'giden') return reply(400, { message: "yon 'gelen' ya da 'giden' olmalı." });
   const yon = b.yon as Yon;

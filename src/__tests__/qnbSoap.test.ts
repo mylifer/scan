@@ -237,7 +237,7 @@ describe('giden portal e-Faturaları', () => {
     assert.deepEqual(params, { vergiTcKimlikNo: '1234567890', belgeTuru: 'FATURA', belgeVersiyon: '1.0', faturaBaslangicTarihi: '20261001', faturaBitisTarihi: '20261031' });
     const xml = '<return xsi:type="ns2:gidenBelgeleriListelePortalData"><alanVergiTcKimlikNo>2222222222</alanVergiTcKimlikNo><belgeNo>GDN2026000000005</belgeNo><belgeTarihi>20261012</belgeTarihi><currency>TRY</currency><ettn>66666666-6666-6666-6666-666666666666</ettn><receiverName>Müşteri Ltd. Şti.</receiverName><tutar>3600.00</tutar><belgeTipi>TICARIFATURA</belgeTipi></return>';
     const [f] = parseList(xml, 'giden');
-    assert.deepEqual(f, { ettn: '66666666-6666-6666-6666-666666666666', belgeNo: 'GDN2026000000005', tarih: '2026-10-12', unvan: 'Müşteri Ltd. Şti.', vkn: '2222222222', tutar: 3600, paraBirimi: 'TRY', profil: 'TICARIFATURA' });
+    assert.deepEqual(f, { ettn: '66666666-6666-6666-6666-666666666666', belgeNo: 'GDN2026000000005', tarih: '2026-10-12', unvan: 'Müşteri Ltd. Şti.', vkn: '2222222222', tutar: 3600, paraBirimi: 'TRY', profil: 'TICARIFATURA', tip: 'TICARIFATURA' });
   });
 });
 
@@ -263,5 +263,16 @@ describe('tutar okuma', () => {
     assert.equal(tutarRequest('1', '20261001', '20261110').op, 'gidenBelgeTutarBilgileriSorgula');
     const map = parseTutarMap('<return><ettn>a</ettn><odenecekTutar>120.50</odenecekTutar><odenecekTutarDovizCinsi>TRY</odenecekTutarDovizCinsi></return><return><ettn>b</ettn><odenecekTutar>0</odenecekTutar></return>');
     assert.deepEqual([...map], [['a', { tutar: 120.5, paraBirimi: 'TRY' }]]);
+  });
+});
+
+describe('UBL CDATA', () => {
+  it('CDATA içindeki ad ve not okunur', async () => {
+    const { parseUbl: p } = await import('../../supabase/functions/qnb-efatura/soap');
+    const x = '<Invoice><cbc:ID>A1</cbc:ID><cbc:InvoiceTypeCode>IADE</cbc:InvoiceTypeCode><cbc:Note><![CDATA[Yalnız <bir> lira]]></cbc:Note><cac:AccountingCustomerParty><cac:Party><cac:PartyIdentification><cbc:ID schemeID="VKN">0070059074</cbc:ID></cac:PartyIdentification><cac:PartyName><cbc:Name><![CDATA[ADBA & Co A.Ş.]]></cbc:Name></cac:PartyName></cac:Party></cac:AccountingCustomerParty></Invoice>';
+    const d = p(x);
+    assert.equal(d.aliciUnvan, 'ADBA & Co A.Ş.');
+    assert.equal(d.tip, 'IADE');
+    assert.deepEqual(d.notlar, ['Yalnız <bir> lira']);
   });
 });

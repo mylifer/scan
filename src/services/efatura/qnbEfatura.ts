@@ -1,15 +1,28 @@
-import type { EFatura, FaturaDetay, Yon } from '../../../supabase/functions/qnb-efatura/soap';
+import type { EFatura, FaturaDetay, TutarSatiri, Yon } from '../../../supabase/functions/qnb-efatura/soap';
 
-export type { EFatura, FaturaDetay, Yon };
+export type { EFatura, FaturaDetay, TutarSatiri, Yon };
 
 /** supabase.functions.invoke ile aynı biçim (testte sahtelenebilsin diye dışarıdan verilir) */
 export type InvokeFn = (
   name: string,
   options: { body: Record<string, unknown> },
-) => Promise<{ data: { faturalar?: EFatura[]; uyari?: string; bilgi?: string; kontrol?: Kontrol; detay?: FaturaDetay; pdf?: string } | null; error: unknown }>;
+) => Promise<{ data: {
+    faturalar?: EFatura[];
+    uyari?: string;
+    bilgi?: string;
+    kontrol?: Kontrol;
+    detay?: FaturaDetay;
+    pdf?: string;
+    ilkAy?: string | null;
+    gelen?: TutarSatiri[];
+    giden?: TutarSatiri[];
+    earsiv?: EFatura[];
+    qnb?: number | null;
+    taslak?: number;
+  } | null; error: unknown }>;
 
 /** QNB'nin saydığı (toplamBelgeSayisiGetir) ve listede gösterilen e-Fatura sayısı; qnb null: sayı alınamadı */
-export type Kontrol = { qnb: number | null; liste: number };
+export type Kontrol = { qnb: number | null; liste: number; taslak?: number };
 
 export class EFaturaError extends Error {
   constructor(
@@ -65,6 +78,30 @@ export async function getEFaturaPdf(invoke: InvokeFn, yon: Yon, ettn: string, tu
   const data = await call(invoke, { islem: 'pdf', yon, ettn, tur });
   if (typeof data?.pdf !== 'string' || !data.pdf) throw new EFaturaError('Sunucu PDF döndürmedi.');
   return data.pdf;
+}
+
+/** QNB'deki ilk belgenin ayı (YYYY-MM); belge yoksa null */
+export async function getIlkAy(invoke: InvokeFn): Promise<string | null> {
+  const data = await call(invoke, { islem: 'ilk-ay' });
+  return data?.ilkAy ?? null;
+}
+
+/** Bir ayın (≤62 gün) gelen faturalarının tutar/KDV satırları ve QNB'nin sayısı */
+export async function getOzetGelen(invoke: InvokeFn, baslangic: string, bitis: string): Promise<{ gelen: TutarSatiri[]; qnb: number | null }> {
+  const data = await call(invoke, { islem: 'ozet-gelen', baslangic, bitis });
+  if (!Array.isArray(data?.gelen)) throw new EFaturaError('Sunucu beklenmeyen bir yanıt döndürdü.');
+  return { gelen: data.gelen, qnb: data.qnb ?? null };
+}
+
+/** Uzun aralığın giden faturaları (tutar/KDV/tip), e-Arşiv faturaları, QNB sayısı ve taslak sayısı */
+export async function getOzetGiden(
+  invoke: InvokeFn,
+  baslangic: string,
+  bitis: string,
+): Promise<{ giden: TutarSatiri[]; earsiv: EFatura[]; qnb: number | null; taslak: number }> {
+  const data = await call(invoke, { islem: 'ozet-giden', baslangic, bitis });
+  if (!Array.isArray(data?.giden)) throw new EFaturaError('Sunucu beklenmeyen bir yanıt döndürdü.');
+  return { giden: data.giden, earsiv: data.earsiv ?? [], qnb: data.qnb ?? null, taslak: data.taslak ?? 0 };
 }
 
 /** FunctionsHttpError'da context bir Response'tur: durum kodu ve sunucunun mesajı oradan okunur */
