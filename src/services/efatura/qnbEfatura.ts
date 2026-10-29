@@ -6,7 +6,10 @@ export type { EFatura, FaturaDetay, Yon };
 export type InvokeFn = (
   name: string,
   options: { body: Record<string, unknown> },
-) => Promise<{ data: { faturalar?: EFatura[]; uyari?: string; bilgi?: string; detay?: FaturaDetay; pdf?: string } | null; error: unknown }>;
+) => Promise<{ data: { faturalar?: EFatura[]; uyari?: string; bilgi?: string; kontrol?: Kontrol; detay?: FaturaDetay; pdf?: string } | null; error: unknown }>;
+
+/** QNB'nin saydığı (toplamBelgeSayisiGetir) ve listede gösterilen e-Fatura sayısı; qnb null: sayı alınamadı */
+export type Kontrol = { qnb: number | null; liste: number };
 
 export class EFaturaError extends Error {
   constructor(
@@ -37,10 +40,15 @@ export async function listEFaturalar(
   yon: Yon,
   baslangic: string,
   bitis: string,
-): Promise<{ faturalar: EFatura[]; uyari?: string; bilgi?: string }> {
+): Promise<{ faturalar: EFatura[]; uyari?: string; bilgi?: string; kontrol?: Kontrol }> {
   const data = await call(invoke, { yon, baslangic, bitis });
   if (!Array.isArray(data?.faturalar)) throw new EFaturaError('Sunucu beklenmeyen bir yanıt döndürdü.');
-  return { faturalar: data.faturalar, ...(data.uyari ? { uyari: data.uyari } : {}), ...(data.bilgi ? { bilgi: data.bilgi } : {}) };
+  return {
+    faturalar: data.faturalar,
+    ...(data.uyari ? { uyari: data.uyari } : {}),
+    ...(data.bilgi ? { bilgi: data.bilgi } : {}),
+    ...(data.kontrol ? { kontrol: data.kontrol } : {}),
+  };
 }
 
 export type Tur = 'efatura' | 'earsiv';
