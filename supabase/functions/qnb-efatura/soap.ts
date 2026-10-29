@@ -104,8 +104,21 @@ export function listRequest(yon: Yon, vkn: string, baslangic: string, bitis: str
 export function portalListRequest(vkn: string, baslangic: string, bitis: string): { op: string; params: Record<string, string> } {
   return {
     op: 'gidenBelgeleriListelePortal',
-    params: { vergiTcKimlikNo: vkn, belgeTuru: 'FATURA', faturaBaslangicTarihi: baslangic, faturaBitisTarihi: bitis },
+    params: { vergiTcKimlikNo: vkn, belgeTuru: 'FATURA', belgeVersiyon: '1.0', faturaBaslangicTarihi: baslangic, faturaBitisTarihi: bitis },
   };
+}
+
+/** QNB "X boş olamaz" dediğinde X için kullanılacak değer (bilinmeyen alan için yok) */
+export const PORTAL_DEFAULTS: Record<string, string> = {
+  belgeVersiyon: '1.0',
+  pageCount: '1',
+  subeKodu: 'DFLT',
+};
+
+/** "belgeVersiyon boş olamaz." → "belgeVersiyon" */
+export function missingField(message: string): string | null {
+  const m = message.match(/(\w+)\s+(?:boş olamaz|alanı boş|zorunlu|must not be (?:null|empty)|is required)/i);
+  return m ? m[1]! : null;
 }
 
 /** SOAP Fault varsa mesajı, yoksa null */

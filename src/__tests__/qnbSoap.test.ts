@@ -234,9 +234,18 @@ describe('giden portal e-Faturaları', () => {
     const { portalListRequest } = await import('../../supabase/functions/qnb-efatura/soap');
     const { op, params } = portalListRequest('1234567890', '20261001', '20261031');
     assert.equal(op, 'gidenBelgeleriListelePortal');
-    assert.deepEqual(params, { vergiTcKimlikNo: '1234567890', belgeTuru: 'FATURA', faturaBaslangicTarihi: '20261001', faturaBitisTarihi: '20261031' });
+    assert.deepEqual(params, { vergiTcKimlikNo: '1234567890', belgeTuru: 'FATURA', belgeVersiyon: '1.0', faturaBaslangicTarihi: '20261001', faturaBitisTarihi: '20261031' });
     const xml = '<return xsi:type="ns2:gidenBelgeleriListelePortalData"><alanVergiTcKimlikNo>2222222222</alanVergiTcKimlikNo><belgeNo>GDN2026000000005</belgeNo><belgeTarihi>20261012</belgeTarihi><currency>TRY</currency><ettn>66666666-6666-6666-6666-666666666666</ettn><receiverName>Müşteri Ltd. Şti.</receiverName><tutar>3600.00</tutar><belgeTipi>TICARIFATURA</belgeTipi></return>';
     const [f] = parseList(xml, 'giden');
     assert.deepEqual(f, { ettn: '66666666-6666-6666-6666-666666666666', belgeNo: 'GDN2026000000005', tarih: '2026-10-12', unvan: 'Müşteri Ltd. Şti.', vkn: '2222222222', tutar: 3600, paraBirimi: 'TRY', profil: 'TICARIFATURA' });
+  });
+});
+
+describe('eksik alan mesajı', () => {
+  it('QNB "X boş olamaz" mesajından alan adı', async () => {
+    const { missingField } = await import('../../supabase/functions/qnb-efatura/soap');
+    assert.equal(missingField('QNB hatası: belgeVersiyon boş olamaz.'), 'belgeVersiyon');
+    assert.equal(missingField('QNB hatası: pageCount boş olamaz'), 'pageCount');
+    assert.equal(missingField('QNB hatası: tarih aralığı çok uzun'), null);
   });
 });
