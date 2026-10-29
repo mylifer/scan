@@ -16,6 +16,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.47.1 — `3b64633`
+- **Web sürümü açılmıyordu (yalnızca yükleniyor dairesi görünüyordu); düzeltildi.** Expo SDK 58 ile sayfa iskeletinin uygulama dosyalarını kendisi eklemesi gerekiyor; eklenmediği için tarayıcı uygulamayı hiç yüklemiyordu
+
 ## 1.47.0 — `81edf78`
 - **İade faturaları KDV hesabına girdi:** Kestiğiniz iade faturasının (iade ettiğiniz alış) KDV'si artık *Düşebileceğim KDV*'den düşülüyor; daha önce ayrı gösterilip hesaba katılmıyordu, bu yüzden ödenecek KDV olduğundan az görünüyordu. KDV sekmesinde "İade ettiğim alışlar" satırı, Tüm Aylar özetinde indirilecek KDV bu düşülmüş hâliyle
 - Ana sayfadaki arama çubuğunda koyu temada yazı siyah görünüyordu; düzeltildi
