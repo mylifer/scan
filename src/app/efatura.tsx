@@ -1,4 +1,5 @@
 import NativeSegmentedControl, { type SegmentedControlProps } from '@react-native-segmented-control/segmented-control';
+import { router } from 'expo-router';
 import { type ComponentType, useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -18,8 +19,10 @@ const SegmentedControl = NativeSegmentedControl as unknown as ComponentType<Segm
 const YONLER: Yon[] = ['gelen', 'giden'];
 const AY = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
 
+type Donem = { faturalar: EFatura[]; uyari?: string };
+
 /** Uygulama açıkken sekme/ay değişince QNB'ye yeniden sorulmasın */
-const cache = new Map<string, EFatura[]>();
+const cache = new Map<string, Donem>();
 /** QNB girişi başarısız olduysa otomatik yükleme durur (hesap kilitlenmesin); yalnızca elle denenir */
 let loginFailed = false;
 
@@ -49,7 +52,7 @@ export default function EFaturaScreen() {
   const theme = useTheme();
   const [yon, setYon] = useState<Yon>('gelen');
   const [offset, setOffset] = useState(0);
-  const [data, setData] = useState<Record<string, EFatura[]>>(() => Object.fromEntries(cache));
+  const [data, setData] = useState<Record<string, Donem>>(() => Object.fromEntries(cache));
   const [errors, setErrors] = useState<Record<string, { message: string; login: boolean }>>({});
   const [pulling, setPulling] = useState(false);
   /** Elle denenen istek sürüyor mu (dokununca geri bildirim için) */
@@ -59,7 +62,8 @@ export default function EFaturaScreen() {
 
   const range = monthBounds(offset);
   const key = `${yon}:${range.from}`;
-  const items = data[key];
+  const items = data[key]?.faturalar;
+  const uyari = data[key]?.uyari;
   const error =
     errors[key] ??
     (loginFailed && !items ? { message: 'QNB girişi daha önce başarısız oldu. Bilgileri kontrol ettikten sonra elle tekrar deneyin.', login: true } : undefined);
@@ -69,7 +73,7 @@ export default function EFaturaScreen() {
     inflight.current.add(k);
     setBusy(k);
     try {
-      const list = await listEFaturalar((name, options) => supabase.functions.invoke(name, options), y, from, to);
+      const list: Donem = await listEFaturalar((name, options) => supabase.functions.invoke(name, options), y, from, to);
       loginFailed = false;
       cache.set(k, list);
       setData((d) => ({ ...d, [k]: list }));
@@ -93,7 +97,8 @@ export default function EFaturaScreen() {
   const refresh = () => fetchList(key, yon, range.from, range.to);
   const loading = !items && !error;
 
-  const totals = items ? totalsByCurrency(items) : [];
+  // İptal edilen e-Arşiv faturaları toplama girmez
+  const totals = items ? totalsByCurrency(items.filter((f) => !f.iptal)) : [];
   const yonLabel = yon === 'gelen' ? 'gelen' : 'giden';
 
   return (
@@ -147,6 +152,20 @@ export default function EFaturaScreen() {
         </ListSection>
       )}
 
+      {uyari ? (
+        <ListSection footer={uyari}>
+          <ListRow
+            title="e-Arşiv faturaları alınamadı"
+            icon={{ sf: 'exclamationmark.triangle.fill', ion: 'warning', color: theme.orange }}
+            subtitle={busy === key ? 'Deneniyor…' : 'Tekrar denemek için dokunun'}
+            tone="action"
+            disabled={busy === key}
+            accessory={busy === key ? <ActivityIndicator /> : undefined}
+            onPress={refresh}
+          />
+        </ListSection>
+      ) : null}
+
       {loading ? (
         <ActivityIndicator style={{ marginTop: 32 }} />
       ) : items && items.length === 0 ? (
@@ -168,16 +187,23 @@ export default function EFaturaScreen() {
             footer={
               yon === 'gelen'
                 ? 'QNB eSolutions’tan fatura tarihine göre listelenir. Tutar, faturadaki ödenecek tutardır.'
-                : 'QNB eSolutions’tan gönderim tarihine göre listelenir.'
+                : 'e-Fatura (gönderim tarihine göre) ve e-Arşiv faturaları birlikte listelenir. İptal edilenler toplama girmez.'
             }>
             {items.map((f) => (
               <ListRow
                 key={f.ettn || f.belgeNo}
-                icon={{ sf: yon === 'gelen' ? 'tray.and.arrow.down.fill' : 'paperplane.fill', ion: yon === 'gelen' ? 'download' : 'send', color: yon === 'gelen' ? theme.blue : theme.green }}
+                icon={{ sf: yon === 'gelen' ? 'tray.and.arrow.down.fill' : 'paperplane.fill', ion: yon === 'gelen' ? 'download' : 'send', color: f.iptal ? theme.gray : yon === 'gelen' ? theme.blue : theme.green }}
                 title={f.unvan}
-                subtitle={`${dayMonth(f.tarih)} · ${f.belgeNo}`}
+                subtitle={[dayMonth(f.tarih), f.belgeNo, f.tur === 'earsiv' ? 'e-Arşiv' : '', f.iptal ? 'İptal' : ''].filter(Boolean).join(' · ')}
                 value={money(f.tutar, f.paraBirimi)}
-                valueColor={theme.label}
+                valueColor={f.iptal ? theme.secondaryLabel : theme.label}
+                // Kalem ve KDV dökümü yalnızca e-Fatura için (UBL indirilir)
+                chevron={f.tur !== 'earsiv' && !!f.ettn}
+                onPress={
+                  f.tur !== 'earsiv' && f.ettn
+                    ? () => router.push({ pathname: '/efatura-detay', params: { yon, ettn: f.ettn, unvan: f.unvan } })
+                    : undefined
+                }
               />
             ))}
           </ListSection>
