@@ -10,7 +10,7 @@ import { errorMessage } from '../lib/errors';
 import { capitalizeTr, monthRange } from '../lib/format';
 import { haptics } from '../lib/haptics';
 import { type as t, useTheme } from '../lib/theme';
-import { type EFatura, EFaturaError, listEFaturalar, totalsByCurrency, type Yon } from '../services/efatura/qnbEfatura';
+import { type EFatura, EFaturaError, type Kontrol, listEFaturalar, totalsByCurrency, type Yon } from '../services/efatura/qnbEfatura';
 import { supabase } from '../services/supabase/client';
 
 // RN 0.88 tipleri NativeMethods dışa aktarmıyor (bkz. PeriodPicker)
@@ -19,7 +19,15 @@ const SegmentedControl = NativeSegmentedControl as unknown as ComponentType<Segm
 const YONLER: Yon[] = ['gelen', 'giden'];
 const AY = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
 
-type Donem = { faturalar: EFatura[]; uyari?: string; bilgi?: string };
+type Donem = { faturalar: EFatura[]; uyari?: string; bilgi?: string; kontrol?: Kontrol };
+
+/** "49/49 ✓", "48/49 ⚠", sayı yoksa "49" */
+function kontrolMetni(k: Kontrol | undefined, liste: number): string {
+  if (!k || k.qnb === null) return `${liste}`;
+  return `${k.liste}/${k.qnb} ${k.liste >= k.qnb ? '✓' : '⚠'}`;
+}
+
+type DenetimSatiri = { label: string; gelen?: string; giden?: string; sorun: boolean };
 
 /** Uygulama açıkken sekme/ay değişince QNB'ye yeniden sorulmasın */
 const cache = new Map<string, Donem>();
@@ -95,11 +103,50 @@ export default function EFaturaScreen() {
     if (!items && !errors[key] && !loginFailed) void fetchList(key, yon, range.from, range.to);
   }, [items, errors, key, yon, range.from, range.to, fetchList]);
 
+  // Son 12 ayın gelen/giden e-Fatura sayılarını QNB'ninkiyle karşılaştırır (sırayla, giriş hatasında durur)
+  const [denetim, setDenetim] = useState<DenetimSatiri[] | null>(null);
+  const [denetimDurum, setDenetimDurum] = useState<string | null>(null);
+  const denetle = async () => {
+    const satirlar: DenetimSatiri[] = [];
+    setDenetim([]);
+    for (let o = 0; o > -12; o--) {
+      const r = monthBounds(o);
+      const satir: DenetimSatiri = { label: capitalizeTr(r.label), sorun: false };
+      for (const y of YONLER) {
+        setDenetimDurum(`${capitalizeTr(r.label)} · ${y === 'gelen' ? 'Gelen' : 'Giden'}…`);
+        const k = `${y}:${r.from}`;
+        try {
+          const d: Donem = await listEFaturalar((name, options) => supabase.functions.invoke(name, options), y, r.from, r.to);
+          cache.set(k, d);
+          setData((cur) => ({ ...cur, [k]: d }));
+          const metin = kontrolMetni(d.kontrol, d.faturalar.filter((f) => f.tur !== 'earsiv').length);
+          satir[y] = metin;
+          if (d.kontrol?.qnb != null && d.kontrol.liste < d.kontrol.qnb) satir.sorun = true;
+        } catch (e) {
+          satir[y] = 'hata';
+          satir.sorun = true;
+          if (e instanceof EFaturaError && e.loginFailed) {
+            loginFailed = true;
+            satirlar.push(satir);
+            setDenetim([...satirlar]);
+            setDenetimDurum(`Durduruldu: ${errorMessage(e)}`);
+            return;
+          }
+        }
+      }
+      satirlar.push(satir);
+      setDenetim([...satirlar]);
+    }
+    setDenetimDurum(null);
+  };
+
   /** Elle yenileme: önbelleği ve giriş engelini yok sayar */
   const refresh = () => fetchList(key, yon, range.from, range.to);
   const loading = !items && !error;
 
   // İptal edilen e-Arşiv faturaları toplama girmez
+  const denetimSorun = denetim?.filter((d) => d.sorun).length ?? 0;
+  const denetimSuruyor = !!denetimDurum && !denetimDurum.startsWith('Durduruldu');
   const totals = items ? totalsByCurrency(items.filter((f) => !f.iptal)) : [];
   const yonLabel = yon === 'gelen' ? 'gelen' : 'giden';
 
@@ -180,6 +227,14 @@ export default function EFaturaScreen() {
         <>
           <ListSection header="Özet">
             <ListRow title="Fatura Sayısı" value={String(items.length)} />
+            {data[key]?.kontrol?.qnb != null ? (
+              <ListRow
+                title="QNB Kontrolü"
+                subtitle="Listedeki / QNB'nin saydığı e-Fatura"
+                value={kontrolMetni(data[key]?.kontrol, items.length)}
+                valueColor={data[key]!.kontrol!.liste >= data[key]!.kontrol!.qnb! ? theme.green : theme.orange}
+              />
+            ) : null}
             {totals.map((x) => (
               <ListRow key={x.paraBirimi} title={totals.length > 1 ? `Toplam (${x.paraBirimi})` : 'Toplam'} value={money(x.toplam, x.paraBirimi)} valueColor={theme.label} />
             ))}
@@ -210,6 +265,34 @@ export default function EFaturaScreen() {
           </ListSection>
         </>
       ) : null}
+      <ListSection
+        header="Denetim"
+        footer={
+          denetim && !denetimSuruyor && denetim.length
+            ? denetimSorun
+              ? `${denetimSorun} ayda QNB'nin saydığı e-Fatura listede tam görünmüyor (⚠). O aya girip uyarıyı okuyun.`
+              : 'Son 12 ayın tamamında listedeki e-Fatura sayısı QNB’nin saydığıyla aynı.'
+            : 'Her ay için listedeki e-Fatura sayısını QNB’nin kendi sayımıyla karşılaştırır (gelen/giden). Birkaç dakika sürebilir.'
+        }>
+        <ListRow
+          title="Son 12 Ayı Denetle"
+          subtitle={denetimDurum ?? undefined}
+          icon={{ sf: 'checklist', ion: 'checkmark-done', color: theme.indigo }}
+          tone="action"
+          disabled={denetimSuruyor}
+          accessory={denetimSuruyor ? <ActivityIndicator /> : undefined}
+          onPress={denetle}
+        />
+        {(denetim ?? []).map((d) => (
+          <ListRow
+            key={d.label}
+            title={d.label}
+            subtitle={`Gelen ${d.gelen ?? '…'} · Giden ${d.giden ?? '…'}`}
+            value={d.sorun ? '⚠' : '✓'}
+            valueColor={d.sorun ? theme.orange : theme.green}
+          />
+        ))}
+      </ListSection>
     </ScrollView>
   );
 }
