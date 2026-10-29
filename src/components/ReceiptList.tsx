@@ -16,19 +16,26 @@ interface Props {
   /** Düz listede bölüm başlığı (tarihe göre sıralıyken aylara bölünür) */
   header?: string;
   headerAction?: { label: string; onPress: () => void; accessibilityLabel?: string };
+  /** Seçim modu: dokununca fiş açılmaz, seçilir */
+  selection?: { selected: ReadonlySet<string>; toggle: (id: string) => void };
 }
 
 /**
  * Fiş listesi: tarihe göre sıralıyken aylara ayrılır (ay başlığında fiş sayısı ve toplam),
  * tutara göre sıralıyken düz liste. 50'şer gösterilir. Fişe dokununca detay açılır.
  */
-export function ReceiptList({ receipts, sort, header, headerAction }: Props) {
+export function ReceiptList({ receipts, sort, header, headerAction, selection }: Props) {
   // Arama/sıralama değişince baştan gösterilmesi için çağıran `key` verir; veri yenilenince (ekrana dönüş)
   // açılmış "daha göster" sayfaları korunur
   const [visible, setVisible] = useState(PAGE);
 
   const shown = receipts.slice(0, visible);
-  const row = (r: ReceiptRecord) => <ReceiptRow key={r.id} receipt={r} onPress={() => router.push({ pathname: '/receipt/[id]', params: { id: r.id } })} />;
+  const row = (r: ReceiptRecord) =>
+    selection ? (
+      <ReceiptRow key={r.id} receipt={r} selected={selection.selected.has(r.id)} onPress={() => selection.toggle(r.id)} />
+    ) : (
+      <ReceiptRow key={r.id} receipt={r} onPress={() => router.push({ pathname: '/receipt/[id]', params: { id: r.id } })} />
+    );
   const more =
     receipts.length > visible ? (
       <ListRow key="more" title={`${receipts.length - visible} fiş daha göster`} tone="action" onPress={() => setVisible((v) => v + PAGE)} />
