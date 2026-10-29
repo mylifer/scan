@@ -122,9 +122,20 @@ export function parseReturns(xml: string, tag = 'return'): Record<string, string
   return out;
 }
 
-function isoDate(yyyymmdd: string | undefined): string {
-  const s = (yyyymmdd ?? '').replace(/\D/g, '');
-  return s.length >= 8 ? `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}` : '';
+/**
+ * Tarih → YYYY-MM-DD. Tanınan biçimler: 2026-10-15(…), 20261015(…), 15.10.2026, 15/10/2026,
+ * epoch milisaniye (Türkiye saatiyle). Tanınmazsa boş.
+ */
+export function isoDate(v: string | undefined): string {
+  const s = (v ?? '').trim();
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m = s.match(/^(\d{2})[./](\d{2})[./](\d{4})/);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+  if (/^\d{12,13}$/.test(s)) return new Date(Number(s) + 3 * 3_600_000).toISOString().slice(0, 10);
+  m = s.match(/^(\d{4})(\d{2})(\d{2})/);
+  if (m && Number(m[2]) >= 1 && Number(m[2]) <= 12) return `${m[1]}-${m[2]}-${m[3]}`;
+  return '';
 }
 
 export function toEFatura(r: Record<string, string>, yon: Yon): EFatura {
@@ -211,9 +222,21 @@ export function earsivToEFatura(r: Record<string, string>): EFatura {
 
 /** faturaListeSorgula yanıtındaki <output> öğeleri; aralık dışındakiler atılır */
 export function parseEarsivList(xml: string, baslangic: string, bitis: string): EFatura[] {
-  return parseReturns(xml, 'output')
-    .map(earsivToEFatura)
-    .filter((f) => !f.tarih || (f.tarih >= baslangic && f.tarih <= bitis));
+  return parseEarsivPage(xml, baslangic, bitis).list;
+}
+
+/** Bir e-Arşiv sayfası: süzülmüş liste, QNB'nin döndürdüğü ham kayıt sayısı ve tanı için örnek tarih alanları */
+export function parseEarsivPage(xml: string, baslangic: string, bitis: string): { list: EFatura[]; ham: number; ornek?: string } {
+  const raw = parseReturns(xml, 'output');
+  const list = raw.map(earsivToEFatura).filter((f) => !f.tarih || (f.tarih >= baslangic && f.tarih <= bitis));
+  const r = raw[0];
+  const ornek = r
+    ? ['issueDate', 'faturaZamani', 'duzenlenmeZamani', 'creationTime']
+        .filter((k) => r[k])
+        .map((k) => `${k}=${r[k]}`)
+        .join(', ') || `alanlar: ${Object.keys(r).slice(0, 12).join(',')}`
+    : undefined;
+  return { list, ham: raw.length, ...(ornek ? { ornek } : {}) };
 }
 
 /** e-Fatura ve e-Arşiv listelerini birleştirir; aynı ETTN bir kez, yeni tarihli üstte */

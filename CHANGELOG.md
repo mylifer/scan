@@ -16,6 +16,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.43.2 — `7351c23`
+- e-Faturalar: farklı tarih biçimleri (15.10.2026, saatli, epoch) tanınıyor; tarihi tanınmayan e-Arşiv faturası artık listeden düşmüyor
+- Giden listesi boşsa QNB e-Arşiv servisinin kaç kayıt döndürdüğü yazıyor
+
 ## 1.43.1 — `c0b9f5a`
 - Giden e-Arşiv faturaları: QNB sayfa başına en fazla 100 fatura kabul ediyor; sorgu 100'lük sayfalarla yapılıyor, tarih YYYYAAGG
 
