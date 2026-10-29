@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.43.0 — `KOD`
+## 1.43.0 — `23a9b00`
 - **Fatura PDF'i:** Fatura detayında "PDF'i Aç": iPhone'da paylaşım menüsü (Dosyalar'a kaydet, yazdır, gönder), web'de indirilir
 - **Giden e-Arşiv faturaları:** Sorgu, QNB'nin beklediği alanlarla düzeltildi (mukellefVkn, faturaTarihiBaslangic/Bitis)
 - e-Arşiv faturalarına da dokunulabilir: kalemler, KDV ve PDF
