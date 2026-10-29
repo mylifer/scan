@@ -16,6 +16,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.43.4 — `239427e`
+- Giden portal e-Faturaları: QNB'nin istediği belgeVersiyon eklendi; başka zorunlu alan isterse bilinen varsayılanla kendiliğinden yeniden denenir, sayfalı sonuçlar da okunur
+
 ## 1.43.3 — `64af47f`
 - Giden e-Faturalar: QNB portalından kesilen faturalar da listeleniyor (gidenBelgeleriListelePortal); alıcı unvanı ve tutarıyla
 

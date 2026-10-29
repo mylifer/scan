@@ -3,7 +3,7 @@
     "name": "FisTarayici",
     "slug": "fis-tarayici",
     "scheme": "fistarayici",
-    "version": "1.43.3",
+    "version": "1.43.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",

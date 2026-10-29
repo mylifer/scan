@@ -39,6 +39,8 @@ import {
   parseFault,
   parseList,
   parseUbl,
+  missingField,
+  PORTAL_DEFAULTS,
   portalListRequest,
   QNB_URL,
   type Yon,
@@ -186,17 +188,47 @@ async function earsivList(baslangic: string, bitis: string): Promise<{ list: EFa
   }
 }
 
-/** Portaldan kesilen giden e-Faturalar; QNB iş hatasında mesaj döner (giriş hatası yukarı atılır) */
+/**
+ * Portaldan kesilen giden e-Faturalar. Zorunlu alanlar belgesiz: QNB "X boş olamaz" derse X bilinen
+ * bir varsayılanla eklenip yeniden denenir (en fazla 4 kez). pageCount kullanılıyorsa sayfalar boşalana
+ * kadar okunur. QNB iş hatasında mesaj döner; giriş hatası yukarı atılır.
+ */
 async function portalList(baslangic: string, bitis: string): Promise<{ list: EFatura[]; hata?: string }> {
   const { op, params } = portalListRequest(QNB_VKN, compact(baslangic), compact(bitis));
-  try {
-    const list = parseList(await soap(QNB_URL, op, params), 'giden').filter((f) => !f.tarih || (f.tarih >= baslangic && f.tarih <= bitis));
-    console.log(`giden portal ${baslangic}..${bitis}: ${list.length}`);
-    return { list };
-  } catch (e) {
-    if (e instanceof LoginError) throw e;
-    return { list: [], hata: e instanceof Error ? e.message : String(e) };
+  const inRange = (f: EFatura) => !f.tarih || (f.tarih >= baslangic && f.tarih <= bitis);
+  let first: EFatura[] | null = null;
+  for (let attempt = 0; attempt < 4 && !first; attempt++) {
+    try {
+      first = parseList(await soap(QNB_URL, op, params), 'giden');
+    } catch (e) {
+      if (e instanceof LoginError) throw e;
+      const message = e instanceof Error ? e.message : String(e);
+      const field = missingField(message);
+      if (!field || params[field] || !PORTAL_DEFAULTS[field]) return { list: [], hata: message };
+      params[field] = PORTAL_DEFAULTS[field]!;
+    }
   }
+  if (!first) return { list: [], hata: 'Portal listesi alınamadı.' };
+  const pages = [first];
+  if (params.pageCount && first.length) {
+    const seen = new Set(first.map((f) => f.ettn));
+    for (let n = 2; n <= 20; n++) {
+      let next: EFatura[];
+      try {
+        next = parseList(await soap(QNB_URL, op, { ...params, pageCount: String(n) }), 'giden');
+      } catch (e) {
+        if (e instanceof LoginError) throw e;
+        break;
+      }
+      const fresh = next.filter((f) => !seen.has(f.ettn));
+      if (!fresh.length) break;
+      fresh.forEach((f) => seen.add(f.ettn));
+      pages.push(fresh);
+    }
+  }
+  const list = mergeLists(...pages).filter(inRange);
+  console.log(`giden portal ${baslangic}..${bitis}: ${list.length} [${Object.keys(params).join(',')}]`);
+  return { list };
 }
 
 async function listele(yon: Yon, baslangic: string, bitis: string) {
