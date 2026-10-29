@@ -1,4 +1,4 @@
-import { type ErrorBoundaryProps, router, Stack } from 'expo-router';
+import { DarkTheme, DefaultTheme, type ErrorBoundaryProps, router, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -74,7 +74,8 @@ function RootNavigator() {
   return (
     <Stack screenOptions={stackScreenOptions(theme)}>
       <Stack.Protected guard={!!session}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false, title: '' }} />
+        {/* Sekmeler tam genişlik: masaüstünde kenar menüsü solda kalsın, sayfa genişliğini her sekme kendisi sınırlar */}
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, title: '', contentStyle: { backgroundColor: theme.background, flex: 1 } }} />
         <Stack.Screen name="camera" options={{ headerShown: false, animation: 'fade', presentation: 'fullScreenModal', ...fullBleedContent }} />
         <Stack.Screen name="review" options={{ title: 'Fişi Kontrol Et' }} />
         <Stack.Screen name="manual" options={{ title: 'Elle Fiş Ekle', presentation: 'modal' }} />
@@ -130,9 +131,16 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AuthProvider>
           <StatusBar style={theme.dark ? 'light' : 'dark'} />
-          <AppLockGate>
-            <RootNavigator />
-          </AppLockGate>
+          {/* Gezinme renkleri uygulama temasından: web'de sayfa kenarları koyu temada açık gri kalmasın */}
+          <ThemeProvider
+            value={{
+              ...(theme.dark ? DarkTheme : DefaultTheme),
+              colors: { ...(theme.dark ? DarkTheme : DefaultTheme).colors, background: theme.background, card: theme.card, primary: theme.blue, text: theme.label, border: theme.separator },
+            }}>
+            <AppLockGate>
+              <RootNavigator />
+            </AppLockGate>
+          </ThemeProvider>
           <ToastHost />
           <ActionSheetHost />
           <CategoryPickerHost />

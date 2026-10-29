@@ -16,6 +16,15 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.48.0 — `KOD`
+- **Web sürümü masaüstünde pano olarak açılıyor** (tarayıcı penceresi 1024 pikselden genişse): solda sabit menü (Fişler · e-Faturalar · KDV · Ayarlar), sayfalar ekranın tamamını kullanıyor
+  - **Fişler:** solda toplam gider, son 12 ay grafiği ve fiş listesi; sağda fiş ekleme düğmeleri, öne çıkanlar, KDV dağılımı, kategoriler ve dışa aktarma
+  - **e-Faturalar:** üstte özet kutuları (fatura sayısı, toplam, KDV), altında tarih · firma · belge no · matrah · KDV · tutar sütunlu tablo; sütun başlığına tıklayınca o sütuna göre sıralanır
+  - **KDV:** kestiğim, düşebileceğim ve sonuç kartları yan yana
+- KDV sonuç kartında hesabın iki kalemi (beyan edeceğim / düşebileceğim) ayrı satırlarda
+- Web'de koyu temada detay sayfalarının kenarları açık gri görünüyordu; düzeltildi
+- Telefon ve dar pencere görünümü değişmedi
+
 ## 1.47.1 — `3b64633`
 - **Web sürümü açılmıyordu (yalnızca yükleniyor dairesi görünüyordu); düzeltildi.** Expo SDK 58 ile sayfa iskeletinin uygulama dosyalarını kendisi eklemesi gerekiyor; eklenmediği için tarayıcı uygulamayı hiç yüklemiyordu
 

@@ -4,6 +4,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { type ComponentType, useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { EFaturaTable } from '../../../components/efatura/EFaturaTable';
+import { StatTiles } from '../../../components/ui/Columns';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { Icon } from '../../../components/ui/Icon';
 import { ListRow, ListSection } from '../../../components/ui/List';
@@ -13,6 +15,7 @@ import { EFATURA_SORT_KEY, EFATURA_SORTS, type EFaturaSort, isEFaturaSort, sortE
 import { errorMessage } from '../../../lib/errors';
 import { capitalizeTr, monthRange } from '../../../lib/format';
 import { haptics } from '../../../lib/haptics';
+import { useWide } from '../../../lib/layout';
 import { type as t, useTheme } from '../../../lib/theme';
 import { type EFatura, EFaturaError, type Kontrol, totalsByCurrency, type Yon } from '../../../services/efatura/qnbEfatura';
 import { donemCache as cache, donemGetir, type Donem, qnbDurum } from '../../../services/efatura/donemCache';
@@ -77,6 +80,7 @@ function monthBounds(offset: number) {
 /** QNB eSolutions'taki gelen ve giden e-faturalar (yalnızca görüntüleme). */
 export default function EFaturaScreen() {
   const theme = useTheme();
+  const wide = useWide();
   const [yon, setYon] = useState<Yon>('gelen');
   const [offset, setOffset] = useState(0);
   const [data, setData] = useState<Record<string, Donem>>(() => Object.fromEntries(cache));
@@ -93,16 +97,17 @@ export default function EFaturaScreen() {
       })
       .catch(() => {});
   }, []);
+  const siralamaDegistir = (k: EFaturaSort) => {
+    haptics.select();
+    setSiralama(k);
+    AsyncStorage.setItem(EFATURA_SORT_KEY, k).catch(() => {});
+  };
   const siralamaSec = () =>
     showActionSheet({
       title: 'Sırala',
       options: EFATURA_SORTS.map((o) => ({
         label: o.key === siralama ? `✓ ${o.label}` : o.label,
-        onPress: () => {
-          haptics.select();
-          setSiralama(o.key);
-          AsyncStorage.setItem(EFATURA_SORT_KEY, o.key).catch(() => {});
-        },
+        onPress: () => siralamaDegistir(o.key),
       })),
     });
   // Özet ekranından dönünce güncel olsun
@@ -207,7 +212,7 @@ export default function EFaturaScreen() {
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{ paddingTop: 16, paddingBottom: 40 }}
+      contentContainerStyle={{ paddingTop: wide ? 20 : 16, paddingHorizontal: wide ? 8 : 0, paddingBottom: 40 }}
       refreshControl={
         <RefreshControl
           refreshing={pulling}
@@ -218,18 +223,20 @@ export default function EFaturaScreen() {
           }}
         />
       }>
-      <View style={styles.controls}>
-        <SegmentedControl
-          values={['Gelen', 'Giden']}
-          selectedIndex={YONLER.indexOf(yon)}
-          onChange={(e) => {
-            haptics.select();
-            const next = YONLER[e.nativeEvent.selectedSegmentIndex];
-            if (next) setYon(next);
-          }}
-          appearance={theme.dark ? 'dark' : 'light'}
-        />
-        <View style={styles.monthRow}>
+      <View style={[styles.controls, wide && styles.controlsWide]}>
+        <View style={wide ? { width: 280 } : undefined}>
+          <SegmentedControl
+            values={['Gelen', 'Giden']}
+            selectedIndex={YONLER.indexOf(yon)}
+            onChange={(e) => {
+              haptics.select();
+              const next = YONLER[e.nativeEvent.selectedSegmentIndex];
+              if (next) setYon(next);
+            }}
+            appearance={theme.dark ? 'dark' : 'light'}
+          />
+        </View>
+        <View style={[styles.monthRow, wide && { width: 280 }]}>
           <MonthButton dir="left" label="Önceki ay" onPress={() => setOffset((o) => o - 1)} />
           <Text style={[t.headline, { color: theme.label }]}>{capitalizeTr(range.label)}</Text>
           <MonthButton dir="right" label="Sonraki ay" disabled={offset === 0} onPress={() => setOffset((o) => Math.min(0, o + 1))} />
@@ -278,70 +285,114 @@ export default function EFaturaScreen() {
         />
       ) : items ? (
         <>
-          <ListSection header="Özet">
-            <ListRow
-              title="Fatura Sayısı"
-              subtitle={haricSayisi ? `${haricSayisi} olağan dışı fatura toplamlara katılmadı (Genel Özet'ten değiştirilebilir)` : undefined}
-              value={String(items.length)}
+          {wide ? (
+            <StatTiles
+              items={[
+                {
+                  label: 'Fatura Sayısı',
+                  value: String(items.length),
+                  note:
+                    data[key]?.kontrol?.qnb != null
+                      ? `QNB kontrolü ${kontrolMetni(data[key]?.kontrol, items.length)}${haricSayisi ? ` · ${haricSayisi} olağan dışı toplama katılmadı` : ''}`
+                      : undefined,
+                  color: data[key]?.kontrol?.qnb != null && !kontrolTamam(data[key]!.kontrol!) ? theme.orange : undefined,
+                },
+                ...totals.map((x) => ({ label: totals.length > 1 ? `Toplam (${x.paraBirimi})` : 'Toplam', value: money(x.toplam, x.paraBirimi) })),
+                ...(kdv.satis !== null
+                  ? [
+                      {
+                        label: yon === 'gelen' ? 'KDV (indirilecek)' : 'KDV (hesaplanan)',
+                        value: money(kdv.satis, 'TRY'),
+                        note: kdv.matrah ? `Matrah ${money(kdv.matrah, 'TRY')}${kdv.eksik ? ` · ${kdv.eksik} faturada KDV yok` : ''}` : undefined,
+                      },
+                    ]
+                  : []),
+                ...(kdv.iade ? [{ label: 'İade KDV', value: money(kdv.iade, 'TRY'), note: `${kdv.iadeAdet} iade faturası · indirilecekten düşülür` }] : []),
+              ]}
             />
-            {data[key]?.kontrol?.qnb != null ? (
+          ) : (
+          <ListSection header="Özet">
               <ListRow
-                title="QNB Kontrolü"
-                subtitle={`Listedeki / QNB'nin saydığı e-Fatura${data[key]?.kontrol?.taslak ? ` · ${data[key]!.kontrol!.taslak} gönderilmemiş taslak gizli` : ''}`}
-                value={kontrolMetni(data[key]?.kontrol, items.length)}
-                valueColor={kontrolTamam(data[key]!.kontrol!) ? theme.green : theme.orange}
+                title="Fatura Sayısı"
+                subtitle={haricSayisi ? `${haricSayisi} olağan dışı fatura toplamlara katılmadı (Genel Özet'ten değiştirilebilir)` : undefined}
+                value={String(items.length)}
               />
-            ) : null}
-            {totals.map((x) => (
-              <ListRow key={x.paraBirimi} title={totals.length > 1 ? `Toplam (${x.paraBirimi})` : 'Toplam'} value={money(x.toplam, x.paraBirimi)} valueColor={theme.label} />
-            ))}
-            {kdv.satis !== null ? (
-              <ListRow
-                title={yon === 'gelen' ? 'KDV (indirilecek)' : 'KDV (hesaplanan)'}
-                subtitle={kdv.matrah ? `Matrah ${money(kdv.matrah, 'TRY')}${kdv.eksik ? ` · ${kdv.eksik} faturada KDV bilgisi yok` : ''}` : undefined}
-                value={money(kdv.satis, 'TRY')}
-                valueColor={theme.label}
+              {data[key]?.kontrol?.qnb != null ? (
+                <ListRow
+                  title="QNB Kontrolü"
+                  subtitle={`Listedeki / QNB'nin saydığı e-Fatura${data[key]?.kontrol?.taslak ? ` · ${data[key]!.kontrol!.taslak} gönderilmemiş taslak gizli` : ''}`}
+                  value={kontrolMetni(data[key]?.kontrol, items.length)}
+                  valueColor={kontrolTamam(data[key]!.kontrol!) ? theme.green : theme.orange}
+                />
+              ) : null}
+              {totals.map((x) => (
+                <ListRow key={x.paraBirimi} title={totals.length > 1 ? `Toplam (${x.paraBirimi})` : 'Toplam'} value={money(x.toplam, x.paraBirimi)} valueColor={theme.label} />
+              ))}
+              {kdv.satis !== null ? (
+                <ListRow
+                  title={yon === 'gelen' ? 'KDV (indirilecek)' : 'KDV (hesaplanan)'}
+                  subtitle={kdv.matrah ? `Matrah ${money(kdv.matrah, 'TRY')}${kdv.eksik ? ` · ${kdv.eksik} faturada KDV bilgisi yok` : ''}` : undefined}
+                  value={money(kdv.satis, 'TRY')}
+                  valueColor={theme.label}
+                />
+              ) : null}
+              {kdv.iade ? (
+                <ListRow title="KDV (iade faturaları)" subtitle={`${kdv.iadeAdet} iade faturası · indirilecek KDV'den düşülür`} value={money(kdv.iade, 'TRY')} />
+              ) : null}
+            </ListSection>
+          )}
+          {wide ? (
+            <>
+              <EFaturaTable
+                items={sortEFaturalar(items, siralama)}
+                siralama={siralama}
+                onSiralama={siralamaDegistir}
+                haric={haric}
+                onOpen={(f) => router.push({ pathname: '/efatura-detay', params: { yon, ettn: f.ettn, unvan: f.unvan, tur: f.tur ?? 'efatura', belgeNo: f.belgeNo } })}
               />
-            ) : null}
-            {kdv.iade ? (
-              <ListRow title="KDV (iade faturaları)" subtitle={`${kdv.iadeAdet} iade faturası · indirilecek KDV'den düşülür`} value={money(kdv.iade, 'TRY')} />
-            ) : null}
-          </ListSection>
+              <Text style={[t.footnote, { color: theme.secondaryLabel, marginHorizontal: 32, marginTop: 7, marginBottom: 28 }]}>
+                {yon === 'gelen'
+                  ? 'QNB eSolutions’tan fatura tarihine göre listelenir. Tutar, faturadaki ödenecek tutardır. Sıralamak için sütun başlığına tıklayın.'
+                  : 'e-Fatura (gönderim tarihine göre) ve e-Arşiv faturaları birlikte listelenir. İptal edilenler toplama girmez. Sıralamak için sütun başlığına tıklayın.'}
+              </Text>
+            </>
+          ) : (
           <ListSection
-            header={yon === 'gelen' ? 'Gelen faturalar' : 'Giden faturalar'}
-            headerAction={{ label: EFATURA_SORTS.find((o) => o.key === siralama)!.label, onPress: siralamaSec, accessibilityLabel: 'Sıralamayı değiştir' }}
-            footer={
-              yon === 'gelen'
-                ? 'QNB eSolutions’tan fatura tarihine göre listelenir. Tutar, faturadaki ödenecek tutardır.'
-                : 'e-Fatura (gönderim tarihine göre) ve e-Arşiv faturaları birlikte listelenir. İptal edilenler toplama girmez.'
-            }>
-            {sortEFaturalar(items, siralama).map((f) => (
-              <ListRow
-                key={f.ettn || f.belgeNo}
-                icon={{ sf: yon === 'gelen' ? 'tray.and.arrow.down.fill' : 'paperplane.fill', ion: yon === 'gelen' ? 'download' : 'send', color: f.iptal ? theme.gray : yon === 'gelen' ? theme.blue : theme.green }}
-                title={f.unvan}
-                subtitle={[
-                  dayMonth(f.tarih),
-                  f.belgeNo,
-                  f.tip === 'IADE' ? 'İade' : '',
-                  f.tur === 'earsiv' ? 'e-Arşiv' : '',
-                  f.iptal ? 'İptal' : '',
-                  haric.has(f.ettn.toLowerCase()) ? 'Toplama dahil değil' : '',
-                  typeof f.kdv === 'number' ? `KDV ${money(f.kdv, f.paraBirimi)}` : '',
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
-                value={money(f.tutar, f.paraBirimi)}
-                valueColor={f.iptal ? theme.secondaryLabel : theme.label}
-                chevron={!!f.ettn}
-                onPress={
-                  f.ettn
-                    ? () => router.push({ pathname: '/efatura-detay', params: { yon, ettn: f.ettn, unvan: f.unvan, tur: f.tur ?? 'efatura', belgeNo: f.belgeNo } })
-                    : undefined
-                }
-              />
-            ))}
-          </ListSection>
+              header={yon === 'gelen' ? 'Gelen faturalar' : 'Giden faturalar'}
+              headerAction={{ label: EFATURA_SORTS.find((o) => o.key === siralama)!.label, onPress: siralamaSec, accessibilityLabel: 'Sıralamayı değiştir' }}
+              footer={
+                yon === 'gelen'
+                  ? 'QNB eSolutions’tan fatura tarihine göre listelenir. Tutar, faturadaki ödenecek tutardır.'
+                  : 'e-Fatura (gönderim tarihine göre) ve e-Arşiv faturaları birlikte listelenir. İptal edilenler toplama girmez.'
+              }>
+              {sortEFaturalar(items, siralama).map((f) => (
+                <ListRow
+                  key={f.ettn || f.belgeNo}
+                  icon={{ sf: yon === 'gelen' ? 'tray.and.arrow.down.fill' : 'paperplane.fill', ion: yon === 'gelen' ? 'download' : 'send', color: f.iptal ? theme.gray : yon === 'gelen' ? theme.blue : theme.green }}
+                  title={f.unvan}
+                  subtitle={[
+                    dayMonth(f.tarih),
+                    f.belgeNo,
+                    f.tip === 'IADE' ? 'İade' : '',
+                    f.tur === 'earsiv' ? 'e-Arşiv' : '',
+                    f.iptal ? 'İptal' : '',
+                    haric.has(f.ettn.toLowerCase()) ? 'Toplama dahil değil' : '',
+                    typeof f.kdv === 'number' ? `KDV ${money(f.kdv, f.paraBirimi)}` : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                  value={money(f.tutar, f.paraBirimi)}
+                  valueColor={f.iptal ? theme.secondaryLabel : theme.label}
+                  chevron={!!f.ettn}
+                  onPress={
+                    f.ettn
+                      ? () => router.push({ pathname: '/efatura-detay', params: { yon, ettn: f.ettn, unvan: f.unvan, tur: f.tur ?? 'efatura', belgeNo: f.belgeNo } })
+                      : undefined
+                  }
+                />
+              ))}
+            </ListSection>
+          )}
         </>
       ) : null}
       <ListSection
@@ -396,5 +447,6 @@ function MonthButton({ dir, label, onPress, disabled }: { dir: 'left' | 'right';
 
 const styles = StyleSheet.create({
   controls: { marginHorizontal: 16, marginBottom: 16, gap: 12 },
+  controlsWide: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
   monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });

@@ -10,6 +10,7 @@ import { ReceiptRow, SwipeToDelete } from '../../../components/dashboard/Receipt
 import { SummaryCard } from '../../../components/dashboard/SummaryCard';
 import { TrendChart } from '../../../components/TrendChart';
 import { Button } from '../../../components/ui/Button';
+import { Column, Columns } from '../../../components/ui/Columns';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { HeaderIconButton, HeaderTextButton } from '../../../components/ui/HeaderButton';
 import { ListRow, ListSection } from '../../../components/ui/List';
@@ -24,6 +25,7 @@ import { showAlert } from '../../../lib/alert';
 import { errorMessage } from '../../../lib/errors';
 import { formatTL } from '../../../lib/format';
 import { haptics } from '../../../lib/haptics';
+import { useWide } from '../../../lib/layout';
 import { periodRange } from '../../../lib/period';
 import { formatRunAt } from '../../../lib/schedule';
 import { receiptMatcher } from '../../../lib/search';
@@ -48,6 +50,7 @@ const PAGE = 25;
 export default function DashboardScreen() {
   const theme = useTheme();
   const toolbarHeight = useToolbarHeight(1, true);
+  const wide = useWide();
   const { summary: s, previousCategories, trend, loading, error, offlineSince, refresh, remove, period, label, showMonthly, showYearly, showAll, prev, next, goToMonth } =
     useMonthlySummary();
   const { drafts, processor } = useDrafts();
@@ -326,6 +329,180 @@ export default function DashboardScreen() {
   const moreRow =
     filtered.length > visible ? <ListRow key="more" title={`${filtered.length - visible} fiş daha göster`} tone="action" onPress={() => setVisible((v) => v + PAGE)} /> : null;
 
+  const periodPicker = (
+    <PeriodPicker
+      period={period}
+      label={label}
+      onMode={(mode) => ({ month: showMonthly, year: showYearly, all: showAll })[mode]()}
+      onPrev={prev}
+      onNext={next}
+    />
+  );
+
+  const alerts = (
+    <>
+      {updateAvailable && (
+        <ListSection>
+          <ListRow
+            title="Yeni sürüm hazır"
+            subtitle="Güncellemek için dokunun"
+            icon={{ sf: 'arrow.down.circle.fill', ion: 'arrow-down-circle', color: theme.blue }}
+            onPress={reloadApp}
+            chevron
+          />
+        </ListSection>
+      )}
+
+      {needsCategorySetup && (
+        <ListSection>
+          <ListRow
+            title="Veritabanını güncelle"
+            subtitle="Yeni kategoriler, fiş no, VKN, not ve etiketler"
+            icon={{ sf: 'tag.fill', ion: 'pricetag', color: theme.purple }}
+            onPress={() => router.push('/setup-categories')}
+            chevron
+          />
+        </ListSection>
+      )}
+
+      {error && (
+        <ListSection>
+          <ListRow
+            title={offlineSince ? 'Çevrimdışı' : 'Veriler alınamadı'}
+            subtitle={offlineSince ? `Son veriler · ${formatSavedAt(offlineSince)}` : error}
+            icon={{ sf: 'wifi.exclamationmark', ion: 'cloud-offline', color: theme.orange }}
+            onPress={refresh}
+            chevron
+          />
+        </ListSection>
+      )}
+    </>
+  );
+
+  const summaryCard = (
+    <SummaryCard
+      total={s?.toplamGider ?? 0}
+      kdv={s?.toplamKdv ?? 0}
+      count={s?.fisSayisi ?? 0}
+      compare={isMonth ? compareWithPreviousMonth(trend, offset, s?.toplamGider ?? 0) : null}
+      budget={isMonth ? budget : null}
+      onBudgetPress={() => router.push('/budget')}
+    />
+  );
+
+  const draftsRow = (drafts.length > 0 || processor.running) && (
+    <ListSection>
+      <ListRow
+        icon={{ sf: 'square.stack.3d.up.fill', ion: 'layers', color: theme.purple }}
+        title={processor.running ? `Taranıyor ${processor.done}/${processor.total}` : 'Taslaklar'}
+        subtitle={readyDrafts ? `${readyDrafts} fiş incelemeye hazır` : nextScheduled ? `${formatRunAt(nextScheduled)} için planlı` : 'Taranmayı bekliyor'}
+        value={String(drafts.length)}
+        chevron
+        onPress={() => router.push('/batch')}
+      />
+    </ListSection>
+  );
+
+  const navRows = (
+    <ListSection>
+      <ListRow title="Son Eklenenler" icon={{ sf: 'clock.fill', ion: 'time', color: theme.orange }} onPress={() => router.push('/recent')} chevron />
+      <ListRow title="Tüm Fişler" icon={{ sf: 'doc.text.fill', ion: 'document-text', color: theme.blue }} onPress={() => router.push('/receipts')} chevron />
+      <ListRow title="Firmalar" icon={{ sf: 'building.2.fill', ion: 'business', color: theme.indigo }} onPress={() => router.push('/firms')} chevron />
+    </ListSection>
+  );
+
+  const empty = !!s && s.fisSayisi === 0;
+  const emptyState = (
+    <EmptyState
+      icon={{ sf: 'doc.text.viewfinder', ion: 'scan-outline' }}
+      title="Fiş Yok"
+      message={
+        range
+          ? `${isMonth ? 'Bu ay' : 'Bu yıl'} tarihli bir fiş bulunmuyor. Taramak için ${wide ? 'sağdaki' : 'aşağıdaki'} düğmeyi kullanın.`
+          : 'Henüz hiç fiş kaydetmediniz.'
+      }
+    />
+  );
+
+  const trendSection = trend && trend.some((p) => p.total > 0) && (
+    <ListSection header="Son 12 Ay">
+      <TrendChart key={`${period.mode}${offset}`} data={trend} currentOffset={isMonth ? offset : null} onOpenMonth={goToMonth} />
+    </ListSection>
+  );
+
+  const kdvSection = s && (
+    <ListSection header="KDV Dağılımı">
+      <ListRow title="%1" value={formatTL(s.kdv1)} />
+      <ListRow title="%10" value={formatTL(s.kdv10)} />
+      <ListRow title="%20" value={formatTL(s.kdv20)} />
+    </ListSection>
+  );
+
+  const receiptList = s && (
+    <>
+      {Platform.OS !== 'ios' && (
+        <View style={{ marginHorizontal: 16, marginBottom: 12 }}>
+          <SearchField value={query} onChangeText={setQuery} placeholder="Firma, tutar, etiket ya da not ara" />
+        </View>
+      )}
+      <ListSection
+        header={filtering ? `Fişler · ${filtered.length} / ${s.fisler.length}` : `Fişler · ${s.fisler.length}`}
+        headerAction={
+          s.fisler.length > 1 ? { label: SORT_OPTIONS.find((o) => o.key === sort)!.label, onPress: chooseSort, accessibilityLabel: 'Sıralamayı değiştir' } : undefined
+        }
+        style={grouped && controlRows.length === 0 ? { marginBottom: 12 } : undefined}
+        footer={grouped ? undefined : categoryFooter}>
+        {[...controlRows, ...(grouped ? [] : shown.map(receiptRow)), ...(!grouped && moreRow ? [moreRow] : [])]}
+      </ListSection>
+      {grouped?.map((g, i) => {
+        const m = monthTotals.get(g.key);
+        const last = i === grouped.length - 1;
+        return (
+          <ListSection key={g.key} header={`${g.label} · ${m?.count ?? g.items.length} fiş · ${formatTL(m?.total ?? 0)}`} footer={last ? categoryFooter : undefined}>
+            {[...g.items.map(receiptRow), ...(last && moreRow ? [moreRow] : [])]}
+          </ListSection>
+        );
+      })}
+    </>
+  );
+
+  // Fiş ekleme ya da seçim modundaki toplu işlem düğmeleri: telefonda alttaki araç çubuğunda, masaüstünde sağ sütunda
+  const actions = selecting ? (
+    <View style={{ flexDirection: 'row', gap: 10 }}>
+      <Button
+        title="Kategori"
+        variant="gray"
+        icon={{ sf: 'tag', ion: 'pricetag-outline' }}
+        onPress={bulkCategory}
+        disabled={!selectedList.length || bulkBusy}
+        style={{ flex: 1, paddingHorizontal: 8 }}
+      />
+      <Button
+        title="Gönderildi"
+        variant="gray"
+        icon={{ sf: 'paperplane', ion: 'paper-plane-outline' }}
+        onPress={bulkSent}
+        disabled={!selectedList.length || bulkBusy}
+        style={{ flex: 1, paddingHorizontal: 8 }}
+      />
+      <Button
+        title={selectedList.length ? `Sil (${selectedList.length})` : 'Sil'}
+        tone="red"
+        icon={{ sf: 'trash', ion: 'trash-outline' }}
+        onPress={bulkDelete}
+        loading={bulkBusy}
+        disabled={!selectedList.length || bulkBusy}
+        style={{ flex: 1, paddingHorizontal: 8 }}
+      />
+    </View>
+  ) : (
+    <View style={{ flexDirection: 'row', gap: 10 }}>
+      <Button title="Elle" variant="gray" icon={{ sf: 'square.and.pencil', ion: 'create-outline' }} onPress={() => router.push('/manual')} style={{ paddingHorizontal: 16 }} />
+      <Button title="Çoklu" variant="gray" icon={{ sf: 'square.stack.3d.up', ion: 'albums-outline' }} onPress={addMultiple} style={{ paddingHorizontal: 16 }} />
+      <Button title="Fiş Tara" icon={{ sf: 'camera.fill', ion: 'camera' }} onPress={() => router.push('/camera')} style={{ flex: 1 }} />
+    </View>
+  );
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       <Stack.Screen
@@ -376,7 +553,7 @@ export default function DashboardScreen() {
       />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ paddingTop: 8, paddingBottom: toolbarHeight }}
+        contentContainerStyle={{ paddingTop: wide ? 20 : 8, paddingHorizontal: wide ? 8 : 0, paddingBottom: wide ? 40 : toolbarHeight }}
         refreshControl={
           <RefreshControl
             refreshing={pulling}
@@ -387,162 +564,60 @@ export default function DashboardScreen() {
             }}
           />
         }>
-        <PeriodPicker
-          period={period}
-          label={label}
-          onMode={(mode) => ({ month: showMonthly, year: showYearly, all: showAll })[mode]()}
-          onPrev={prev}
-          onNext={next}
-        />
-
-        {updateAvailable && (
-          <ListSection>
-            <ListRow
-              title="Yeni sürüm hazır"
-              subtitle="Güncellemek için dokunun"
-              icon={{ sf: 'arrow.down.circle.fill', ion: 'arrow-down-circle', color: theme.blue }}
-              onPress={reloadApp}
-              chevron
-            />
-          </ListSection>
-        )}
-
-        {needsCategorySetup && (
-          <ListSection>
-            <ListRow
-              title="Veritabanını güncelle"
-              subtitle="Yeni kategoriler, fiş no, VKN, not ve etiketler"
-              icon={{ sf: 'tag.fill', ion: 'pricetag', color: theme.purple }}
-              onPress={() => router.push('/setup-categories')}
-              chevron
-            />
-          </ListSection>
-        )}
-
-        {error && (
-          <ListSection>
-            <ListRow
-              title={offlineSince ? 'Çevrimdışı' : 'Veriler alınamadı'}
-              subtitle={offlineSince ? `Son veriler · ${formatSavedAt(offlineSince)}` : error}
-              icon={{ sf: 'wifi.exclamationmark', ion: 'cloud-offline', color: theme.orange }}
-              onPress={refresh}
-              chevron
-            />
-          </ListSection>
-        )}
-
-        {!s && loading ? (
-          <ActivityIndicator style={{ marginTop: 48 }} />
-        ) : (
-          <>
-            <SummaryCard
-              total={s?.toplamGider ?? 0}
-              kdv={s?.toplamKdv ?? 0}
-              count={s?.fisSayisi ?? 0}
-              compare={isMonth ? compareWithPreviousMonth(trend, offset, s?.toplamGider ?? 0) : null}
-              budget={isMonth ? budget : null}
-              onBudgetPress={() => router.push('/budget')}
-            />
-
-            {(drafts.length > 0 || processor.running) && (
-              <ListSection>
-                <ListRow
-                  icon={{ sf: 'square.stack.3d.up.fill', ion: 'layers', color: theme.purple }}
-                  title={processor.running ? `Taranıyor ${processor.done}/${processor.total}` : 'Taslaklar'}
-                  subtitle={
-                    readyDrafts
-                      ? `${readyDrafts} fiş incelemeye hazır`
-                      : nextScheduled
-                        ? `${formatRunAt(nextScheduled)} için planlı`
-                        : 'Taranmayı bekliyor'
-                  }
-                  value={String(drafts.length)}
-                  chevron
-                  onPress={() => router.push('/batch')}
-                />
+        {wide ? (
+          <Columns>
+            <Column flex={3}>
+              {periodPicker}
+              {alerts}
+              {!s && loading ? (
+                <ActivityIndicator style={{ marginTop: 48 }} />
+              ) : (
+                <>
+                  {summaryCard}
+                  {draftsRow}
+                  {empty ? emptyState : s && <>{trendSection}{receiptList}</>}
+                </>
+              )}
+            </Column>
+            <Column flex={2}>
+              <ListSection header={selecting ? `${selectedList.length} fiş seçildi` : 'Fiş Ekle'}>
+                <View style={{ padding: 12 }}>{actions}</View>
               </ListSection>
-            )}
-
-            <ListSection>
-              <ListRow
-                title="Son Eklenenler"
-                icon={{ sf: 'clock.fill', ion: 'time', color: theme.orange }}
-                onPress={() => router.push('/recent')}
-                chevron
-              />
-              <ListRow
-                title="Tüm Fişler"
-                icon={{ sf: 'doc.text.fill', ion: 'document-text', color: theme.blue }}
-                onPress={() => router.push('/receipts')}
-                chevron
-              />
-              <ListRow
-                title="Firmalar"
-                icon={{ sf: 'building.2.fill', ion: 'business', color: theme.indigo }}
-                onPress={() => router.push('/firms')}
-                chevron
-              />
-            </ListSection>
-
-            {s && s.fisSayisi === 0 ? (
-              <EmptyState
-                icon={{ sf: 'doc.text.viewfinder', ion: 'scan-outline' }}
-                title="Fiş Yok"
-                message={range ? `${isMonth ? 'Bu ay' : 'Bu yıl'} tarihli bir fiş bulunmuyor. Taramak için aşağıdaki düğmeyi kullanın.` : 'Henüz hiç fiş kaydetmediniz.'}
-              />
-            ) : (
-              s && (
+              {navRows}
+              {!empty && s && (
                 <>
                   <InsightsSection items={insights} />
-
-                  <ExportSection summary={s} label={label} range={range} />
-
-                  {trend && trend.some((p) => p.total > 0) && (
-                    <ListSection header="Son 12 Ay">
-                      <TrendChart
-                        key={`${period.mode}${offset}`}
-                        data={trend}
-                        currentOffset={isMonth ? offset : null}
-                        onOpenMonth={goToMonth}
-                      />
-                    </ListSection>
-                  )}
-
-                  <ListSection header="KDV Dağılımı">
-                    <ListRow title="%1" value={formatTL(s.kdv1)} />
-                    <ListRow title="%10" value={formatTL(s.kdv10)} />
-                    <ListRow title="%20" value={formatTL(s.kdv20)} />
-                  </ListSection>
-
+                  {kdvSection}
                   <CategorySection items={s.kategoriToplamlari} selected={category} onSelect={setCategory} />
-
-                  {Platform.OS !== 'ios' && (
-                    <View style={{ marginHorizontal: 16, marginBottom: 12 }}>
-                      <SearchField value={query} onChangeText={setQuery} placeholder="Firma, tutar, etiket ya da not ara" />
-                    </View>
-                  )}
-                  <ListSection
-                    header={filtering ? `Fişler · ${filtered.length} / ${s.fisler.length}` : `Fişler · ${s.fisler.length}`}
-                    headerAction={
-                      s.fisler.length > 1
-                        ? { label: SORT_OPTIONS.find((o) => o.key === sort)!.label, onPress: chooseSort, accessibilityLabel: 'Sıralamayı değiştir' }
-                        : undefined
-                    }
-                    style={grouped && controlRows.length === 0 ? { marginBottom: 12 } : undefined}
-                    footer={grouped ? undefined : categoryFooter}>
-                    {[...controlRows, ...(grouped ? [] : shown.map(receiptRow)), ...(!grouped && moreRow ? [moreRow] : [])]}
-                  </ListSection>
-                  {grouped?.map((g, i) => {
-                    const m = monthTotals.get(g.key);
-                    const last = i === grouped.length - 1;
-                    return (
-                      <ListSection key={g.key} header={`${g.label} · ${m?.count ?? g.items.length} fiş · ${formatTL(m?.total ?? 0)}`} footer={last ? categoryFooter : undefined}>
-                        {[...g.items.map(receiptRow), ...(last && moreRow ? [moreRow] : [])]}
-                      </ListSection>
-                    );
-                  })}
+                  <ExportSection summary={s} label={label} range={range} />
                 </>
-              )
+              )}
+            </Column>
+          </Columns>
+        ) : (
+          <>
+            {periodPicker}
+            {alerts}
+            {!s && loading ? (
+              <ActivityIndicator style={{ marginTop: 48 }} />
+            ) : (
+              <>
+                {summaryCard}
+                {draftsRow}
+                {navRows}
+                {empty
+                  ? emptyState
+                  : s && (
+                      <>
+                        <InsightsSection items={insights} />
+                        <ExportSection summary={s} label={label} range={range} />
+                        {trendSection}
+                        {kdvSection}
+                        <CategorySection items={s.kategoriToplamlari} selected={category} onSelect={setCategory} />
+                        {receiptList}
+                      </>
+                    )}
+              </>
             )}
           </>
         )}
@@ -552,55 +627,7 @@ export default function DashboardScreen() {
         </Text>
       </ScrollView>
 
-      <Toolbar inTab>
-        {selecting ? (
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <Button
-              title="Kategori"
-              variant="gray"
-              icon={{ sf: 'tag', ion: 'pricetag-outline' }}
-              onPress={bulkCategory}
-              disabled={!selectedList.length || bulkBusy}
-              style={{ flex: 1, paddingHorizontal: 8 }}
-            />
-            <Button
-              title="Gönderildi"
-              variant="gray"
-              icon={{ sf: 'paperplane', ion: 'paper-plane-outline' }}
-              onPress={bulkSent}
-              disabled={!selectedList.length || bulkBusy}
-              style={{ flex: 1, paddingHorizontal: 8 }}
-            />
-            <Button
-              title={selectedList.length ? `Sil (${selectedList.length})` : 'Sil'}
-              tone="red"
-              icon={{ sf: 'trash', ion: 'trash-outline' }}
-              onPress={bulkDelete}
-              loading={bulkBusy}
-              disabled={!selectedList.length || bulkBusy}
-              style={{ flex: 1, paddingHorizontal: 8 }}
-            />
-          </View>
-        ) : (
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Button
-            title="Elle"
-            variant="gray"
-            icon={{ sf: 'square.and.pencil', ion: 'create-outline' }}
-            onPress={() => router.push('/manual')}
-            style={{ paddingHorizontal: 16 }}
-          />
-          <Button
-            title="Çoklu"
-            variant="gray"
-            icon={{ sf: 'square.stack.3d.up', ion: 'albums-outline' }}
-            onPress={addMultiple}
-            style={{ paddingHorizontal: 16 }}
-          />
-          <Button title="Fiş Tara" icon={{ sf: 'camera.fill', ion: 'camera' }} onPress={() => router.push('/camera')} style={{ flex: 1 }} />
-        </View>
-        )}
-      </Toolbar>
+      {wide ? null : <Toolbar inTab>{actions}</Toolbar>}
     </View>
   );
 }

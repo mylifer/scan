@@ -9,6 +9,7 @@ import { HARIC_KEY } from '../../../lib/efaturaOzet';
 import { errorMessage } from '../../../lib/errors';
 import { capitalizeTr, formatTL, monthRange } from '../../../lib/format';
 import { haptics } from '../../../lib/haptics';
+import { useWide } from '../../../lib/layout';
 import { type KdvAy, kdvAyHesapla } from '../../../lib/kdvAy';
 import { tabular, type as t, useTheme } from '../../../lib/theme';
 import { donemGetir, qnbDurum } from '../../../services/efatura/donemCache';
@@ -29,6 +30,7 @@ function ayAraligi(offset: number) {
  */
 export default function KdvScreen() {
   const theme = useTheme();
+  const wide = useWide();
   const [offset, setOffset] = useState(0);
   const [sonuclar, setSonuclar] = useState<Record<string, KdvAy>>({});
   const [hatalar, setHatalar] = useState<Record<string, { message: string; login: boolean }>>({});
@@ -83,9 +85,9 @@ export default function KdvScreen() {
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{ paddingTop: 12, paddingBottom: 40 }}
+      contentContainerStyle={{ paddingTop: wide ? 20 : 12, paddingHorizontal: wide ? 8 : 0, paddingBottom: 40 }}
       refreshControl={<RefreshControl refreshing={false} onRefresh={() => yukle(true)} />}>
-      <View style={[styles.ayRow, { backgroundColor: theme.card }]}>
+      <View style={[styles.ayRow, wide && styles.ayRowWide, { backgroundColor: theme.card }]}>
         <AyButon yon="left" label="Önceki ay" onPress={() => setOffset((o) => o - 1)} />
         <Text style={[t.headline, { color: theme.label }]}>{capitalizeTr(ay.label)}</Text>
         <AyButon yon="right" label="Sonraki ay" disabled={offset === 0} onPress={() => setOffset((o) => Math.min(0, o + 1))} />
@@ -100,7 +102,7 @@ export default function KdvScreen() {
       {!kdv && !hata ? <ActivityIndicator style={{ marginTop: 40 }} /> : null}
 
       {kdv ? (
-        <View style={styles.cards}>
+        <View style={[styles.cards, wide && styles.cardsWide]}>
           <Kart
             baslik="Kestiğim KDV"
             aciklama="Giden faturalarımda müşteriden aldığım"
@@ -128,16 +130,23 @@ export default function KdvScreen() {
               .filter(Boolean)
               .join(' ')}
           />
-          <View style={[styles.sonuc, { backgroundColor: theme.label }]}>
+          <View style={[styles.sonuc, wide && styles.kartWide, { backgroundColor: theme.label }]}>
             <Text style={[t.footnote, styles.kartBaslik, { color: theme.background, opacity: 0.75 }]}>{sonucMetni.toLocaleUpperCase('tr-TR')}</Text>
             <Text style={[styles.buyuk, tabular, { color: theme.background }]}>{formatTL(Math.abs(kdv.sonuc))}</Text>
-            <Text style={[t.footnote, { color: theme.background, opacity: 0.75 }]}>
-              {`${formatTL(kdv.kestigim.beyan)} − ${formatTL(kdv.dusulebilir)}`}
-            </Text>
+            <View style={[styles.ayrinti, { borderTopColor: theme.background, opacity: 0.85 }]}>
+              <View style={styles.satir}>
+                <Text style={[t.subhead, { color: theme.background }]}>Beyan edeceğim KDV</Text>
+                <Text style={[t.subhead, tabular, { color: theme.background }]}>{formatTL(kdv.kestigim.beyan)}</Text>
+              </View>
+              <View style={styles.satir}>
+                <Text style={[t.subhead, { color: theme.background }]}>Düşebileceğim KDV</Text>
+                <Text style={[t.subhead, tabular, { color: theme.background }]}>{kdv.dusulebilir >= 0 ? `−${formatTL(kdv.dusulebilir)}` : formatTL(-kdv.dusulebilir)}</Text>
+              </View>
+            </View>
           </View>
-          {yukleniyor === ay.from ? <ActivityIndicator /> : null}
         </View>
       ) : null}
+      {kdv && yukleniyor === ay.from ? <ActivityIndicator style={{ marginBottom: 20 }} /> : null}
 
       <ListSection footer="Önceki aylardan devreden KDV bu hesapta yok. Bilgi amaçlıdır; beyanname için muhasebecinize danışın.">
         <ListRow
@@ -173,8 +182,9 @@ function Kart({
   not?: string;
 }) {
   const theme = useTheme();
+  const wide = useWide();
   return (
-    <View style={[styles.kart, { backgroundColor: theme.card }]}>
+    <View style={[styles.kart, wide && styles.kartWide, { backgroundColor: theme.card }]}>
       <Text style={[t.footnote, styles.kartBaslik, { color: theme.secondaryLabel }]}>{baslik.toLocaleUpperCase('tr-TR')}</Text>
       <Text style={[t.subhead, { color: theme.secondaryLabel }]}>{aciklama}</Text>
       <Text style={[styles.buyuk, tabular, { color: theme.label }]}>{formatTL(tutar)}</Text>
@@ -212,6 +222,9 @@ function AyButon({ yon, label, onPress, disabled }: { yon: 'left' | 'right'; lab
 }
 
 const styles = StyleSheet.create({
+  ayRowWide: { alignSelf: 'flex-start', width: 320, marginBottom: 20 },
+  cardsWide: { flexDirection: 'row', alignItems: 'stretch', gap: 16, marginBottom: 28 },
+  kartWide: { flex: 1, minWidth: 0 },
   ayRow: { marginHorizontal: 16, marginBottom: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 },
   cards: { marginHorizontal: 16, gap: 12, marginBottom: 20 },
   kart: { borderRadius: 14, padding: 16, gap: 4 },
