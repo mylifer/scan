@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, Switch } from 'react-native';
 
 import { ListRow, ListSection } from '../components/ui/List';
-import { aylarArasi, ayAraligi, type DonemOzet, kdvFarki, olaganDisi, ozetle } from '../lib/efaturaOzet';
+import { aylarArasi, ayAraligi, type DonemOzet, HARIC_KEY, kdvFarki, OLAGANDISI_DAHIL_KEY, olaganDisi, ozetle } from '../lib/efaturaOzet';
 import { errorMessage } from '../lib/errors';
 import { capitalizeTr } from '../lib/format';
 import { useTheme } from '../lib/theme';
@@ -60,6 +60,8 @@ export default function EFaturaOzetScreen() {
   const [hata, setHata] = useState<string | null>(null);
   const [pulling, setPulling] = useState(false);
   const calisiyor = useRef(false);
+  /** Olağan dışı yüksek tutarlı faturalar toplamlara katılsın mı (varsayılan: hayır) */
+  const [olaganDisiDahil, setOlaganDisiDahil] = useState(false);
 
   /** yenile: true ise saklanan aylar da yeniden sorulur */
   const yukle = useCallback(async (yenile: boolean) => {
@@ -68,6 +70,11 @@ export default function EFaturaOzetScreen() {
     try {
       const c = await onbellekOku();
       setHata(null);
+      try {
+        setOlaganDisiDahil((await AsyncStorage.getItem(OLAGANDISI_DAHIL_KEY)) === '1');
+      } catch {
+        // tercih okunamazsa varsayılan: hariç
+      }
       setGelen(c.gelen);
       let ilkAy = c.ilkAy;
       if (ilkAy === undefined || yenile) {
@@ -113,10 +120,23 @@ export default function EFaturaOzetScreen() {
   const gelenRows = aylar.flatMap((a) => gelen[a]?.rows ?? []);
   const gelenQnb = aylar.reduce((t, a) => t + (gelen[a]?.qnb ?? 0), 0);
   const gelenEksikAy = aylar.filter((a) => !gelen[a]).length;
-  const oz = ozetle(gelenRows, giden?.giden ?? [], giden?.earsiv ?? []);
+  const tuhaf = olaganDisi(giden?.giden ?? []);
+  const haric = new Set(olaganDisiDahil ? [] : tuhaf.map((t) => t.ettn.toLowerCase()));
+  const oz = ozetle(gelenRows, giden?.giden ?? [], giden?.earsiv ?? [], haric);
   const g = oz.genel;
   const fark = kdvFarki(g);
-  const tuhaf = olaganDisi(giden?.giden ?? []);
+  const haricKey = [...haric].sort().join(',');
+
+  // Hariç tutulan faturalar aylık listede de toplamlara katılmasın diye saklanır
+  useEffect(() => {
+    if (!giden) return;
+    AsyncStorage.setItem(HARIC_KEY, JSON.stringify(haricKey ? haricKey.split(',') : [])).catch(() => {});
+  }, [giden, haricKey]);
+
+  const dahilDegistir = (v: boolean) => {
+    setOlaganDisiDahil(v);
+    AsyncStorage.setItem(OLAGANDISI_DAHIL_KEY, v ? '1' : '0').catch(() => {});
+  };
   const gidenListe = (giden?.giden.length ?? 0) + (giden?.taslak ?? 0);
 
   const satirAlt = (d: DonemOzet) =>
@@ -187,13 +207,21 @@ export default function EFaturaOzetScreen() {
           {tuhaf.length ? (
             <ListSection
               header="Olağan dışı yüksek tutar"
-              footer="Bu giden faturaların matrahı diğerlerinin ortancasından çok yüksek; yanlış tutarla kesilmiş olabilir. QNB'de geçerli göründükleri için toplamlara dahildir. İptal edildiyse muhasebecinize bildirin.">
+              footer={
+                olaganDisiDahil
+                  ? 'Bu faturalar toplamlara dahil. Matrahları diğer giden faturaların ortancasından çok yüksek; yanlış tutarla kesilmiş olabilir.'
+                  : 'Bu faturalar toplamlara ve aylık listedeki KDV toplamına katılmıyor (matrahları diğer giden faturaların ortancasından çok yüksek). QNB’de geçerli göründükleri için muhasebecinize bildirmeniz önerilir.'
+              }>
+              <ListRow
+                title="Toplamlara Dahil Et"
+                accessory={<Switch value={olaganDisiDahil} onValueChange={dahilDegistir} accessibilityLabel="Olağan dışı faturaları toplamlara dahil et" />}
+              />
               {tuhaf.map((t) => (
                 <ListRow
                   key={`${t.tarih}${t.belgeNo}`}
                   icon={{ sf: 'exclamationmark.triangle.fill', ion: 'warning', color: theme.orange }}
                   title={`${trDate(t.tarih)} · ${t.belgeNo}`}
-                  subtitle={`Matrah ${money(t.matrah)} (ortancanın ~${t.kat} katı)`}
+                  subtitle={`Matrah ${money(t.matrah)} (ortancanın ~${t.kat} katı)${olaganDisiDahil ? '' : ' · hariç'}`}
                   value={money(t.kdv)}
                 />
               ))}

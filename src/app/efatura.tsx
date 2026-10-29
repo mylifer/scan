@@ -1,11 +1,13 @@
 import NativeSegmentedControl, { type SegmentedControlProps } from '@react-native-segmented-control/segmented-control';
-import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router, useFocusEffect } from 'expo-router';
 import { type ComponentType, useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { EmptyState } from '../components/ui/EmptyState';
 import { Icon } from '../components/ui/Icon';
 import { ListRow, ListSection } from '../components/ui/List';
+import { HARIC_KEY } from '../lib/efaturaOzet';
 import { errorMessage } from '../lib/errors';
 import { capitalizeTr, monthRange } from '../lib/format';
 import { haptics } from '../lib/haptics';
@@ -83,6 +85,16 @@ export default function EFaturaScreen() {
   const [data, setData] = useState<Record<string, Donem>>(() => Object.fromEntries(cache));
   const [errors, setErrors] = useState<Record<string, { message: string; login: boolean }>>({});
   const [pulling, setPulling] = useState(false);
+  /** Genel Özet'te toplamlardan çıkarılan faturalar (olağan dışı yüksek tutar) */
+  const [haric, setHaric] = useState<ReadonlySet<string>>(new Set());
+  // Özet ekranından dönünce güncel olsun
+  useFocusEffect(
+    useCallback(() => {
+      AsyncStorage.getItem(HARIC_KEY)
+        .then((raw) => setHaric(new Set(raw ? (JSON.parse(raw) as string[]) : [])))
+        .catch(() => {});
+    }, []),
+  );
   /** Elle denenen istek sürüyor mu (dokununca geri bildirim için) */
   const [busy, setBusy] = useState<string | null>(null);
   /** Aynı dönem için aynı anda tek istek */
@@ -167,8 +179,10 @@ export default function EFaturaScreen() {
   const denetimSorun = denetim?.filter((d) => d.sorun).length ?? 0;
   const denetimSuruyor = !!denetimDurum && !denetimDurum.startsWith('Durduruldu');
   // İptal edilen e-Arşiv faturaları toplama girmez
-  const totals = items ? totalsByCurrency(items.filter((f) => !f.iptal)) : [];
-  const kdv = kdvToplami(items ?? []);
+  const hesaba = (f: EFatura) => !f.iptal && !haric.has(f.ettn.toLowerCase());
+  const totals = items ? totalsByCurrency(items.filter(hesaba)) : [];
+  const kdv = kdvToplami((items ?? []).filter(hesaba));
+  const haricSayisi = (items ?? []).filter((f) => haric.has(f.ettn.toLowerCase())).length;
   const yonLabel = yon === 'gelen' ? 'gelen' : 'giden';
 
   return (
@@ -257,7 +271,11 @@ export default function EFaturaScreen() {
       ) : items ? (
         <>
           <ListSection header="Özet">
-            <ListRow title="Fatura Sayısı" value={String(items.length)} />
+            <ListRow
+              title="Fatura Sayısı"
+              subtitle={haricSayisi ? `${haricSayisi} olağan dışı fatura toplamlara katılmadı (Genel Özet'ten değiştirilebilir)` : undefined}
+              value={String(items.length)}
+            />
             {data[key]?.kontrol?.qnb != null ? (
               <ListRow
                 title="QNB Kontrolü"
@@ -297,6 +315,7 @@ export default function EFaturaScreen() {
                   f.tip === 'IADE' ? 'İade' : '',
                   f.tur === 'earsiv' ? 'e-Arşiv' : '',
                   f.iptal ? 'İptal' : '',
+                  haric.has(f.ettn.toLowerCase()) ? 'Toplama dahil değil' : '',
                   typeof f.kdv === 'number' ? `KDV ${money(f.kdv, f.paraBirimi)}` : '',
                 ]
                   .filter(Boolean)
