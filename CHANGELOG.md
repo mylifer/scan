@@ -16,6 +16,11 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.40.0 — `KOD`
+- **Tüm Fişler'de toplu işaretleme:** "Seç" → "Tümünü Seç" (arama ve filtreye uyan bütün fişler, farklı aylar dahil) → "Gönderildi". "Yalnızca Gönderilmemişler" filtresi burada da var
+- **iPhone'da "Yeni sürüm hazır":** Yeni güncelleme indirilince ana sayfada uyarı çıkar, dokununca hemen yüklenir (önceden uygulamayı tamamen kapatıp açmak gerekiyordu)
+- Çok sayıda fiş birlikte işaretlenirken ya da kategorisi değiştirilirken istekler 100'erli gruplara bölünüyor
+
 ## 1.39.0 — `5405738`
 - **Muhasebeciye gönderildi işareti:** Fişin detayında "Muhasebeciye Gönderildi" anahtarı; ana sayfada "Seç" → "Gönderildi" ile birden fazla fiş birlikte işaretlenir ya da işareti kaldırılır. Gönderilen fişlerin satırında yeşil kâğıt uçak simgesi görünür
 - **Dışa aktarımda hariç tutma:** Excel ve Muhasebe Paketi'nin üstünde "Gönderilenleri Hariç Tut" anahtarı (son seçiminiz hatırlanır); altında kaç fişin aktarılacağı yazar. Dışa aktarım hiçbir fişi kendiliğinden işaretlemez
