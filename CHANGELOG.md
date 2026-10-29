@@ -16,6 +16,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.41.2 — `KOD`
+- e-Faturalar: QNB şifresinin sonunda yapıştırırken gelen satır sonu/boşluk girişi bozuyordu; QNB bilgileri artık kenar boşluklarından temizleniyor
+- Yayın iş akışı QNB secret'larının biçimini (değerleri göstermeden) denetliyor
+
 ## 1.41.1 — `a59928f`
 - e-Faturalar'da "yetkisi yok" uyarısı artık giriş yapılan e-postayı da gösteriyor; uzun hata mesajları kesilmeden okunuyor
 - `QNB_ALLOWED_EMAILS` içinde tırnak, noktalı virgül ya da boşluk olsa da adres tanınıyor

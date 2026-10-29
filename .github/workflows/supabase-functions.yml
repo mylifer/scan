@@ -62,6 +62,9 @@ jobs:
           done
       - name: QNB bilgilerini Supabase'e gizli değer olarak yaz (tanımlıysa)
         run: |
+          # Kopyala-yapıştırla gelen baştaki/sondaki boşluk ve satır sonları temizlenir (ör. şifrenin sonunda Enter)
+          trim() { local x="${1//$'\r'/}"; x="${x#"${x%%[![:space:]]*}"}"; x="${x%"${x##*[![:space:]]}"}"; printf %s "$x"; }
+          QNB_USER=$(trim "$QNB_USER"); QNB_PASS=$(trim "$QNB_PASS"); QNB_VKN=$(trim "$QNB_VKN")
           if [ -n "$QNB_USER" ] && [ -n "$QNB_PASS" ] && [ -n "$QNB_VKN" ] && [ -n "$QNB_ALLOWED_EMAILS" ]; then
             npx --yes supabase@latest secrets set --project-ref "$PROJECT_REF" \
               QNB_USER="$QNB_USER" QNB_PASS="$QNB_PASS" QNB_VKN="$QNB_VKN" QNB_ALLOWED_EMAILS="$QNB_ALLOWED_EMAILS"
