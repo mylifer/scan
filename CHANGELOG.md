@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.43.6 — `KOD`
+## 1.43.6 — `8721918`
 - Giden listesi boşsa ek tarama: QNB'nin giden belge sayısı, portal (gönderim tarihi), web servis (belge tarihi) ve e-Arşiv (oluşturma zamanı); bulunanlar listeye eklenir, sonuçlar notta yazar
 
 ## 1.43.5 — `37986f1`
