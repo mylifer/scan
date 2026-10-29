@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.40.0 — `KOD`
+## 1.40.0 — `f5e5b83`
 - **Tüm Fişler'de toplu işaretleme:** "Seç" → "Tümünü Seç" (arama ve filtreye uyan bütün fişler, farklı aylar dahil) → "Gönderildi". "Yalnızca Gönderilmemişler" filtresi burada da var
 - **iPhone'da "Yeni sürüm hazır":** Yeni güncelleme indirilince ana sayfada uyarı çıkar, dokununca hemen yüklenir (önceden uygulamayı tamamen kapatıp açmak gerekiyordu)
 - Çok sayıda fiş birlikte işaretlenirken ya da kategorisi değiştirilirken istekler 100'erli gruplara bölünüyor
