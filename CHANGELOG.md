@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.45.0 — `KOD`
+## 1.45.0 — `c00fd55`
 - **e-Fatura Özeti (yeni ekran):** e-Faturalar → Genel Özet. İlk faturadan bugüne gelen/giden sayıları, matrah, hesaplanan ve indirilecek KDV, fark, tevkifat, iade faturalarının KDV'si (ayrı), indirilecek KDV'nin oranlara dağılımı, yıllık ve aylık döküm. Olağan dışı yüksek tutarlı giden faturalar ayrıca uyarılır. Geçmiş aylar telefonda saklanır
 - **Aylık listelerde KDV:** Her faturanın KDV'si satırda; Özet'te dönemin KDV toplamı ve matrahı, iade faturaları ayrı
 - Gönderilmemiş taslak faturalar artık listede görünmüyor (QNB kontrolünde hesaba katılıyor)
