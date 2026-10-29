@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.44.0 — `KOD`
+## 1.44.0 — `b24caa5`
 - **QNB kontrolü:** Her ay, listedeki e-Fatura sayısı QNB'nin kendi sayımıyla karşılaştırılır (Özet'te "QNB Kontrolü"). Eksik varsa taşınmış eski faturalar kendiliğinden aranır — artık gelen faturalarda da ve listenin bir kısmı eksik olduğunda da. Yine eksik kalırsa uyarı çıkar
 - **Son 12 Ayı Denetle:** e-Faturalar ekranının altında; her ay için gelen/giden sayısını QNB'ninkiyle karşılaştırır
 - Eksik alıcı/tarih/tutar bilgileri daha hızlı tamamlanır (5'erli, en fazla 25 fatura)
