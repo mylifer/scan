@@ -10,7 +10,7 @@ import {
   parseFault,
   parseList,
   detailRequest,
-  earsivListInputs,
+  earsivListInput,
   EARSIV_OK,
   earsivDocInputs,
   extractFile,
@@ -172,12 +172,11 @@ describe('fatura detayı (UBL)', () => {
 
 describe('e-Arşiv listesi', () => {
   it('zarf e-Arşiv ad alanını kullanır, input JSON metin olarak gider', () => {
-    const [first] = earsivListInputs('1234567890', '2026-10-01', '2026-10-31');
+    const first = earsivListInput('1234567890', '2026-10-01', '2026-10-31', 0);
     const xml = buildEnvelope('faturaListeSorgula', { input: JSON.stringify(first) }, 'u', 'p', { earsiv: true });
     assert.match(xml, /xmlns:ser="http:\/\/service\.earsiv\.uut\.cs\.com\.tr\/"/);
     assert.match(xml, /<ser:faturaListeSorgula><input>\{&quot;mukellefVkn&quot;:&quot;1234567890&quot;/);
-    assert.equal(first!.faturaTarihiBaslangic, '20261001');
-    assert.equal(first!.pagingLimit, 1000);
+    assert.deepEqual(first, { mukellefVkn: '1234567890', faturaTarihiBaslangic: '20261001', faturaTarihiBitis: '20261031', pagingStart: 0, pagingLimit: 100 });
   });
 
   it('sonuç kodu, çıktı ve tarih süzmesi', () => {

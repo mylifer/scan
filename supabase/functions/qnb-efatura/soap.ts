@@ -154,19 +154,16 @@ export function parseList(xml: string, yon: Yon): EFatura[] {
 // e-Arşiv (giden): faturaListeSorgula. Girdi bir JSON metnidir; alan adları belgelenmediği için
 // birkaç olası biçim sırayla denenir. Sonuç yine de tarih aralığına göre süzülür.
 
+/** faturaListeSorgula'da bir sayfadaki en fazla fatura (QNB sınırı) */
+export const EARSIV_PAGE = 100;
+
 /**
- * Denenecek e-Arşiv liste girdileri (tarihler YYYY-MM-DD). Alan adları QNB'nin hata mesajındaki listeden
- * (FaturaSorgulamaInput): mukellefVkn, faturaTarihiBaslangic/Bitis, pagingStart/Limit. Tarih biçimi belgesiz.
+ * e-Arşiv liste girdisi (FaturaSorgulamaInput). QNB'nin hata mesajlarına göre: mukellefVkn,
+ * faturaTarihiBaslangic/Bitis YYYYAAGG, pagingLimit en fazla 100. Tarihler YYYY-MM-DD gelir.
  */
-export function earsivListInputs(vkn: string, baslangic: string, bitis: string): Record<string, string | number>[] {
+export function earsivListInput(vkn: string, baslangic: string, bitis: string, pagingStart: number): Record<string, string | number> {
   const c = (d: string) => d.replace(/-/g, '');
-  const sayfa = { pagingStart: 0, pagingLimit: 1000 };
-  return [
-    { mukellefVkn: vkn, faturaTarihiBaslangic: c(baslangic), faturaTarihiBitis: c(bitis), ...sayfa },
-    { mukellefVkn: vkn, faturaTarihiBaslangic: baslangic, faturaTarihiBitis: bitis, ...sayfa },
-    { mukellefVkn: vkn, faturaTarihiBaslangic: `${baslangic} 00:00:00`, faturaTarihiBitis: `${bitis} 23:59:59`, ...sayfa },
-    { mukellefVkn: vkn, faturaTarihiBaslangic: c(baslangic), faturaTarihiBitis: c(bitis) },
-  ];
+  return { mukellefVkn: vkn, faturaTarihiBaslangic: c(baslangic), faturaTarihiBitis: c(bitis), pagingStart, pagingLimit: EARSIV_PAGE };
 }
 
 /** e-Arşiv belge biçimleri (donenBelgeFormati) */

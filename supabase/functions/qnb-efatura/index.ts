@@ -24,7 +24,8 @@ import {
   EARSIV_OK,
   EARSIV_URL,
   earsivDocInputs,
-  earsivListInputs,
+  EARSIV_PAGE,
+  earsivListInput,
   ETTN_RE,
   type EFatura,
   extractFile,
@@ -133,32 +134,43 @@ async function soap(url: string, op: string, params: Record<string, string>, opt
 
 const compact = (s: string) => s.replace(/-/g, '');
 
+/** e-Arşiv listesinin bir sayfası; QNB iş hatasında mesajı döner */
+async function earsivPage(baslangic: string, bitis: string, start: number): Promise<EFatura[] | string> {
+  const xml = await soap(EARSIV_URL, 'faturaListeSorgula', { input: JSON.stringify(earsivListInput(QNB_VKN, baslangic, bitis, start)) }, { earsiv: true });
+  const r = parseEarsivResult(xml);
+  if (r.code && r.code !== EARSIV_OK) return `${r.code}: ${(r.text || 'açıklama yok').slice(0, 700)}`;
+  return parseEarsivList(xml, baslangic, bitis);
+}
+
 /**
- * Giden e-Arşiv faturaları. Girdi alanları belgelenmediği için olası biçimler sırayla denenir;
- * ilk başarılı yanıt kullanılır. Hiçbiri tutmazsa QNB'nin mesajları uyarı olarak döner.
+ * Giden e-Arşiv faturaları, 100'lük sayfalarla. pagingStart'ın kayıt sırası mı sayfa numarası mı olduğu
+ * belgesiz: ilk sayfa doluysa start=1 ile bakılır; sonuç ilk sayfayla büyük ölçüde örtüşüyorsa kayıt
+ * sırasıdır. Giriş hatasında gelen ve giden e-Fatura listesi yine gösterilir.
  */
 async function earsivList(baslangic: string, bitis: string): Promise<{ list: EFatura[]; hata?: string }> {
-  const hatalar: string[] = [];
-  for (const input of earsivListInputs(QNB_VKN, baslangic, bitis)) {
-    let xml: string;
-    try {
-      xml = await soap(EARSIV_URL, 'faturaListeSorgula', { input: JSON.stringify(input) }, { earsiv: true });
-    } catch (e) {
-      // e-Arşiv girişi reddedilirse (ör. ayrı kullanıcı gerekiyorsa) başka biçim denenmez;
-      // gelen ve giden e-Fatura listesi yine gösterilir
-      if (e instanceof LoginError) return { list: [], hata: e.message };
-      hatalar.push(e instanceof Error ? e.message : String(e));
-      continue;
+  try {
+    const first = await earsivPage(baslangic, bitis, 0);
+    if (typeof first === 'string') return { list: [], hata: first };
+    const pages = [first];
+    if (first.length >= EARSIV_PAGE) {
+      const probe = await earsivPage(baslangic, bitis, 1);
+      if (typeof probe === 'string') return { list: first, hata: probe };
+      const ids = new Set(first.map((f) => f.ettn));
+      const offset = probe.filter((f) => ids.has(f.ettn)).length > EARSIV_PAGE / 2;
+      let page = offset ? first : probe;
+      if (!offset) pages.push(probe);
+      // En fazla 20 sayfa (2000 fatura/ay)
+      for (let n = offset ? 1 : 2; page.length >= EARSIV_PAGE && n < 20; n++) {
+        const next = await earsivPage(baslangic, bitis, offset ? n * EARSIV_PAGE : n);
+        if (typeof next === 'string') return { list: mergeLists(...pages), hata: next };
+        pages.push(next);
+        page = next;
+      }
     }
-    const r = parseEarsivResult(xml);
-    if (r.code === EARSIV_OK || (!r.code && /<output\b/.test(xml))) {
-      console.log(`e-Arşiv listesi: ${Object.keys(input).join(',')} biçimi çalıştı`);
-      return { list: parseEarsivList(xml, baslangic, bitis) };
-    }
-    hatalar.push(`${r.code || 'kod yok'}: ${(r.text || 'açıklama yok').slice(0, 700)} [${Object.keys(input).join(',')}]`);
+    return { list: mergeLists(...pages) };
+  } catch (e) {
+    return { list: [], hata: e instanceof Error ? e.message : String(e) };
   }
-  console.log('e-Arşiv listesi alınamadı:', hatalar.join(' | '));
-  return { list: [], hata: hatalar.join(' | ') };
 }
 
 async function listele(yon: Yon, baslangic: string, bitis: string) {

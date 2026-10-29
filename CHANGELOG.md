@@ -16,6 +16,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.43.1 — `c0b9f5a`
+- Giden e-Arşiv faturaları: QNB sayfa başına en fazla 100 fatura kabul ediyor; sorgu 100'lük sayfalarla yapılıyor, tarih YYYYAAGG
+
 ## 1.43.0 — `23a9b00`
 - **Fatura PDF'i:** Fatura detayında "PDF'i Aç": iPhone'da paylaşım menüsü (Dosyalar'a kaydet, yazdır, gönder), web'de indirilir
 - **Giden e-Arşiv faturaları:** Sorgu, QNB'nin beklediği alanlarla düzeltildi (mukellefVkn, faturaTarihiBaslangic/Bitis)
