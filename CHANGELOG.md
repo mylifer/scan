@@ -16,6 +16,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.45.1 — `KOD`
+- e-Fatura Özeti: olağan dışı yüksek tutarlı giden faturalar artık varsayılan olarak toplamlara katılmıyor ("Toplamlara Dahil Et" anahtarıyla geri alınabilir). Aylık listede de KDV ve tutar toplamına girmiyor, satırında "Toplama dahil değil" yazıyor
+
 ## 1.45.0 — `c00fd55`
 - **e-Fatura Özeti (yeni ekran):** e-Faturalar → Genel Özet. İlk faturadan bugüne gelen/giden sayıları, matrah, hesaplanan ve indirilecek KDV, fark, tevkifat, iade faturalarının KDV'si (ayrı), indirilecek KDV'nin oranlara dağılımı, yıllık ve aylık döküm. Olağan dışı yüksek tutarlı giden faturalar ayrıca uyarılır. Geçmiş aylar telefonda saklanır
 - **Aylık listelerde KDV:** Her faturanın KDV'si satırda; Özet'te dönemin KDV toplamı ve matrahı, iade faturaları ayrı

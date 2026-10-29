@@ -59,6 +59,13 @@ describe('e-Fatura özeti', () => {
     assert.equal(t[0]!.tarih, '2025-11-29');
     assert.equal(t[0]!.kat, 1000);
     assert.deepEqual(olaganDisi(g.slice(0, 2)), [], 'az veride uyarı yok');
+    assert.equal(t[0]!.ettn, 'd');
+    // Hariç tutulunca toplamlara girmez
+    const dahil = ozetle([], g, []);
+    const haric = ozetle([], g, [], new Set(t.map((x) => x.ettn.toLowerCase())));
+    assert.equal(dahil.genel.satis.kdv, 24072000);
+    assert.equal(haric.genel.satis.kdv, 72000);
+    assert.equal(haric.genel.satis.adet, 3);
   });
 
   it('ay aralıkları', () => {

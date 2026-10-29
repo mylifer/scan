@@ -26,6 +26,7 @@ export interface DonemOzet {
 }
 
 export interface OlaganDisi {
+  ettn: string;
   tarih: string;
   belgeNo: string;
   matrah: number;
@@ -64,8 +65,9 @@ function tekil<T extends { ettn: string }>(list: T[]): T[] {
 /**
  * Genel, yıllık ve aylık özet. Gelen KDV = indirilecek, giden satış KDV = hesaplanan; iade faturaları ayrı
  * tutulur (beyannamede nasıl gösterileceği muhasebe tercihine bağlı). Yalnızca TRY tutarlar toplanır.
+ * haric: toplamlara katılmayacak giden faturaların ETTN'leri (küçük harf).
  */
-export function ozetle(gelen: TutarSatiri[], giden: TutarSatiri[], earsiv: EFatura[]) {
+export function ozetle(gelen: TutarSatiri[], giden: TutarSatiri[], earsiv: EFatura[], haric: ReadonlySet<string> = new Set()) {
   const genel = bosDonem('tum');
   const yillar = new Map<string, DonemOzet>();
   const aylar = new Map<string, DonemOzet>();
@@ -74,7 +76,7 @@ export function ozetle(gelen: TutarSatiri[], giden: TutarSatiri[], earsiv: EFatu
     for (const d of [genel, al(yillar, tarih.slice(0, 4) || '?'), al(aylar, tarih.slice(0, 7) || '?')]) ekle(d[alan], r);
   };
   for (const r of tekil(gelen)) if (r.paraBirimi === 'TRY') isle(r.tarih, 'gelen', { ...r, tutar: r.odenecek });
-  for (const r of tekil(giden)) if (r.paraBirimi === 'TRY') isle(r.tarih, r.tip === 'IADE' ? 'iade' : 'satis', { ...r, tutar: r.odenecek });
+  for (const r of tekil(giden)) if (r.paraBirimi === 'TRY' && !haric.has(r.ettn.toLowerCase())) isle(r.tarih, r.tip === 'IADE' ? 'iade' : 'satis', { ...r, tutar: r.odenecek });
   for (const f of tekil(earsiv))
     if (!f.iptal && !f.taslak && f.paraBirimi === 'TRY') isle(f.tarih, 'earsiv', { matrah: f.matrah ?? 0, kdv: f.kdv ?? 0, tutar: f.tutar });
   const sirala = (m: Map<string, DonemOzet>) => [...m.values()].sort((a, b) => b.donem.localeCompare(a.donem));
@@ -93,7 +95,7 @@ export function olaganDisi(giden: TutarSatiri[], esik = 20): OlaganDisi[] {
   const ortanca = m[Math.floor(m.length / 2)]!;
   return giden
     .filter((r) => ortanca > 0 && r.matrah / ortanca >= esik)
-    .map((r) => ({ tarih: r.tarih, belgeNo: r.belgeNo, matrah: r.matrah, kdv: r.kdv, kat: Math.round(r.matrah / ortanca) }));
+    .map((r) => ({ ettn: r.ettn, tarih: r.tarih, belgeNo: r.belgeNo, matrah: r.matrah, kdv: r.kdv, kat: Math.round(r.matrah / ortanca) }));
 }
 
 /** "2026-10" → ayın ilk ve son günü */
@@ -119,3 +121,8 @@ export function aylarArasi(ilk: string, simdi = new Date()): string[] {
   }
   return out;
 }
+
+/** Toplamlardan hariç tutulan faturaların ETTN'leri (küçük harf); özet ekranı yazar, aylık liste okur */
+export const HARIC_KEY = 'efatura-ozet:haric';
+/** Olağan dışı faturaları yine de toplamlara katma tercihi ("1" ise katılır) */
+export const OLAGANDISI_DAHIL_KEY = 'efatura-ozet:olagandisi-dahil';
