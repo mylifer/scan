@@ -48,6 +48,18 @@ jobs:
       - uses: actions/checkout@v4
       - name: Gemini anahtarını Supabase'e gizli değer olarak yaz
         run: npx --yes supabase@latest secrets set --project-ref "$PROJECT_REF" GEMINI_API_KEY="$GEMINI_API_KEY"
+      - name: QNB secret'larını denetle (değerleri göstermez)
+        # Yalnızca uzunluk ve yaygın yazım hataları (kenarda boşluk, tırnak, satır sonu) raporlanır
+        run: |
+          for v in QNB_USER QNB_PASS QNB_VKN; do
+            x="${!v}"
+            [ -z "$x" ] && { echo "$v: tanımlı değil"; continue; }
+            t=$(printf %s "$x" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+            q=yok; [[ "$x" =~ ^[\"\'].*[\"\']$ ]] && q=var
+            n=yok; [[ "$x" == *$'\n'* ]] && n=var
+            o=yok; printf %s "$x" | LC_ALL=C grep -q '[^ -~]' && o=var
+            echo "$v: uzunluk=${#x} kenarda_boşluk=$([ "$t" != "$x" ] && echo var || echo yok) tırnak=$q satır_sonu=$n türkçe/özel_harf=$o"
+          done
       - name: QNB bilgilerini Supabase'e gizli değer olarak yaz (tanımlıysa)
         run: |
           if [ -n "$QNB_USER" ] && [ -n "$QNB_PASS" ] && [ -n "$QNB_VKN" ] && [ -n "$QNB_ALLOWED_EMAILS" ]; then
