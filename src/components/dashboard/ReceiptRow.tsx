@@ -38,6 +38,10 @@ export function ReceiptRow({ receipt: r, onPress, isLast, selected }: RowProps) 
               color={selected ? theme.blue : theme.tertiaryLabel}
             />
           </View>
+        ) : r.muhasebe_gonderildi_at ? (
+          <View accessibilityLabel="muhasebeciye gönderildi">
+            <Icon sf="paperplane.fill" ion="paper-plane" size={14} color={theme.green} />
+          </View>
         ) : undefined
       }
       onPress={onPress}

@@ -9,11 +9,12 @@ import type { ReceiptRecord } from '../types/receipt';
 import { useAuth } from './useAuth';
 
 /** Önbellekte fiş başına dizi (alan adları tekrar edilmez; ~2 kat daha çok fiş sığar). Fotoğraf yolu gerekmez. */
-type Packed = [string, string, string, string, number, number, number, number, string, string?, string?, string?, string[]?];
+type Packed = [string, string, string, string, number, number, number, number, string, string?, string?, string?, string[]?, string?];
 const pack = (r: ReceiptRecord): Packed => {
   const p: Packed = [r.id, r.created_at, r.firma_adi, r.tarih, r.toplam_tutar, r.kdv_yuzde1, r.kdv_yuzde10, r.kdv_yuzde20, r.kategori];
   // Ek alanlar yalnızca doluysa yazılır (önbellek küçük kalsın)
-  if (r.fis_no || r.vkn || r.notlar || r.etiketler.length) p.push(r.fis_no ?? '', r.vkn ?? '', r.notlar ?? '', r.etiketler);
+  if (r.fis_no || r.vkn || r.notlar || r.etiketler.length || r.muhasebe_gonderildi_at) p.push(r.fis_no ?? '', r.vkn ?? '', r.notlar ?? '', r.etiketler);
+  if (r.muhasebe_gonderildi_at) p.push(r.muhasebe_gonderildi_at);
   return p;
 };
 const unpack = (p: Packed): ReceiptRecord => ({
@@ -32,6 +33,7 @@ const unpack = (p: Packed): ReceiptRecord => ({
   vkn: p[10] || null,
   notlar: p[11] || null,
   etiketler: p[12] ?? [],
+  muhasebe_gonderildi_at: p[13] || null,
 });
 
 /**

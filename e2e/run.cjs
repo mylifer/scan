@@ -318,6 +318,38 @@ test('toplu düzenleme: seçilen fişlerin kategorisi değişir, toplu silinir',
   await close();
 });
 
+test('muhasebeciye gönderildi: toplu ve tek tek işaretlenir, dışa aktarımda hariç tutulur', async (b) => {
+  const { page, backend, errors, close } = await open(b, { receipts: thisMonth() });
+  const monthIds = backend.db.receipts.filter((r) => r.tarih.slice(0, 7) === isoDate(0, 1).slice(0, 7)).map((r) => r.id);
+  await page.getByText('Seç', { exact: true }).click();
+  await page.waitForTimeout(300);
+  await page.getByText('Tümünü Seç').click();
+  await page.getByText('Gönderildi', { exact: true }).click();
+  await page.waitForTimeout(300);
+  await page.getByText(`Muhasebeciye Gönderildi (${monthIds.length})`).click();
+  await page.waitForTimeout(1500);
+  const sent = backend.db.receipts.filter((r) => monthIds.includes(r.id));
+  assert.ok(sent.every((r) => r.muhasebe_gonderildi_at), 'bu ayın fişleri işaretlenmeli');
+  assert.ok(backend.db.receipts.filter((r) => !monthIds.includes(r.id)).every((r) => !r.muhasebe_gonderildi_at), 'diğer aylara dokunulmamalı');
+  // Dışa aktarım: varsayılan olarak gönderilenler hariç → aktarılacak fiş kalmaz
+  assert.ok((await page.getByText('Gönderilenleri Hariç Tut').count()) >= 1, 'hariç tut anahtarı görünmeli');
+  assert.ok((await page.getByText('bütün fişleri', { exact: false }).count()) >= 1, 'hepsi gönderildi uyarısı');
+  // Gönderilmemiş filtresi
+  await page.getByLabel('Yalnızca gönderilmemişler').click();
+  await page.waitForTimeout(400);
+  assert.ok((await page.getByText('Eşleşen fiş yok').count()) >= 1, 'filtrede gönderilmemiş fiş yok');
+  await page.getByLabel('Yalnızca gönderilmemişler').click();
+  await page.waitForTimeout(400);
+  // Tek fişin işaretini detaydan kaldır
+  await page.getByText('MİGROS TİCARET A.Ş.').first().click();
+  await page.waitForTimeout(1200);
+  await page.getByLabel('Muhasebeciye gönderildi', { exact: true }).click();
+  await page.waitForTimeout(1200);
+  assert.equal(backend.db.receipts.find((r) => r.firma_adi === 'MİGROS TİCARET A.Ş.').muhasebe_gonderildi_at, null, 'işaret kaldırılmalı');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 test('tüm fişler, firmalar ve firma detayı', async (b) => {
   const { page, errors, close } = await open(b, {
     receipts: [

@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, RefreshControl, ScrollView, Switch, Text, View } from 'react-native';
 
 import { CategorySection } from '../components/dashboard/CategorySection';
 import { ExportSection } from '../components/dashboard/ExportSection';
@@ -39,7 +39,7 @@ import { pickPhotos } from '../services/image/pickPhotos';
 import { updateMonthlySummary } from '../services/reminders/monthlySummary';
 import { monthOffset } from '../lib/monthlySummaryPlan';
 import { categoriesReady } from '../services/supabase/schema';
-import { deleteReceipt as deleteReceiptRecord, purgeExpiredTrash, updateReceiptsCategory } from '../services/supabase/receiptsRepository';
+import { deleteReceipt as deleteReceiptRecord, markReceiptsSent, purgeExpiredTrash, updateReceiptsCategory } from '../services/supabase/receiptsRepository';
 import { ESKI_KATEGORILER, type Kategori, type ReceiptRecord } from '../types/receipt';
 
 const PAGE = 25;
@@ -80,7 +80,9 @@ export default function DashboardScreen() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Kategori | null>(null);
   const [sort, setSort] = useState<SortKey>('newest');
-  const listKey = `${label}|${query}|${category}|${sort}`;
+  // Yalnızca muhasebeciye henüz gönderilmemiş fişler
+  const [unsentOnly, setUnsentOnly] = useState(false);
+  const listKey = `${label}|${query}|${category}|${sort}|${unsentOnly}`;
   const [shownKey, setShownKey] = useState(listKey);
   // Toplu düzenleme: seçim modu ve seçilen fişler (dönem/filtre değişince seçim temizlenir)
   const [selecting, setSelecting] = useState(false);
@@ -91,12 +93,13 @@ export default function DashboardScreen() {
     setVisible(PAGE);
     setSelected(new Set());
   }
-  const filtering = !!query.trim() || !!category;
+  const filtering = !!query.trim() || !!category || unsentOnly;
   const fisler = s?.fisler;
+  const sentCount = useMemo(() => fisler?.filter((r) => r.muhasebe_gonderildi_at).length ?? 0, [fisler]);
   const filtered = useMemo(() => {
     const matches = receiptMatcher(query);
-    return sortReceipts(fisler?.filter((r) => (!category || r.kategori === category) && matches(r)) ?? [], sort);
-  }, [fisler, category, query, sort]);
+    return sortReceipts(fisler?.filter((r) => (!category || r.kategori === category) && (!unsentOnly || !r.muhasebe_gonderildi_at) && matches(r)) ?? [], sort);
+  }, [fisler, category, query, sort, unsentOnly]);
 
   function chooseSort() {
     showActionSheet({
@@ -200,6 +203,17 @@ export default function DashboardScreen() {
     ? `Yalnızca ${categoryMeta(category).label} kategorisi gösteriliyor. Kategoriye tekrar dokunarak filtreyi kaldırabilirsiniz.`
     : undefined;
   const controlRows = [
+    ...(sentCount > 0 || unsentOnly
+      ? [
+          <ListRow
+            key="unsent"
+            title="Yalnızca Gönderilmemişler"
+            subtitle={`${sentCount} fiş muhasebeciye gönderildi`}
+            icon={{ sf: 'paperplane', ion: 'paper-plane-outline', color: theme.green }}
+            accessory={<Switch value={unsentOnly} onValueChange={setUnsentOnly} accessibilityLabel="Yalnızca gönderilmemişler" />}
+          />,
+        ]
+      : []),
     ...(filtering
       ? [
           <ListRow
@@ -210,6 +224,7 @@ export default function DashboardScreen() {
             onPress={() => {
               setQuery('');
               setCategory(null);
+              setUnsentOnly(false);
             }}
           />,
         ]
@@ -275,6 +290,24 @@ export default function DashboardScreen() {
         }
         await bulk(async () => `${await updateReceiptsCategory(ids, k)} fiş ${categoryMeta(k).label} yapıldı`);
       },
+    });
+  }
+
+  function bulkSent() {
+    const list = selectedList;
+    if (!list.length) return;
+    const ids = list.map((r) => r.id);
+    const unsent = list.filter((r) => !r.muhasebe_gonderildi_at).length;
+    const sent = list.length - unsent;
+    showActionSheet({
+      title: `${list.length} fiş`,
+      message: sent && unsent ? `${sent} tanesi zaten gönderildi olarak işaretli.` : undefined,
+      options: [
+        ...(unsent
+          ? [{ label: `Muhasebeciye Gönderildi (${unsent})`, onPress: () => bulk(async () => `${await markReceiptsSent(ids, true)} fiş gönderildi olarak işaretlendi`) }]
+          : []),
+        ...(sent ? [{ label: `Gönderildi İşaretini Kaldır (${sent})`, onPress: () => bulk(async () => `${await markReceiptsSent(ids, false)} fişin işareti kaldırıldı`) }] : []),
+      ],
     });
   }
 
@@ -539,6 +572,14 @@ export default function DashboardScreen() {
               variant="gray"
               icon={{ sf: 'tag', ion: 'pricetag-outline' }}
               onPress={bulkCategory}
+              disabled={!selectedList.length || bulkBusy}
+              style={{ flex: 1 }}
+            />
+            <Button
+              title="Gönderildi"
+              variant="gray"
+              icon={{ sf: 'paperplane', ion: 'paper-plane-outline' }}
+              onPress={bulkSent}
               disabled={!selectedList.length || bulkBusy}
               style={{ flex: 1 }}
             />

@@ -123,6 +123,8 @@ export interface ReceiptRecord {
   vkn: string | null;
   notlar: string | null;
   etiketler: string[];
+  /** Muhasebeciye gönderildi olarak işaretlendiği an (ISO); işaretli değilse null */
+  muhasebe_gonderildi_at: string | null;
 }
 
 export type DraftStatus = 'pending' | 'scheduled' | 'processing' | 'ready' | 'failed';

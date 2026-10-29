@@ -24,3 +24,12 @@ describe('kurulum kodları', () => {
     assert.ok(TRASH_SETUP_SQL.includes('select 5'));
   });
 });
+
+describe('007 kurulumu', () => {
+  it('migration dosyasıyla aynı ve sürümü 7 yapar', async () => {
+    const { SENT_SETUP_SQL } = await import('../lib/setupSql');
+    const file = readFileSync(new URL('../../supabase/migrations/007_muhasebe_gonderildi.sql', import.meta.url), 'utf8');
+    assert.ok(file.endsWith(SENT_SETUP_SQL));
+    assert.ok(SENT_SETUP_SQL.includes('muhasebe_gonderildi_at') && SENT_SETUP_SQL.includes('select 7'));
+  });
+});

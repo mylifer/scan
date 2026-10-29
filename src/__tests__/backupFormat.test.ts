@@ -20,6 +20,7 @@ const rec = (id: string, firma_adi: string, tarih: string, toplam_tutar: number,
   vkn: null,
   notlar: null,
   etiketler: [],
+  muhasebe_gonderildi_at: null,
 });
 const round = (n: number) => Math.round(n * 100) / 100;
 

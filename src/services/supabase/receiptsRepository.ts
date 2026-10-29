@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 
 import { receiptImageName, round2, trDateToIso } from '../../lib/format';
 import { isLikelyDuplicate } from '../../lib/receiptExtras';
+import { type PeriodSummary, summarizeReceipts } from '../../lib/summary';
 import { learnedCategoryFor } from '../../lib/search';
 import { buildMonthlySeries, type MonthPoint } from '../../lib/trend';
 import type { Kategori, ReceiptData, ReceiptRecord } from '../../types/receipt';
@@ -97,17 +98,7 @@ export async function getReceiptImageUrl(path: string, expiresInSec = 300): Prom
   return data?.signedUrl ?? null;
 }
 
-export interface PeriodSummary {
-  toplamGider: number;
-  toplamKdv: number;
-  kdv1: number;
-  kdv10: number;
-  kdv20: number;
-  fisSayisi: number;
-  kategoriToplamlari: { kategori: Kategori; toplam: number }[];
-  /** Dönemdeki tüm fişler; fiş tarihine, sonra eklenme zamanına göre yeniden eskiye */
-  fisler: ReceiptRecord[];
-}
+export type { PeriodSummary } from '../../lib/summary';
 
 /** Supabase tek istekte en fazla 1000 satır döndürür; daha fazlası sayfalanarak alınır. */
 const PAGE_SIZE = 1000;
@@ -132,31 +123,7 @@ export async function getSummary(range?: { from: string; to: string }): Promise<
     if (!data || data.length < PAGE_SIZE) break;
   }
 
-  const byKategori = new Map<Kategori, number>();
-  let toplamGider = 0;
-  let kdv1 = 0;
-  let kdv10 = 0;
-  let kdv20 = 0;
-  for (const r of rows) {
-    toplamGider += r.toplam_tutar;
-    kdv1 += r.kdv_yuzde1;
-    kdv10 += r.kdv_yuzde10;
-    kdv20 += r.kdv_yuzde20;
-    byKategori.set(r.kategori, (byKategori.get(r.kategori) ?? 0) + r.toplam_tutar);
-  }
-
-  return {
-    toplamGider: round2(toplamGider),
-    toplamKdv: round2(kdv1 + kdv10 + kdv20),
-    kdv1: round2(kdv1),
-    kdv10: round2(kdv10),
-    kdv20: round2(kdv20),
-    fisSayisi: rows.length,
-    kategoriToplamlari: [...byKategori.entries()]
-      .map(([kategori, toplam]) => ({ kategori, toplam: round2(toplam) }))
-      .sort((a, b) => b.toplam - a.toplam),
-    fisler: rows,
-  };
+  return summarizeReceipts(rows);
 }
 
 /** Son `months` ayın aylık toplamları (grafik için; yalnızca gereken sütunlar indirilir). */
@@ -292,7 +259,7 @@ export function invalidateFirmCategories() {
 export async function insertRestoredReceipt(
   userId: string,
   r: Pick<ReceiptRecord, 'firma_adi' | 'tarih' | 'toplam_tutar' | 'kdv_yuzde1' | 'kdv_yuzde10' | 'kdv_yuzde20' | 'kategori' | 'created_at'> &
-    Partial<Pick<ReceiptRecord, 'fis_no' | 'vkn' | 'notlar' | 'etiketler'>>,
+    Partial<Pick<ReceiptRecord, 'fis_no' | 'vkn' | 'notlar' | 'etiketler' | 'muhasebe_gonderildi_at'>>,
   photo: Uint8Array | null,
 ): Promise<void> {
   let imagePath: string | null = null;
@@ -320,6 +287,7 @@ export async function insertRestoredReceipt(
     ...(r.vkn ? { vkn: r.vkn } : {}),
     ...(r.notlar ? { notlar: r.notlar } : {}),
     ...(r.etiketler?.length ? { etiketler: r.etiketler } : {}),
+    ...(r.muhasebe_gonderildi_at ? { muhasebe_gonderildi_at: r.muhasebe_gonderildi_at } : {}),
     // Sıralama korunsun: fişin ilk eklendiği an
     ...(r.created_at ? { created_at: r.created_at } : {}),
   });
@@ -370,6 +338,22 @@ export async function renameFirms(from: string[], to: string): Promise<number> {
     invalidateFirmCategories();
   }
   return changed;
+}
+
+/**
+ * Fişleri muhasebeciye gönderildi olarak işaretler (`sent` false ise işareti kaldırır).
+ * Zaten işaretli olanların tarihi değişmez. @returns değişen fiş sayısı
+ */
+export async function markReceiptsSent(ids: string[], sent: boolean): Promise<number> {
+  if (!ids.length) return 0;
+  let query = supabase
+    .from(TABLE)
+    .update({ muhasebe_gonderildi_at: sent ? new Date().toISOString() : null })
+    .in('id', ids);
+  query = sent ? query.is('muhasebe_gonderildi_at', null) : query.not('muhasebe_gonderildi_at', 'is', null);
+  const { data, error } = await query.select('id');
+  if (error) throw new Error(`İşaretlenemedi: ${error.message}`);
+  return data?.length ?? 0;
 }
 
 /** Seçilen fişlerin kategorisini değiştirir. @returns değişen fiş sayısı */
@@ -553,6 +537,7 @@ export async function restoreFromTrash(item: TrashItem): Promise<void> {
     ...(r.vkn ? { vkn: r.vkn } : {}),
     ...(r.notlar ? { notlar: r.notlar } : {}),
     ...(r.etiketler.length ? { etiketler: r.etiketler } : {}),
+    ...(r.muhasebe_gonderildi_at ? { muhasebe_gonderildi_at: r.muhasebe_gonderildi_at } : {}),
   });
   // 23505: fiş zaten geri alınmış (ör. önceki deneme yarım kaldı) → yalnızca çöp kaydı silinir
   if (error && error.code !== '23505') throw new Error(`Geri alınamadı: ${error.message}`);
@@ -624,5 +609,6 @@ function toRecord(row: Record<string, unknown>): ReceiptRecord {
     vkn: typeof row.vkn === 'string' && row.vkn ? row.vkn : null,
     notlar: typeof row.notlar === 'string' && row.notlar ? row.notlar : null,
     etiketler: Array.isArray(row.etiketler) ? row.etiketler.filter((t): t is string => typeof t === 'string') : [],
+    muhasebe_gonderildi_at: typeof row.muhasebe_gonderildi_at === 'string' && row.muhasebe_gonderildi_at ? row.muhasebe_gonderildi_at : null,
   };
 }

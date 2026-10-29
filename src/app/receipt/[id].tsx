@@ -2,7 +2,7 @@ import { errorMessage } from '../../lib/errors';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Switch, View } from 'react-native';
 
 import { fromFormValues, ReceiptForm, type ReceiptFormValues, toFormValues, validateForm } from '../../components/ReceiptForm';
 import { ReceiptPhoto } from '../../components/ReceiptPhoto';
@@ -22,6 +22,7 @@ import {
   deleteReceipt,
   getReceipt,
   getReceiptImageUrl,
+  markReceiptsSent,
   recordToData,
   updateReceipt,
 } from '../../services/supabase/receiptsRepository';
@@ -44,6 +45,24 @@ export default function ReceiptDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [attaching, setAttaching] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [marking, setMarking] = useState(false);
+
+  /** Muhasebeciye gönderildi işaretini açar/kapatır (formdaki kaydedilmemiş değişikliklerden bağımsız) */
+  async function toggleSent(on: boolean) {
+    if (!record) return;
+    setMarking(true);
+    try {
+      await markReceiptsSent([record.id], on);
+      setRecord({ ...record, muhasebe_gonderildi_at: on ? new Date().toISOString() : null });
+      haptics.success();
+      showToast(on ? 'Muhasebeciye gönderildi olarak işaretlendi' : 'Gönderildi işareti kaldırıldı', 'info');
+    } catch (e) {
+      haptics.error();
+      showAlert('İşaretlenemedi', errorMessage(e));
+    } finally {
+      setMarking(false);
+    }
+  }
 
   useEffect(() => {
     getReceipt(id)
@@ -78,6 +97,11 @@ export default function ReceiptDetailScreen() {
           (values.tarih !== initial.tarih || values.toplamTutar !== initial.toplamTutar || values.fisNo !== initial.fisNo || values.vkn !== initial.vkn);
         if (keyChanged && !(await confirmIfDuplicate(data, record.id))) return;
         await updateReceipt(record.id, data);
+        // Muhasebeciye gönderilmiş fişin tutarı/tarihi değiştiyse: düzeltilmiş hâli de gönderilsin mi?
+        const amountsChanged =
+          !!initial &&
+          (keyChanged || values.kdvYuzde1 !== initial.kdvYuzde1 || values.kdvYuzde10 !== initial.kdvYuzde10 || values.kdvYuzde20 !== initial.kdvYuzde20);
+        if (record.muhasebe_gonderildi_at && amountsChanged) await askResend(record.id);
         allowLeave();
         router.back();
         showToast('Değişiklikler kaydedildi');
@@ -88,6 +112,28 @@ export default function ReceiptDetailScreen() {
       } finally {
         setSaving(false);
       }
+    });
+  }
+
+  /** Gönderilmiş fiş düzeltildi: işaret kaldırılırsa sonraki dışa aktarıma tekrar girer */
+  function askResend(id: string): Promise<void> {
+    return new Promise((resolve) => {
+      showActionSheet({
+        title: 'Bu fiş muhasebeciye gönderilmişti',
+        message: 'Düzeltilmiş hâlinin de gönderilmesi için "gönderildi" işaretini kaldırabilirsiniz; fiş bir sonraki dışa aktarıma girer.',
+        options: [
+          {
+            label: 'İşareti Kaldır',
+            onPress: () => {
+              markReceiptsSent([id], false)
+                .catch((e) => showAlert('İşaret kaldırılamadı', errorMessage(e)))
+                .finally(resolve);
+            },
+          },
+        ],
+        cancelLabel: 'Gönderildi Kalsın',
+        onCancel: resolve,
+      });
     });
   }
 
@@ -182,6 +228,25 @@ export default function ReceiptDetailScreen() {
         contentContainerStyle={{ paddingTop: 16, paddingBottom: 40 }}>
         {record.image_path && <ReceiptPhoto uri={imageUrl} />}
         <ReceiptForm values={values} onChange={setValues} />
+        <ListSection
+          footer={
+            record.muhasebe_gonderildi_at
+              ? 'Dışa aktarırken "Gönderilenleri hariç tut" açıksa bu fiş tekrar aktarılmaz.'
+              : 'Muhasebeciye gönderdiğiniz fişleri işaretleyin; sonraki dışa aktarımda hariç tutabilirsiniz.'
+          }>
+          <ListRow
+            title="Muhasebeciye Gönderildi"
+            subtitle={record.muhasebe_gonderildi_at ? sentLabel(record.muhasebe_gonderildi_at) : undefined}
+            icon={{ sf: 'paperplane.fill', ion: 'paper-plane', color: theme.green }}
+            accessory={
+              marking ? (
+                <ActivityIndicator />
+              ) : (
+                <Switch value={!!record.muhasebe_gonderildi_at} onValueChange={toggleSent} accessibilityLabel="Muhasebeciye gönderildi" />
+              )
+            }
+          />
+        </ListSection>
         <ListSection>
           <ListRow
             title="Paylaş"
@@ -207,4 +272,9 @@ export default function ReceiptDetailScreen() {
       </ScrollView>
     </KeyboardAvoidingView>
   );
+}
+
+/** "12 Ekim 2026" */
+function sentLabel(iso: string) {
+  return new Date(iso).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
