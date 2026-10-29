@@ -12,7 +12,10 @@ import {
   detailRequest,
   earsivListInputs,
   EARSIV_OK,
+  earsivDocInputs,
+  extractFile,
   extractXml,
+  parseEarsivDoc,
   mergeLists,
   parseBase64Return,
   parseEarsivList,
@@ -172,8 +175,9 @@ describe('e-Arşiv listesi', () => {
     const [first] = earsivListInputs('1234567890', '2026-10-01', '2026-10-31');
     const xml = buildEnvelope('faturaListeSorgula', { input: JSON.stringify(first) }, 'u', 'p', { earsiv: true });
     assert.match(xml, /xmlns:ser="http:\/\/service\.earsiv\.uut\.cs\.com\.tr\/"/);
-    assert.match(xml, /<ser:faturaListeSorgula><input>\{&quot;vkn&quot;:&quot;1234567890&quot;/);
-    assert.equal(first!.baslangicTarihi, '20261001');
+    assert.match(xml, /<ser:faturaListeSorgula><input>\{&quot;mukellefVkn&quot;:&quot;1234567890&quot;/);
+    assert.equal(first!.faturaTarihiBaslangic, '20261001');
+    assert.equal(first!.pagingLimit, 1000);
   });
 
   it('sonuç kodu, çıktı ve tarih süzmesi', () => {
@@ -192,5 +196,21 @@ describe('e-Arşiv listesi', () => {
     const merged = mergeLists(list, [{ ...list[0]! }]);
     assert.equal(merged.length, 2, 'aynı ETTN bir kez');
     assert.equal(merged[0]!.belgeNo, 'EAR2026000000011', 'yeni tarihli üstte');
+  });
+});
+
+describe('e-Arşiv belge ve PDF', () => {
+  it('faturaSorgula girdisi ve belgeIcerigi', () => {
+    assert.deepEqual(earsivDocInputs('1', 'u', 3)[0], { faturaUuid: 'u', donenBelgeFormati: 3 });
+    const xml = '<S:Body><ns2:faturaSorgulaResponse><output><belgeFormati>PDF</belgeFormati><belgeIcerigi>JVBERi0=</belgeIcerigi></output><return><resultCode>AE00000</resultCode></return></ns2:faturaSorgulaResponse></S:Body>';
+    assert.equal(parseEarsivDoc(xml), 'JVBERi0=');
+    assert.equal(parseEarsivResult(xml).code, EARSIV_OK);
+  });
+
+  it('zip içinden PDF seçilir', () => {
+    const pdf = new TextEncoder().encode('%PDF-1.4');
+    const zip = zipSync({ 'a.xml': new TextEncoder().encode('<a/>'), 'fatura.pdf': pdf });
+    assert.deepEqual(extractFile(zip, unzipSync, 'pdf'), pdf);
+    assert.deepEqual(extractFile(pdf, unzipSync, 'pdf'), pdf, 'zip değilse olduğu gibi');
   });
 });

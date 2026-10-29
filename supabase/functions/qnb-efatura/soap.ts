@@ -154,15 +154,37 @@ export function parseList(xml: string, yon: Yon): EFatura[] {
 // e-Arşiv (giden): faturaListeSorgula. Girdi bir JSON metnidir; alan adları belgelenmediği için
 // birkaç olası biçim sırayla denenir. Sonuç yine de tarih aralığına göre süzülür.
 
-/** Denenecek e-Arşiv liste girdileri (tarihler YYYY-MM-DD) */
-export function earsivListInputs(vkn: string, baslangic: string, bitis: string): Record<string, string>[] {
+/**
+ * Denenecek e-Arşiv liste girdileri (tarihler YYYY-MM-DD). Alan adları QNB'nin hata mesajındaki listeden
+ * (FaturaSorgulamaInput): mukellefVkn, faturaTarihiBaslangic/Bitis, pagingStart/Limit. Tarih biçimi belgesiz.
+ */
+export function earsivListInputs(vkn: string, baslangic: string, bitis: string): Record<string, string | number>[] {
   const c = (d: string) => d.replace(/-/g, '');
+  const sayfa = { pagingStart: 0, pagingLimit: 1000 };
   return [
-    { vkn, baslangicTarihi: c(baslangic), bitisTarihi: c(bitis) },
-    { vkn, baslangicTarihi: baslangic, bitisTarihi: bitis },
-    { vkn, faturaBaslangicTarihi: c(baslangic), faturaBitisTarihi: c(bitis) },
-    { vkn, sube: 'DFLT', kasa: 'DFLT', baslangicTarihi: c(baslangic), bitisTarihi: c(bitis) },
+    { mukellefVkn: vkn, faturaTarihiBaslangic: c(baslangic), faturaTarihiBitis: c(bitis), ...sayfa },
+    { mukellefVkn: vkn, faturaTarihiBaslangic: baslangic, faturaTarihiBitis: bitis, ...sayfa },
+    { mukellefVkn: vkn, faturaTarihiBaslangic: `${baslangic} 00:00:00`, faturaTarihiBitis: `${bitis} 23:59:59`, ...sayfa },
+    { mukellefVkn: vkn, faturaTarihiBaslangic: c(baslangic), faturaTarihiBitis: c(bitis) },
   ];
+}
+
+/** e-Arşiv belge biçimleri (donenBelgeFormati) */
+export const EARSIV_FORMAT = { UBL: 0, PDF: 3 } as const;
+
+/** faturaSorgula girdileri: tek fatura UBL ya da PDF olarak */
+export function earsivDocInputs(vkn: string, uuid: string, format: number): Record<string, string | number>[] {
+  return [
+    { faturaUuid: uuid, donenBelgeFormati: format },
+    { vkn, faturaUuid: uuid, donenBelgeFormati: format },
+    { mukellefVkn: vkn, faturaUuid: uuid, donenBelgeFormati: format },
+  ];
+}
+
+/** faturaSorgula yanıtındaki <output><belgeIcerigi>base64</belgeIcerigi> */
+export function parseEarsivDoc(xml: string): string | null {
+  const m = xml.match(/<belgeIcerigi\b[^>]*>([A-Za-z0-9+/=\s]+)<\/belgeIcerigi>/);
+  return m ? m[1]!.replace(/\s+/g, '') : null;
 }
 
 /** e-Arşiv sonuç kodu ve metni (<return><resultCode>…) */
@@ -215,10 +237,10 @@ export function mergeLists(...lists: EFatura[][]): EFatura[] {
 
 export const ETTN_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export function detailRequest(yon: Yon, vkn: string, ettn: string): { op: string; params: Record<string, string> } {
+export function detailRequest(yon: Yon, vkn: string, ettn: string, format: 'UBL' | 'PDF' = 'UBL'): { op: string; params: Record<string, string> } {
   return {
     op: yon === 'gelen' ? 'gelenBelgeIndirExt' : 'gidenBelgeIndirExt',
-    params: { vergiTcKimlikNo: vkn, belgeEttn: ettn, belgeTuru: 'FATURA', belgeFormati: 'UBL' },
+    params: { vergiTcKimlikNo: vkn, belgeEttn: ettn, belgeTuru: 'FATURA', belgeFormati: format },
   };
 }
 
@@ -235,16 +257,27 @@ export function base64ToBytes(b64: string): Uint8Array {
   return out;
 }
 
-/** İndirilen belgeden UBL XML metni: zip ise içindeki .xml, değilse düz metin */
-export function extractXml(bytes: Uint8Array, unzip: (b: Uint8Array) => Record<string, Uint8Array>): string {
-  const dec = new TextDecoder('utf-8');
+export function bytesToBase64(bytes: Uint8Array): string {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+/** İndirilen belgeden istenen dosya: zip ise içindeki .xml/.pdf, değilse olduğu gibi */
+export function extractFile(bytes: Uint8Array, unzip: (b: Uint8Array) => Record<string, Uint8Array>, ext: 'xml' | 'pdf'): Uint8Array {
   if (bytes[0] === 0x50 && bytes[1] === 0x4b) {
     const files = unzip(bytes);
-    const name = Object.keys(files).find((n) => /\.xml$/i.test(n)) ?? Object.keys(files)[0];
+    const names = Object.keys(files);
+    const name = names.find((n) => n.toLowerCase().endsWith(`.${ext}`)) ?? names[0];
     if (!name) throw new Error('İndirilen arşiv boş.');
-    return dec.decode(files[name]);
+    return files[name]!;
   }
-  return dec.decode(bytes);
+  return bytes;
+}
+
+/** İndirilen belgeden UBL XML metni */
+export function extractXml(bytes: Uint8Array, unzip: (b: Uint8Array) => Record<string, Uint8Array>): string {
+  return new TextDecoder('utf-8').decode(extractFile(bytes, unzip, 'xml'));
 }
 
 export interface FaturaKalem {

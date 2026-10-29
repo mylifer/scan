@@ -8,7 +8,9 @@
 // İstekler (POST):
 //   { yon, baslangic: 'YYYY-MM-DD', bitis: 'YYYY-MM-DD' }  → { faturalar: EFatura[], uyari? }
 //     giden: e-Fatura + e-Arşiv birlikte
-//   { islem: 'detay', yon, ettn }                         → { detay: FaturaDetay }  (yalnızca e-Fatura)
+//   { islem: 'detay', yon, ettn, tur? }                   → { detay: FaturaDetay }  (kalemler, KDV)
+//   { islem: 'pdf', yon, ettn, tur? }                     → { pdf: base64 }
+//     tur: 'earsiv' ise e-Arşiv servisinden (faturaSorgula), yoksa e-Fatura'dan (…BelgeIndirExt)
 // Hata: { message, code? }  (code: 'qnb_login' → tekrar denemeyin)
 
 import { unzipSync } from 'npm:fflate@0.8.2';
@@ -16,17 +18,21 @@ import { unzipSync } from 'npm:fflate@0.8.2';
 import {
   base64ToBytes,
   buildEnvelope,
+  bytesToBase64,
   detailRequest,
+  EARSIV_FORMAT,
   EARSIV_OK,
   EARSIV_URL,
+  earsivDocInputs,
   earsivListInputs,
   ETTN_RE,
   type EFatura,
-  extractXml,
+  extractFile,
   isLoginFault,
   listRequest,
   mergeLists,
   parseBase64Return,
+  parseEarsivDoc,
   parseEarsivList,
   parseEarsivResult,
   parseFault,
@@ -149,7 +155,7 @@ async function earsivList(baslangic: string, bitis: string): Promise<{ list: EFa
       console.log(`e-Arşiv listesi: ${Object.keys(input).join(',')} biçimi çalıştı`);
       return { list: parseEarsivList(xml, baslangic, bitis) };
     }
-    hatalar.push(`${r.code || 'kod yok'}: ${r.text || 'açıklama yok'} [${Object.keys(input).join(',')}]`);
+    hatalar.push(`${r.code || 'kod yok'}: ${(r.text || 'açıklama yok').slice(0, 700)} [${Object.keys(input).join(',')}]`);
   }
   console.log('e-Arşiv listesi alınamadı:', hatalar.join(' | '));
   return { list: [], hata: hatalar.join(' | ') };
@@ -166,11 +172,50 @@ async function listele(yon: Yon, baslangic: string, bitis: string) {
   };
 }
 
-async function detay(yon: Yon, ettn: string) {
-  const { op, params } = detailRequest(yon, QNB_VKN, ettn);
-  const b64 = parseBase64Return(await soap(QNB_URL, op, params, { wrap: false }));
-  if (!b64) throw new QnbError('QNB faturanın içeriğini döndürmedi.');
-  return { detay: parseUbl(extractXml(base64ToBytes(b64), unzipSync)) };
+type Tur = 'efatura' | 'earsiv';
+
+/** Tek faturanın kendisi (UBL ya da PDF), ham bayt olarak */
+async function belge(tur: Tur, yon: Yon, ettn: string, format: 'UBL' | 'PDF'): Promise<Uint8Array> {
+  const unzipped = (b64: string) => extractFile(base64ToBytes(b64), unzipSync, format === 'PDF' ? 'pdf' : 'xml');
+  if (tur === 'efatura') {
+    const { op, params } = detailRequest(yon, QNB_VKN, ettn, format);
+    const b64 = parseBase64Return(await soap(QNB_URL, op, params, { wrap: false }));
+    if (!b64) throw new QnbError('QNB faturanın içeriğini döndürmedi.');
+    return unzipped(b64);
+  }
+  // e-Arşiv: faturaSorgula girdisi belgesiz; olası biçimler sırayla denenir
+  const hatalar: string[] = [];
+  for (const input of earsivDocInputs(QNB_VKN, ettn, EARSIV_FORMAT[format])) {
+    let xml: string;
+    try {
+      xml = await soap(EARSIV_URL, 'faturaSorgula', { input: JSON.stringify(input) }, { earsiv: true });
+    } catch (e) {
+      if (e instanceof LoginError) throw e;
+      hatalar.push(e instanceof Error ? e.message : String(e));
+      continue;
+    }
+    const r = parseEarsivResult(xml);
+    const b64 = parseEarsivDoc(xml);
+    if (b64 && (r.code === EARSIV_OK || !r.code)) {
+      console.log(`e-Arşiv faturaSorgula: ${Object.keys(input).join(',')} biçimi çalıştı`);
+      return unzipped(b64);
+    }
+    hatalar.push(`${r.code || 'kod yok'}: ${(r.text || 'belge dönmedi').slice(0, 700)} [${Object.keys(input).join(',')}]`);
+  }
+  throw new QnbError(`e-Arşiv faturası alınamadı: ${hatalar.join(' | ')}`);
+}
+
+async function detay(tur: Tur, yon: Yon, ettn: string) {
+  return { detay: parseUbl(new TextDecoder('utf-8').decode(await belge(tur, yon, ettn, 'UBL'))) };
+}
+
+async function pdf(tur: Tur, yon: Yon, ettn: string) {
+  const bytes = await belge(tur, yon, ettn, 'PDF');
+  // %PDF imzası
+  if (!(bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46)) {
+    throw new QnbError('QNB PDF yerine başka bir içerik döndürdü.');
+  }
+  return { pdf: bytesToBase64(bytes) };
 }
 
 Deno.serve(async (req) => {
@@ -190,7 +235,7 @@ Deno.serve(async (req) => {
     return reply(500, { message: 'Sunucuda QNB bilgileri (QNB_USER, QNB_PASS, QNB_VKN) eksik.' });
   }
 
-  let b: { islem?: unknown; yon?: unknown; baslangic?: unknown; bitis?: unknown; ettn?: unknown };
+  let b: { islem?: unknown; yon?: unknown; baslangic?: unknown; bitis?: unknown; ettn?: unknown; tur?: unknown };
   try {
     b = await req.json();
   } catch {
@@ -200,9 +245,10 @@ Deno.serve(async (req) => {
   const yon = b.yon as Yon;
 
   try {
-    if (b.islem === 'detay') {
+    if (b.islem === 'detay' || b.islem === 'pdf') {
       if (typeof b.ettn !== 'string' || !ETTN_RE.test(b.ettn)) return reply(400, { message: 'Geçersiz ETTN.' });
-      return reply(200, await detay(yon, b.ettn));
+      const tur: Tur = b.tur === 'earsiv' ? 'earsiv' : 'efatura';
+      return reply(200, b.islem === 'pdf' ? await pdf(tur, yon, b.ettn) : await detay(tur, yon, b.ettn));
     }
     if (!validRange(b.baslangic, b.bitis)) return reply(400, { message: `Tarih aralığı geçersiz (en fazla ${MAX_DAYS} gün).` });
     return reply(200, await listele(yon, b.baslangic, b.bitis as string));
