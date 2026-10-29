@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.43.5 — `KOD`
+## 1.43.5 — `37986f1`
 - Giden e-Faturalarda tutar 0 görünüyordu: Türkçe biçimli tutarlar (1.234,56) okunuyor; tutar yine yoksa QNB'nin tutar sorgusundan ya da faturanın kendisinden tamamlanıyor
 
 ## 1.43.4 — `239427e`
