@@ -13,13 +13,13 @@ export const fullBleedContent = { contentStyle: { backgroundColor: '#000' } };
  * iOS: buzlu cam, yarı saydam gezinme çubuğu (ScrollView'larda
  * contentInsetAdjustmentBehavior="automatic" gerekir). Web: düz arka plan.
  */
-export function stackScreenOptions(theme: Theme) {
+export function stackScreenOptions(theme: Theme, maxWidth: number = CONTENT_MAX_WIDTH) {
   const common = {
     headerTintColor: theme.blue,
     headerTitleStyle: { color: theme.label, fontFamily },
     headerBackButtonDisplayMode: 'minimal' as const,
     // iPad ve geniş tarayıcı penceresinde içerik ortada, okunabilir genişlikte (telefonda etkisiz)
-    contentStyle: { backgroundColor: theme.background, width: '100%' as const, maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' as const },
+    contentStyle: { backgroundColor: theme.background, width: '100%' as const, maxWidth, alignSelf: 'center' as const },
   };
   if (Platform.OS === 'ios') {
     return {
@@ -50,6 +50,15 @@ export function tabRootHeader(theme: Theme) {
     headerTransparent: false,
     headerBlurEffect: 'none' as const,
     headerStyle: { backgroundColor: theme.background },
+    headerShadowVisible: false,
+  };
+}
+
+/** Masaüstü tarayıcıda sekme sayfalarının başlığı: pano başlığı gibi büyük */
+export function wideHeader(theme: Theme) {
+  return {
+    headerTitleStyle: { color: theme.label, fontFamily, fontSize: 26, fontWeight: '700' as const },
+    headerStyle: { backgroundColor: theme.background, height: 76 },
     headerShadowVisible: false,
   };
 }

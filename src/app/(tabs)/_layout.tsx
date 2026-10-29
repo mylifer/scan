@@ -2,18 +2,23 @@ import { Tabs } from 'expo-router';
 import { Platform, Text } from 'react-native';
 
 import { Icon } from '../../components/ui/Icon';
+import { WebSidebar } from '../../components/web/WebSidebar';
+import { useWide } from '../../lib/layout';
 import { fontFamily, useTheme } from '../../lib/theme';
 
 /**
  * Ana gezinme: dört sekme. Her sekmenin kendi sayfa yığını vardır (büyük başlık, arama);
  * fiş, fatura detayı, kamera gibi ekranlar kök yığından sekmenin üstüne açılır ve geri tuşu
- * hep aynı sekmeye döner.
+ * hep aynı sekmeye döner. Geniş web penceresinde sekmeler soldaki menüye dönüşür.
  */
 export default function TabsLayout() {
   const theme = useTheme();
+  const wide = useWide();
   return (
     <Tabs
+      tabBar={wide ? (props) => <WebSidebar {...props} /> : undefined}
       screenOptions={{
+        tabBarPosition: wide ? 'left' : 'bottom',
         headerShown: false,
         tabBarActiveTintColor: theme.blue,
         tabBarInactiveTintColor: theme.secondaryLabel,
