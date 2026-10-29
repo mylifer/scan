@@ -16,6 +16,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.43.7 — `KOD`
+- Eski (QNB'nin taşıdığı) giden faturalar: ek tarama tutar ve durum sorgularıyla ETTN'leri bulur; alıcı, tarih ve tutar faturanın kendisinden tamamlanır. Detay ve PDF, normal indirme olmazsa "taşınan belgeler" metodundan alınır
+- e-Arşiv oluşturma zamanı sorgusu QNB'nin istediği YYYYAAGGSSDDSS biçiminde
+
 ## 1.43.6 — `8721918`
 - Giden listesi boşsa ek tarama: QNB'nin giden belge sayısı, portal (gönderim tarihi), web servis (belge tarihi) ve e-Arşiv (oluşturma zamanı); bulunanlar listeye eklenir, sonuçlar notta yazar
 
