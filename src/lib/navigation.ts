@@ -38,3 +38,18 @@ export function stackScreenOptions(theme: Theme) {
 }
 
 export const largeTitle = Platform.OS === 'ios' ? { headerLargeTitleEnabled: true } : {};
+
+/**
+ * iOS: ilk açılmayan sekmelerin kök sayfalarında saydam büyük başlık, içeriği başlığın çok altına
+ * itiyordu (üstte büyük boşluk). Bu sayfalarda başlık çubuğu düz (saydam değil); içerik hemen altından başlar.
+ */
+export function tabRootHeader(theme: Theme) {
+  if (Platform.OS !== 'ios') return largeTitle;
+  return {
+    ...largeTitle,
+    headerTransparent: false,
+    headerBlurEffect: 'none' as const,
+    headerStyle: { backgroundColor: theme.background },
+    headerShadowVisible: false,
+  };
+}

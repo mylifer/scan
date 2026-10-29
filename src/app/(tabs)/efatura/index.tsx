@@ -303,7 +303,9 @@ export default function EFaturaScreen() {
                 valueColor={theme.label}
               />
             ) : null}
-            {kdv.iade ? <ListRow title="KDV (iade faturaları)" subtitle={`${kdv.iadeAdet} iade faturası`} value={money(kdv.iade, 'TRY')} /> : null}
+            {kdv.iade ? (
+              <ListRow title="KDV (iade faturaları)" subtitle={`${kdv.iadeAdet} iade faturası · indirilecek KDV'den düşülür`} value={money(kdv.iade, 'TRY')} />
+            ) : null}
           </ListSection>
           <ListSection
             header={yon === 'gelen' ? 'Gelen faturalar' : 'Giden faturalar'}

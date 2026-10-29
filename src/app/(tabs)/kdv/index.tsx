@@ -118,10 +118,12 @@ export default function KdvScreen() {
             satirlar={[
               { ad: `Gelen e-Faturalar (${kdv.gelenEfatura.adet})`, tutar: kdv.gelenEfatura.kdv },
               { ad: `Taranan fişler (${kdv.fis.adet})`, tutar: kdv.fis.kdv },
+              ...(kdv.iade.adet ? [{ ad: `İade ettiğim alışlar (${kdv.iade.adet})`, tutar: -kdv.iade.kdv }] : []),
             ]}
             not={[
               kdv.fis.eslesen ? `${kdv.fis.eslesen} fiş bir e-Faturayla aynı alışveriş olduğu için iki kez sayılmadı.` : '',
               kdv.gelenEfatura.eksik ? `${kdv.gelenEfatura.eksik} e-Faturanın KDV bilgisi QNB'den gelmedi.` : '',
+              kdv.iade.adet ? 'Kestiğim iade faturalarının KDV\'si, o alışları daha önce indirdiğim için buradan düşüldü.' : '',
             ]
               .filter(Boolean)
               .join(' ')}
@@ -135,12 +137,6 @@ export default function KdvScreen() {
           </View>
           {yukleniyor === ay.from ? <ActivityIndicator /> : null}
         </View>
-      ) : null}
-
-      {kdv?.iade.adet ? (
-        <ListSection footer="İade faturalarının KDV'si yukarıdaki hesaba katılmadı; beyannamede nasıl gösterileceği muhasebe tercihine bağlıdır.">
-          <ListRow title={`İade faturaları (${kdv.iade.adet})`} value={formatTL(kdv.iade.kdv)} />
-        </ListSection>
       ) : null}
 
       <ListSection footer="Önceki aylardan devreden KDV bu hesapta yok. Bilgi amaçlıdır; beyanname için muhasebecinize danışın.">

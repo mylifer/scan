@@ -63,8 +63,8 @@ function tekil<T extends { ettn: string }>(list: T[]): T[] {
 }
 
 /**
- * Genel, yıllık ve aylık özet. Gelen KDV = indirilecek, giden satış KDV = hesaplanan; iade faturaları ayrı
- * tutulur (beyannamede nasıl gösterileceği muhasebe tercihine bağlı). Yalnızca TRY tutarlar toplanır.
+ * Genel, yıllık ve aylık özet. Gelen KDV = indirilecek, giden satış KDV = hesaplanan; kestiğim iade faturaları
+ * ayrı tutulur ve indirilecekten düşülür (bkz. kdvFarki). Yalnızca TRY tutarlar toplanır.
  * haric: toplamlara katılmayacak giden faturaların ETTN'leri (küçük harf).
  */
 export function ozetle(gelen: TutarSatiri[], giden: TutarSatiri[], earsiv: EFatura[], haric: ReadonlySet<string> = new Set()) {
@@ -83,9 +83,14 @@ export function ozetle(gelen: TutarSatiri[], giden: TutarSatiri[], earsiv: EFatu
   return { genel, yillar: sirala(yillar), aylar: sirala(aylar) };
 }
 
-/** Hesaplanan − indirilecek (iadeler hariç; pozitif: ödenecek yönde) */
+/** İndirilecek KDV: gelen e-Faturalar − kestiğim iade faturaları (iade edilen alışın KDV'si indirilemez) */
+export function indirilecekKdv(d: DonemOzet): number {
+  return yuvarla(d.gelen.kdv - d.iade.kdv);
+}
+
+/** Hesaplanan − indirilecek (pozitif: ödenecek yönde) */
 export function kdvFarki(d: DonemOzet): number {
-  return yuvarla(d.satis.kdv + d.earsiv.kdv - d.gelen.kdv);
+  return yuvarla(d.satis.kdv + d.earsiv.kdv - indirilecekKdv(d));
 }
 
 /** Ortancanın `esik` katından büyük matrahlı giden faturalar (yanlış tutarla kesilmiş olabilir) */
