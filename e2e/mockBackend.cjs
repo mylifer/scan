@@ -46,6 +46,7 @@ function filterRows(rows, sp) {
  * Sayfaya sahte arka ucu kurar.
  * @param opts.receipts başlangıç fişleri; opts.schema veritabanı kurulum sürümü (0 = kurulum yok);
  *        opts.gemini (çağrı no) => yanıt nesnesi ya da { status } hata; opts.delay (url) => ms
+ *        opts.efatura (istek gövdesi) => { status?, body } (qnb-efatura sunucu fonksiyonu)
  */
 async function installBackend(page, opts = {}) {
   const state = {
@@ -149,6 +150,12 @@ async function installBackend(page, opts = {}) {
       prefixes.forEach((p) => state.storage.delete(p));
       state.log.push(`STORAGE DELETE ${prefixes.length}`);
       return json(route, []);
+    }
+    if (path === '/functions/v1/qnb-efatura' && m === 'POST') {
+      const body = JSON.parse(req.postData() || '{}');
+      state.log.push(`EFATURA ${body.yon} ${body.baslangic} ${body.bitis}`);
+      const r = opts.efatura ? opts.efatura(body) : { body: { faturalar: [] } };
+      return json(route, r.body, r.status ?? 200);
     }
     state.log.push(`UNHANDLED ${m} ${path}`);
     return json(route, {}, 404);

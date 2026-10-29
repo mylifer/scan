@@ -232,6 +232,12 @@ export default function SettingsScreen() {
           onPress={() => router.push('/tax-calendar')}
           chevron
         />
+        <ListRow
+          title="e-Faturalar"
+          icon={{ sf: 'doc.richtext.fill', ion: 'receipt', color: theme.teal }}
+          onPress={() => router.push('/efatura')}
+          chevron
+        />
         {remindersSupported ? (
           <ListRow
             title="Vergi Hatırlatıcısı"

@@ -81,6 +81,7 @@ function RootNavigator() {
         <Stack.Screen name="setup-categories" options={{ title: 'Veritabanı Güncellemesi' }} />
         <Stack.Screen name="budget" options={{ title: 'Aylık Bütçe', presentation: 'modal' }} />
         <Stack.Screen name="tax-calendar" options={{ title: 'Vergi Takvimi' }} />
+        <Stack.Screen name="efatura" options={{ title: 'e-Faturalar', ...largeTitle }} />
         <Stack.Screen name="merge-firms" options={{ title: 'Firma Adları' }} />
         <Stack.Screen name="trash" options={{ title: 'Son Silinenler' }} />
         <Stack.Screen name="recent" options={{ title: 'Son Eklenenler' }} />
