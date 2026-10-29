@@ -16,6 +16,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.43.6 — `8721918`
+- Giden listesi boşsa ek tarama: QNB'nin giden belge sayısı, portal (gönderim tarihi), web servis (belge tarihi) ve e-Arşiv (oluşturma zamanı); bulunanlar listeye eklenir, sonuçlar notta yazar
+
 ## 1.43.5 — `37986f1`
 - Giden e-Faturalarda tutar 0 görünüyordu: Türkçe biçimli tutarlar (1.234,56) okunuyor; tutar yine yoksa QNB'nin tutar sorgusundan ya da faturanın kendisinden tamamlanıyor
 
