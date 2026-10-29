@@ -1,0 +1,94 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1162 >>
+stream
+BT
+/F1 11 Tf
+50 790 Td
+/F1 18 Tf
+(e-ARSIV FATURA) Tj
+0 -20 Td
+/F1 11 Tf
+(Satici: OPET PETROLCULUK A.S.) Tj
+0 -20 Td
+/F1 11 Tf
+(Kucukbakkalkoy Mah. Ataturk Cad. No:1 Atasehir / Istanbul) Tj
+0 -20 Td
+/F1 11 Tf
+(Vergi Dairesi: Buyuk Mukellefler   VKN: 3900383669) Tj
+0 -20 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 11 Tf
+(SAYIN) Tj
+0 -20 Td
+/F1 11 Tf
+(Alici: DENEME KULLANICI   TCKN: 10000000146) Tj
+0 -20 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 11 Tf
+(Fatura No: OPT2026000000123) Tj
+0 -20 Td
+/F1 11 Tf
+(Fatura Tarihi: 15.09.2026) Tj
+0 -20 Td
+/F1 11 Tf
+(Senaryo: EARSIVFATURA   Tip: SATIS) Tj
+0 -20 Td
+/F1 11 Tf
+(ETTN: 0f1e2d3c-1111-2222-3333-444455556666) Tj
+0 -20 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 11 Tf
+(Mal/Hizmet            Miktar   Birim Fiyat    KDV %    Tutar) Tj
+0 -20 Td
+/F1 11 Tf
+(Motorin               20 L     50,00 TL       %20      1.000,00 TL) Tj
+0 -20 Td
+/F1 11 Tf
+() Tj
+0 -20 Td
+/F1 11 Tf
+(Mal Hizmet Toplam Tutari:            1.000,00 TL) Tj
+0 -20 Td
+/F1 11 Tf
+(Hesaplanan KDV \(%20\):                  200,00 TL) Tj
+0 -20 Td
+/F1 11 Tf
+(Vergiler Dahil Toplam Tutar:         1.200,00 TL) Tj
+0 -20 Td
+/F1 11 Tf
+(Odenecek Tutar:                      1.200,00 TL) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001455 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1550
+%%EOF

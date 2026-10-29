@@ -3,6 +3,12 @@ import { Platform } from 'react-native';
 import type { Theme } from './theme';
 import { fontFamily } from './theme';
 
+/** iPad'de liste ekranlarının en geniş hâli (Ayarlar uygulamasına yakın) */
+export const CONTENT_MAX_WIDTH = 760;
+
+/** Kamera gibi tam ekran sayfalarda genişlik sınırı olmaz */
+export const fullBleedContent = { contentStyle: { backgroundColor: '#000' } };
+
 /**
  * iOS: buzlu cam, yarı saydam gezinme çubuğu (ScrollView'larda
  * contentInsetAdjustmentBehavior="automatic" gerekir). Web: düz arka plan.
@@ -12,7 +18,8 @@ export function stackScreenOptions(theme: Theme) {
     headerTintColor: theme.blue,
     headerTitleStyle: { color: theme.label, fontFamily },
     headerBackButtonDisplayMode: 'minimal' as const,
-    contentStyle: { backgroundColor: theme.background },
+    // iPad ve geniş tarayıcı penceresinde içerik ortada, okunabilir genişlikte (telefonda etkisiz)
+    contentStyle: { backgroundColor: theme.background, width: '100%' as const, maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' as const },
   };
   if (Platform.OS === 'ios') {
     return {

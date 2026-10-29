@@ -16,6 +16,14 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.38.0 — `KOD`
+- **e-Arşiv / e-Fatura PDF'i:** Elle Fiş Ekle → "PDF'ten Doldur" ile mailden gelen faturanın PDF'i seçilir, yapay zekâ satıcıyı, tarihi, ödenecek tutarı, KDV'yi, fatura numarasını ve satıcının VKN'sini doldurur (alıcının numarası karıştırılmaz)
+- **Fatura karekodu:** Elle Fiş Ekle → "Karekodu Okut" ile e-Arşiv/e-Fatura çıktısındaki GİB karekodu okunur; tutar, KDV, tarih, fatura no ve VKN yapay zekâsız ve hatasız gelir. Firma adı karekodda olmadığı için bu VKN ile daha önce kaydettiğiniz fişten alınır (yoksa yazmanız istenir)
+- **Face ID kilidi:** Ayarlar → Güvenlik. Açıkken uygulama açılışta ve 1 dakikadan uzun arka planda kaldıktan sonra Face ID ister (olmazsa telefon şifresi); uygulama değiştiricide içerik gizlenir
+- **Ana ekran kısayolları:** Uygulama simgesine basılı tutunca Fiş Tara, Fatura Karekodu Okut, Elle / PDF Fatura Ekle ve Toplu Tarama
+- **iPad desteği:** Uygulama iPad'e de kurulabiliyor; listeler geniş ekranda ortada, okunabilir genişlikte
+- Face ID, kısayollar ve iPad yeni TestFlight derlemesiyle gelir; Expo Go'da ve eski derlemede bu özellikler görünmez (uygulama sorunsuz çalışmaya devam eder)
+
 ## 1.37.0 — `added62`
 - **Güvenlik:** Fişler artık uygulamanın Supabase sunucusundaki fonksiyonla okunuyor. Gemini anahtarı web sürümünün ve iPhone uygulamasının içinde bulunmuyor; yayın sırasında pakette anahtar bulunursa yayın durduruluyor. Fonksiyonu yalnızca giriş yapmış kullanıcı çağırabiliyor (oturum sunucuda doğrulanıyor). Yayın öncesi canlı sistemde geçici bir test hesabıyla uçtan uca deneniyor. (Not: 1.30.0'dan eski bir sürüme geri dönülürse fiş okuma çalışmaz.)
 - **Fiş no ve VKN/TCKN:** Yapay zekâ fişteki fiş numarasını ve firmanın vergi/TC kimlik numarasını da okuyor; formda düzeltilebiliyor. VKN/TCKN'nin kontrol hanesi doğrulanıyor, tutmazsa uyarı çıkıyor (okuma hatası olabilir)

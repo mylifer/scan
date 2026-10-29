@@ -25,6 +25,7 @@ import { supabase } from '../services/supabase/client';
 import { countReceipts, getStorageUsage, getSummary, type StorageUsage } from '../services/supabase/receiptsRepository';
 import { getVisionService } from '../services/vision';
 import { trashReady } from '../services/supabase/schema';
+import { lockAvailable, lockMethodLabel, setAppLock, useAppLockEnabled } from '../services/appLock';
 
 /** Supabase free plan depolama kotası */
 const STORAGE_QUOTA = 1024 * 1024 * 1024;
@@ -42,6 +43,22 @@ export default function SettingsScreen() {
   const [reminder, setReminder] = useState(false);
 
   const [monthly, setMonthly] = useState(false);
+  const locked = useAppLockEnabled();
+  const canLock = lockAvailable();
+  const [lockLabel, setLockLabel] = useState('Face ID');
+  useEffect(() => {
+    if (canLock) lockMethodLabel().then(setLockLabel);
+  }, [canLock]);
+
+  async function toggleLock(on: boolean) {
+    if (await setAppLock(on)) {
+      haptics.success();
+      showToast(on ? `Uygulama ${lockLabel} ile kilitlenecek` : 'Kilit kapatıldı');
+    } else if (on) {
+      haptics.error();
+      showToast('Kimlik doğrulanamadı; kilit açılmadı', 'error');
+    }
+  }
   useEffect(() => {
     if (!remindersSupported) return;
     isReminderEnabled().then(setReminder);
@@ -237,6 +254,18 @@ export default function SettingsScreen() {
           chevron
         />
       </ListSection>
+
+      {canLock ? (
+        <ListSection
+          header="Güvenlik"
+          footer={`Açıkken uygulama açılışta ve 1 dakikadan uzun arka planda kaldıktan sonra ${lockLabel} ister. ${lockLabel} olmazsa telefon şifresiyle açılır.`}>
+          <ListRow
+            title={`${lockLabel} ile Kilitle`}
+            icon={{ sf: 'faceid', ion: 'scan', color: theme.green }}
+            accessory={<Switch value={locked} onValueChange={toggleLock} accessibilityLabel={`${lockLabel} ile kilitle`} />}
+          />
+        </ListSection>
+      ) : null}
 
       <ListSection header="Veriler" footer="Fotoğraflar Supabase'in ücretsiz 1 GB alanında saklanır. Arşiv fotoğrafları sıkıştırılarak (~50–120 KB) kaydedilir.">
         <ListRow title="Fiş Sayısı" value={count === null ? '—' : String(count)} icon={{ sf: 'doc.text.fill', ion: 'document-text', color: theme.blue }} />

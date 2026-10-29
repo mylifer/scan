@@ -5,6 +5,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AppLockGate } from '../components/AppLockGate';
 import { CategoryPickerHost } from '../components/CategoryPickerHost';
 import { ResetPassword } from '../components/ResetPassword';
 import { ToastHost } from '../components/ToastHost';
@@ -14,13 +15,14 @@ import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { showAlert } from '../lib/alert';
 import { errorMessage } from '../lib/errors';
-import { largeTitle, stackScreenOptions } from '../lib/navigation';
+import { fullBleedContent, largeTitle, stackScreenOptions } from '../lib/navigation';
 import { useTheme } from '../lib/theme';
 import { setupNotifications, subscribeNotificationTaps } from '../services/reminders/notificationSetup';
 import { MONTHLY_SUMMARY_KIND } from '../lib/monthlySummaryPlan';
 import { refreshTaxReminders } from '../services/reminders/taxReminders';
 import { installGlobalErrorHandlers, reportError } from '../services/errorLog';
 import { loadCustomCategories } from '../services/supabase/categoriesRepository';
+import { setupQuickActions } from '../services/quickActions';
 
 // Bildirim davranışı uygulama açılışında bir kez ayarlanır (vergi hatırlatıcısı ön planda da görünsün);
 // açıksa hatırlatıcı planı 6 ay ileriye yenilenir
@@ -39,8 +41,11 @@ function RootNavigator() {
     void loadCustomCategories(userId);
   }, [userId]);
 
-  // Aylık özet bildirimine dokunulunca o ayın özetini aç (giriş yapılmışsa)
   const signedIn = !!session;
+  // Ana ekran kısayolları (Fiş Tara, Karekod…) yalnızca giriş yapılmışken
+  useEffect(() => (signedIn ? setupQuickActions() : undefined), [signedIn]);
+
+  // Aylık özet bildirimine dokunulunca o ayın özetini aç (giriş yapılmışsa)
   useEffect(() => {
     if (!signedIn) return;
     return subscribeNotificationTaps((data) => {
@@ -70,7 +75,7 @@ function RootNavigator() {
     <Stack screenOptions={stackScreenOptions(theme)}>
       <Stack.Protected guard={!!session}>
         <Stack.Screen name="index" options={{ title: 'Giderler', ...largeTitle }} />
-        <Stack.Screen name="camera" options={{ headerShown: false, animation: 'fade', presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="camera" options={{ headerShown: false, animation: 'fade', presentation: 'fullScreenModal', ...fullBleedContent }} />
         <Stack.Screen name="review" options={{ title: 'Fişi Kontrol Et' }} />
         <Stack.Screen name="manual" options={{ title: 'Elle Fiş Ekle', presentation: 'modal' }} />
         <Stack.Screen name="setup-categories" options={{ title: 'Veritabanı Güncellemesi' }} />
@@ -84,6 +89,7 @@ function RootNavigator() {
         <Stack.Screen name="firm/[key]" options={{ title: 'Firma' }} />
         <Stack.Screen name="setup-trash" options={{ title: 'Çöp Kutusu' }} />
         <Stack.Screen name="categories" options={{ title: 'Kategoriler' }} />
+        <Stack.Screen name="qr" options={{ headerShown: false, animation: 'fade', presentation: 'fullScreenModal', ...fullBleedContent }} />
         <Stack.Screen name="errors" options={{ title: 'Hata Kayıtları' }} />
         <Stack.Screen name="batch" options={{ title: 'Toplu Tarama', ...largeTitle }} />
         <Stack.Screen name="batch-review" options={{ title: 'İncele' }} />
@@ -123,7 +129,9 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AuthProvider>
           <StatusBar style={theme.dark ? 'light' : 'dark'} />
-          <RootNavigator />
+          <AppLockGate>
+            <RootNavigator />
+          </AppLockGate>
           <ToastHost />
           <ActionSheetHost />
           <CategoryPickerHost />

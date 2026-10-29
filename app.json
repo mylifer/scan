@@ -3,17 +3,18 @@
     "name": "FisTarayici",
     "slug": "fis-tarayici",
     "scheme": "fistarayici",
-    "version": "1.37.0",
+    "version": "1.38.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.adba.fistarayici",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleDisplayName": "Fiş Tarayıcı"
-      }
+      },
+      "requireFullScreen": true
     },
     "android": {
       "package": "com.adba.fistarayici",
@@ -55,7 +56,14 @@
       "@react-native-community/datetimepicker",
       "expo-image",
       "expo-sharing",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Uygulamayı Face ID ile kilitleyip açabilmek için."
+        }
+      ],
+      "expo-document-picker"
     ],
     "experiments": {
       "baseUrl": "/scan"

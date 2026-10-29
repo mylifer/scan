@@ -3,6 +3,7 @@
 // kendi kategorisi ve hata kaydı yazıp okur → test kullanıcısını (verileriyle birlikte) siler.
 import { readFileSync } from 'node:fs';
 
+import { parseGibQr } from '../src/lib/gibQr';
 import { parseReceiptJson } from '../src/services/vision/parseReceiptJson';
 import { RECEIPT_USER_PROMPT, receiptJsonSchema, receiptSystemPrompt } from '../src/services/vision/receiptPrompt';
 
@@ -10,6 +11,7 @@ const URL_ = process.env.SUPABASE_URL!;
 const PUBLISHABLE = process.env.SUPABASE_PUBLISHABLE_KEY!;
 const ADMIN = process.env.SUPABASE_ADMIN_KEY!;
 const IMAGE = process.env.IMAGE ?? 'e2e/fixtures/fis.jpg';
+const PDF = process.env.PDF ?? 'e2e/fixtures/fatura.pdf';
 
 const adminHeaders: Record<string, string> = { apikey: ADMIN, 'Content-Type': 'application/json' };
 if (ADMIN.startsWith('ey')) adminHeaders.Authorization = `Bearer ${ADMIN}`;
@@ -73,6 +75,29 @@ async function main() {
       check((d.fisNo ?? '').replace(/^0+/, '') === '42', 'Fiş no', d.fisNo);
       check(d.vkn === '6220529513', 'VKN', d.vkn);
     }
+
+    // 2b) e-Arşiv fatura PDF'i (satıcının VKN'si seçilmeli, alıcının TCKN'si değil)
+    const pdf = readFileSync(PDF).toString('base64');
+    const readPdf = await call('/functions/v1/analyze-receipt', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ image: pdf, mimeType: 'application/pdf', system: receiptSystemPrompt(), user: RECEIPT_USER_PROMPT, schema: receiptJsonSchema() }),
+    });
+    check(readPdf.status === 200 && typeof readPdf.body?.text === 'string', 'Fonksiyon PDF faturayı okudu', readPdf.status === 200 ? undefined : readPdf.body);
+    if (readPdf.status === 200) {
+      const f = parseReceiptJson(readPdf.body.text);
+      console.log('PDF:', JSON.stringify(f));
+      check(/OPET/i.test(f.firmaAdi), 'PDF firma (satıcı)', f.firmaAdi);
+      check(f.tarih === '15.09.2026', 'PDF tarih', f.tarih);
+      check(f.toplamTutar === 1200, 'PDF ödenecek tutar', f.toplamTutar);
+      check(f.kdvYuzde20 === 200 && f.kdvYuzde1 === 0 && f.kdvYuzde10 === 0, 'PDF KDV', [f.kdvYuzde1, f.kdvYuzde10, f.kdvYuzde20]);
+      check(f.fisNo === 'OPT2026000000123', 'PDF fatura no', f.fisNo);
+      check(f.vkn === '3900383669', 'PDF satıcı VKN (alıcı TCKN değil)', f.vkn);
+    }
+
+    // 2c) Karekod çözümü (sunucu gerekmez; yine de canlı denemede dursun)
+    const qr = parseGibQr('{"vkntckn":"3900383669","tarih":"2026-09-15","no":"OPT2026000000123","hesaplanankdv(20)":"200","odenecek":"1200"}');
+    check(qr?.toplamTutar === 1200 && qr.kdvYuzde20 === 200, 'Karekod çözüldü', qr);
 
     // 3) Yeni alanlar ve kendi kategorisiyle fiş kaydı (006 kurulumu)
     const cat = await call('/rest/v1/receipt_categories', { method: 'POST', token, headers: { Prefer: 'return=representation' }, body: JSON.stringify({ ad: 'Deneme Kategorisi' }) });
