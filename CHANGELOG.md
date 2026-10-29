@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.41.0 — `KOD`
+## 1.41.0 — `e595c65`
 - **e-Faturalar (QNB eSolutions):** Ayarlar → e-Faturalar. Gelen ve giden e-faturalar ay ay; satıcı/alıcı unvanı, fatura tarihi, belge no ve tutarı, üstte fatura sayısı ve dönem toplamı. Yalnızca görüntüleme, QNB'de hiçbir şey değiştirilmez
 - QNB bilgileri uygulamada değil, Supabase'de saklanır (`qnb-efatura` fonksiyonu); faturaları yalnızca izin verilen hesap görür
 - QNB girişi başarısız olursa otomatik tekrar denenmez (hesap kilitlenmesin)
