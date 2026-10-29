@@ -24,8 +24,12 @@ type Donem = { faturalar: EFatura[]; uyari?: string; bilgi?: string; kontrol?: K
 /** "49/49 ✓", "48/49 ⚠", sayı yoksa "49" */
 function kontrolMetni(k: Kontrol | undefined, liste: number): string {
   if (!k || k.qnb === null) return `${liste}`;
-  return `${k.liste}/${k.qnb} ${k.liste >= k.qnb ? '✓' : '⚠'}`;
+  const tamam = k.liste + (k.taslak ?? 0) >= k.qnb;
+  return `${k.liste}/${k.qnb - (k.taslak ?? 0)} ${tamam ? '✓' : '⚠'}`;
 }
+
+/** Kontrol tamam mı (taslaklar QNB sayısına dahil, listede yok) */
+const kontrolTamam = (k: Kontrol) => k.qnb === null || k.liste + (k.taslak ?? 0) >= k.qnb;
 
 type DenetimSatiri = { label: string; gelen?: string; giden?: string; sorun: boolean };
 
@@ -40,6 +44,22 @@ function money(value: number, currency: string): string {
   } catch {
     return `${value.toFixed(2)} ${currency}`;
   }
+}
+
+/** Dönemin KDV'si (TRY); iade faturaları ayrı. Hiçbir faturada KDV bilgisi yoksa satis null */
+function kdvToplami(list: EFatura[]) {
+  const gecerli = list.filter((f) => !f.iptal && !f.taslak && f.paraBirimi === 'TRY');
+  const bilinen = gecerli.filter((f) => typeof f.kdv === 'number');
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const iadeler = bilinen.filter((f) => f.tip === 'IADE');
+  const satislar = bilinen.filter((f) => f.tip !== 'IADE');
+  return {
+    satis: bilinen.length ? r2(satislar.reduce((t, f) => t + (f.kdv ?? 0), 0)) : null,
+    matrah: r2(satislar.reduce((t, f) => t + (f.matrah ?? 0), 0)),
+    iade: r2(iadeler.reduce((t, f) => t + (f.kdv ?? 0), 0)),
+    iadeAdet: iadeler.length,
+    eksik: gecerli.length - bilinen.length,
+  };
 }
 
 function dayMonth(iso: string): string {
@@ -121,7 +141,7 @@ export default function EFaturaScreen() {
           setData((cur) => ({ ...cur, [k]: d }));
           const metin = kontrolMetni(d.kontrol, d.faturalar.filter((f) => f.tur !== 'earsiv').length);
           satir[y] = metin;
-          if (d.kontrol?.qnb != null && d.kontrol.liste < d.kontrol.qnb) satir.sorun = true;
+          if (d.kontrol && !kontrolTamam(d.kontrol)) satir.sorun = true;
         } catch (e) {
           satir[y] = 'hata';
           satir.sorun = true;
@@ -144,10 +164,11 @@ export default function EFaturaScreen() {
   const refresh = () => fetchList(key, yon, range.from, range.to);
   const loading = !items && !error;
 
-  // İptal edilen e-Arşiv faturaları toplama girmez
   const denetimSorun = denetim?.filter((d) => d.sorun).length ?? 0;
   const denetimSuruyor = !!denetimDurum && !denetimDurum.startsWith('Durduruldu');
+  // İptal edilen e-Arşiv faturaları toplama girmez
   const totals = items ? totalsByCurrency(items.filter((f) => !f.iptal)) : [];
+  const kdv = kdvToplami(items ?? []);
   const yonLabel = yon === 'gelen' ? 'gelen' : 'giden';
 
   return (
@@ -165,6 +186,16 @@ export default function EFaturaScreen() {
           }}
         />
       }>
+      <ListSection>
+        <ListRow
+          title="Genel Özet"
+          subtitle="Başlangıçtan bugüne fatura sayıları ve KDV"
+          icon={{ sf: 'chart.bar.xaxis', ion: 'stats-chart', color: theme.purple }}
+          chevron
+          onPress={() => router.push('/efatura-ozet')}
+        />
+      </ListSection>
+
       <View style={styles.controls}>
         <SegmentedControl
           values={['Gelen', 'Giden']}
@@ -230,14 +261,23 @@ export default function EFaturaScreen() {
             {data[key]?.kontrol?.qnb != null ? (
               <ListRow
                 title="QNB Kontrolü"
-                subtitle="Listedeki / QNB'nin saydığı e-Fatura"
+                subtitle={`Listedeki / QNB'nin saydığı e-Fatura${data[key]?.kontrol?.taslak ? ` · ${data[key]!.kontrol!.taslak} gönderilmemiş taslak gizli` : ''}`}
                 value={kontrolMetni(data[key]?.kontrol, items.length)}
-                valueColor={data[key]!.kontrol!.liste >= data[key]!.kontrol!.qnb! ? theme.green : theme.orange}
+                valueColor={kontrolTamam(data[key]!.kontrol!) ? theme.green : theme.orange}
               />
             ) : null}
             {totals.map((x) => (
               <ListRow key={x.paraBirimi} title={totals.length > 1 ? `Toplam (${x.paraBirimi})` : 'Toplam'} value={money(x.toplam, x.paraBirimi)} valueColor={theme.label} />
             ))}
+            {kdv.satis !== null ? (
+              <ListRow
+                title={yon === 'gelen' ? 'KDV (indirilecek)' : 'KDV (hesaplanan)'}
+                subtitle={kdv.matrah ? `Matrah ${money(kdv.matrah, 'TRY')}${kdv.eksik ? ` · ${kdv.eksik} faturada KDV bilgisi yok` : ''}` : undefined}
+                value={money(kdv.satis, 'TRY')}
+                valueColor={theme.label}
+              />
+            ) : null}
+            {kdv.iade ? <ListRow title="KDV (iade faturaları)" subtitle={`${kdv.iadeAdet} iade faturası`} value={money(kdv.iade, 'TRY')} /> : null}
           </ListSection>
           <ListSection
             header={yon === 'gelen' ? 'Gelen faturalar' : 'Giden faturalar'}
@@ -251,7 +291,16 @@ export default function EFaturaScreen() {
                 key={f.ettn || f.belgeNo}
                 icon={{ sf: yon === 'gelen' ? 'tray.and.arrow.down.fill' : 'paperplane.fill', ion: yon === 'gelen' ? 'download' : 'send', color: f.iptal ? theme.gray : yon === 'gelen' ? theme.blue : theme.green }}
                 title={f.unvan}
-                subtitle={[dayMonth(f.tarih), f.belgeNo, f.tur === 'earsiv' ? 'e-Arşiv' : '', f.iptal ? 'İptal' : ''].filter(Boolean).join(' · ')}
+                subtitle={[
+                  dayMonth(f.tarih),
+                  f.belgeNo,
+                  f.tip === 'IADE' ? 'İade' : '',
+                  f.tur === 'earsiv' ? 'e-Arşiv' : '',
+                  f.iptal ? 'İptal' : '',
+                  typeof f.kdv === 'number' ? `KDV ${money(f.kdv, f.paraBirimi)}` : '',
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
                 value={money(f.tutar, f.paraBirimi)}
                 valueColor={f.iptal ? theme.secondaryLabel : theme.label}
                 chevron={!!f.ettn}

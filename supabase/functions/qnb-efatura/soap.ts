@@ -29,6 +29,13 @@ export interface EFatura {
   tur?: 'efatura' | 'earsiv';
   /** İptal edilmiş e-Arşiv faturası */
   iptal?: boolean;
+  /** Toplam KDV ve KDV hariç mal/hizmet tutarı (QNB tutar bilgisinden) */
+  kdv?: number;
+  matrah?: number;
+  /** SATIS, IADE, TEVKIFAT… (giden portal belgeTipi ya da UBL InvoiceTypeCode) */
+  tip?: string;
+  /** Gönderilmemiş taslak (geçici numara "---…"); listede ve toplamlarda gösterilmez */
+  taslak?: boolean;
 }
 
 export function xmlEscape(s: string): string {
@@ -116,14 +123,64 @@ export function tutarRequest(vkn: string, baslangic: string, bitis: string): { o
   };
 }
 
+/** QNB tutar bilgisi satırı (gelen/giden…TutarBilgileri…Sorgula) */
+export interface TutarSatiri {
+  ettn: string;
+  belgeNo: string;
+  /** YYYY-MM-DD (fatura tarihi) */
+  tarih: string;
+  /** Gelen'de gönderen VKN */
+  vkn: string;
+  matrah: number;
+  kdv: number;
+  tevkifat: number;
+  odenecek: number;
+  paraBirimi: string;
+  /** KDV oranına göre tutar: { "20": 24000, "10": 899.45 } */
+  oranlar: Record<string, number>;
+  /** Giden: SATIS / IADE … (sonradan eklenir) */
+  tip?: string;
+}
+
+export function parseTutarRows(xml: string): TutarSatiri[] {
+  return parseReturns(xml)
+    .filter((r) => r.ettn)
+    .map((r) => {
+      const oranlar: Record<string, number> = {};
+      for (const [k, v] of Object.entries(r)) {
+        const m = k.match(/^kdv(\d+)Tutar$/);
+        const n = parseTutar(v);
+        if (m && Number.isFinite(n) && n) oranlar[m[1]!] = n;
+      }
+      const num = (k: string) => (Number.isFinite(parseTutar(r[k])) ? parseTutar(r[k]) : 0);
+      return {
+        ettn: r.ettn!,
+        belgeNo: r.belgeNo ?? '',
+        tarih: isoDate(r.belgeTarihi),
+        vkn: r.gondericiVkn ?? '',
+        matrah: num('malHizmetToplamTutari'),
+        kdv: num('kdvToplamTutari'),
+        tevkifat: num('kdvTevkifatTutari'),
+        odenecek: num('odenecekTutar'),
+        paraBirimi: r.odenecekTutarDovizCinsi || r.kdvToplamTutariDovizCinsi || 'TRY',
+        oranlar,
+      };
+    });
+}
+
 /** gidenBelgeTutarBilgileriSorgula yanıtı → ETTN'ye göre ödenecek tutar */
 export function parseTutarMap(xml: string): Map<string, { tutar: number; paraBirimi: string }> {
   const out = new Map<string, { tutar: number; paraBirimi: string }>();
-  for (const r of parseReturns(xml)) {
-    const tutar = firstAmount(r, ['odenecekTutar']);
-    if (r.ettn && tutar) out.set(r.ettn, { tutar, paraBirimi: r.odenecekTutarDovizCinsi || 'TRY' });
-  }
+  for (const r of parseTutarRows(xml)) if (r.odenecek) out.set(r.ettn, { tutar: r.odenecek, paraBirimi: r.paraBirimi });
   return out;
+}
+
+/** Gelen faturaların tutar/KDV bilgileri, fatura tarihine göre (QNB en fazla 100 satır döndürür) */
+export function gelenTutarRequest(vkn: string, baslangic: string, bitis: string): { op: string; params: Record<string, string> } {
+  return {
+    op: 'gelenBelgeTutarBilgileriFaturaTarihineGoreSorgula',
+    params: { vergiTcKimlikNo: vkn, belgeTuru: 'FATURA', baslangicFaturaTarihi: baslangic, bitisFaturaTarihi: bitis },
+  };
 }
 
 /** QNB "X boş olamaz" dediğinde X için kullanılacak değer (bilinmeyen alan için yok) */
@@ -215,6 +272,8 @@ export function toEFatura(r: Record<string, string>, yon: Yon): EFatura {
     tutar,
     paraBirimi: r.odenecekTutarDovizCinsi || r.dovizCinsi || r.currency || 'TRY',
     profil: r.profileId || r.profileID || r.faturaSenaryo || r.belgeTipi || '',
+    ...(r.belgeTipi ? { tip: r.belgeTipi } : {}),
+    ...((r.belgeNo ?? '').startsWith('---') ? { taslak: true } : {}),
   };
 }
 
@@ -281,6 +340,8 @@ export function earsivToEFatura(r: Record<string, string>): EFatura {
     profil: r.profileId || 'EARSIVFATURA',
     tur: 'earsiv',
     iptal: !!r.iptalTarihi,
+    ...(Number.isFinite(parseTutar(r.vergilerToplami)) ? { kdv: parseTutar(r.vergilerToplami) } : {}),
+    ...(r.invoiceTypeCode ? { tip: r.invoiceTypeCode } : {}),
   };
 }
 
@@ -377,6 +438,8 @@ export interface FaturaKalem {
 
 export interface FaturaDetay {
   belgeNo: string;
+  /** InvoiceTypeCode: SATIS, IADE, TEVKIFAT… */
+  tip: string;
   tarih: string;
   saticiUnvan: string;
   saticiVkn: string;
@@ -402,8 +465,12 @@ function block(xml: string, tag: string): string {
 function blocks(xml: string, tag: string): string[] {
   return [...xml.matchAll(new RegExp(`<${P}${tag}\\b[^>]*>([\\s\\S]*?)<\\/${P}${tag}>`, 'g'))].map((m) => m[1]!);
 }
+/** CDATA içeriğini kaçışlı metne çevirir (etiket temizliğinde silinmesin) */
+function cdata(xml: string): string {
+  return xml.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, (_, c: string) => xmlEscape(c));
+}
 function text(xml: string, tag: string): string {
-  return xmlUnescape(block(xml, tag).replace(/<[^>]+>/g, '')).trim();
+  return xmlUnescape(cdata(block(xml, tag)).replace(/<[^>]+>/g, '')).trim();
 }
 function num(xml: string, tag: string): number {
   const n = Number(text(xml, tag));
@@ -452,6 +519,7 @@ export function parseUbl(xml: string): FaturaDetay {
   const cus = party(block(head, 'AccountingCustomerParty'));
   return {
     belgeNo: text(head, 'ID'),
+    tip: text(head, 'InvoiceTypeCode'),
     tarih: isoDate(text(head, 'IssueDate')),
     saticiUnvan: sup.unvan,
     saticiVkn: sup.vkn,
@@ -465,7 +533,7 @@ export function parseUbl(xml: string): FaturaDetay {
     kdvToplam: num(taxTotal, 'TaxAmount'),
     odenecek: num(total, 'PayableAmount'),
     notlar: blocks(head, 'Note')
-      .map((n) => xmlUnescape(n.replace(/<[^>]+>/g, '')).trim())
+      .map((n) => xmlUnescape(cdata(n).replace(/<[^>]+>/g, '')).trim())
       .filter((n) => n && n.length < 300)
       .slice(0, 5),
   };
