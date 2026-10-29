@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.39.0 — `KOD`
+## 1.39.0 — `5405738`
 - **Muhasebeciye gönderildi işareti:** Fişin detayında "Muhasebeciye Gönderildi" anahtarı; ana sayfada "Seç" → "Gönderildi" ile birden fazla fiş birlikte işaretlenir ya da işareti kaldırılır. Gönderilen fişlerin satırında yeşil kâğıt uçak simgesi görünür
 - **Dışa aktarımda hariç tutma:** Excel ve Muhasebe Paketi'nin üstünde "Gönderilenleri Hariç Tut" anahtarı (son seçiminiz hatırlanır); altında kaç fişin aktarılacağı yazar. Dışa aktarım hiçbir fişi kendiliğinden işaretlemez
 - "Yalnızca Gönderilmemişler" filtresi (dönemde gönderilmiş fiş varsa listenin üstünde)
