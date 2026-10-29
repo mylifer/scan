@@ -45,10 +45,9 @@ export class ClaudeVisionAdapter implements VisionService {
             {
               role: 'user',
               content: [
-                {
-                  type: 'image',
-                  source: { type: 'base64', media_type: image.mimeType, data: image.base64 },
-                },
+                image.mimeType === 'application/pdf'
+                  ? { type: 'document', source: { type: 'base64', media_type: image.mimeType, data: image.base64 } }
+                  : { type: 'image', source: { type: 'base64', media_type: image.mimeType, data: image.base64 } },
                 { type: 'text', text: RECEIPT_USER_PROMPT },
               ],
             },

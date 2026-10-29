@@ -21,6 +21,7 @@ export function receiptSystemPrompt(categories: readonly Kategori[] = allCategor
 - Çıktıyı SADECE geçerli bir JSON formatında ver, markdown veya ekstra metin kullanma.
 - JSON anahtarları şunlar olmalı: firmaAdi (string), tarih (DD.MM.YYYY formatında string), toplamTutar (number), kdvYuzde1 (number), kdvYuzde10 (number), kdvYuzde20 (number), kategori (string - ${categories.join(', ')} seçeneklerinden en uygununu tahmin et), fisNo (string), vkn (string).
 - Kategori rehberi: ${CATEGORY_GUIDE}.${custom.length ? `\n- Kullanıcının kendi kategorileri: ${custom.join(', ')}. Fiş bunlardan birine açıkça uyuyorsa onu seç.` : ''}
+- Belge bir e-Arşiv fatura ya da e-Fatura (PDF) olabilir. O zaman: firmaAdi faturayı DÜZENLEYEN satıcıdır (alıcı değil), tarih fatura tarihidir, fisNo fatura numarasıdır (ör. ABC2026000000123), vkn satıcının VKN/TCKN'sidir, toplamTutar vergiler dahil ÖDENECEK tutardır; KDV tutarlarını faturadaki "Hesaplanan KDV (%..)" satırlarından al (eski %8 oranını kdvYuzde10'a, %18'i kdvYuzde20'ye yaz).
 - Eğer fişte bazı KDV dilimleri yoksa değerlerini 0 yap. TOPLAM ve TOPKDV satırlarını asla karıştırma.
 - kdvYuzde1, kdvYuzde10 ve kdvYuzde20 alanlarına matrahı değil, o dilime ait KDV TUTARINI yaz.
 - Sayılarda ondalık ayırıcı olarak nokta kullan (ör. 1234.56), binlik ayırıcı kullanma.
@@ -29,7 +30,7 @@ export function receiptSystemPrompt(categories: readonly Kategori[] = allCategor
 - eminOlunmayanlar (string dizisi): fişte silik, kesik, buruşuk ya da okunaksız olduğu için değerini tahmin ettiğin alanların adlarını yaz (${RECEIPT_FIELDS.join(', ')}). Net okuduğun alanları yazma; hepsinden eminsen boş dizi [] ver. Kategori fişte yazmadığı için yalnızca firmadan anlaşılamıyorsa ekle. Fişte hiç bulunmayan fisNo/vkn'yi ekleme.`;
 }
 
-export const RECEIPT_USER_PROMPT = 'Bu POS fişini oku ve kurallara uygun JSON döndür.';
+export const RECEIPT_USER_PROMPT = 'Bu POS fişini ya da faturayı oku ve kurallara uygun JSON döndür.';
 
 /** Yapılandırılmış çıktıyı destekleyen sağlayıcılar için JSON şeması. */
 export function receiptJsonSchema(categories: readonly Kategori[] = allCategories()) {

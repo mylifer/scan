@@ -1,9 +1,9 @@
 import type { ReceiptData } from '../../types/receipt';
 
 export interface ReceiptImage {
-  /** JPEG verisi, base64 (data: öneki olmadan) */
+  /** JPEG/PNG görsel ya da PDF (e-Arşiv / e-Fatura), base64 (data: öneki olmadan) */
   base64: string;
-  mimeType: 'image/jpeg' | 'image/png';
+  mimeType: 'image/jpeg' | 'image/png' | 'application/pdf';
 }
 
 /**

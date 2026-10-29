@@ -11,7 +11,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 /** İstemcideki zincirle aynı: asıl model yoğunsa sırayla yedekler */
 const MODELS = ['gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest'];
 const TRANSIENT = new Set([429, 500, 502, 503, 504]);
-/** ~6 MB base64 görsel sınırı (uygulama ~300 KB gönderir); kötüye kullanıma karşı */
+/** ~6 MB base64 sınırı (fotoğraf ~300 KB, e-Arşiv PDF'i birkaç yüz KB); kötüye kullanıma karşı */
 const MAX_IMAGE_CHARS = 8_000_000;
 
 const CORS = {
@@ -22,7 +22,7 @@ const CORS = {
 
 interface Body {
   image: string;
-  mimeType: 'image/jpeg' | 'image/png';
+  mimeType: 'image/jpeg' | 'image/png' | 'application/pdf';
   system: string;
   user: string;
   schema: unknown;
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     return reply(400, { message: 'Geçersiz istek gövdesi.' });
   }
   if (typeof b.image !== 'string' || !b.image || b.image.length > MAX_IMAGE_CHARS) return reply(400, { message: 'Görsel eksik ya da çok büyük.' });
-  if (b.mimeType !== 'image/jpeg' && b.mimeType !== 'image/png') return reply(400, { message: 'Desteklenmeyen görsel türü.' });
+  if (!['image/jpeg', 'image/png', 'application/pdf'].includes(b.mimeType)) return reply(400, { message: 'Desteklenmeyen dosya türü.' });
   if (typeof b.system !== 'string' || typeof b.user !== 'string') return reply(400, { message: 'İstem eksik.' });
 
   let firstTransient: { status: number; message: string } | null = null;

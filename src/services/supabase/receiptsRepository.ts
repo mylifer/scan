@@ -216,6 +216,14 @@ export async function findPossibleDuplicates(data: ReceiptData, excludeId?: stri
   return (rows ?? []).map(toRecord).filter((r) => isLikelyDuplicate(key, r)).slice(0, 3);
 }
 
+/** Bu VKN/TCKN ile en son kaydedilen fişin firma adı ve kategorisi (karekodda firma adı yok) */
+export async function findFirmByVkn(vkn: string): Promise<{ firma_adi: string; kategori: Kategori } | null> {
+  if (!vkn) return null;
+  const { data, error } = await supabase.from(TABLE).select('firma_adi, kategori').eq('vkn', vkn).order('created_at', { ascending: false }).limit(1);
+  if (error || !data?.length) return null;
+  return { firma_adi: String(data[0].firma_adi ?? ''), kategori: String(data[0].kategori ?? 'diğer') };
+}
+
 /** Kullanıcının daha önce kullandığı etiketler, en çok kullanılandan aza (formda öneri olarak) */
 export async function getKnownTags(limit = 30): Promise<string[]> {
   const { data, error } = await supabase.from(TABLE).select('etiketler').order('created_at', { ascending: false }).limit(500);

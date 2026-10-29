@@ -11,6 +11,8 @@ Türkiye'deki POS fişlerini kamerayla okuyup gider ve KDV takibi yapan Expo (Re
 - **25 hazır kategori + kendi kategorileriniz** (Ayarlar → Kategoriler; seçicide yazıp tek dokunuşla eklenir) ve **kategori hafızası:** bir firmayı hangi kategoriyle kaydettiyseniz sonraki fişleri de öyle gelir (`supabase/migrations/006_receipt_extras.sql`)
 - **Fiş no, VKN/TCKN, not ve etiketler:** VKN/TCKN kontrol hanesi doğrulanır; mükerrer fiş uyarısı fiş no ve VKN'yi de kullanır; arama not ve etiketlerde (#proje) de çalışır
 - **Fiş ekleme:** Kamera, galeri, toplu çekim ya da **elle** (fotoğrafsız; sonradan fotoğraf eklenebilir)
+- **e-Arşiv / e-Fatura:** PDF'ten (yapay zekâ) ya da faturadaki GİB karekodundan (kesin değerler) otomatik doldurma
+- **Face ID kilidi**, **ana ekran kısayolları** (simgeye basılı tutunca) ve **iPad** desteği (yeni TestFlight derlemesiyle)
 - **Fiş detayı:** Düzenleme, tam ekran yakınlaştırılabilir fotoğraf, paylaşma, mükerrer fiş ve şüpheli KDV uyarıları
 - **Dışa aktarma:** Excel (.xlsx; her fişin yanında fotoğrafı, tıklayınca kendi sayfasında tam boyutu; çok aylı dönemlerde "Aylar" sayfası) ve Muhasebe Paketi (Excel + tüm fotoğraflar, ZIP; akış olarak üretilir)
 - **Ayarlar:** Hesap, aylık bütçe, KDV hatırlatıcısı (iPhone, her ayın 25'i), depolama kullanımı, kategoriler, yapay zekâ modeli, hata kayıtları, sürüm bilgisi
