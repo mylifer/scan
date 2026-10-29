@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.43.1 — `KOD`
+## 1.43.1 — `c0b9f5a`
 - Giden e-Arşiv faturaları: QNB sayfa başına en fazla 100 fatura kabul ediyor; sorgu 100'lük sayfalarla yapılıyor, tarih YYYYAAGG
 
 ## 1.43.0 — `23a9b00`
