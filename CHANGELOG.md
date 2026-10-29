@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.47.0 — `KOD`
+## 1.47.0 — `81edf78`
 - **İade faturaları KDV hesabına girdi:** Kestiğiniz iade faturasının (iade ettiğiniz alış) KDV'si artık *Düşebileceğim KDV*'den düşülüyor; daha önce ayrı gösterilip hesaba katılmıyordu, bu yüzden ödenecek KDV olduğundan az görünüyordu. KDV sekmesinde "İade ettiğim alışlar" satırı, Tüm Aylar özetinde indirilecek KDV bu düşülmüş hâliyle
 - Ana sayfadaki arama çubuğunda koyu temada yazı siyah görünüyordu; düzeltildi
 - e-Faturalar, KDV ve Ayarlar sekmelerinin üstündeki büyük boşluk giderildi (iPhone)
