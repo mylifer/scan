@@ -4,16 +4,16 @@ import { router, useFocusEffect } from 'expo-router';
 import { type ComponentType, useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { EmptyState } from '../components/ui/EmptyState';
-import { Icon } from '../components/ui/Icon';
-import { ListRow, ListSection } from '../components/ui/List';
-import { HARIC_KEY } from '../lib/efaturaOzet';
-import { errorMessage } from '../lib/errors';
-import { capitalizeTr, monthRange } from '../lib/format';
-import { haptics } from '../lib/haptics';
-import { type as t, useTheme } from '../lib/theme';
-import { type EFatura, EFaturaError, type Kontrol, listEFaturalar, totalsByCurrency, type Yon } from '../services/efatura/qnbEfatura';
-import { supabase } from '../services/supabase/client';
+import { EmptyState } from '../../../components/ui/EmptyState';
+import { Icon } from '../../../components/ui/Icon';
+import { ListRow, ListSection } from '../../../components/ui/List';
+import { HARIC_KEY } from '../../../lib/efaturaOzet';
+import { errorMessage } from '../../../lib/errors';
+import { capitalizeTr, monthRange } from '../../../lib/format';
+import { haptics } from '../../../lib/haptics';
+import { type as t, useTheme } from '../../../lib/theme';
+import { type EFatura, EFaturaError, type Kontrol, totalsByCurrency, type Yon } from '../../../services/efatura/qnbEfatura';
+import { donemCache as cache, donemGetir, type Donem, qnbDurum } from '../../../services/efatura/donemCache';
 
 // RN 0.88 tipleri NativeMethods dışa aktarmıyor (bkz. PeriodPicker)
 const SegmentedControl = NativeSegmentedControl as unknown as ComponentType<SegmentedControlProps>;
@@ -21,7 +21,6 @@ const SegmentedControl = NativeSegmentedControl as unknown as ComponentType<Segm
 const YONLER: Yon[] = ['gelen', 'giden'];
 const AY = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
 
-type Donem = { faturalar: EFatura[]; uyari?: string; bilgi?: string; kontrol?: Kontrol };
 
 /** "49/49 ✓", "48/49 ⚠", sayı yoksa "49" */
 function kontrolMetni(k: Kontrol | undefined, liste: number): string {
@@ -35,10 +34,6 @@ const kontrolTamam = (k: Kontrol) => k.qnb === null || k.liste + (k.taslak ?? 0)
 
 type DenetimSatiri = { label: string; gelen?: string; giden?: string; sorun: boolean };
 
-/** Uygulama açıkken sekme/ay değişince QNB'ye yeniden sorulmasın */
-const cache = new Map<string, Donem>();
-/** QNB girişi başarısız olduysa otomatik yükleme durur (hesap kilitlenmesin); yalnızca elle denenir */
-let loginFailed = false;
 
 function money(value: number, currency: string): string {
   try {
@@ -108,21 +103,21 @@ export default function EFaturaScreen() {
   const bilgi = data[key]?.bilgi;
   const error =
     errors[key] ??
-    (loginFailed && !items ? { message: 'QNB girişi daha önce başarısız oldu. Bilgileri kontrol ettikten sonra elle tekrar deneyin.', login: true } : undefined);
+    (qnbDurum.loginFailed && !items ? { message: 'QNB girişi daha önce başarısız oldu. Bilgileri kontrol ettikten sonra elle tekrar deneyin.', login: true } : undefined);
 
-  const fetchList = useCallback(async (k: string, y: Yon, from: string, to: string) => {
+  const fetchList = useCallback(async (k: string, y: Yon, from: string, to: string, force = false) => {
     if (inflight.current.has(k)) return;
     inflight.current.add(k);
     setBusy(k);
     try {
-      const list: Donem = await listEFaturalar((name, options) => supabase.functions.invoke(name, options), y, from, to);
-      loginFailed = false;
+      const list: Donem = await donemGetir(y, from, to, force);
+      qnbDurum.loginFailed = false;
       cache.set(k, list);
       setData((d) => ({ ...d, [k]: list }));
       setErrors(({ [k]: _, ...rest }) => rest);
     } catch (e) {
       const login = e instanceof EFaturaError && e.loginFailed;
-      if (login) loginFailed = true;
+      if (login) qnbDurum.loginFailed = true;
       setErrors((cur) => ({ ...cur, [k]: { message: errorMessage(e), login } }));
     } finally {
       inflight.current.delete(k);
@@ -132,7 +127,7 @@ export default function EFaturaScreen() {
 
   // Dönem ilk kez açılınca getir (önbellekte varsa ya da QNB girişi başarısızsa sorma)
   useEffect(() => {
-    if (!items && !errors[key] && !loginFailed) void fetchList(key, yon, range.from, range.to);
+    if (!items && !errors[key] && !qnbDurum.loginFailed) void fetchList(key, yon, range.from, range.to);
   }, [items, errors, key, yon, range.from, range.to, fetchList]);
 
   // Son 12 ayın gelen/giden e-Fatura sayılarını QNB'ninkiyle karşılaştırır (sırayla, giriş hatasında durur)
@@ -148,7 +143,7 @@ export default function EFaturaScreen() {
         setDenetimDurum(`${capitalizeTr(r.label)} · ${y === 'gelen' ? 'Gelen' : 'Giden'}…`);
         const k = `${y}:${r.from}`;
         try {
-          const d: Donem = await listEFaturalar((name, options) => supabase.functions.invoke(name, options), y, r.from, r.to);
+          const d: Donem = await donemGetir(y, r.from, r.to, true);
           cache.set(k, d);
           setData((cur) => ({ ...cur, [k]: d }));
           const metin = kontrolMetni(d.kontrol, d.faturalar.filter((f) => f.tur !== 'earsiv').length);
@@ -158,7 +153,7 @@ export default function EFaturaScreen() {
           satir[y] = 'hata';
           satir.sorun = true;
           if (e instanceof EFaturaError && e.loginFailed) {
-            loginFailed = true;
+            qnbDurum.loginFailed = true;
             satirlar.push(satir);
             setDenetim([...satirlar]);
             setDenetimDurum(`Durduruldu: ${errorMessage(e)}`);
@@ -173,7 +168,7 @@ export default function EFaturaScreen() {
   };
 
   /** Elle yenileme: önbelleği ve giriş engelini yok sayar */
-  const refresh = () => fetchList(key, yon, range.from, range.to);
+  const refresh = () => fetchList(key, yon, range.from, range.to, true);
   const loading = !items && !error;
 
   const denetimSorun = denetim?.filter((d) => d.sorun).length ?? 0;
@@ -200,16 +195,6 @@ export default function EFaturaScreen() {
           }}
         />
       }>
-      <ListSection>
-        <ListRow
-          title="Genel Özet"
-          subtitle="Başlangıçtan bugüne fatura sayıları ve KDV"
-          icon={{ sf: 'chart.bar.xaxis', ion: 'stats-chart', color: theme.purple }}
-          chevron
-          onPress={() => router.push('/efatura-ozet')}
-        />
-      </ListSection>
-
       <View style={styles.controls}>
         <SegmentedControl
           values={['Gelen', 'Giden']}

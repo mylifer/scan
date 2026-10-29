@@ -5,24 +5,27 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '../../lib/theme';
 
-/** Ekranın altında buzlu cam arka planlı araç çubuğu. */
-export function Toolbar({ children }: { children: ReactNode }) {
+/**
+ * Ekranın altında buzlu cam arka planlı araç çubuğu.
+ * inTab: sekme çubuğunun üstünde; alttaki güvenli alanı sekme çubuğu zaten bırakır.
+ */
+export function Toolbar({ children, inTab }: { children: ReactNode; inTab?: boolean }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   return (
     <BlurView
       intensity={80}
       tint={theme.dark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
-      style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12), borderTopColor: theme.separator }]}>
+      style={[styles.bar, { paddingBottom: inTab ? 12 : Math.max(insets.bottom, 12), borderTopColor: theme.separator }]}>
       <View style={styles.inner}>{children}</View>
     </BlurView>
   );
 }
 
 /** Araç çubuğunun kapladığı yükseklik (içeriğin altına boşluk bırakmak için) */
-export function useToolbarHeight(rows = 1) {
+export function useToolbarHeight(rows = 1, inTab = false) {
   const insets = useSafeAreaInsets();
-  return 12 + rows * 50 + (rows - 1) * 10 + Math.max(insets.bottom, 12) + 16;
+  return 12 + rows * 50 + (rows - 1) * 10 + (inTab ? 12 : Math.max(insets.bottom, 12)) + 16;
 }
 
 const styles = StyleSheet.create({

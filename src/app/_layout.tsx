@@ -74,14 +74,13 @@ function RootNavigator() {
   return (
     <Stack screenOptions={stackScreenOptions(theme)}>
       <Stack.Protected guard={!!session}>
-        <Stack.Screen name="index" options={{ title: 'Giderler', ...largeTitle }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, title: '' }} />
         <Stack.Screen name="camera" options={{ headerShown: false, animation: 'fade', presentation: 'fullScreenModal', ...fullBleedContent }} />
         <Stack.Screen name="review" options={{ title: 'Fişi Kontrol Et' }} />
         <Stack.Screen name="manual" options={{ title: 'Elle Fiş Ekle', presentation: 'modal' }} />
         <Stack.Screen name="setup-categories" options={{ title: 'Veritabanı Güncellemesi' }} />
         <Stack.Screen name="budget" options={{ title: 'Aylık Bütçe', presentation: 'modal' }} />
         <Stack.Screen name="tax-calendar" options={{ title: 'Vergi Takvimi' }} />
-        <Stack.Screen name="efatura" options={{ title: 'e-Faturalar', ...largeTitle }} />
         <Stack.Screen name="efatura-detay" options={{ title: 'Fatura' }} />
         <Stack.Screen name="efatura-ozet" options={{ title: 'e-Fatura Özeti', ...largeTitle }} />
         <Stack.Screen name="merge-firms" options={{ title: 'Firma Adları' }} />
@@ -97,7 +96,6 @@ function RootNavigator() {
         <Stack.Screen name="batch" options={{ title: 'Toplu Tarama', ...largeTitle }} />
         <Stack.Screen name="batch-review" options={{ title: 'İncele' }} />
         <Stack.Screen name="receipt/[id]" options={{ title: 'Fiş' }} />
-        <Stack.Screen name="settings" options={{ title: 'Ayarlar', presentation: 'modal', ...largeTitle }} />
       </Stack.Protected>
       <Stack.Protected guard={!session}>
         <Stack.Screen name="login" options={{ headerShown: false }} />

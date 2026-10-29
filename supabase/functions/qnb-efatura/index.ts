@@ -452,6 +452,7 @@ async function kdvEkle(list: EFatura[], yon: Yon, baslangic: string, bitis: stri
       if (!r || f.tur === 'earsiv') continue;
       f.kdv = r.kdv;
       f.matrah = r.matrah;
+      if (r.tevkifat) f.tevkifat = r.tevkifat;
       if (!f.tutar) Object.assign(f, { tutar: r.odenecek, paraBirimi: r.paraBirimi });
     }
   } catch (e) {

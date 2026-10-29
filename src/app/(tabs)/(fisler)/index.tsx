@@ -2,52 +2,52 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Platform, RefreshControl, ScrollView, Switch, Text, View } from 'react-native';
 
-import { CategorySection } from '../components/dashboard/CategorySection';
-import { ExportSection } from '../components/dashboard/ExportSection';
-import { InsightsSection } from '../components/dashboard/InsightsSection';
-import { PeriodPicker } from '../components/dashboard/PeriodPicker';
-import { ReceiptRow, SwipeToDelete } from '../components/dashboard/ReceiptRow';
-import { SummaryCard } from '../components/dashboard/SummaryCard';
-import { TrendChart } from '../components/TrendChart';
-import { Button } from '../components/ui/Button';
-import { EmptyState } from '../components/ui/EmptyState';
-import { HeaderIconButton, HeaderTextButton } from '../components/ui/HeaderButton';
-import { ListRow, ListSection } from '../components/ui/List';
-import { SearchField } from '../components/ui/SearchField';
-import { Toolbar, useToolbarHeight } from '../components/ui/Toolbar';
-import { useDrafts } from '../hooks/useDrafts';
-import { useMonthlySummary } from '../hooks/useMonthlySummary';
-import { confirmDestructive, showActionSheet } from '../lib/actionSheet';
-import { showCategoryPicker } from '../lib/categoryPicker';
-import { showSentSheet } from '../lib/bulkSent';
-import { showAlert } from '../lib/alert';
-import { errorMessage } from '../lib/errors';
-import { formatTL } from '../lib/format';
-import { haptics } from '../lib/haptics';
-import { periodRange } from '../lib/period';
-import { formatRunAt } from '../lib/schedule';
-import { receiptMatcher } from '../lib/search';
-import { monthlyInsights } from '../lib/insights';
-import { groupByMonth, SORT_OPTIONS, type SortKey, sortReceipts } from '../lib/sort';
-import { useMonthlyBudget } from '../lib/budget';
-import { categoryMeta, type as t, useTheme } from '../lib/theme';
-import { showToast } from '../lib/toast';
-import { compareWithPreviousMonth } from '../lib/trend';
-import { VERSION_LABEL } from '../lib/version';
-import { reloadApp, useWebUpdateAvailable } from '../lib/webUpdate';
-import { enqueueDraftUpload, resumePendingUploads } from '../services/drafts/uploadQueue';
-import { pickPhotos } from '../services/image/pickPhotos';
-import { updateMonthlySummary } from '../services/reminders/monthlySummary';
-import { monthOffset } from '../lib/monthlySummaryPlan';
-import { categoriesReady } from '../services/supabase/schema';
-import { deleteReceipt as deleteReceiptRecord, purgeExpiredTrash, updateReceiptsCategory } from '../services/supabase/receiptsRepository';
-import { ESKI_KATEGORILER, type Kategori, type ReceiptRecord } from '../types/receipt';
+import { CategorySection } from '../../../components/dashboard/CategorySection';
+import { ExportSection } from '../../../components/dashboard/ExportSection';
+import { InsightsSection } from '../../../components/dashboard/InsightsSection';
+import { PeriodPicker } from '../../../components/dashboard/PeriodPicker';
+import { ReceiptRow, SwipeToDelete } from '../../../components/dashboard/ReceiptRow';
+import { SummaryCard } from '../../../components/dashboard/SummaryCard';
+import { TrendChart } from '../../../components/TrendChart';
+import { Button } from '../../../components/ui/Button';
+import { EmptyState } from '../../../components/ui/EmptyState';
+import { HeaderIconButton, HeaderTextButton } from '../../../components/ui/HeaderButton';
+import { ListRow, ListSection } from '../../../components/ui/List';
+import { SearchField } from '../../../components/ui/SearchField';
+import { Toolbar, useToolbarHeight } from '../../../components/ui/Toolbar';
+import { useDrafts } from '../../../hooks/useDrafts';
+import { useMonthlySummary } from '../../../hooks/useMonthlySummary';
+import { confirmDestructive, showActionSheet } from '../../../lib/actionSheet';
+import { showCategoryPicker } from '../../../lib/categoryPicker';
+import { showSentSheet } from '../../../lib/bulkSent';
+import { showAlert } from '../../../lib/alert';
+import { errorMessage } from '../../../lib/errors';
+import { formatTL } from '../../../lib/format';
+import { haptics } from '../../../lib/haptics';
+import { periodRange } from '../../../lib/period';
+import { formatRunAt } from '../../../lib/schedule';
+import { receiptMatcher } from '../../../lib/search';
+import { monthlyInsights } from '../../../lib/insights';
+import { groupByMonth, SORT_OPTIONS, type SortKey, sortReceipts } from '../../../lib/sort';
+import { useMonthlyBudget } from '../../../lib/budget';
+import { categoryMeta, type as t, useTheme } from '../../../lib/theme';
+import { showToast } from '../../../lib/toast';
+import { compareWithPreviousMonth } from '../../../lib/trend';
+import { VERSION_LABEL } from '../../../lib/version';
+import { reloadApp, useWebUpdateAvailable } from '../../../lib/webUpdate';
+import { enqueueDraftUpload, resumePendingUploads } from '../../../services/drafts/uploadQueue';
+import { pickPhotos } from '../../../services/image/pickPhotos';
+import { updateMonthlySummary } from '../../../services/reminders/monthlySummary';
+import { monthOffset } from '../../../lib/monthlySummaryPlan';
+import { categoriesReady } from '../../../services/supabase/schema';
+import { deleteReceipt as deleteReceiptRecord, purgeExpiredTrash, updateReceiptsCategory } from '../../../services/supabase/receiptsRepository';
+import { ESKI_KATEGORILER, type Kategori, type ReceiptRecord } from '../../../types/receipt';
 
 const PAGE = 25;
 
 export default function DashboardScreen() {
   const theme = useTheme();
-  const toolbarHeight = useToolbarHeight();
+  const toolbarHeight = useToolbarHeight(1, true);
   const { summary: s, previousCategories, trend, loading, error, offlineSince, refresh, remove, period, label, showMonthly, showYearly, showAll, prev, next, goToMonth } =
     useMonthlySummary();
   const { drafts, processor } = useDrafts();
@@ -336,9 +336,7 @@ export default function DashboardScreen() {
                 title={allSelected ? 'Seçimi Kaldır' : 'Tümünü Seç'}
                 onPress={() => setSelected(allSelected ? new Set() : new Set(visibleList.map((r) => r.id)))}
               />
-            ) : (
-              <HeaderIconButton icon={{ sf: 'person.crop.circle', ion: 'person-circle-outline' }} onPress={() => router.push('/settings')} label="Ayarlar" />
-            ),
+            ) : null,
           headerRight: () =>
             selecting ? (
               <HeaderTextButton title="Bitti" bold onPress={exitSelection} />
@@ -551,7 +549,7 @@ export default function DashboardScreen() {
         </Text>
       </ScrollView>
 
-      <Toolbar>
+      <Toolbar inTab>
         {selecting ? (
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Button
