@@ -41,7 +41,9 @@ import {
   parseUbl,
   missingField,
   PORTAL_DEFAULTS,
+  parseTutarMap,
   portalListRequest,
+  tutarRequest,
   QNB_URL,
   type Yon,
 } from './soap.ts';
@@ -231,6 +233,39 @@ async function portalList(baslangic: string, bitis: string): Promise<{ list: EFa
   return { list };
 }
 
+/**
+ * Portal listesi bazen tutarı boş/0 döndürüyor. Önce gidenBelgeTutarBilgileriSorgula (gönderim tarihi;
+ * fatura tarihinden birkaç gün sonra gönderilmiş olabilir diye aralık 10 gün uzatılır), hâlâ eksikse
+ * en fazla 10 fatura için UBL'deki ödenecek tutar kullanılır. Hata olursa sessizce geçilir.
+ */
+async function tutarlariTamamla(list: EFatura[], baslangic: string, bitis: string): Promise<void> {
+  let eksik = list.filter((f) => !f.tutar && f.ettn);
+  if (!eksik.length) return;
+  try {
+    const son = new Date(Math.min(Date.parse(bitis) + 10 * 86_400_000, Date.now())).toISOString().slice(0, 10);
+    const { op, params } = tutarRequest(QNB_VKN, compact(baslangic), compact(son));
+    const map = parseTutarMap(await soap(QNB_URL, op, params, { wrap: false }));
+    for (const f of eksik) {
+      const t = map.get(f.ettn);
+      if (t) Object.assign(f, t);
+    }
+  } catch (e) {
+    if (e instanceof LoginError) return;
+    console.log('tutar sorgusu:', e instanceof Error ? e.message : e);
+  }
+  eksik = list.filter((f) => !f.tutar && f.ettn).slice(0, 10);
+  for (const f of eksik) {
+    try {
+      const d = parseUbl(new TextDecoder('utf-8').decode(await belge('efatura', 'giden', f.ettn, 'UBL')));
+      if (d.odenecek) Object.assign(f, { tutar: d.odenecek, paraBirimi: d.paraBirimi });
+      if (!f.unvan || f.unvan === f.vkn) f.unvan = d.aliciUnvan || f.unvan;
+    } catch (e) {
+      if (e instanceof LoginError) return;
+      console.log('UBL tutarı:', e instanceof Error ? e.message : e);
+    }
+  }
+}
+
 async function listele(yon: Yon, baslangic: string, bitis: string) {
   const { op, params } = listRequest(yon, QNB_VKN, compact(baslangic), compact(bitis));
   const efatura = parseList(await soap(QNB_URL, op, params), yon);
@@ -241,8 +276,10 @@ async function listele(yon: Yon, baslangic: string, bitis: string) {
     portal.hata ? `Portal e-Faturaları alınamadı: ${portal.hata}` : '',
     earsiv.hata ? `e-Arşiv faturaları alınamadı: ${earsiv.hata}` : '',
   ].filter(Boolean);
+  const giden = mergeLists(efatura, portal.list);
+  await tutarlariTamamla(giden, baslangic, bitis);
   return {
-    faturalar: mergeLists(efatura, portal.list, earsiv.list),
+    faturalar: mergeLists(giden, earsiv.list),
     ...(uyarilar.length ? { uyari: uyarilar.join('\n\n') } : {}),
     ...(earsiv.bilgi ? { bilgi: `e-Fatura: web servis ${efatura.length}, portal ${portal.list.length} kayıt. ${earsiv.bilgi}` } : {}),
   };

@@ -249,3 +249,19 @@ describe('eksik alan mesajı', () => {
     assert.equal(missingField('QNB hatası: tarih aralığı çok uzun'), null);
   });
 });
+
+describe('tutar okuma', () => {
+  it('farklı biçimler ve tutar sorgusu', async () => {
+    const { parseTutar, parseTutarMap, tutarRequest } = await import('../../supabase/functions/qnb-efatura/soap');
+    assert.equal(parseTutar('1234.56'), 1234.56);
+    assert.equal(parseTutar('1.234,56'), 1234.56);
+    assert.equal(parseTutar('1,234.56'), 1234.56);
+    assert.equal(parseTutar('1234,5'), 1234.5);
+    assert.ok(Number.isNaN(parseTutar('')));
+    const [f] = parseList('<return><belgeNo>G1</belgeNo><belgeTarihi>20261012</belgeTarihi><tutar>3.600,00</tutar></return>', 'giden');
+    assert.equal(f!.tutar, 3600);
+    assert.equal(tutarRequest('1', '20261001', '20261110').op, 'gidenBelgeTutarBilgileriSorgula');
+    const map = parseTutarMap('<return><ettn>a</ettn><odenecekTutar>120.50</odenecekTutar><odenecekTutarDovizCinsi>TRY</odenecekTutarDovizCinsi></return><return><ettn>b</ettn><odenecekTutar>0</odenecekTutar></return>');
+    assert.deepEqual([...map], [['a', { tutar: 120.5, paraBirimi: 'TRY' }]]);
+  });
+});
