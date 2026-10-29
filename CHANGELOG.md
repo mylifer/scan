@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.38.0 — `KOD`
+## 1.38.0 — `01c4d83`
 - **e-Arşiv / e-Fatura PDF'i:** Elle Fiş Ekle → "PDF'ten Doldur" ile mailden gelen faturanın PDF'i seçilir, yapay zekâ satıcıyı, tarihi, ödenecek tutarı, KDV'yi, fatura numarasını ve satıcının VKN'sini doldurur (alıcının numarası karıştırılmaz)
 - **Fatura karekodu:** Elle Fiş Ekle → "Karekodu Okut" ile e-Arşiv/e-Fatura çıktısındaki GİB karekodu okunur; tutar, KDV, tarih, fatura no ve VKN yapay zekâsız ve hatasız gelir. Firma adı karekodda olmadığı için bu VKN ile daha önce kaydettiğiniz fişten alınır (yoksa yazmanız istenir)
 - **Face ID kilidi:** Ayarlar → Güvenlik. Açıkken uygulama açılışta ve 1 dakikadan uzun arka planda kaldıktan sonra Face ID ister (olmazsa telefon şifresi); uygulama değiştiricide içerik gizlenir
