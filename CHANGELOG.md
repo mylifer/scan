@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.46.0 — `KOD`
+## 1.46.0 — `f29a349`
 - **Yeni gezinme: alt sekmeler.** Fişler · e-Faturalar · KDV · Ayarlar. Ayarlar artık açılır pencere değil; e-Faturalar ve KDV ana sekme. Fiş, fatura detayı, kamera gibi ekranlar sekmenin üstünde açılır, geri tuşu hep geldiğiniz sekmeye döner
 - **KDV sekmesi (yeni):** Seçilen ay için *Kestiğim KDV* (giden faturalar; alıcının ödediği tevkifat düşülerek beyan edilecek tutar), *Düşebileceğim KDV* (gelen e-Faturalar ve taranan fişler, ayrı satırlarda) ve *Bu ay ödenecek / sonraki aya devreden KDV*. Hem e-Faturası hem fişi olan alışveriş iki kez sayılmaz (aynı gün, aynı tutar, aynı VKN). İade faturaları ayrı gösterilir. Renkler anlam taşımaz; her rakamın ne olduğu yanında yazar
 - Tüm Aylar (genel özet) ve Vergi Takvimi KDV sekmesinden açılır
