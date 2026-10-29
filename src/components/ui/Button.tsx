@@ -57,7 +57,10 @@ export function Button({
       ) : (
         <View style={styles.content}>
           {icon && <Icon {...icon} size={size === 'large' ? 18 : 16} color={fg} weight="semibold" />}
-          <Text style={[size === 'large' ? t.headline : { ...t.subhead, fontWeight: '600' }, { color: fg }]}>{title}</Text>
+          {/* Dar düğmelerde (ör. seçim çubuğu) iki satıra kaymasın; iOS'ta gerekirse yazı küçülür */}
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[size === 'large' ? t.headline : { ...t.subhead, fontWeight: '600' }, { color: fg, flexShrink: 1 }]}>
+            {title}
+          </Text>
         </View>
       )}
     </Pressable>

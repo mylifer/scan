@@ -573,7 +573,7 @@ export default function DashboardScreen() {
               icon={{ sf: 'tag', ion: 'pricetag-outline' }}
               onPress={bulkCategory}
               disabled={!selectedList.length || bulkBusy}
-              style={{ flex: 1 }}
+              style={{ flex: 1, paddingHorizontal: 8 }}
             />
             <Button
               title="Gönderildi"
@@ -581,7 +581,7 @@ export default function DashboardScreen() {
               icon={{ sf: 'paperplane', ion: 'paper-plane-outline' }}
               onPress={bulkSent}
               disabled={!selectedList.length || bulkBusy}
-              style={{ flex: 1 }}
+              style={{ flex: 1, paddingHorizontal: 8 }}
             />
             <Button
               title={selectedList.length ? `Sil (${selectedList.length})` : 'Sil'}
@@ -590,7 +590,7 @@ export default function DashboardScreen() {
               onPress={bulkDelete}
               loading={bulkBusy}
               disabled={!selectedList.length || bulkBusy}
-              style={{ flex: 1 }}
+              style={{ flex: 1, paddingHorizontal: 8 }}
             />
           </View>
         ) : (
