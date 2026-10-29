@@ -16,6 +16,13 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.39.0 — `5405738`
+- **Muhasebeciye gönderildi işareti:** Fişin detayında "Muhasebeciye Gönderildi" anahtarı; ana sayfada "Seç" → "Gönderildi" ile birden fazla fiş birlikte işaretlenir ya da işareti kaldırılır. Gönderilen fişlerin satırında yeşil kâğıt uçak simgesi görünür
+- **Dışa aktarımda hariç tutma:** Excel ve Muhasebe Paketi'nin üstünde "Gönderilenleri Hariç Tut" anahtarı (son seçiminiz hatırlanır); altında kaç fişin aktarılacağı yazar. Dışa aktarım hiçbir fişi kendiliğinden işaretlemez
+- "Yalnızca Gönderilmemişler" filtresi (dönemde gönderilmiş fiş varsa listenin üstünde)
+- Gönderilmiş bir fişin tutarı ya da tarihi düzeltilirse, düzeltilmiş hâlinin de gönderilebilmesi için işaretin kaldırılması önerilir
+- Seçim çubuğundaki düğme yazıları dar ekranda iki satıra kaymıyor
+
 ## 1.38.0 — `01c4d83`
 - **e-Arşiv / e-Fatura PDF'i:** Elle Fiş Ekle → "PDF'ten Doldur" ile mailden gelen faturanın PDF'i seçilir, yapay zekâ satıcıyı, tarihi, ödenecek tutarı, KDV'yi, fatura numarasını ve satıcının VKN'sini doldurur (alıcının numarası karıştırılmaz)
 - **Fatura karekodu:** Elle Fiş Ekle → "Karekodu Okut" ile e-Arşiv/e-Fatura çıktısındaki GİB karekodu okunur; tutar, KDV, tarih, fatura no ve VKN yapay zekâsız ve hatasız gelir. Firma adı karekodda olmadığı için bu VKN ile daha önce kaydettiğiniz fişten alınır (yoksa yazmanız istenir)

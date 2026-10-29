@@ -103,5 +103,5 @@ export function useMonthlySummary() {
 }
 
 function withExtras(r: ReceiptRecord): ReceiptRecord {
-  return { ...r, fis_no: r.fis_no ?? null, vkn: r.vkn ?? null, notlar: r.notlar ?? null, etiketler: Array.isArray(r.etiketler) ? r.etiketler : [] };
+  return { ...r, fis_no: r.fis_no ?? null, vkn: r.vkn ?? null, notlar: r.notlar ?? null, etiketler: Array.isArray(r.etiketler) ? r.etiketler : [], muhasebe_gonderildi_at: r.muhasebe_gonderildi_at ?? null };
 }

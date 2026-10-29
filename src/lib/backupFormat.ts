@@ -29,6 +29,7 @@ export interface BackupReceipt {
   vkn?: string | null;
   notlar?: string | null;
   etiketler?: string[];
+  muhasebe_gonderildi_at?: string | null;
   /** ZIP içindeki fotoğraf yolu; fotoğraf yoksa ya da yedeklenemediyse null */
   photo: string | null;
 }
@@ -68,6 +69,7 @@ export function buildManifest(
       vkn: r.vkn,
       notlar: r.notlar,
       etiketler: r.etiketler,
+      muhasebe_gonderildi_at: r.muhasebe_gonderildi_at,
       photo: photos.has(r.id) ? photoEntryName(r.id) : null,
     })),
   };
@@ -127,7 +129,7 @@ export function parseManifest(text: string): BackupManifest {
 }
 
 /** Yedekteki ek alanlar (eski yedeklerde yok; bozuk değerler atılır) */
-function extrasOf(r: Partial<BackupReceipt>): Pick<BackupReceipt, 'fis_no' | 'vkn' | 'notlar' | 'etiketler'> {
+function extrasOf(r: Partial<BackupReceipt>): Pick<BackupReceipt, 'fis_no' | 'vkn' | 'notlar' | 'etiketler' | 'muhasebe_gonderildi_at'> {
   const fis = cleanFisNo(r.fis_no ?? '');
   const vkn = cleanTaxId(r.vkn ?? '');
   const not = cleanNote(typeof r.notlar === 'string' ? r.notlar : '');
@@ -136,6 +138,7 @@ function extrasOf(r: Partial<BackupReceipt>): Pick<BackupReceipt, 'fis_no' | 'vk
     vkn: vkn.length === 10 || vkn.length === 11 ? vkn : null,
     notlar: not || null,
     etiketler: Array.isArray(r.etiketler) ? parseTags(r.etiketler) : [],
+    muhasebe_gonderildi_at: typeof r.muhasebe_gonderildi_at === 'string' && !Number.isNaN(Date.parse(r.muhasebe_gonderildi_at)) ? r.muhasebe_gonderildi_at : null,
   };
 }
 
