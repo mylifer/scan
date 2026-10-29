@@ -12,6 +12,7 @@ Türkiye'deki POS fişlerini kamerayla okuyup gider ve KDV takibi yapan Expo (Re
 - **Fiş no, VKN/TCKN, not ve etiketler:** VKN/TCKN kontrol hanesi doğrulanır; mükerrer fiş uyarısı fiş no ve VKN'yi de kullanır; arama not ve etiketlerde (#proje) de çalışır
 - **Fiş ekleme:** Kamera, galeri, toplu çekim ya da **elle** (fotoğrafsız; sonradan fotoğraf eklenebilir)
 - **e-Arşiv / e-Fatura:** PDF'ten (yapay zekâ) ya da faturadaki GİB karekodundan (kesin değerler) otomatik doldurma
+- **e-Faturalar (QNB eSolutions):** Ayarlar → e-Faturalar; gelen ve giden e-faturalar ay ay, satıcı/alıcı unvanı ve tutarıyla (yalnızca görüntüleme). Supabase fonksiyonu `qnb-efatura` üzerinden; QNB bilgileri sunucuda durur. Kurulum: GitHub secret'ları `QNB_USER`, `QNB_PASS`, `QNB_VKN`, `QNB_ALLOWED_EMAILS` → "Supabase fonksiyonunu yayınla" iş akışı
 - **Face ID kilidi**, **ana ekran kısayolları** (simgeye basılı tutunca) ve **iPad** desteği (yeni TestFlight derlemesiyle)
 - **Fiş detayı:** Düzenleme, tam ekran yakınlaştırılabilir fotoğraf, paylaşma, mükerrer fiş ve şüpheli KDV uyarıları
 - **Dışa aktarma:** Excel (.xlsx; her fişin yanında fotoğrafı, tıklayınca kendi sayfasında tam boyutu; çok aylı dönemlerde "Aylar" sayfası) ve Muhasebe Paketi (Excel + tüm fotoğraflar, ZIP; akış olarak üretilir)

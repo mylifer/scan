@@ -222,6 +222,35 @@ test('vergi takvimi: önümüzdeki son günler, muhtasar isteğe bağlı', async
   await close();
 });
 
+test('e-faturalar: gelen/giden sekmeleri, özet; QNB giriş hatasında otomatik tekrar yok', async (b) => {
+  const fatura = (belgeNo, unvan, tutar) => ({ ettn: belgeNo, belgeNo, tarih: isoDate(0, 1), unvan, vkn: '1234567890', tutar, paraBirimi: 'TRY', profil: 'TEMELFATURA' });
+  const efatura = (body) =>
+    body.yon === 'gelen'
+      ? { body: { faturalar: [fatura('A1', 'ÖRNEK GIDA A.Ş.', 1753.14), fatura('A2', 'İKİNCİ LTD. ŞTİ.', 129)] } }
+      : { status: 502, body: { code: 'qnb_login', message: 'QNB girişi başarısız: username.pwd.mismatch' } };
+  const { page, backend, errors, close } = await open(b, { receipts: thisMonth(), efatura });
+  await page.getByLabel('Ayarlar').click();
+  await page.waitForTimeout(800);
+  await page.getByText('e-Faturalar').click();
+  await page.waitForTimeout(1200);
+  let text = await page.locator('body').innerText();
+  assert.ok(text.includes('ÖRNEK GIDA A.Ş.') && text.includes('İKİNCİ LTD. ŞTİ.'), 'gelen faturalar görünmeli');
+  assert.ok(text.includes('1.882,14'), 'toplam 1.882,14 olmalı');
+  const gelen = backend.log.find((l) => l.startsWith('EFATURA gelen'));
+  assert.match(gelen ?? '', /^EFATURA gelen \d{4}-\d{2}-01 \d{4}-\d{2}-\d{2}$/, 'bu ayın ilk ve son günü sorulmalı');
+  await page.getByText('Giden', { exact: true }).click();
+  await page.waitForTimeout(1000);
+  text = await page.locator('body').innerText();
+  assert.ok(text.includes('QNB girişi başarısız'), 'giriş hatası gösterilmeli');
+  // Önceki aya geçmek QNB'ye yeniden sormamalı (hesap kilitlenmesin)
+  await page.getByLabel('Önceki ay').click();
+  await page.waitForTimeout(800);
+  assert.equal(backend.log.filter((l) => l.startsWith('EFATURA giden')).length, 1, 'giriş hatasından sonra otomatik istek atılmamalı');
+  assert.ok((await page.locator('body').innerText()).includes('elle tekrar deneyin'));
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 test('firma adları: farklı yazımlar tek ada birleştirilir', async (b) => {
   const { page, backend, errors, close } = await open(b, {
     receipts: [
