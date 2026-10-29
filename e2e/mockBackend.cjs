@@ -91,7 +91,7 @@ async function installBackend(page, opts = {}) {
     }
     if (path.startsWith('/auth/v1/logout')) return route.fulfill({ status: 204, body: '' });
     if (path.startsWith('/rest/v1/rpc/receipt_schema_version')) {
-      const v = opts.schema ?? 6;
+      const v = opts.schema ?? 7;
       return v ? json(route, v) : json(route, { code: 'PGRST202', message: 'Could not find the function' }, 404);
     }
     const rest = path.match(/^\/rest\/v1\/(\w+)/);
