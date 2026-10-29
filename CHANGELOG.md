@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.47.1 — `KOD`
+## 1.47.1 — `3b64633`
 - **Web sürümü açılmıyordu (yalnızca yükleniyor dairesi görünüyordu); düzeltildi.** Expo SDK 58 ile sayfa iskeletinin uygulama dosyalarını kendisi eklemesi gerekiyor; eklenmediği için tarayıcı uygulamayı hiç yüklemiyordu
 
 ## 1.47.0 — `81edf78`
