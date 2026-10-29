@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.46.1 — `KOD`
+## 1.46.1 — `d1468c5`
 - e-Faturalar listesinde **sıralama**: liste başlığının sağındaki düğmeyle En Yeni, En Eski, En Yüksek/Düşük Tutar, En Yüksek KDV, Firma (A–Z). Seçim telefonda hatırlanır
 
 ## 1.46.0 — `f29a349`
