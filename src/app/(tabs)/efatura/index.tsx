@@ -7,7 +7,9 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, T
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { Icon } from '../../../components/ui/Icon';
 import { ListRow, ListSection } from '../../../components/ui/List';
+import { showActionSheet } from '../../../lib/actionSheet';
 import { HARIC_KEY } from '../../../lib/efaturaOzet';
+import { EFATURA_SORT_KEY, EFATURA_SORTS, type EFaturaSort, isEFaturaSort, sortEFaturalar } from '../../../lib/efaturaSort';
 import { errorMessage } from '../../../lib/errors';
 import { capitalizeTr, monthRange } from '../../../lib/format';
 import { haptics } from '../../../lib/haptics';
@@ -82,6 +84,27 @@ export default function EFaturaScreen() {
   const [pulling, setPulling] = useState(false);
   /** Genel Özet'te toplamlardan çıkarılan faturalar (olağan dışı yüksek tutar) */
   const [haric, setHaric] = useState<ReadonlySet<string>>(new Set());
+  /** Listenin sıralaması (telefonda hatırlanır) */
+  const [siralama, setSiralama] = useState<EFaturaSort>('yeni');
+  useEffect(() => {
+    AsyncStorage.getItem(EFATURA_SORT_KEY)
+      .then((v) => {
+        if (isEFaturaSort(v)) setSiralama(v);
+      })
+      .catch(() => {});
+  }, []);
+  const siralamaSec = () =>
+    showActionSheet({
+      title: 'Sırala',
+      options: EFATURA_SORTS.map((o) => ({
+        label: o.key === siralama ? `✓ ${o.label}` : o.label,
+        onPress: () => {
+          haptics.select();
+          setSiralama(o.key);
+          AsyncStorage.setItem(EFATURA_SORT_KEY, o.key).catch(() => {});
+        },
+      })),
+    });
   // Özet ekranından dönünce güncel olsun
   useFocusEffect(
     useCallback(() => {
@@ -284,12 +307,13 @@ export default function EFaturaScreen() {
           </ListSection>
           <ListSection
             header={yon === 'gelen' ? 'Gelen faturalar' : 'Giden faturalar'}
+            headerAction={{ label: EFATURA_SORTS.find((o) => o.key === siralama)!.label, onPress: siralamaSec, accessibilityLabel: 'Sıralamayı değiştir' }}
             footer={
               yon === 'gelen'
                 ? 'QNB eSolutions’tan fatura tarihine göre listelenir. Tutar, faturadaki ödenecek tutardır.'
                 : 'e-Fatura (gönderim tarihine göre) ve e-Arşiv faturaları birlikte listelenir. İptal edilenler toplama girmez.'
             }>
-            {items.map((f) => (
+            {sortEFaturalar(items, siralama).map((f) => (
               <ListRow
                 key={f.ettn || f.belgeNo}
                 icon={{ sf: yon === 'gelen' ? 'tray.and.arrow.down.fill' : 'paperplane.fill', ion: yon === 'gelen' ? 'download' : 'send', color: f.iptal ? theme.gray : yon === 'gelen' ? theme.blue : theme.green }}
