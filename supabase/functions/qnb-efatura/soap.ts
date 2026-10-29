@@ -32,6 +32,8 @@ export interface EFatura {
   /** Toplam KDV ve KDV hariç mal/hizmet tutarı (QNB tutar bilgisinden) */
   kdv?: number;
   matrah?: number;
+  /** Alıcının tevkif ettiği KDV (giden tevkifatlı faturalar) */
+  tevkifat?: number;
   /** SATIS, IADE, TEVKIFAT… (giden portal belgeTipi ya da UBL InvoiceTypeCode) */
   tip?: string;
   /** Gönderilmemiş taslak (geçici numara "---…"); listede ve toplamlarda gösterilmez */

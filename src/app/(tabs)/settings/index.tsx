@@ -1,31 +1,30 @@
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
-import { HeaderTextButton } from '../components/ui/HeaderButton';
-import { ListRow, ListSection } from '../components/ui/List';
-import { useAuth } from '../hooks/useAuth';
-import { confirmDestructive, showActionSheet } from '../lib/actionSheet';
-import { showAlert } from '../lib/alert';
-import { errorMessage } from '../lib/errors';
-import { formatBytes, formatTL, monthRange } from '../lib/format';
-import { haptics } from '../lib/haptics';
-import { tabular, type as t, useTheme } from '../lib/theme';
-import { HOST_APP_NAME, VERSION_LABEL } from '../lib/version';
-import { useMonthlyBudget } from '../lib/budget';
-import { showToast } from '../lib/toast';
-import { disableReminder, enableReminder, isReminderEnabled, remindersSupported } from '../services/reminders/taxReminders';
-import { disableMonthlySummary, enableMonthlySummary, isMonthlySummaryEnabled } from '../services/reminders/monthlySummary';
-import { applyRestore, createBackup, previewRestore } from '../services/backup/backup';
-import { pickBackupFile } from '../services/backup/pickBackupFile';
-import { buildReceiptsWorkbook, exportFilename, shareXlsx, shareZipStream } from '../services/export/exportReceipts';
-import { backupFilename } from '../lib/backupFormat';
-import { clearCache } from '../lib/offlineCache';
-import { supabase } from '../services/supabase/client';
-import { countReceipts, getStorageUsage, getSummary, type StorageUsage } from '../services/supabase/receiptsRepository';
-import { getVisionService } from '../services/vision';
-import { trashReady } from '../services/supabase/schema';
-import { lockAvailable, lockMethodLabel, setAppLock, useAppLockEnabled } from '../services/appLock';
+import { ListRow, ListSection } from '../../../components/ui/List';
+import { useAuth } from '../../../hooks/useAuth';
+import { confirmDestructive, showActionSheet } from '../../../lib/actionSheet';
+import { showAlert } from '../../../lib/alert';
+import { errorMessage } from '../../../lib/errors';
+import { formatBytes, formatTL, monthRange } from '../../../lib/format';
+import { haptics } from '../../../lib/haptics';
+import { tabular, type as t, useTheme } from '../../../lib/theme';
+import { HOST_APP_NAME, VERSION_LABEL } from '../../../lib/version';
+import { useMonthlyBudget } from '../../../lib/budget';
+import { showToast } from '../../../lib/toast';
+import { disableReminder, enableReminder, isReminderEnabled, remindersSupported } from '../../../services/reminders/taxReminders';
+import { disableMonthlySummary, enableMonthlySummary, isMonthlySummaryEnabled } from '../../../services/reminders/monthlySummary';
+import { applyRestore, createBackup, previewRestore } from '../../../services/backup/backup';
+import { pickBackupFile } from '../../../services/backup/pickBackupFile';
+import { buildReceiptsWorkbook, exportFilename, shareXlsx, shareZipStream } from '../../../services/export/exportReceipts';
+import { backupFilename } from '../../../lib/backupFormat';
+import { clearCache } from '../../../lib/offlineCache';
+import { supabase } from '../../../services/supabase/client';
+import { countReceipts, getStorageUsage, getSummary, type StorageUsage } from '../../../services/supabase/receiptsRepository';
+import { getVisionService } from '../../../services/vision';
+import { trashReady } from '../../../services/supabase/schema';
+import { lockAvailable, lockMethodLabel, setAppLock, useAppLockEnabled } from '../../../services/appLock';
 
 /** Supabase free plan depolama kotası */
 const STORAGE_QUOTA = 1024 * 1024 * 1024;
@@ -205,8 +204,6 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={{ backgroundColor: theme.background }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingTop: 16, paddingBottom: 40 }}>
-      <Stack.Screen options={{ headerRight: () => <HeaderTextButton title="Bitti" bold onPress={() => router.back()} /> }} />
-
       <View style={[styles.account, { backgroundColor: theme.card }]}>
         <View style={[styles.avatar, { backgroundColor: theme.gray }]}>
           <Text style={styles.avatarText}>{(email[0] ?? '?').toLocaleUpperCase('tr-TR')}</Text>
@@ -230,12 +227,6 @@ export default function SettingsScreen() {
           title="Vergi Takvimi"
           icon={{ sf: 'calendar', ion: 'calendar', color: theme.red }}
           onPress={() => router.push('/tax-calendar')}
-          chevron
-        />
-        <ListRow
-          title="e-Faturalar"
-          icon={{ sf: 'doc.richtext.fill', ion: 'receipt', color: theme.teal }}
-          onPress={() => router.push('/efatura')}
           chevron
         />
         {remindersSupported ? (

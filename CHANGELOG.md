@@ -16,6 +16,12 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.46.0 — `KOD`
+- **Yeni gezinme: alt sekmeler.** Fişler · e-Faturalar · KDV · Ayarlar. Ayarlar artık açılır pencere değil; e-Faturalar ve KDV ana sekme. Fiş, fatura detayı, kamera gibi ekranlar sekmenin üstünde açılır, geri tuşu hep geldiğiniz sekmeye döner
+- **KDV sekmesi (yeni):** Seçilen ay için *Kestiğim KDV* (giden faturalar; alıcının ödediği tevkifat düşülerek beyan edilecek tutar), *Düşebileceğim KDV* (gelen e-Faturalar ve taranan fişler, ayrı satırlarda) ve *Bu ay ödenecek / sonraki aya devreden KDV*. Hem e-Faturası hem fişi olan alışveriş iki kez sayılmaz (aynı gün, aynı tutar, aynı VKN). İade faturaları ayrı gösterilir. Renkler anlam taşımaz; her rakamın ne olduğu yanında yazar
+- Tüm Aylar (genel özet) ve Vergi Takvimi KDV sekmesinden açılır
+- e-Faturalar ve KDV sekmeleri aynı ayın verisini QNB'ye iki kez sormaz
+
 ## 1.45.1 — `03f263c`
 - e-Fatura Özeti: olağan dışı yüksek tutarlı giden faturalar artık varsayılan olarak toplamlara katılmıyor ("Toplamlara Dahil Et" anahtarıyla geri alınabilir). Aylık listede de KDV ve tutar toplamına girmiyor, satırında "Toplama dahil değil" yazıyor
 
