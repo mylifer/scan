@@ -60,13 +60,8 @@ export async function fetchInvoicePdf(
 
   const promise = (async () => {
     try {
-      const invoke: InvokeFn =
-        invoker ??
-        customInvoker ??
-        (await (async () => {
-          const { supabase } = await import('../supabase/client');
-          return (name: string, options: { body: Record<string, unknown> }) => supabase.functions.invoke(name, options);
-        })());
+      const invoke: InvokeFn | null = invoker ?? customInvoker;
+      if (!invoke) throw new Error('PDF invoker tanımlı değil.');
 
       const b64 = await getEFaturaPdf(invoke, yon, ettn, tur);
       const bytes = base64ToBytes(b64);
