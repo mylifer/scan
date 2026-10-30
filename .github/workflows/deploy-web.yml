@@ -29,8 +29,10 @@ jobs:
       # Publishable key herkese açık olacak şekilde tasarlanmıştır; güvenliği RLS kuralları sağlar
       EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_7gu66leZ4qgYJPcOpcsh7g_yss8NOyN
       # Fişler Supabase fonksiyonu (analyze-receipt) üzerinden okunur: Gemini anahtarı sunucuda durur,
-      # web sürümüne gömülmez. (1.30.0'dan eski bir sürüme geri dönülürse fiş okuma çalışmaz.)
+      # web sürümüne gömülmez.
       EXPO_PUBLIC_VISION_PROVIDER: edge
+      NEXT_PUBLIC_SUPABASE_URL: https://fzhagwcysltvpcgdfrnl.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_7gu66leZ4qgYJPcOpcsh7g_yss8NOyN
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,21 +50,43 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Tür denetimi
+      - name: Kök tür denetimi
         run: npx tsc --noEmit
-      - name: Testler
+      - name: Kök testler
         run: npm test
-      - name: Kod denetimi (lint)
+      - name: Kök kod denetimi (lint)
         run: npx expo lint
-      - name: Önceki parçaları geri yükle
+
+      # Yeni Next.js web uygulaması (web/ varsa)
+      - name: Next.js Web uygulamasını derle
+        if: hashFiles('web/package.json') != ''
+        run: |
+          echo "Next.js 16 Web uygulaması derleniyor..."
+          cd web
+          npm ci
+          npm run typecheck
+          npm run lint
+          npm test
+          npm run build
+          cd ..
+          rm -rf dist
+          mkdir -p dist
+          cp -r web/out/* dist/
+
+      # Eski Expo Web sürümü için fallback (yalnızca web/ yoksa - eski commit'e geri dönüldüğünde)
+      - name: Eski Expo Web parçalarını geri yükle
+        if: hashFiles('web/package.json') == ''
         uses: actions/cache/restore@v4
         with:
           path: .previous-chunks
           key: web-chunks-${{ github.sha }}
           restore-keys: |
             web-chunks-
-      - run: npx expo export --platform web --output-dir dist
-      - name: Önceki parçaları pakete ekle (eski oturumların 404 almasını önler)
+      - name: Eski Expo Web derlemesi
+        if: hashFiles('web/package.json') == ''
+        run: npx expo export --platform web --output-dir dist
+      - name: Eski Expo parçalarını pakete ekle
+        if: hashFiles('web/package.json') == ''
         run: |
           if [ -d .previous-chunks ]; then
             mkdir -p dist/_expo/static/js/web
@@ -70,12 +94,13 @@ jobs:
           fi
           mkdir -p .previous-chunks
           cp -n dist/_expo/static/js/web/*.js .previous-chunks/ 2>/dev/null || true
-      - name: Parçaları önbelleğe kaydet
+      - name: Eski Expo parçalarını önbelleğe kaydet
+        if: hashFiles('web/package.json') == ''
         uses: actions/cache/save@v4
-        if: always()
         with:
           path: .previous-chunks
           key: web-chunks-${{ github.sha }}
+
       - name: Yapay zekâ anahtarı pakette olmamalı
         # Google API anahtarları "AIza" ile başlar; pakette bulunursa yayın durdurulur
         run: |

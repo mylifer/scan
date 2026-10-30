@@ -60,7 +60,9 @@
     "lint": "expo lint",
     "test:e2e:build": "EXPO_OFFLINE=1 CI=1 EXPO_PUBLIC_SUPABASE_URL=https://e2e.supabase.co EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=e2e EXPO_PUBLIC_VISION_PROVIDER=gemini EXPO_PUBLIC_GEMINI_API_KEY=e2e npx expo export --platform web --clear --output-dir dist-e2e",
     "test:e2e": "npm run test:e2e:build && node e2e/run.cjs",
-    "web:check": "cd web && npm run typecheck && npm run lint && npm test && npm run build"
+    "web:check": "cd web && npm run typecheck && npm run lint && npm test && npm run build",
+    "web:dev": "cd web && npm run dev",
+    "web:build": "cd web && npm run build"
   },
   "private": true
 }
