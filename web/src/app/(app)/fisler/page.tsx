@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { ReceiptsView } from "@/components/receipts/receipts-view";
 
 export const metadata: Metadata = { title: "Fişler · Fiş Tarayıcı" };
 
 export default function Page() {
-  return <PlaceholderPage title="Fişler" />;
+  return <ReceiptsView />;
 }

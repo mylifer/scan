@@ -10,21 +10,12 @@ import { buildMonthlySeries, type MonthPoint } from '../../lib/trend';
 import type { Kategori, ReceiptData, ReceiptRecord } from '../../types/receipt';
 import { trashCutoff } from '../../lib/trash';
 import { supabase } from './client';
+import { chunks, extraColumns, toRecord } from './receiptRows';
 import { trashReady } from './schema';
 
 const TABLE = 'receipts';
 const TRASH_TABLE = 'receipt_trash';
 export const RECEIPT_IMAGES_BUCKET = 'receipt-images';
-
-/** Fiş no, VKN, not ve etiket sütunları (006 kurulumu); boş değerler null/[] olarak yazılır */
-function extraColumns(data: Pick<ReceiptData, 'fisNo' | 'vkn' | 'notlar' | 'etiketler'>) {
-  return {
-    fis_no: data.fisNo?.trim() || null,
-    vkn: data.vkn?.trim() || null,
-    notlar: data.notlar?.trim() || null,
-    etiketler: data.etiketler ?? [],
-  };
-}
 
 export interface SaveResult {
   record: ReceiptRecord;
@@ -99,6 +90,7 @@ export async function getReceiptImageUrl(path: string, expiresInSec = 300): Prom
 }
 
 export type { PeriodSummary } from '../../lib/summary';
+export { recordToData } from './receiptRows';
 
 /** Supabase tek istekte en fazla 1000 satır döndürür; daha fazlası sayfalanarak alınır. */
 const PAGE_SIZE = 1000;
@@ -357,13 +349,6 @@ export async function markReceiptsSent(ids: string[], sent: boolean): Promise<nu
   return changed;
 }
 
-/** Çok sayıda kimlik tek istekte gönderilirse adres çok uzar (URL sınırı); 100'erli gruplara bölünür */
-function chunks<T>(list: T[], size = 100): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
-  return out;
-}
-
 /** Seçilen fişlerin kategorisini değiştirir. @returns değişen fiş sayısı */
 export async function updateReceiptsCategory(ids: string[], kategori: Kategori): Promise<number> {
   let changed = 0;
@@ -461,24 +446,6 @@ export async function updateReceipt(id: string, data: ReceiptData): Promise<Rece
   if (error) throw new Error(`Güncellenemedi: ${error.message}`);
   invalidateFirmCategories();
   return toRecord(row);
-}
-
-/** Kayıttaki (DB) fişi forma uygun ReceiptData'ya çevirir. */
-export function recordToData(r: ReceiptRecord): ReceiptData {
-  const [y, m, d] = r.tarih.split('-');
-  return {
-    firmaAdi: r.firma_adi,
-    tarih: `${d}.${m}.${y}`,
-    toplamTutar: r.toplam_tutar,
-    kdvYuzde1: r.kdv_yuzde1,
-    kdvYuzde10: r.kdv_yuzde10,
-    kdvYuzde20: r.kdv_yuzde20,
-    kategori: r.kategori,
-    ...(r.fis_no ? { fisNo: r.fis_no } : {}),
-    ...(r.vkn ? { vkn: r.vkn } : {}),
-    ...(r.notlar ? { notlar: r.notlar } : {}),
-    ...(r.etiketler.length ? { etiketler: [...r.etiketler] } : {}),
-  };
 }
 
 /** Fişi ve (varsa) Storage'daki görselini siler. */
@@ -605,24 +572,3 @@ export async function purgeExpiredTrash(): Promise<number> {
   }
 }
 
-// numeric kolonlar güvenlik için Number'a çevrilir
-function toRecord(row: Record<string, unknown>): ReceiptRecord {
-  return {
-    id: String(row.id),
-    created_at: String(row.created_at),
-    firma_adi: String(row.firma_adi ?? ''),
-    tarih: String(row.tarih),
-    toplam_tutar: Number(row.toplam_tutar ?? 0),
-    kdv_yuzde1: Number(row.kdv_yuzde1 ?? 0),
-    kdv_yuzde10: Number(row.kdv_yuzde10 ?? 0),
-    kdv_yuzde20: Number(row.kdv_yuzde20 ?? 0),
-    toplam_kdv: Number(row.toplam_kdv ?? 0),
-    kategori: row.kategori as Kategori,
-    image_path: (row.image_path as string | null) ?? null,
-    fis_no: typeof row.fis_no === 'string' && row.fis_no ? row.fis_no : null,
-    vkn: typeof row.vkn === 'string' && row.vkn ? row.vkn : null,
-    notlar: typeof row.notlar === 'string' && row.notlar ? row.notlar : null,
-    etiketler: Array.isArray(row.etiketler) ? row.etiketler.filter((t): t is string => typeof t === 'string') : [],
-    muhasebe_gonderildi_at: typeof row.muhasebe_gonderildi_at === 'string' && row.muhasebe_gonderildi_at ? row.muhasebe_gonderildi_at : null,
-  };
-}

@@ -1,0 +1,71 @@
+import { ZipStream } from '../../lib/zipStream';
+import type { PeriodSummary } from '../../lib/summary';
+import { photoFileNames } from './packageNames';
+import { buildReceiptsWorkbook } from './receiptsWorkbook';
+
+export interface PackageResult {
+  photos: number;
+  /** İndirilemeyen fotoğraf sayısı (paket yine de oluşturulur) */
+  failed: number;
+}
+
+/** ZIP çıktısının parça parça yazıldığı yer (dosya ya da bellek) */
+export type ChunkSink = (chunk: Uint8Array) => void;
+
+/** Storage yolundan dosya baytlarını getiren platforma özgü indirici */
+export type BytesDownloader = (path: string) => Promise<Uint8Array>;
+
+/**
+ * Muhasebe paketi: Excel + dönemin fiş fotoğrafları tek ZIP'te.
+ * Akış (streaming) olarak üretilir: her fotoğraf indirilir indirilmez ZIP'e yazılıp bellekten bırakılır,
+ * böylece binlerce fotoğraflı yıllık paket bile belleğe iki kez sığdırılmak zorunda kalmaz.
+ * Fotoğraflar zaten sıkıştırılmış JPEG olduğundan ZIP içinde yeniden sıkıştırılmaz.
+ * İndirici dışarıdan verilir (iOS ya da web), böylece bu dosya platformdan bağımsızdır.
+ */
+export async function buildAccountingPackageWith(
+  download: BytesDownloader,
+  summary: PeriodSummary,
+  periodLabel: string,
+  excelName: string,
+  sink: ChunkSink,
+  onProgress?: (done: number, total: number) => void,
+): Promise<PackageResult> {
+  /** İlk hatada diğer indirme işçileri de dursun (yarım dosyaya yazmaya devam etmesinler) */
+  let aborted = false;
+  const zip = new ZipStream(sink);
+  const add = (name: string, data: Uint8Array, compress: boolean) => {
+    try {
+      zip.add(name, data, compress);
+    } catch (e) {
+      aborted = true;
+      throw e;
+    }
+  };
+
+  add(excelName, buildReceiptsWorkbook(summary, periodLabel), true);
+
+  const withPhoto = summary.fisler.filter((r) => r.image_path);
+  const names = photoFileNames(withPhoto);
+  let failed = 0;
+  // Aynı anda en fazla 4 indirme (hız ve bellek dengesi); ZIP'e ekleme sırayla (tek iş parçacığı)
+  let next = 0;
+  let done = 0;
+  onProgress?.(0, withPhoto.length);
+  async function worker() {
+    while (!aborted && next < withPhoto.length) {
+      const r = withPhoto[next++];
+      let bytes: Uint8Array | null = null;
+      try {
+        bytes = await download(r.image_path!);
+      } catch {
+        failed++;
+      }
+      if (aborted) return;
+      if (bytes) add(`Fotograflar/${names.get(r.id)}`, bytes, false);
+      onProgress?.(++done, withPhoto.length);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(4, withPhoto.length) }, worker));
+  zip.end();
+  return { photos: withPhoto.length - failed, failed };
+}
