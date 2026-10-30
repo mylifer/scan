@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## Web 0.4.0 — (bekleniyor)
+## Web 0.4.0 — `b981f30`
 - **Web uygulamasında mali araçlar ve yönetim ekranları tamamlandı (`web/`):**
   - **KDV Takibi (`/kdv`):** Aylık KDV durumu, indirilecek ve hesaplanan KDV dökümü, net ödenecek/devreden KDV kartı, orana göre matrah dağılımı ve geçmiş aylar tablosu.
   - **Vergi Takvimi (`/vergi-takvimi`):** Türkiye mali takvimi (KDV, Geçici Vergi, Gelir/Kurumlar Vergisi, Muhtasar, Ba-Bs), tatil ve hafta sonu ertelemeleri, kalan gün sayaçları ve yaklaşan ödemeler özeti.
