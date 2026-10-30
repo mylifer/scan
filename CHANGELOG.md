@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## Web 1.0.3 — (bekleniyor)
+## Web 1.0.3 — `07bd0c5`
 - **Web uygulamasında kenar çubuğu (Sidebar) modern SaaS ve Fintrack mimarisine göre baştan tasarlandı (`web/`):**
   - **Masaüstü SaaS Estetiği ve Marka Kimliği:** Üst kısımda yüksek çözünürlüklü marka ikonu ve tipografisi (`FişTarayıcı · Mali İşletme Portalı`), altında ise tek tıkla doğrudan fiş yüklemeyi sağlayan birincil aksiyon butonu (`+ Yeni Fiş Tara`) konumlandırıldı.
   - **Rafine Menü ve Hover Mimarisi:** Fintrack mimarisine dayalı `rounded-[10px]` satır yapısı, yumuşak `bg-primary/10` aktif durumu, turkuaz ikon vurguları (`text-primary`) ve yüksek kontrastlı `hover:bg-sidebar-accent/70` etkileşimleri uygulandı. Clunky kılcal şeritler temizlendi.
