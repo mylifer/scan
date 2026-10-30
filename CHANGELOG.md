@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## Web 1.0.2 — (bekleniyor)
+## Web 1.0.2 — `e47bbec`
 - **Web uygulamasında fatura detay ve modal taşma sorunları çözüldü, genel UI denetimi tamamlandı (`web/`):**
   - **Diyalog Genişlik ve Taşma Sorunu (`DialogContent` & `AlertDialogContent`):** `dialog.tsx` tabanındaki `sm:max-w-sm` kısıtlaması kaldırıldı. `max-w-[calc(100vw-2rem)]` ve `sm:max-w-lg` tabanıyla geniş modal sınıflarının (`sm:max-w-4xl`, `sm:max-w-5xl`) ezilmesi engellendi. Modal kapatma düğmesi (`X`) ile başlık alanının çakışmaması için sağ iç boşluk (`pr-8`) güvenceye alındı.
   - **UBL Fatura Detay Modalı (`FaturaDetayDialog`):** 7 sütunlu fatura kalemleri tablosu ve KDV döküm tablosu `overflow-x-auto` taşıyıcı içine alındı ve `min-w-[650px]` ile genişletildi; mal/hizmet adlarının kelime bazında kaydırılması (`break-words`), sayısal değerlerin tek satırda kalması (`whitespace-nowrap`) sağlandı. Satıcı ve alıcı kartlarında uzun unvan ve VKN taşmaları önlendi.
