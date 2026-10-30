@@ -16,6 +16,33 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.52.0 — (bekleniyor)
+- **Web sürümü masaüstünde yerel Shadcn UI tasarımına ve zengin web UX mimarisine dönüştürüldü:**
+  - **Yeni Shadcn UI Web Bileşenleri (`src/components/web/`):**
+    - `Button`: `default`, `secondary`, `outline`, `ghost`, `destructive` varyantları, `default`, `sm`, `lg`, `icon` boyutları, yüklenme göstergesi, ikon desteği ve web imleç davranışları.
+    - `Input`: Odak halkası (focus ring), sol ikon yuvası, tek tıkla temizleme ve klavye kısayolu desteği.
+    - `Switch`: Modern Shadcn kayar anahtar (toggle switch) bileşeni.
+    - `PageHeader`: Sayfa başlığı, açıklama metni, durum rozeti, geri butonu (`onBack`) ve sayfa eylem çubuğu.
+    - `StatCard`: Üst mikro etiket, ikon, büyük rakam ve açıklama içeren istatistik kartı.
+    - `ReceiptTable`: Fişler için masaüstü veri tablosu; tarih/tutar sıralama, kategori rozetleri, etiketler ve çoklu seçim desteği.
+    - `Card` & `Table`: `StyleProp` ve `TextStyle` desteğiyle esnek web uyumluluğu.
+  - **Ana Sekme Sayfalarının Masaüstü Yenilenmesi:**
+    - **Fişler & Giderler (`/`):** Başlık altında hızlı işlem butonları (Fiş Tara, Çoklu Fotoğraf, Elle Ekle, Taslaklar), Shadcn `ReceiptTable` veri tablosu, filtreler ve sağ kolonda trend/hızlı erişim kartları.
+    - **e-Faturalar (`/efatura`):** Masaüstü sayfa başlığı, yenileme butonu, denetim kartı ve hizalanmış `EFaturaTable`.
+    - **KDV Dengesi (`/kdv`):** Sayfa başlığı ve alt bölümdeki iOS satırları yerine Shadcn işlem kartları.
+    - **Ayarlar (`/settings`):** 7 adet ardışık iOS listesi yerine masaüstünde modern 2 sütunlu Shadcn kart ızgarası (Profil, Depolama & Kullanım göstergesi, Yedekleme, Takip & Vergi ayarları, Yapay Zekâ Motoru ve Uygulama Bilgileri).
+  - **İç Sayfaların (Detay ve Alt Ekranlar) Masaüstü Web Dönüşümü:**
+    - **Fiş Detayı (`/receipt/[id]`):** Sayfa başlığı (geri butonu, firma adı, paylaş/fotoğraf/sil/kaydet aksiyonları), sol kolonda orijinal fiş fotoğrafı ve muhasebe durumu toggle kartı; sağ kolonda Shadcn kartları içinde yapılandırılmış fiş formu.
+    - **Fiş Formu (`ReceiptForm`):** Masaüstünde 3 adet Shadcn Kartına (Fiş Bilgileri, Tutar & KDV Dağılımı, Ek Bilgiler & Notlar) dönüştürüldü. Elle fiş ekleme (`/manual`), inceleme (`/review`) ve toplu inceleme ekranları otomatik olarak masaüstü web tasarımına kavuştu.
+    - **Fatura Detayı (`/efatura-detay`):** Masaüstünde sayfa başlığı, PDF indir/paylaş aksiyonları, 4'lü metrik özet kartları, kalemler Shadcn tablosu, satıcı/alıcı detay kartı ve toplamlar özeti kartı.
+    - **Kategoriler (`/categories`):** Yeni kategori ekleme formu, özel kategoriler tablosu (düzenle/sil aksiyonları) ve hazır kategoriler ızgarası.
+    - **Firmalar (`/firms`):** Sıralama butonları, filtreleme alanı ve detay bağlantılı Shadcn firma tablosu.
+    - **Firma Detayı (`/firm/[key]`):** Metrik kartları, KDV dağılım kartı ve firmaya ait fişlerin Shadcn `ReceiptTable` tablosu.
+    - **Vergi Takvimi (`/tax-calendar`):** Muhtasar/Ba-Bs geçiş anahtarı, aylık Shadcn kartları, aciliyet rozetleri ve açıklama kutuları.
+    - **Son Silinenler (`/trash`):** Sayfa başlığı, tümünü temizle aksiyonu ve tek tek geri alma/kalıcı silme destekli Shadcn tablosu.
+    - **e-Fatura Özeti (`/efatura-ozet`):** Metrik kartları, KDV dengesi kartı, QNB denetim kartı ve aylık KDV farkı dökümü tablosu.
+  - **Mobil Uyumluluğu:** Mobil ekranlarda (`!wide`) mevcut iOS/Android native deneyimi ve akışı %100 korunmuştur.
+
 ## 1.51.1 — `85bb546`
 - **e-Fatura seçim arayüzü hiza ve tutarlılık düzeltmeleri:**
   - **Masaüstü Tablo Sütun Hizalaması:** Onay kutusu sütunu (`checkCol`) sabit 48px genişlik, esnemeyi önleyen flex kuralları ve ortalı yerleşimle yeniden düzenlendi. Tarih başlığı ve metinlerinin onay kutusuyla yapışması engellendi; başlık kutusu ile satır kutularının dikey ekseni birebir hizalandı.

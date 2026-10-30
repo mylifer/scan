@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { type StyleProp, StyleSheet, Text, type TextStyle, View, type ViewStyle } from 'react-native';
 
 import { fontFamily, useShadcnTheme } from '../../lib/theme';
 
 interface CardProps {
   children: ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function Card({ children, style }: CardProps) {
@@ -30,7 +30,7 @@ export function CardHeader({
   style,
 }: {
   children: ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }) {
   return <View style={[styles.header, style]}>{children}</View>;
 }
@@ -40,7 +40,7 @@ export function CardTitle({
   style,
 }: {
   children: ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<TextStyle>;
 }) {
   const t = useShadcnTheme();
   return (
@@ -55,7 +55,7 @@ export function CardDescription({
   style,
 }: {
   children: ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<TextStyle>;
 }) {
   const t = useShadcnTheme();
   return (
@@ -70,7 +70,7 @@ export function CardContent({
   style,
 }: {
   children: ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }) {
   return <View style={[styles.content, style]}>{children}</View>;
 }
@@ -80,7 +80,7 @@ export function CardFooter({
   style,
 }: {
   children: ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }) {
   const t = useShadcnTheme();
   return (

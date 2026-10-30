@@ -6,13 +6,16 @@ import { showCategoryPicker } from '../lib/categoryPicker';
 import { formatTL, normalizeTrDate, parseAmount, round2, todayTr } from '../lib/format';
 import { formWarnings, type ReceiptFormValues, setFormField } from '../lib/receiptForm';
 import { haptics } from '../lib/haptics';
-import { categoryMeta, fontFamily, tabular, type as t, useTheme } from '../lib/theme';
+import { useWide } from '../lib/layout';
+import { categoryMeta, fontFamily, tabular, type as t, useShadcnTheme, useTheme } from '../lib/theme';
 import { MAX_NOTE_LENGTH, parseTags } from '../lib/receiptExtras';
 import { normalizeForSearch } from '../lib/search';
 import { getKnownTags } from '../services/supabase/receiptsRepository';
 import type { ReceiptField } from '../types/receipt';
 import { Icon } from './ui/Icon';
 import { FieldRow, ListRow, ListSection } from './ui/List';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './web/Card';
+import { WebInput } from './web/Input';
 
 export { emptyForm, formWarnings, fromFormValues, type ReceiptFormValues, toFormValues, validateForm } from '../lib/receiptForm';
 
@@ -23,6 +26,8 @@ interface Props {
 
 export function ReceiptForm({ values, onChange }: Props) {
   const theme = useTheme();
+  const wide = useWide();
+  const st = useShadcnTheme();
   const set = <K extends keyof ReceiptFormValues>(key: K, value: ReceiptFormValues[K]) => onChange(setFormField(values, key, value));
   const unsure = (f: ReceiptField) => values.belirsiz?.includes(f) ?? false;
   const toplamKdv = round2(parseAmount(values.kdvYuzde1) + parseAmount(values.kdvYuzde10) + parseAmount(values.kdvYuzde20));
@@ -54,6 +59,233 @@ export function ReceiptForm({ values, onChange }: Props) {
   }
 
   const warnings = formWarnings(values);
+
+  if (wide) {
+    return (
+      <View style={{ gap: 20 }}>
+        {!!values.belirsiz?.length && (
+          <View style={[styles.webWarning, { backgroundColor: '#fef3c7', borderColor: '#f59e0b' }]}>
+            <Icon sf="questionmark.circle.fill" ion="help-circle" size={18} color="#b45309" />
+            <Text style={[styles.webWarningText, { color: '#92400e' }]}>
+              Turuncu işaretli {values.belirsiz.length === 1 ? 'alan' : `${values.belirsiz.length} alan`} fişte net okunamadı. Fişle karşılaştırıp gerekirse düzeltin.
+            </Text>
+          </View>
+        )}
+        {warnings.length > 0 && (
+          <View style={[styles.webWarning, { backgroundColor: '#fef2f2', borderColor: '#ef4444' }]}>
+            <Icon sf="exclamationmark.triangle.fill" ion="warning" size={18} color="#b91c1c" />
+            <View style={{ flex: 1, gap: 4 }}>
+              {warnings.map((w) => (
+                <Text key={w} style={[styles.webWarningText, { color: '#991b1b' }]}>
+                  {w}
+                </Text>
+              ))}
+            </View>
+          </View>
+        )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Fiş Bilgileri</CardTitle>
+            <CardDescription>Firma adı, fiş tarihi ve harcama kategorisi.</CardDescription>
+          </CardHeader>
+          <CardContent style={{ gap: 16 }}>
+            <View style={styles.webFieldGroup}>
+              <Text style={[styles.webLabel, { color: unsure('firmaAdi') ? '#d97706' : st.cardForeground }]}>
+                Firma Adı {unsure('firmaAdi') ? '• Okunamadı' : ''}
+              </Text>
+              <WebInput
+                value={values.firmaAdi}
+                onChangeText={(v) => set('firmaAdi', v)}
+                placeholder="Firma adı"
+                autoCapitalize="characters"
+              />
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 16 }}>
+              <View style={[styles.webFieldGroup, { flex: 1 }]}>
+                <Text style={[styles.webLabel, { color: unsure('tarih') ? '#d97706' : st.cardForeground }]}>
+                  Tarih {unsure('tarih') ? '• Okunamadı' : ''}
+                </Text>
+                <WebInput
+                  value={values.tarih}
+                  onChangeText={(v) => set('tarih', v)}
+                  placeholder="GG.AA.YYYY"
+                />
+              </View>
+              <View style={[styles.webFieldGroup, { flex: 1 }]}>
+                <Text style={[styles.webLabel, { color: unsure('kategori') ? '#d97706' : st.cardForeground }]}>
+                  Kategori {unsure('kategori') ? '• Belirsiz' : ''}
+                </Text>
+                <Pressable
+                  onPress={pickCategory}
+                  style={[
+                    styles.webCategoryPicker,
+                    { borderColor: st.border, backgroundColor: st.card },
+                  ]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+                    <Icon sf={meta.sf} ion={meta.ion} size={18} color={theme[meta.color] as string} />
+                    <Text style={{ fontFamily, fontSize: 13, fontWeight: '500', color: st.cardForeground }}>
+                      {meta.label}
+                    </Text>
+                  </View>
+                  <Icon sf="chevron.up.chevron.down" ion="swap-vertical" size={14} color={st.mutedForeground} />
+                </Pressable>
+              </View>
+            </View>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Tutar ve KDV Dağılımı</CardTitle>
+            <CardDescription>Toplam fiş bedeli ve uygulanan vergi oranları.</CardDescription>
+          </CardHeader>
+          <CardContent style={{ gap: 16 }}>
+            <View style={styles.webFieldGroup}>
+              <Text style={[styles.webLabel, { color: unsure('toplamTutar') ? '#d97706' : st.cardForeground }]}>
+                Toplam Tutar (₺) {unsure('toplamTutar') ? '• Okunamadı' : ''}
+              </Text>
+              <WebInput
+                value={values.toplamTutar}
+                onChangeText={(v) => set('toplamTutar', v)}
+                placeholder="0,00"
+                keyboardType="decimal-pad"
+                style={[{ fontSize: 18, fontWeight: '700' }, tabular]}
+              />
+            </View>
+
+            <View style={{ gap: 8 }}>
+              <Text style={[styles.webLabel, { color: st.cardForeground }]}>KDV Oranları (₺)</Text>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={{ flex: 1, gap: 6 }}>
+                  <Text style={[styles.webSubLabel, { color: unsure('kdvYuzde1') ? '#d97706' : st.mutedForeground }]}>
+                    %1 KDV
+                  </Text>
+                  <WebInput
+                    value={values.kdvYuzde1}
+                    onChangeText={(v) => set('kdvYuzde1', v)}
+                    placeholder="0,00"
+                    keyboardType="decimal-pad"
+                    style={tabular}
+                  />
+                </View>
+                <View style={{ flex: 1, gap: 6 }}>
+                  <Text style={[styles.webSubLabel, { color: unsure('kdvYuzde10') ? '#d97706' : st.mutedForeground }]}>
+                    %10 KDV
+                  </Text>
+                  <WebInput
+                    value={values.kdvYuzde10}
+                    onChangeText={(v) => set('kdvYuzde10', v)}
+                    placeholder="0,00"
+                    keyboardType="decimal-pad"
+                    style={tabular}
+                  />
+                </View>
+                <View style={{ flex: 1, gap: 6 }}>
+                  <Text style={[styles.webSubLabel, { color: unsure('kdvYuzde20') ? '#d97706' : st.mutedForeground }]}>
+                    %20 KDV
+                  </Text>
+                  <WebInput
+                    value={values.kdvYuzde20}
+                    onChangeText={(v) => set('kdvYuzde20', v)}
+                    placeholder="0,00"
+                    keyboardType="decimal-pad"
+                    style={tabular}
+                  />
+                </View>
+              </View>
+            </View>
+
+            <View style={[styles.webKdvSummary, { backgroundColor: kdvTooHigh ? '#fef2f2' : st.muted }]}>
+              <Text style={[styles.webKdvSummaryText, { color: kdvTooHigh ? '#dc2626' : st.mutedForeground }]}>
+                {kdvTooHigh
+                  ? '⚠ Toplam KDV, toplam tutardan büyük! TOPLAM ile TOPKDV karışmış olabilir.'
+                  : `Hesaplanan Toplam KDV: ${formatTL(toplamKdv)}`}
+              </Text>
+            </View>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Ek Bilgiler ve Notlar</CardTitle>
+            <CardDescription>Fiş no, VKN/TCKN, arama etiketleri ve özel notlarınız.</CardDescription>
+          </CardHeader>
+          <CardContent style={{ gap: 16 }}>
+            <View style={{ flexDirection: 'row', gap: 16 }}>
+              <View style={[styles.webFieldGroup, { flex: 1 }]}>
+                <Text style={[styles.webLabel, { color: unsure('fisNo') ? '#d97706' : st.cardForeground }]}>
+                  Fiş No {unsure('fisNo') ? '• Okunamadı' : ''}
+                </Text>
+                <WebInput
+                  value={values.fisNo}
+                  onChangeText={(v) => set('fisNo', v)}
+                  placeholder="ör. 0045"
+                  autoCapitalize="characters"
+                  maxLength={40}
+                />
+              </View>
+              <View style={[styles.webFieldGroup, { flex: 1 }]}>
+                <Text style={[styles.webLabel, { color: unsure('vkn') ? '#d97706' : st.cardForeground }]}>
+                  VKN / TCKN {unsure('vkn') ? '• Okunamadı' : ''}
+                </Text>
+                <WebInput
+                  value={values.vkn}
+                  onChangeText={(v) => set('vkn', v)}
+                  placeholder="10 ya da 11 hane"
+                  keyboardType="number-pad"
+                  maxLength={14}
+                  style={tabular}
+                />
+              </View>
+            </View>
+
+            <View style={styles.webFieldGroup}>
+              <Text style={[styles.webLabel, { color: st.cardForeground }]}>Etiketler</Text>
+              <WebInput
+                value={values.etiketler}
+                onChangeText={(v) => set('etiketler', v)}
+                placeholder="ör. Proje X, müşteri yemeği (virgülle ayırın)"
+                autoCapitalize="none"
+              />
+              {suggestions.length > 0 && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                  {suggestions.map((tag) => (
+                    <Pressable
+                      key={tag}
+                      onPress={() => addTag(tag)}
+                      style={({ pressed }: { pressed: boolean }) => [
+                        styles.webChip,
+                        {
+                          backgroundColor: pressed ? st.secondary : st.muted,
+                          borderColor: st.border,
+                        },
+                      ]}>
+                      <Text style={[styles.webChipText, { color: st.foreground }]}>+ {tag}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            <View style={styles.webFieldGroup}>
+              <Text style={[styles.webLabel, { color: st.cardForeground }]}>Notlar</Text>
+              <WebInput
+                value={values.notlar}
+                onChangeText={(v) => set('notlar', v)}
+                placeholder="Bu fiş hakkında not ekleyin..."
+                multiline
+                numberOfLines={3}
+                maxLength={MAX_NOTE_LENGTH}
+                style={{ minHeight: 70, paddingTop: 8 }}
+              />
+            </View>
+          </CardContent>
+        </Card>
+      </View>
+    );
+  }
 
   return (
     <>
@@ -231,4 +463,63 @@ const styles = StyleSheet.create({
   noteRow: { paddingHorizontal: 16, paddingVertical: 4 },
   note: { minHeight: 66, paddingVertical: 8, textAlignVertical: 'top', fontFamily, ...Platform.select({ web: { outlineWidth: 0 } }) },
   warning: { flexDirection: 'row', gap: 10, marginHorizontal: 16, marginBottom: 20, padding: 12, borderRadius: 12 },
+  webWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  webWarningText: {
+    fontFamily,
+    fontSize: 13,
+    fontWeight: '500',
+    flex: 1,
+  },
+  webFieldGroup: {
+    gap: 6,
+  },
+  webLabel: {
+    fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  webSubLabel: {
+    fontFamily,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  webCategoryPicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    minHeight: 40,
+    cursor: 'pointer',
+  },
+  webKdvSummary: {
+    padding: 10,
+    borderRadius: 6,
+  },
+  webKdvSummaryText: {
+    fontFamily,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  webChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 14,
+    borderWidth: 1,
+    cursor: 'pointer',
+  },
+  webChipText: {
+    fontFamily,
+    fontSize: 12,
+    fontWeight: '500',
+  },
 });
