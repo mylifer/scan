@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { errorMessage } from '../../lib/errors';
@@ -46,6 +46,21 @@ function PdfViewerDialog({ fatura, yon, onClose }: { fatura: EFatura; yon: Yon; 
   const [loading, setLoading] = useState(!initialCached);
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const autoOpened = useRef(false);
+
+  const handleDownload = useCallback(async () => {
+    if (!cached) return;
+    setDownloading(true);
+    try {
+      const ad = (fatura.belgeNo || fatura.ettn).replace(/[^\w-]/g, '_');
+      await sharePdf(cached.bytes, `${ad}.pdf`);
+      haptics.success();
+    } catch {
+      // Hata oluşursa sessizce geç
+    } finally {
+      setDownloading(false);
+    }
+  }, [cached, fatura.belgeNo, fatura.ettn]);
 
   // Web'de Escape tuşuna basınca pencereyi kapat
   useEffect(() => {
@@ -56,6 +71,16 @@ function PdfViewerDialog({ fatura, yon, onClose }: { fatura: EFatura; yon: Yon; 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
+
+  // Mobilde PDF hazır olduğunda otomatik olarak sistem paylaşım/önizleme menüsünü tetikle
+  useEffect(() => {
+    if (Platform.OS === 'web' || !cached || autoOpened.current) return;
+    autoOpened.current = true;
+    const timer = setTimeout(() => {
+      void handleDownload();
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [cached, handleDownload]);
 
   // Önbellekte yoksa arka plandan getir
   useEffect(() => {
@@ -92,20 +117,6 @@ function PdfViewerDialog({ fatura, yon, onClose }: { fatura: EFatura; yon: Yon; 
         setError(errorMessage(err));
         setLoading(false);
       });
-  };
-
-  const handleDownload = async () => {
-    if (!cached) return;
-    setDownloading(true);
-    try {
-      const ad = (fatura.belgeNo || fatura.ettn).replace(/[^\w-]/g, '_');
-      await sharePdf(cached.bytes, `${ad}.pdf`);
-      haptics.success();
-    } catch {
-      // Hata oluşursa sessizce geç
-    } finally {
-      setDownloading(false);
-    }
   };
 
   return (
@@ -162,8 +173,10 @@ function PdfViewerDialog({ fatura, yon, onClose }: { fatura: EFatura; yon: Yon; 
                     <ActivityIndicator size="small" color={st.cardForeground} />
                   ) : (
                     <>
-                      <Icon sf="arrow.down.doc" ion="download-outline" size={14} color={st.cardForeground} />
-                      <Text style={[styles.actionBtnText, { color: st.cardForeground }]}>İndir</Text>
+                      <Icon sf={Platform.OS === 'web' ? 'arrow.down.doc' : 'square.and.arrow.up'} ion={Platform.OS === 'web' ? 'download-outline' : 'share-outline'} size={14} color={st.cardForeground} />
+                      <Text style={[styles.actionBtnText, { color: st.cardForeground }]}>
+                        {Platform.OS === 'web' ? 'İndir' : 'Paylaş'}
+                      </Text>
                     </>
                   )}
                 </Pressable>
@@ -231,8 +244,18 @@ function PdfViewerDialog({ fatura, yon, onClose }: { fatura: EFatura; yon: Yon; 
                 </Text>
                 <Pressable
                   onPress={handleDownload}
-                  style={[styles.retryBtn, { backgroundColor: st.primary }]}>
-                  <Text style={[styles.retryBtnText, { color: st.primaryForeground }]}>Dosyayı Aç / Paylaş</Text>
+                  disabled={downloading}
+                  accessibilityRole="button"
+                  accessibilityLabel="PDF'i Aç ve Paylaş"
+                  style={({ pressed }) => [
+                    styles.retryBtn,
+                    { backgroundColor: st.primary, opacity: pressed || downloading ? 0.8 : 1 },
+                  ]}>
+                  {downloading ? (
+                    <ActivityIndicator size="small" color={st.primaryForeground} />
+                  ) : (
+                    <Text style={[styles.retryBtnText, { color: st.primaryForeground }]}>PDF&apos;i Aç / Paylaş</Text>
+                  )}
                 </Pressable>
               </View>
             )}
