@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.51.1 — `PENDING`
+## 1.51.1 — `85bb546`
 - **e-Fatura seçim arayüzü hiza ve tutarlılık düzeltmeleri:**
   - **Masaüstü Tablo Sütun Hizalaması:** Onay kutusu sütunu (`checkCol`) sabit 48px genişlik, esnemeyi önleyen flex kuralları ve ortalı yerleşimle yeniden düzenlendi. Tarih başlığı ve metinlerinin onay kutusuyla yapışması engellendi; başlık kutusu ile satır kutularının dikey ekseni birebir hizalandı.
   - **Mükerrer Onay Kutusu Kaldırıldı:** Seçim araç çubuğundaki (`EFaturaExportBar`) gereksiz ikinci onay kutusu kaldırılarak net bir sayaç rozeti (`[50] 50 fatura seçildi`) ve toplam tutar bilgisine dönüştürüldü.
