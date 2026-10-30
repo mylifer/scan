@@ -16,6 +16,12 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.8 — (bekleniyor)
+- **Sistem genelindeki font ailesi modern Geist font ailesine geçirildi (`web/` & `src/`):**
+  - **Geist Sans & Geist Mono Entegrasyonu (`layout.tsx`):** `next/font/google` üzerinden resmi `Geist` (ana metin ve arayüz) ve `Geist_Mono` (belge no, VKN, tarih, kod ve sayısal tablolar) font değişkenleri (`--font-geist-sans`, `--font-geist-mono`) kök düzenine bağlandı.
+  - **Tailwind v4 Tema Eşleştirmesi (`globals.css`):** `@theme inline` altında `--font-sans` ve `--font-mono` değişkenleri Geist ailesiyle güncellendi; `font-sans`, `font-mono` sınıfları ve `code, kbd, pre` elemanları doğrudan Geist font ailesine bağlandı.
+  - **Paylaşılan Tema Desteği (`theme.ts`):** `fontFamily` web tanımı Geist font ailesi öncelikli olacak şekilde güncellendi.
+
 ## Web 1.0.7 — `e681030`
 - **Daraltılmış (collapsed) kenar çubuğunda logo ve butonların taşma sorunu giderildi (`web/`):**
   - **Kompakt Logo ve Tooltip Entegrasyonu (`app-sidebar.tsx`):** Kenar çubuğu daraltıldığında (`state === "collapsed"`), logonun etrafındaki sabit `p-3` başlık boşluğu ve `p-1` bağlantı dolgusu kaldırılarak `3rem` (48px) ikon genişliğine kusursuz oturan `p-1.5` ve `size-9` (36px) merkezlenmiş buton mimarisine geçildi. Daraltılmış modda logonun üzerine gelindiğinde "FişTarayıcı" ipucu (Tooltip) gösterilmesi sağlandı.
