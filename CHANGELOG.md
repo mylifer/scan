@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## Web 1.0.7 — (bekleniyor)
+## Web 1.0.7 — `e681030`
 - **Daraltılmış (collapsed) kenar çubuğunda logo ve butonların taşma sorunu giderildi (`web/`):**
   - **Kompakt Logo ve Tooltip Entegrasyonu (`app-sidebar.tsx`):** Kenar çubuğu daraltıldığında (`state === "collapsed"`), logonun etrafındaki sabit `p-3` başlık boşluğu ve `p-1` bağlantı dolgusu kaldırılarak `3rem` (48px) ikon genişliğine kusursuz oturan `p-1.5` ve `size-9` (36px) merkezlenmiş buton mimarisine geçildi. Daraltılmış modda logonun üzerine gelindiğinde "FişTarayıcı" ipucu (Tooltip) gösterilmesi sağlandı.
   - **Daraltılmış Mod Konteyner Boşlukları ve İkon Hizalaması:** "Yeni Fiş Tara" butonu, navigasyon menüsü ve alt panel (Footer) konteynerlerindeki geniş yatay boşluklar (`px-3`, `px-2.5`, `p-2.5`) daraltılmış modda `px-1.5` / `p-1.5` değerine indirilerek tüm ikon butonların tek dikey eksende 48px sınırları içinde taşmadan hizalanması garantilendi.
