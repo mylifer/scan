@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { SettingsView } from "@/components/settings/settings-view";
 
 export const metadata: Metadata = { title: "Ayarlar · Fiş Tarayıcı" };
 
 export default function Page() {
-  return <PlaceholderPage title="Ayarlar" />;
+  return <SettingsView />;
 }
