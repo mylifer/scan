@@ -16,6 +16,17 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.6 — (bekleniyor)
+- **e-Faturalar tablosunda sütun başlıklarına tıklanarak sıralama yapma özelliği eklendi (`web/`):**
+  - **İnteraktif Sütun Başlıkları (`SortHeader`):** Tablodaki `Tarih`, `Firma / Ünvan`, `Tür / Tip`, `KDV` ve `Toplam Tutar` sütun başlıkları tıklanabilir sıralama butonlarına dönüştürüldü. Aktif sütun yönüne göre dinamik `ArrowUp`, `ArrowDown` ve pasif durumda `ArrowUpDown` ikonları eklendi; erişilebilirlik için `aria-sort` öznitelikleri tanımlandı.
+  - **Çift Yönlü Sıralama ve Akıllı Varsayılanlar (`sortEFaturaList`):**
+    - `Tarih`: En yeni (desc) ↔ En eski (asc)
+    - `Firma / Ünvan`: Türkçe yerel alfabe harmanlaması (`Intl.Collator("tr-TR")`) ile A-Z (asc) ↔ Z-A (desc)
+    - `Tür / Tip`: Fatura tür ve profil etiketine göre A-Z (asc) ↔ Z-A (desc)
+    - `KDV`: En yüksek (desc) ↔ En düşük (asc); KDV'si henüz hesaplanmamış faturalar her iki yönde de listenin sonuna yerleştirilir.
+    - `Toplam Tutar`: En yüksek (desc) ↔ En düşük (asc)
+  - **Toolbar Sıralama Açılır Menüsüyle Tam Senkronizasyon:** Tablo başlıklarındaki sıralama ile tablonun üstündeki sıralama açılır menüsü (`SORT_PRESETS`) birbirine senkronize bağlandı. Sütuna tıklandığında açılır kutu anında güncellenir; açılır kutudan seçim yapıldığında ise ilgili sütunun ok göstergesi ve yönü yenilenir.
+
 ## Web 1.0.5 — `8602e2d`
 - **Yeni kesilen giden e-Faturalarda KDV'nin görünmeme sorunu giderildi (`web/` & `supabase/functions/qnb-efatura`):**
   - **UBL XML Otomatik KDV Tamamlama (Backend):** QNB eSolutions toplu raporlama servisi (`gidenBelgeTutarBilgileriSorgula`) yeni kesilen faturaları hemen KDV tablosuna işlemeyip gecikmeli yansıttığı için, `tutarlariTamamla` fonksiyonuna KDV kontrolü (`typeof f.kdv !== 'number'`) eklendi. KDV bilgisi henüz rapor servisine düşmemiş faturaların UBL XML'i doğrudan indirilerek `kdvToplam` ve `matrah` değerleri anında faturaya işlenir hâle getirildi.
