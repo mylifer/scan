@@ -102,7 +102,7 @@ function SidebarMonthlyCard() {
   if (!stats) return null;
 
   return (
-    <div className="mx-2 mb-2 p-3 rounded-xl bg-sidebar-accent/50 border border-sidebar-border/70 flex-shrink-0 space-y-1.5 transition-all">
+    <div className="mx-2 mb-2 p-3 rounded-xl bg-sidebar-accent/50 border border-sidebar-border/70 flex-shrink-0 space-y-1.5 transition-all duration-200 animate-in fade-in-50">
       <div className="flex items-center justify-between text-[9.5px] font-bold tracking-[0.12em] uppercase text-muted-foreground">
         <span>Bu Ayki Fişler</span>
         <span className="text-primary font-semibold">{currentMonth.label}</span>
@@ -270,7 +270,7 @@ export function AppSidebar() {
                           href={`${item.href}/`}
                           onClick={handleLinkClick}
                           className={cn(
-                            "flex size-9 items-center justify-center rounded-lg transition-colors cursor-pointer",
+                            "flex size-9 items-center justify-center rounded-lg transition-all duration-150 active:scale-95 cursor-pointer",
                             isActive
                               ? "bg-primary/10 text-primary font-semibold shadow-2xs"
                               : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
@@ -291,7 +291,7 @@ export function AppSidebar() {
                   href={`${item.href}/`}
                   onClick={handleLinkClick}
                   className={cn(
-                    "flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[10px] text-[13px] font-medium transition-colors duration-150 cursor-pointer select-none",
+                    "flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[10px] text-[13px] font-medium transition-all duration-150 active:scale-[0.98] cursor-pointer select-none",
                     isActive
                       ? "bg-primary/10 text-foreground font-semibold shadow-2xs"
                       : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/70"
@@ -341,7 +341,7 @@ export function AppSidebar() {
                 href="/ayarlar/"
                 onClick={handleLinkClick}
                 className={cn(
-                  "flex items-center gap-2 flex-1 px-2.5 py-2 rounded-[10px] text-[13px] font-medium transition-colors duration-150 cursor-pointer select-none",
+                  "flex items-center gap-2 flex-1 px-2.5 py-2 rounded-[10px] text-[13px] font-medium transition-all duration-150 active:scale-[0.98] cursor-pointer select-none",
                   isSettingsActive
                     ? "bg-primary/10 text-foreground font-semibold shadow-2xs"
                     : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/70"
@@ -362,7 +362,7 @@ export function AppSidebar() {
             <button
               type="button"
               onClick={handleSignOut}
-              className="flex items-center gap-2.5 w-full px-2.5 py-1.5 rounded-[10px] text-xs font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors text-left cursor-pointer"
+              className="flex items-center gap-2.5 w-full px-2.5 py-1.5 rounded-[10px] text-xs font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-150 active:scale-[0.98] text-left cursor-pointer"
             >
               <LogOut className="size-4 shrink-0" />
               <span>Çıkış Yap</span>

@@ -17,8 +17,8 @@ export function ThemeToggle() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" aria-label="Tema">
-          <Sun className="size-4 dark:hidden" />
-          <Moon className="hidden size-4 dark:block" />
+          <Sun className="size-4 dark:hidden transition-transform duration-200 hover:rotate-45" />
+          <Moon className="hidden size-4 dark:block transition-transform duration-200 hover:-rotate-12" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
