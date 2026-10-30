@@ -16,6 +16,14 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 0.2.0 — (bekleniyor)
+- **Web uygulamasında Fişler ekranı, düzenleme/detay ve veri katmanı tamamlandı (`web/`):**
+  - **Fiş Listesi (`/fisler`):** Arama çubuğu, dönem ve kategori filtreleri, özet kartları (Toplam, Fiş Sayısı, KDV, Gönderilenler), sıralanabilir başlıklar, satır ve toplu seçim.
+  - **Toplu İşlemler:** Seçili veya döneme ait fişler için Excel dışa aktarımı, fotoğraflı muhasebe paketi (ZIP), muhasebeye gönderildi işareti ve çöp kutusuna taşıma.
+  - **Fiş Düzenleme & Detay (`/fisler/detay?id=...`):** Fiş görseli önizleme, firma, tarih, kategori, hızlı KDV hesaplama (%20, %10, %1, sıfırla), matrah özeti, fiş no, VKN, etiketler ve notlar.
+  - **Yeni Fiş Ekleme (`/fisler/yeni`):** Manuel fiş ekleme ve isteğe bağlı fotoğraf yükleme.
+  - **Ortak Veri Katmanı:** iOS ve Web arasında saf TypeScript mantığı (`receiptRows`, `accountingPackage`, `receiptExport`, `download`) paylaşıldı.
+
 ## Web 0.1.0 — `b6cd354`
 - **Yeni web uygulamasının iskeleti (`web/`) eklendi (henüz yayında değil; Expo web yayında kalmaya devam ediyor):**
   - **Yığın:** Next.js 16 (App Router, statik export, `basePath: /scan`), React 19, Tailwind v4 ve gerçek shadcn (radix-nova) bileşenleri — fintrack-os ile aynı.
