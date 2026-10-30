@@ -16,6 +16,14 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 0.5.0 — (bekleniyor)
+- **Web uygulamasında Ayarlar, Çöp Kutusu, Yedekleme, Hata Günlüğü ve Yapay Zeka ile Fiş Tarama tamamlandı (`web/`):**
+  - **Ayarlar Hub (`/ayarlar`):** Oturum & profil yönetimi, çıkış yapma, sistem bilgisi ve açık/koyu/sistem tema geçişleri.
+  - **Çöp Kutusu (`TrashTab`):** Silinen fişlerin 30 gün boyunca listelenmesi, kalan gün sayaçları (`trashLeftLabel`), tek tıkla geri alma (`restoreFromTrash`), kalıcı silme ve tümünü boşaltma onay dialogu.
+  - **Tam Yedek Al & Geri Yükle (`BackupTab`):** Tüm fiş ve görselleri tek `.zip` arşivinde indirme, yedek yükleme önizlemesi (yeni fişler vs. mevcut fişler), akıllı çift kayıt önleme ve canlı aktarım ilerleme çubuğu.
+  - **Hata Günlüğü (`ErrorLogTab`):** Sistem hatalarının listesi, detay/stack trace modalı ve hata kayıtlarını temizleme.
+  - **Yapay Zeka ile Masaüstü Fiş Tarama (`ReceiptForm` & `vision.ts`):** Masaüstünden sürükle-bırak veya dosya seçimiyle görsel yükleme, Supabase Edge Function üzerinden Gemini analizi ve form alanlarının (firma, tarih, tutar, KDV dilimleri, fiş no, VKN) otomatik doldurulması.
+
 ## Web 0.4.0 — `b981f30`
 - **Web uygulamasında mali araçlar ve yönetim ekranları tamamlandı (`web/`):**
   - **KDV Takibi (`/kdv`):** Aylık KDV durumu, indirilecek ve hesaplanan KDV dökümü, net ödenecek/devreden KDV kartı, orana göre matrah dağılımı ve geçmiş aylar tablosu.

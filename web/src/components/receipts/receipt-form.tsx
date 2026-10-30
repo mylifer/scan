@@ -19,8 +19,8 @@ import {
   Camera,
   Loader2,
   Save,
+  Sparkles,
   Trash2,
-  Upload,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -53,6 +53,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { createReceipt, deleteReceipt, getImageUrl, loadCustomCategories, updateReceipt } from "@/lib/receipts";
+import { analyzeReceiptFile } from "@/lib/vision";
 
 interface ReceiptFormProps {
   initialRecord?: ReceiptRecord;
@@ -74,6 +75,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [categories, setCategories] = useState<readonly Kategori[]>([]);
+  const [analyzing, setAnalyzing] = useState(false);
 
   // Özel kategorileri yükle
   useEffect(() => {
@@ -98,15 +100,37 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
     setForm((prev) => setFormField(prev, key, value));
   };
 
+  const scanFile = async (file: File) => {
+    setAnalyzing(true);
+    try {
+      const data = await analyzeReceiptFile(file);
+      setForm(toFormValues(data));
+      toast.success(
+        `Yapay zeka fişi okudu: ${data.firmaAdi || "Fiş"} (${formatTL(data.toplamTutar)})`
+      );
+      if (data.eminOlunmayanlar && data.eminOlunmayanlar.length > 0) {
+        toast.warning(
+          `Lütfen şu alanları kontrol edin: ${data.eminOlunmayanlar.join(", ")}`
+        );
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Yapay zeka fişi okuyamadı.");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!file.type.startsWith("image/")) {
+      if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
         toast.error("Lütfen geçerli bir görsel dosyası seçin (JPEG, PNG vb.).");
         return;
       }
       setPhotoFile(file);
       setPreviewUrl(URL.createObjectURL(file));
+      // Otomatik tarama teklifi
+      void scanFile(file);
     }
   };
 
@@ -542,7 +566,30 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                       alt="Fiş görseli"
                       className="max-h-full max-w-full object-contain"
                     />
+                    {analyzing && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-xs p-4 text-center">
+                        <Loader2 className="size-8 animate-spin text-primary mb-2" />
+                        <p className="text-xs font-semibold text-foreground">Yapay Zeka Okuyor…</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          Firma, tarih, tutar ve KDV dilimleri taranıyor
+                        </p>
+                      </div>
+                    )}
                   </div>
+
+                  {photoFile && !analyzing && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => void scanFile(photoFile)}
+                      className="w-full gap-1.5 text-xs"
+                    >
+                      <Sparkles className="size-3.5 text-primary" />
+                      Yapay Zeka ile Tekrar Tara
+                    </Button>
+                  )}
+
                   <div className="flex items-center justify-between gap-2">
                     <Button
                       type="button"
@@ -550,6 +597,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                       size="sm"
                       className="w-full"
                       onClick={() => fileInputRef.current?.click()}
+                      disabled={analyzing}
                     >
                       <Camera className="size-4" />
                       Değiştir
@@ -560,6 +608,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                         variant="ghost"
                         size="icon-sm"
                         onClick={handleClearPhoto}
+                        disabled={analyzing}
                         title="Yeni seçimi kaldır"
                       >
                         <X className="size-4" />
@@ -572,15 +621,17 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                   onClick={() => fileInputRef.current?.click()}
                   className="flex aspect-3/4 w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-center transition-colors hover:border-primary/50 hover:bg-muted/30"
                 >
-                  <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-                    <Upload className="size-6 text-muted-foreground" />
+                  <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+                    <Sparkles className="size-6 text-primary" />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm font-medium">Fotoğraf Yükle</p>
-                    <p className="text-xs text-muted-foreground">Tıklayın veya fotoğraf dosyasını seçin</p>
+                    <p className="text-sm font-semibold">Fotoğraf Yükle & AI ile Tara</p>
+                    <p className="text-xs text-muted-foreground">
+                      Tıklayın veya fotoğraf dosyasını seçin; bilgiler otomatik dolsun
+                    </p>
                   </div>
                   <Badge variant="secondary" className="text-[10px]">
-                    JPG, PNG
+                    JPG, PNG, PDF
                   </Badge>
                 </div>
               )}
