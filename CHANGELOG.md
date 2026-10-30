@@ -16,6 +16,15 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 0.3.0 — (bekleniyor)
+- **Web uygulamasında e-Faturalar ekranı, PDF önizleme, detay ve dışa aktarım tamamlandı (`web/`):**
+  - **e-Fatura Listesi (`/efaturalar`):** Gelen / Giden sekmeleri, ay gezintisi, canlı arama, tip filtresi, sıralama, özet metrik kartları (Adet, Toplam Tutar, Net KDV, QNB kontrol durumu).
+  - **Yerleşik PDF Önizleme (`PdfViewerDialog`):** shadcn Dialog içerisinde iframe ile doğrudan PDF görüntüleme ve tek tıkla PDF indirme.
+  - **UBL Fatura Detayları (`FaturaDetayDialog`):** Mal/hizmet kalemleri tablosu, alıcı/satıcı bilgileri, KDV dökümü, ara toplam/iskonto/ödenecek tutar özeti ve fatura notları.
+  - **Dönem Matrah & KDV Özeti (`DonemOzetDialog`):** KDV matrah analizi, giden fatura türleri dökümü ve olağan dışı yüksek tutarlı fatura uyarıları.
+  - **Dışa Aktarım:** Seçili veya döneme ait tüm e-faturalar için Excel tablosu veya PDF arşivi (ZIP) indirme.
+  - **Modüler Mimari:** `pdfCache` servisindeki dolaylı React Native bağımlılığı izole edilerek web derleyicileriyle (Turbopack) tam uyumlu saf hale getirildi.
+
 ## Web 0.2.0 — `100998a`
 - **Web uygulamasında Fişler ekranı, düzenleme/detay ve veri katmanı tamamlandı (`web/`):**
   - **Fiş Listesi (`/fisler`):** Arama çubuğu, dönem ve kategori filtreleri, özet kartları (Toplam, Fiş Sayısı, KDV, Gönderilenler), sıralanabilir başlıklar, satır ve toplu seçim.

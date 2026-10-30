@@ -4,6 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { AppState, Platform } from 'react-native';
 
+import { setPdfInvoker } from '../efatura/pdfCache';
+
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const key = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '';
 
@@ -43,3 +45,7 @@ if (Platform.OS !== 'web') {
     else supabase.auth.stopAutoRefresh();
   });
 }
+
+// e-Fatura PDF indirmeleri için varsayılan invoker
+setPdfInvoker((name, options) => supabase.functions.invoke(name, options));
+

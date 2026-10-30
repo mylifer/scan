@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { EFaturaView } from "@/components/efatura/efatura-view";
 
 export const metadata: Metadata = { title: "e-Faturalar · Fiş Tarayıcı" };
 
 export default function Page() {
-  return <PlaceholderPage title="e-Faturalar" />;
+  return <EFaturaView />;
 }
