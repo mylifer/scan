@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## Web 1.0.6 — (bekleniyor)
+## Web 1.0.6 — `6d76edb`
 - **e-Faturalar tablosunda sütun başlıklarına tıklanarak sıralama yapma özelliği eklendi (`web/`):**
   - **İnteraktif Sütun Başlıkları (`SortHeader`):** Tablodaki `Tarih`, `Firma / Ünvan`, `Tür / Tip`, `KDV` ve `Toplam Tutar` sütun başlıkları tıklanabilir sıralama butonlarına dönüştürüldü. Aktif sütun yönüne göre dinamik `ArrowUp`, `ArrowDown` ve pasif durumda `ArrowUpDown` ikonları eklendi; erişilebilirlik için `aria-sort` öznitelikleri tanımlandı.
   - **Çift Yönlü Sıralama ve Akıllı Varsayılanlar (`sortEFaturaList`):**
