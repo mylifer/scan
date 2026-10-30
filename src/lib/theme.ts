@@ -143,9 +143,9 @@ export const type = {
 /** Tutarlarda rakamlar hizalı dursun */
 export const tabular: TextStyle = { fontVariant: ['tabular-nums'] };
 
-/** Web'de Inter ve SF Pro */
+/** Web ve sistem genelinde Geist font ailesi */
 export const fontFamily = Platform.select({
-  web: 'Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif',
+  web: 'var(--font-geist-sans), "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   default: undefined,
 });
 
