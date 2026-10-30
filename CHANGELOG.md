@@ -16,6 +16,13 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.51.1 — `PENDING`
+- **e-Fatura seçim arayüzü hiza ve tutarlılık düzeltmeleri:**
+  - **Masaüstü Tablo Sütun Hizalaması:** Onay kutusu sütunu (`checkCol`) sabit 48px genişlik, esnemeyi önleyen flex kuralları ve ortalı yerleşimle yeniden düzenlendi. Tarih başlığı ve metinlerinin onay kutusuyla yapışması engellendi; başlık kutusu ile satır kutularının dikey ekseni birebir hizalandı.
+  - **Mükerrer Onay Kutusu Kaldırıldı:** Seçim araç çubuğundaki (`EFaturaExportBar`) gereksiz ikinci onay kutusu kaldırılarak net bir sayaç rozeti (`[50] 50 fatura seçildi`) ve toplam tutar bilgisine dönüştürüldü.
+  - **Ekran Altında Sabit Yüzen Çubuk:** Dışa aktarma çubuğu sayfa akışının içinden çıkarılarak sayfanın altında sabit yüzen (floating bar) bir panele dönüştürüldü. Böylece fatura seçildiğinde tablonun aşağı sıçraması önlendi.
+  - **Mobil Görünüm Uyumu:** Mobilde seçim modunda fatura simgelerinin değişmesi yerine, iOS tasarımına ve fiş listesine uygun olarak sağ kenarda yuvarlak seçim rozetleri gösterildi.
+
 ## 1.51.0 — `d055851`
 - **e-Fatura sayfasında tekli ve çoklu fatura seçimi ile toplu Excel ve PDF dışa aktarma (export):**
   - **Fatura Seçim Desteği:** Masaüstü tablosunda her satır için onay kutusu (checkbox) ve tablo başlığında "Tümünü Seç / Temizle" (kısmi seçim destekli indeterminate durum) eklendi. Seçilen satırlar belirgin renkle vurgulanır.

@@ -69,7 +69,7 @@ export function EFaturaTable({
       {/* Table Header */}
       <View style={[styles.row, styles.head, { borderBottomColor: t.border, backgroundColor: t.muted }]}>
         {onToggleSelectAll && (
-          <View style={[styles.cell, styles.checkCell]}>
+          <View style={styles.checkCol}>
             <Checkbox
               checked={items.length > 0 && items.every((f) => !!f.ettn && selected?.has(f.ettn.toLowerCase()))}
               indeterminate={
@@ -148,9 +148,10 @@ export function EFaturaTable({
                   if (f.ettn) onToggleSelect(f.ettn);
                 }}
                 disabled={!f.ettn}
-                accessibilityRole="button"
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: isSelected, disabled: !f.ettn }}
                 accessibilityLabel={`${f.unvan} faturasını seç`}
-                style={[styles.cell, styles.checkCell]}>
+                style={styles.checkCol}>
                 <Checkbox
                   checked={isSelected}
                   disabled={!f.ettn}
@@ -276,17 +277,18 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    paddingLeft: 4,
+    paddingRight: 8,
     minHeight: 48,
   },
   head: {
-    minHeight: 38,
+    minHeight: 40,
     borderBottomWidth: 1,
   },
   headText: {
     fontFamily,
     fontSize: 12,
-    letterSpacing: 0.4,
+    letterSpacing: 0.3,
   },
   cell: {
     paddingHorizontal: 10,
@@ -294,12 +296,16 @@ const styles = StyleSheet.create({
     minWidth: 0,
     justifyContent: 'center',
   },
-  checkCell: {
-    width: 44,
-    flex: 0,
+  checkCol: {
+    width: 48,
+    minWidth: 48,
+    maxWidth: 48,
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 0,
+    cursor: 'pointer',
   },
   sag: {
     textAlign: 'right',
