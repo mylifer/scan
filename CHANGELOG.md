@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## Web 0.2.0 — (bekleniyor)
+## Web 0.2.0 — `100998a`
 - **Web uygulamasında Fişler ekranı, düzenleme/detay ve veri katmanı tamamlandı (`web/`):**
   - **Fiş Listesi (`/fisler`):** Arama çubuğu, dönem ve kategori filtreleri, özet kartları (Toplam, Fiş Sayısı, KDV, Gönderilenler), sıralanabilir başlıklar, satır ve toplu seçim.
   - **Toplu İşlemler:** Seçili veya döneme ait fişler için Excel dışa aktarımı, fotoğraflı muhasebe paketi (ZIP), muhasebeye gönderildi işareti ve çöp kutusuna taşıma.
