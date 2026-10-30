@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.52.1 — (bekleniyor)
+## 1.52.1 — `4aaeba6`
 - **iOS uygulamasında e-Fatura PDF açılışındaki "Creating blobs from 'ArrayBuffer' and 'ArrayBufferView' are not supported" hatası giderildi:**
   - **React Native Blob Uyumluluğu (`pdfCache`):** React Native'in (iOS/Android) dahili Blob polyfill'i `ArrayBuffer` veya `Uint8Array` parametresi alamaz ve istisna fırlatır. İframe için kullanılan `Blob` ve `URL.createObjectURL` mantığı yalnızca `document` tanımlı olan web tarayıcısı ortamıyla sınırlandırıldı.
   - **iOS Dosya Yazma ve Paylaşım Senkronizasyonu (`exportReceipts`):** Expo SDK 58'in modern `File.write()` asenkron API'si `await` ile güvenceye alınarak dosyanın tamamen yazılması ve iOS paylaşım menüsüne (`sharePdf`) eksiksiz teslim edilmesi sağlandı.
