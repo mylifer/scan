@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## Web 0.1.0 — `TBD`
+## Web 0.1.0 — `b6cd354`
 - **Yeni web uygulamasının iskeleti (`web/`) eklendi (henüz yayında değil; Expo web yayında kalmaya devam ediyor):**
   - **Yığın:** Next.js 16 (App Router, statik export, `basePath: /scan`), React 19, Tailwind v4 ve gerçek shadcn (radix-nova) bileşenleri — fintrack-os ile aynı.
   - **Düzen:** Daraltılabilir kenar çubuğu (Fişler, e-Faturalar, KDV, Vergi Takvimi, Firmalar, Kategoriler, Bütçe, Ayarlar), başlık çubuğu, açık/koyu/sistem tema ve kullanıcı menüsü (Çıkış).
