@@ -1,0 +1,261 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* shadcn dark variant */
+@custom-variant dark (&:is(.dark *));
+
+/* ─────────────────────────────────────────────────────────────────
+   SHADCN SEMANTIC TOKEN MAPPING  (Tailwind v4 — @theme inline)
+   ───────────────────────────────────────────────────────────────── */
+@theme inline {
+  --radius-sm:  calc(var(--radius) - 4px);
+  --radius-md:  calc(var(--radius) - 2px);
+  --radius-lg:  var(--radius);
+  --radius-xl:  calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --color-background:              var(--background);
+  --color-foreground:              var(--foreground);
+  --color-card:                    var(--card);
+  --color-card-foreground:         var(--card-foreground);
+  --color-popover:                 var(--popover);
+  --color-popover-foreground:      var(--popover-foreground);
+  --color-primary:                 var(--primary);
+  --color-primary-foreground:      var(--primary-foreground);
+  --color-secondary:               var(--secondary);
+  --color-secondary-foreground:    var(--secondary-foreground);
+  --color-muted:                   var(--muted);
+  --color-muted-foreground:        var(--muted-foreground);
+  --color-accent:                  var(--accent);
+  --color-accent-foreground:       var(--accent-foreground);
+  --color-destructive:             var(--destructive);
+  --color-border:                  var(--border);
+  --color-input:                   var(--input);
+  --color-ring:                    var(--ring);
+
+  --color-chart-1:  var(--chart-1);
+  --color-chart-2:  var(--chart-2);
+  --color-chart-3:  var(--chart-3);
+  --color-chart-4:  var(--chart-4);
+  --color-chart-5:  var(--chart-5);
+
+  --color-sidebar:                     var(--sidebar-background);
+  --color-sidebar-foreground:          var(--sidebar-foreground);
+  --color-sidebar-primary:             var(--sidebar-primary);
+  --color-sidebar-primary-foreground:  var(--sidebar-primary-foreground);
+  --color-sidebar-accent:              var(--sidebar-accent);
+  --color-sidebar-accent-foreground:   var(--sidebar-accent-foreground);
+  --color-sidebar-border:              var(--sidebar-border);
+  --color-sidebar-ring:                var(--sidebar-ring);
+
+  --font-sans: var(--font-sans, system-ui, sans-serif);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   ZINC NEW YORK — Light (default)
+   ───────────────────────────────────────────────────────────────── */
+:root {
+  /* Katmanlı nötr zemin: hafif kırık-beyaz sayfa + saf beyaz kartlar (mockup dili) */
+  --background:           #f7f7f6;
+  --foreground:           oklch(0.141 0.005 285.82);
+  --card:                 #ffffff;
+  --card-foreground:      oklch(0.141 0.005 285.82);
+  --popover:              #ffffff;
+  --popover-foreground:   oklch(0.141 0.005 285.82);
+  /* Birincil aksan: turkuaz — nötr temadan ayrışır.
+     Aksan parlak (luminans ~0.55) olduğu için üstündeki yazı KOYU olmalı:
+     beyaz metin 1.8:1 ile okunmaz, koyu mürekkep ~11:1 verir. */
+  --primary:              #00D9D9;
+  --primary-foreground:   #062626;
+  --secondary:            oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.034 264.665);
+  --muted:                oklch(0.967 0.001 286.375);
+  --muted-foreground:     oklch(0.552 0.015 285.938);
+  --accent:               oklch(0.967 0.001 286.375);
+  --accent-foreground:    oklch(0.21 0.034 264.665);
+  --destructive:          oklch(0.577 0.245 27.325);
+  --border:               oklch(0.92 0.004 286.32);
+  --input:                oklch(0.92 0.004 286.32);
+  --ring:                 #00D9D9;
+  --radius:               0.625rem;
+
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.067);
+
+  /* Nakit akışı gelir/gider — açık temada koyu-doygun tonlar */
+  --cf-income:  #16a34a;
+  --cf-expense: #dc2626;
+
+  /* Toplu düzenleme (batch edit) seçim aksanı — turkuaz (nötr temadan ayrışır) */
+  --batch-accent:        #00D9D9;
+  --batch-accent-soft:   #e8fbfb;
+  --batch-accent-border: #a3e9e9;
+
+  --sidebar-background:           oklch(0.985 0.002 247.839);
+  --sidebar-foreground:           oklch(0.373 0.016 285.806);
+  --sidebar-primary:              #00D9D9;
+  --sidebar-primary-foreground:   #062626;
+  --sidebar-accent:               oklch(0.967 0.001 286.375);
+  --sidebar-accent-foreground:    oklch(0.21 0.034 264.665);
+  --sidebar-border:               oklch(0.92 0.004 286.32);
+  --sidebar-ring:                 oklch(0.141 0.005 285.82);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   ZINC NEW YORK — Dark (opt-in via .dark on <html>)
+   ───────────────────────────────────────────────────────────────── */
+.dark {
+  /* Katmanlı koyu: neredeyse-siyah sayfa + biraz açık gri kartlar (mockup dili) */
+  --background:           #0a0a0a;
+  --foreground:           oklch(0.985 0.001 106.424);
+  --card:                 #151515;
+  --card-foreground:      oklch(0.985 0.001 106.424);
+  --popover:              #1b1b1b;
+  --popover-foreground:   oklch(0.985 0.001 106.424);
+  /* Birincil aksan: koyu temada da aynı turkuaz (zaten koyu zeminde parlak) */
+  --primary:              #00D9D9;
+  --primary-foreground:   #062626;
+  --secondary:            oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0.001 106.424);
+  --muted:                oklch(0.274 0.006 286.033);
+  --muted-foreground:     oklch(0.705 0.015 286.067);
+  --accent:               oklch(0.274 0.006 286.033);
+  --accent-foreground:    oklch(0.985 0.001 106.424);
+  --destructive:          oklch(0.704 0.191 22.216);
+  --border:               oklch(1 0 0 / 14%);
+  --input:                oklch(1 0 0 / 20%);
+  --ring:                 #00D9D9;
+
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.067);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+
+  /* Nakit akışı gelir/gider — koyu temada parlak tonlar (koyu zemin kontrastı) */
+  --cf-income:  #34d399;
+  --cf-expense: #fb7185;
+
+  /* Toplu düzenleme (batch edit) seçim aksanı — koyu temada turkuaz + koyu soft */
+  --batch-accent:        #00D9D9;
+  --batch-accent-soft:   #0b2a2a;
+  --batch-accent-border: #1e5e5e;
+
+  --sidebar-background:           #0f0f0f;
+  --sidebar-foreground:           oklch(0.985 0.001 106.424);
+  --sidebar-primary:              #00D9D9;
+  --sidebar-primary-foreground:   #062626;
+  --sidebar-accent:               oklch(0.274 0.006 286.033);
+  --sidebar-accent-foreground:    oklch(0.985 0.001 106.424);
+  --sidebar-border:               oklch(1 0 0 / 10%);
+  --sidebar-ring:                 oklch(0.552 0.015 285.938);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   CHART ANIMATIONS
+   ───────────────────────────────────────────────────────────────── */
+@keyframes chart-reveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.chart-reveal {
+  animation: chart-reveal 0.5s cubic-bezier(0, 0, 0.2, 1) both;
+}
+
+/* Net varlık çizgisinin soldan sağa "çiziliyormuş" gibi belirmesi
+   _NetWorthChart.tsx içinde JS (WAAPI) ile yapılıyor: SVG path'in
+   stroke-dasharray+dashoffset'i uzunluğu boyunca animasyonlanır (kalem
+   inişleri/çıkışları izleyerek çizer), dolgu ise çizgi tamamlanırken yumuşakça
+   belirir. WAAPI kullanılıyor çünkü recharts hidrasyonda path'in inline
+   style'ını sıfırlıyor; WAAPI'nin yönettiği özellikler bundan etkilenmez. */
+
+/* ─────────────────────────────────────────────────────────────────
+   BASE LAYER
+   ───────────────────────────────────────────────────────────────── */
+@layer base {
+  * {
+    border-color: var(--border);
+    outline-color: var(--ring);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   GLOBAL UTILITIES
+   ───────────────────────────────────────────────────────────────── */
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* KPI tutarı — kapsayıcı genişliğine göre ölçeklenen punto.
+   Para birimi dizesi ("₺372.886,02") bölünemez TEK bir parçadır: sarılamaz, o
+   yüzden sabit büyük punto dar bir kolona sığmadığında kart `overflow:hidden`
+   ile sayıyı KIRPIYOR ve kullanıcı eksik tutar görüyordu (mobil 2 kolonlu
+   ızgarada 375px'te "₺372.886,0"). cqi viewport'a değil KAPSAYICININ içerik
+   genişliğine bağlı olduğundan kolon sayısı/kenar çubuğu ne olursa olsun sığar;
+   üst sınır masaüstündeki 1.875rem (text-3xl) görünümünü aynen korur.
+   Kullanım: punto referansı olan kapsayıcıya Tailwind'in `@container` sınıfı,
+   tutarın kendisine `kpi-value`. */
+.kpi-value {
+  font-size: clamp(0.875rem, 13cqi, 1.875rem);
+  line-height: 1.15;
+}
+
+/* Satır-içi aksiyon grubu (düzenle / sil / iade).
+   Tailwind'in `hover:` ve `group-hover:` varyantları @media (hover: hover) ile
+   sarılıdır → DOKUNMATİK cihazda hiç tetiklenmez. Bu gruplar `opacity-0
+   group-hover:opacity-100` ile yazıldığından telefonda kalıcı olarak opacity-0
+   kalıyordu: butonlar GÖRÜNMEZ ama tıklanabilir durumdaydı. İki sonucu vardı —
+   (1) mobilde bir işlemi düzenlemenin/silmenin görünür yolu yoktu (satırın
+   kendisi tıklanabilir değil), (2) satırın sağ kenarına yapılan kazara dokunuş
+   sil/iade tetikleyebiliyordu.
+   Hover'ı olmayan cihazlarda grubu kalıcı görünür yapıp dokunma hedeflerini
+   36px'e çıkarır. İşaretçili cihazlarda davranış aynen korunur.
+
+   İkinci kullanım: DAİMA görünür olan satır ikon grupları (bütçe/borç
+   düzenle+sil) için de kullanılır — orada `opacity: 1` etkisizdir, amaç yalnız
+   dokunma hedefini büyütmektir; 24px'lik sil butonu 4px aralıkla düzenlemenin
+   yanında duruyordu ve telefonda yanlış basma riski taşıyordu.
+   DİKKAT: doğrudan çocuk butonları kareye sabitler — yalnız ikon butonu içeren
+   gruplara uygulanmalı, metinli butonlara (ör. "Kaydet") DEĞİL. */
+@media (hover: none) {
+  .row-actions { opacity: 1; }
+  .row-actions > button,
+  .row-actions > a { width: 2.25rem; height: 2.25rem; }
+  /* Grup içinde değil, tek başına duran hover-reveal buton için aynı kural. */
+  .row-action { opacity: 1; width: 2.25rem; height: 2.25rem; }
+}
+
+@keyframes caret-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.amount-caret { animation: caret-blink 1.1s step-end infinite; }
+
+
+::-webkit-scrollbar         { width: 4px; height: 4px; }
+::-webkit-scrollbar-track   { background: transparent; }
+::-webkit-scrollbar-thumb   { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Yazdırma / PDF (Raporlar, Aylık Özet): kenar boşluğu, beyaz zemin. Gezinme
+   öğeleri bileşenlerde print:hidden ile gizlenir; koyu tema PrintSupport ile
+   baskı süresince kaldırılır. */
+@media print {
+  @page { margin: 12mm; }
+  body { background: #fff !important; }
+}

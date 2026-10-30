@@ -16,6 +16,14 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 0.1.0 — `TBD`
+- **Yeni web uygulamasının iskeleti (`web/`) eklendi (henüz yayında değil; Expo web yayında kalmaya devam ediyor):**
+  - **Yığın:** Next.js 16 (App Router, statik export, `basePath: /scan`), React 19, Tailwind v4 ve gerçek shadcn (radix-nova) bileşenleri — fintrack-os ile aynı.
+  - **Düzen:** Daraltılabilir kenar çubuğu (Fişler, e-Faturalar, KDV, Vergi Takvimi, Firmalar, Kategoriler, Bütçe, Ayarlar), başlık çubuğu, açık/koyu/sistem tema ve kullanıcı menüsü (Çıkış).
+  - **Oturum:** Supabase e-posta/şifre girişi ve istemci tarafı oturum koruması.
+  - **Ortak kod:** `@shared/*` ile iOS uygulamasındaki saf TS modülleri web'de kullanılabiliyor.
+  - Çalıştırma: `cd web && npm install && npm run dev`; kontrol: `npm run web:check`.
+
 ## 1.52.1 — `4aaeba6`
 - **iOS uygulamasında e-Fatura PDF açılışındaki "Creating blobs from 'ArrayBuffer' and 'ArrayBufferView' are not supported" hatası giderildi:**
   - **React Native Blob Uyumluluğu (`pdfCache`):** React Native'in (iOS/Android) dahili Blob polyfill'i `ArrayBuffer` veya `Uint8Array` parametresi alamaz ve istisna fırlatır. İframe için kullanılan `Blob` ve `URL.createObjectURL` mantığı yalnızca `document` tanımlı olan web tarayıcısı ortamıyla sınırlandırıldı.
