@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## Web 0.3.0 — (bekleniyor)
+## Web 0.3.0 — `31730c8`
 - **Web uygulamasında e-Faturalar ekranı, PDF önizleme, detay ve dışa aktarım tamamlandı (`web/`):**
   - **e-Fatura Listesi (`/efaturalar`):** Gelen / Giden sekmeleri, ay gezintisi, canlı arama, tip filtresi, sıralama, özet metrik kartları (Adet, Toplam Tutar, Net KDV, QNB kontrol durumu).
   - **Yerleşik PDF Önizleme (`PdfViewerDialog`):** shadcn Dialog içerisinde iframe ile doğrudan PDF görüntüleme ve tek tıkla PDF indirme.
