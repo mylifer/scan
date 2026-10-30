@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## Web 1.0.5 — (bekleniyor)
+## Web 1.0.5 — `8602e2d`
 - **Yeni kesilen giden e-Faturalarda KDV'nin görünmeme sorunu giderildi (`web/` & `supabase/functions/qnb-efatura`):**
   - **UBL XML Otomatik KDV Tamamlama (Backend):** QNB eSolutions toplu raporlama servisi (`gidenBelgeTutarBilgileriSorgula`) yeni kesilen faturaları hemen KDV tablosuna işlemeyip gecikmeli yansıttığı için, `tutarlariTamamla` fonksiyonuna KDV kontrolü (`typeof f.kdv !== 'number'`) eklendi. KDV bilgisi henüz rapor servisine düşmemiş faturaların UBL XML'i doğrudan indirilerek `kdvToplam` ve `matrah` değerleri anında faturaya işlenir hâle getirildi.
   - **İstemci Tarafı Anlık KDV Geri Beslemesi (Frontend):** Fatura Detay Modalı (`FaturaDetayDialog`) açıldığında UBL'den çözümlenen KDV ve matrah değerlerinin ana fatura listesine (`onDetayLoaded`) anında aktarılması sağlandı; kullanıcı faturaya tıkladığı anda KDV tablodaki satıra ve dönemin toplam KDV kartına otomatik yansıtıldı.
