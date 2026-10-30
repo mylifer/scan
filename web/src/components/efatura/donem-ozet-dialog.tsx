@@ -73,30 +73,32 @@ export function DonemOzetDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col p-4 sm:p-6">
-        <DialogHeader className="flex flex-row items-start justify-between border-b pb-4">
-          <div className="space-y-1 pr-6">
-            <DialogTitle className="text-base sm:text-lg">
-              {periodLabel} · Dönem Özeti ({yon === "gelen" ? "Gelen e-Faturalar" : "Giden e-Faturalar"})
-            </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">
-              Bu dönemdeki faturaların matrah ve vergi toplamları
-            </DialogDescription>
-          </div>
+      <DialogContent className="flex max-h-[90vh] w-full max-w-[calc(100vw-2rem)] sm:max-w-4xl flex-col p-4 sm:p-6 overflow-hidden">
+        <DialogHeader className="border-b pb-4 pr-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0 flex-1 space-y-1">
+              <DialogTitle className="break-words text-base sm:text-lg font-semibold">
+                {periodLabel} · Dönem Özeti ({yon === "gelen" ? "Gelen e-Faturalar" : "Giden e-Faturalar"})
+              </DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
+                Bu dönemdeki faturaların matrah ve vergi toplamları
+              </DialogDescription>
+            </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleExport}
-            className="mr-6 shrink-0 gap-1.5"
-          >
-            <FileSpreadsheet className="size-4" />
-            Excel İndir
-          </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              className="shrink-0 gap-1.5"
+            >
+              <FileSpreadsheet className="size-4" />
+              Excel İndir
+            </Button>
+          </div>
         </DialogHeader>
 
-        <div className="flex-1 space-y-6 overflow-y-auto pr-1 pt-2">
+        <div className="flex-1 min-h-0 space-y-6 overflow-y-auto pr-1 pt-2">
           {/* Özet Kartları */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <SummaryBlock
@@ -121,8 +123,8 @@ export function DonemOzetDialog({
           {yon === "giden" && (
             <div className="space-y-2">
               <h4 className="text-xs font-semibold uppercase text-muted-foreground">Fatura Dağılımı</h4>
-              <div className="rounded-lg border">
-                <Table>
+              <div className="w-full overflow-x-auto rounded-lg border">
+                <Table className="min-w-[520px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Fatura Türü</TableHead>
@@ -135,27 +137,27 @@ export function DonemOzetDialog({
                   <TableBody>
                     <TableRow>
                       <TableCell className="font-medium">e-Fatura Satış</TableCell>
-                      <TableCell className="text-right tabular-nums">{ozet.satis.adet}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatTL(ozet.satis.matrah)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatTL(ozet.satis.kdv)}</TableCell>
-                      <TableCell className="text-right font-medium tabular-nums">{formatTL(ozet.satis.tutar)}</TableCell>
+                      <TableCell className="text-right whitespace-nowrap tabular-nums">{ozet.satis.adet}</TableCell>
+                      <TableCell className="text-right whitespace-nowrap tabular-nums">{formatTL(ozet.satis.matrah)}</TableCell>
+                      <TableCell className="text-right whitespace-nowrap tabular-nums">{formatTL(ozet.satis.kdv)}</TableCell>
+                      <TableCell className="text-right font-medium whitespace-nowrap tabular-nums">{formatTL(ozet.satis.tutar)}</TableCell>
                     </TableRow>
                     {ozet.iade.adet > 0 && (
                       <TableRow className="text-destructive">
                         <TableCell className="font-medium">İadeler</TableCell>
-                        <TableCell className="text-right tabular-nums">{ozet.iade.adet}</TableCell>
-                        <TableCell className="text-right tabular-nums">-{formatTL(ozet.iade.matrah)}</TableCell>
-                        <TableCell className="text-right tabular-nums">-{formatTL(ozet.iade.kdv)}</TableCell>
-                        <TableCell className="text-right font-medium tabular-nums">-{formatTL(ozet.iade.tutar)}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap tabular-nums">{ozet.iade.adet}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap tabular-nums">-{formatTL(ozet.iade.matrah)}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap tabular-nums">-{formatTL(ozet.iade.kdv)}</TableCell>
+                        <TableCell className="text-right font-medium whitespace-nowrap tabular-nums">-{formatTL(ozet.iade.tutar)}</TableCell>
                       </TableRow>
                     )}
                     {ozet.earsiv.adet > 0 && (
                       <TableRow>
                         <TableCell className="font-medium">e-Arşiv Fatura</TableCell>
-                        <TableCell className="text-right tabular-nums">{ozet.earsiv.adet}</TableCell>
-                        <TableCell className="text-right tabular-nums">{formatTL(ozet.earsiv.matrah)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{formatTL(ozet.earsiv.kdv)}</TableCell>
-                        <TableCell className="text-right font-medium tabular-nums">{formatTL(ozet.earsiv.tutar)}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap tabular-nums">{ozet.earsiv.adet}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap tabular-nums">{formatTL(ozet.earsiv.matrah)}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap tabular-nums">{formatTL(ozet.earsiv.kdv)}</TableCell>
+                        <TableCell className="text-right font-medium whitespace-nowrap tabular-nums">{formatTL(ozet.earsiv.tutar)}</TableCell>
                       </TableRow>
                     )}
                   </TableBody>

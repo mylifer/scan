@@ -196,15 +196,15 @@ export function CategoriesView() {
                         key={cat}
                         className="flex items-center justify-between p-3 transition-colors hover:bg-muted/40"
                       >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
                           <Tag className="size-4 text-primary shrink-0" />
-                          <span className="font-semibold text-foreground text-sm">{categoryLabel(cat)}</span>
-                          <Badge variant="secondary" className="text-xs">
+                          <span className="font-semibold text-foreground text-sm truncate">{categoryLabel(cat)}</span>
+                          <Badge variant="secondary" className="text-xs shrink-0">
                             {count} fiş
                           </Badge>
                         </div>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 shrink-0">
                           <Button
                             type="button"
                             variant="ghost"
@@ -270,7 +270,7 @@ export function CategoriesView() {
 
       {/* Düzenleme Dialogu */}
       <Dialog open={Boolean(editingCat)} onOpenChange={(open) => !open && setEditingCat(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Kategori Adını Düzenle</DialogTitle>
             <DialogDescription>

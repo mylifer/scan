@@ -307,7 +307,7 @@ export function ReceiptsView() {
 
       <Card className="py-0">
         <CardContent className="px-0">
-          <Table>
+          <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10 pl-4">

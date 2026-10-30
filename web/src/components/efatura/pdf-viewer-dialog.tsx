@@ -85,35 +85,37 @@ function PdfViewerContent({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[85vh] max-w-5xl flex-col p-4 sm:p-6">
-        <DialogHeader className="flex flex-row items-start justify-between border-b pb-4">
-          <div className="space-y-1 pr-6">
-            <DialogTitle className="truncate text-base sm:text-lg">
-              {fatura.unvan || "e-Fatura Önizleme"}
-            </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">
-              {fatura.belgeNo || fatura.ettn} · {fatura.tarih} ·{" "}
-              <span className="font-semibold text-foreground">
-                {`${formatTL(fatura.tutar)} ${fatura.paraBirimi}`}
-              </span>
-            </DialogDescription>
-          </div>
+      <DialogContent className="flex h-[88vh] w-full max-w-[calc(100vw-2rem)] sm:max-w-5xl flex-col p-4 sm:p-6 overflow-hidden">
+        <DialogHeader className="border-b pb-4 pr-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0 flex-1 space-y-1">
+              <DialogTitle className="truncate text-base sm:text-lg font-semibold" title={fatura.unvan || "e-Fatura Önizleme"}>
+                {fatura.unvan || "e-Fatura Önizleme"}
+              </DialogTitle>
+              <DialogDescription className="break-all text-xs sm:text-sm text-muted-foreground">
+                {fatura.belgeNo || fatura.ettn} · {fatura.tarih} ·{" "}
+                <span className="font-semibold text-foreground whitespace-nowrap">
+                  {`${formatTL(fatura.tutar)} ${fatura.paraBirimi}`}
+                </span>
+              </DialogDescription>
+            </div>
 
-          {state.cached && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleDownload}
-              className="mr-6 shrink-0 gap-1.5"
-            >
-              <Download className="size-4" />
-              İndir
-            </Button>
-          )}
+            {state.cached && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleDownload}
+                className="shrink-0 gap-1.5"
+              >
+                <Download className="size-4" />
+                İndir
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
-        <div className="relative flex-1 overflow-hidden pt-2">
+        <div className="relative flex-1 min-h-0 overflow-hidden pt-2">
           {state.loading && (
             <div className="flex h-full w-full flex-col items-center justify-center gap-3">
               <Loader2 className="size-8 animate-spin text-primary" />

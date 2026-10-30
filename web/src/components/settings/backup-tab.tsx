@@ -225,7 +225,7 @@ export function BackupTab() {
 
       {/* İnceleme ve Onay Dialogu */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="w-full max-w-[calc(100vw-2rem)] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ArrowUpCircle className="size-5 text-primary" />

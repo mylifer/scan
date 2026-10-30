@@ -46,8 +46,8 @@ export function FirmMergeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col p-4 sm:p-6">
-        <DialogHeader className="border-b pb-4">
+      <DialogContent className="flex max-h-[85vh] w-full max-w-[calc(100vw-2rem)] sm:max-w-2xl flex-col p-4 sm:p-6 overflow-hidden">
+        <DialogHeader className="border-b pb-4 pr-8">
           <div className="flex items-center gap-2">
             <GitMerge className="size-5 text-primary" />
             <DialogTitle className="text-base sm:text-lg">Firma Adlarını Birleştir</DialogTitle>
@@ -57,7 +57,7 @@ export function FirmMergeDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 space-y-4 overflow-y-auto pr-1 pt-2">
+        <div className="flex-1 min-h-0 space-y-4 overflow-y-auto pr-1 pt-2">
           {groups.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
               Birleştirilebilecek benzer firma adı bulunamadı.
@@ -68,9 +68,9 @@ export function FirmMergeDialog({
               return (
                 <Card key={idx} size="sm" className="space-y-3 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <span className="text-xs text-muted-foreground">Önerilen Ortak Ad:</span>
-                      <h4 className="font-semibold text-foreground text-sm sm:text-base">
+                      <h4 className="font-semibold text-foreground text-sm sm:text-base break-words">
                         {group.suggested}
                       </h4>
                     </div>
@@ -79,7 +79,7 @@ export function FirmMergeDialog({
                       size="sm"
                       disabled={isMerging}
                       onClick={() => handleMerge(group, idx)}
-                      className="gap-1.5"
+                      className="shrink-0 gap-1.5"
                     >
                       {isMerging ? (
                         <>

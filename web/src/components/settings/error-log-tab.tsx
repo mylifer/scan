@@ -124,7 +124,7 @@ export function ErrorLogTab() {
             </div>
           ) : (
             <div className="overflow-x-auto rounded-md border">
-              <Table>
+              <Table className="min-w-[600px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Tarih & Saat</TableHead>
@@ -174,7 +174,7 @@ export function ErrorLogTab() {
 
       {/* Detay Dialogu */}
       <Dialog open={!!selectedError} onOpenChange={(open) => !open && setSelectedError(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-full max-w-[calc(100vw-2rem)] sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="size-4 text-amber-500" />
@@ -190,13 +190,13 @@ export function ErrorLogTab() {
             <div className="space-y-4 py-2">
               <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-1">
                 <span className="font-semibold text-foreground">Hata Mesajı:</span>
-                <p className="font-mono text-destructive">{selectedError.message}</p>
+                <p className="font-mono text-destructive break-words">{selectedError.message}</p>
               </div>
 
               {selectedError.detail ? (
                 <div className="space-y-1.5">
                   <span className="text-xs font-semibold text-muted-foreground">Teknik Detay (Stack Trace):</span>
-                  <pre className="max-h-60 overflow-auto rounded-lg border bg-muted/60 p-3 font-mono text-xs text-foreground/90 whitespace-pre-wrap">
+                  <pre className="max-h-60 overflow-x-auto rounded-lg border bg-muted/60 p-3 font-mono text-xs text-foreground/90 whitespace-pre-wrap break-all">
                     {selectedError.detail}
                   </pre>
                 </div>

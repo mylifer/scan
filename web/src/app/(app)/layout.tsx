@@ -29,9 +29,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         <AppHeader />
-        <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">{children}</main>
+        <main className="flex-1 min-w-0 p-4 md:p-6 pb-20 md:pb-6">{children}</main>
         <MobileNav />
       </SidebarInset>
     </SidebarProvider>

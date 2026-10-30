@@ -204,7 +204,7 @@ export function FirmsView() {
       {/* Firma Tablosu */}
       <Card>
         <CardContent className="p-0">
-          <Table>
+          <Table className="min-w-[640px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12 pl-4">#</TableHead>
@@ -269,7 +269,7 @@ export function FirmsView() {
 
               {!loading && filteredFirms.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-16 text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={6} className="py-16 text-center text-sm text-muted-foreground">
                     {search ? "Aramanıza uyan firma bulunamadı." : "Henüz kayıtlı firma bulunmuyor."}
                   </TableCell>
                 </TableRow>
