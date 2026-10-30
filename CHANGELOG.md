@@ -16,6 +16,13 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.0 — (bekleniyor)
+- **Yeni masaüstü-yoğun Next.js web dashboardu yayına alındı (GitHub Pages):**
+  - **Modern Web Mimarisi:** Web uygulaması tamamen Expo web'den ayrılarak Next.js 16 (App Router), React 19, Tailwind v4 ve gerçek shadcn UI (radix-nova) ile baştan inşa edildi.
+  - **Canlı Yayın Entegrasyonu:** `.github/workflows/deploy-web.yml` iş akışı, doğrudan `web/` klasörünü derleyip `web/out` statik çıktısını `https://mylifer.github.io/scan/` adresine yayınlayacak şekilde güncellendi.
+  - **Geriye Dönük Uyumluluk ve Rollback Desteği:** GitHub Actions üzerinden eski bir commit'e dönülmek istendiğinde (`workflow_dispatch ref` girdisi), eski Expo web derleyicisine otomatik fallback sağlanarak arşiv güvenliği korundu.
+  - **iOS Uygulaması İzolasyonu:** Kök Expo projesi (`src/`) ve iOS mobil uygulaması hiçbir değişiklikten etkilenmeden ve kalite kapılarından (208 birim testi) ödün verilmeden bağımsızlığını korudu.
+
 ## Web 0.5.0 — `b74b5f6`
 - **Web uygulamasında Ayarlar, Çöp Kutusu, Yedekleme, Hata Günlüğü ve Yapay Zeka ile Fiş Tarama tamamlandı (`web/`):**
   - **Ayarlar Hub (`/ayarlar`):** Oturum & profil yönetimi, çıkış yapma, sistem bilgisi ve açık/koyu/sistem tema geçişleri.
