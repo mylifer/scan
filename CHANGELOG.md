@@ -16,6 +16,14 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.1 — (bekleniyor)
+- **Web uygulamasında sidebar responsive davranışı, hover ve aktif durum stilleri iyileştirildi (`web/`):**
+  - **Yüksek Kontrastlı Hover ve Aktif Efektleri:** `--sidebar-accent` ve `--sidebar-background` renk değişkenleri görünür kontrast sağlayacak şekilde güncellendi. Aktif sayfa bağlantıları için turkuaz dikey hap göstergesi (`before:bg-primary`), turkuaz ikon rengi (`text-primary`) ve hafif arka plan dolgusu (`bg-primary/10`) eklendi.
+  - **İmleç ve Etkileşim:** Tüm kenar çubuğu buton ve bağlantılarına `cursor-pointer` ve yumuşak 150ms geçiş animasyonları uygulandı.
+  - **Mobil Drawer Kapanma Düzeltmesi:** Mobil ekranlarda yan çekmece (Sheet) açıldığında herhangi bir menü öğesine tıklandığında çekmecenin otomatik kapanması (`setOpenMobile(false)`) ve sağ üstte kapatma (`X`) butonu sağlandı.
+  - **Mobil Alt Gezinti Çubuğu (`MobileNav`):** Dar ekranlarda (`md:hidden`) tek parmakla birincil ekranlar arasında (Fişler, e-Faturalar, KDV, Bütçe, Ayarlar) hızlı geçiş sağlayan alt tab bar eklendi.
+  - **Masaüstü Daraltma / Genişletme:** Sidebar altında ve başlıkta tek tıkla masaüstü kenar çubuğunu simge moduna daraltan/genişleten buton ve hiyerarşik grup başlıkları eklendi.
+
 ## Web 1.0.0 — `f702dc1`
 - **Yeni masaüstü-yoğun Next.js web dashboardu yayına alındı (GitHub Pages):**
   - **Modern Web Mimarisi:** Web uygulaması tamamen Expo web'den ayrılarak Next.js 16 (App Router), React 19, Tailwind v4 ve gerçek shadcn UI (radix-nova) ile baştan inşa edildi.
