@@ -641,7 +641,7 @@ export function EFaturaView() {
                   align="right"
                   className="w-36 text-right"
                 />
-                <TableHead className="w-28 pr-4 text-right">İşlemler</TableHead>
+                <TableHead className="w-40 pr-4 text-right">İşlemler</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -671,7 +671,7 @@ export function EFaturaView() {
                       <Skeleton className="ml-auto h-4 w-20" />
                     </TableCell>
                     <TableCell className="pr-4 text-right">
-                      <Skeleton className="ml-auto h-7 w-16" />
+                      <Skeleton className="ml-auto h-8 w-28" />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -742,24 +742,27 @@ export function EFaturaView() {
                         </span>
                       </TableCell>
                       <TableCell className="pr-4 text-right" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1.5">
                           <Button
                             type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            title="PDF Önizle"
+                            variant="default"
+                            size="sm"
+                            className="h-8 gap-1.5 px-2.5 text-xs font-semibold shadow-xs cursor-pointer"
+                            title="Faturayı Görüntüle"
                             onClick={() => setPdfFatura(f)}
                           >
-                            <FileText className="size-4 text-primary" />
+                            <FileText className="size-3.5" />
+                            <span>Görüntüle</span>
                           </Button>
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon-sm"
-                            title="Detaylar"
+                            className="cursor-pointer"
+                            title="Fatura Kalem Detayları"
                             onClick={() => setDetayFatura(f)}
                           >
-                            <Eye className="size-4 text-muted-foreground" />
+                            <Eye className="size-4 text-muted-foreground hover:text-foreground" />
                           </Button>
                         </div>
                       </TableCell>

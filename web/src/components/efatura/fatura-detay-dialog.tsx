@@ -89,7 +89,7 @@ function FaturaDetayContent({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] w-full max-w-[calc(100vw-2rem)] sm:max-w-4xl flex-col p-4 sm:p-6 overflow-hidden">
+      <DialogContent className="flex max-h-[92vh] w-full max-w-[calc(100vw-2rem)] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl flex-col p-4 sm:p-6 overflow-hidden">
         <DialogHeader className="border-b pb-4 pr-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0 flex-1 space-y-1">
@@ -107,13 +107,13 @@ function FaturaDetayContent({
             {onOpenPdf && (
               <Button
                 type="button"
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={() => onOpenPdf(fatura)}
-                className="shrink-0 gap-1.5"
+                className="shrink-0 gap-1.5 shadow-xs"
               >
                 <FileText className="size-4" />
-                PDF Gör
+                <span>PDF Görüntüle</span>
               </Button>
             )}
           </div>
@@ -181,23 +181,23 @@ function FaturaDetayContent({
               <div className="space-y-2">
                 <h4 className="text-xs font-semibold uppercase text-muted-foreground">Fatura Kalemleri</h4>
                 <div className="w-full overflow-x-auto rounded-lg border">
-                  <Table className="min-w-[650px]">
+                  <Table className="w-full min-w-[720px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-12">#</TableHead>
-                        <TableHead>Mal / Hizmet</TableHead>
-                        <TableHead className="text-right">Miktar</TableHead>
-                        <TableHead className="text-right">Birim Fiyat</TableHead>
-                        <TableHead className="text-right">KDV %</TableHead>
-                        <TableHead className="text-right">KDV Tutarı</TableHead>
-                        <TableHead className="text-right">Tutar (KDV Hariç)</TableHead>
+                        <TableHead className="w-12 pl-3">#</TableHead>
+                        <TableHead className="min-w-48">Mal / Hizmet</TableHead>
+                        <TableHead className="w-28 text-right">Miktar</TableHead>
+                        <TableHead className="w-32 text-right">Birim Fiyat</TableHead>
+                        <TableHead className="w-20 text-right">KDV %</TableHead>
+                        <TableHead className="w-32 text-right">KDV Tutarı</TableHead>
+                        <TableHead className="w-36 pr-3 text-right">Tutar (KDV Hariç)</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {state.detay.kalemler.map((k, idx) => (
                         <TableRow key={idx}>
-                          <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
-                          <TableCell className="font-medium min-w-[200px] break-words">{k.ad}</TableCell>
+                          <TableCell className="pl-3 text-xs text-muted-foreground">{idx + 1}</TableCell>
+                          <TableCell className="font-medium min-w-48 break-words">{k.ad}</TableCell>
                           <TableCell className="text-right whitespace-nowrap tabular-nums">
                             {k.miktar} {k.birim}
                           </TableCell>
@@ -208,7 +208,7 @@ function FaturaDetayContent({
                           <TableCell className="text-right whitespace-nowrap tabular-nums">
                             {formatTL(k.kdvTutari)} {currency}
                           </TableCell>
-                          <TableCell className="text-right font-medium whitespace-nowrap tabular-nums">
+                          <TableCell className="pr-3 text-right font-medium whitespace-nowrap tabular-nums">
                             {formatTL(k.tutar)} {currency}
                           </TableCell>
                         </TableRow>

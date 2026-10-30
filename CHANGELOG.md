@@ -16,6 +16,11 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.10 — (bekleniyor)
+- **e-Fatura detay pop-up genişliği optimize edildi ve tabloda birincil aksiyon (Primary CTA) uygulandı (`web/`):**
+  - **Diyalog Genişliği ve Sütun Düzeni (`fatura-detay-dialog.tsx`):** Fatura Detay pop-up'ının genişliği `sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl` seviyesine çıkarıldı. 7 sütunlu Fatura Kalemleri tablosundaki her sütuna oranlı ve net genişlikler (`#`, `Mal / Hizmet`, `Miktar`, `Birim Fiyat`, `KDV %`, `KDV Tutarı`, `Tutar (KDV Hariç)`) tanımlanarak tüm sütunların yatay kaydırma gerektirmeden pop-up'a kusursuz sığması sağlandı. Modaldaki "PDF Görüntüle" butonu da birincil aksiyon stiline (`variant="default"`) geçirildi.
+  - **Tabloda Fatura Görüntüleme Butonuna Primary CTA (`efatura-view.tsx`):** e-Faturalar tablosundaki satır içi fatura görüntüleme eylemi, soluk/görünmez ikon yerine turkuaz birincil aksiyon düğmesine (`variant="default" size="sm"`, `[ 📄 Görüntüle ]`) dönüştürüldü; yanına ikincil detay inceleme ikonu konumlandırılarak net bir işlem hiyerarşisi tesis edildi.
+
 ## Web 1.0.9 — `6973d5e`
 - **Fatura Detay modalı ve finansal kartlardaki tutar alanları Geist Sans tipografisine uyarlandı (`web/`):**
   - **Fatura Detay Tutar Özeti Kartı (`fatura-detay-dialog.tsx`):** Sağ altta yer alan Ara Toplam, İskonto, Toplam KDV ve Ödenecek Toplam satırlarında kullanılan `font-mono` (monospace) sınıfı kaldırılarak sistemin geri kalanıyla uyumlu `Geist Sans` (`tabular-nums font-medium/font-semibold`) tipografisine geçirildi; para birimi ve rakamların modern ve tutarlı görünmesi sağlandı.
