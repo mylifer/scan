@@ -16,6 +16,14 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.12 — `c7d56e0`
+- **Vergi Takvimi tablosunda geçmiş satırlar varsayılan olarak gizlendi ve gösterim onay kutusu (Checkbox) eklendi (`web/`):**
+  - **Varsayılan Geçmiş Satır Gizleme (`tax-calendar-view.tsx`):** Vergi Takvimi tablosunda vadesi geçmiş olan tüm satırlar (`daysUntil < 0`) varsayılan olarak filtrelenerek gizlendi. Kullanıcı yalnızca bugün (`daysUntil === 0`) ve gelecekteki yaklaşan vergi yükümlülüklerini odaklı ve sade bir listede görür.
+  - **"Geçmiş satırları göster" Filtre Onay Kutusu:** Yıl ve tür filtrelerinin yanına shadcn/ui `Checkbox` ve `Label` bileşeni eklendi. İşaretlendiğinde önceki ayların tamamlanmış yükümlülükleri de listeye dahil edilerek geçmiş durum rozetiyle (`Tamamlandı`) gösterilir.
+  - **Dinamik Geçmiş Kayıt Sayacı (Badge):** Seçili yıl ve tür filtrelerine uygun kaç adet tamamlanmış geçmiş kayıt bulunduğu hesaplanarak onay kutusunun yanına rozet (`Badge`) olarak eklendi.
+  - **Boş Durum Rehberliği:** Seçilen filtrede yaklaşan hiçbir yükümlülük kalmadığında tablonun boş kalmasını önleyen ve geçmiş kayıtların görüntülenebileceğini açıklayan bilgilendirici boş durum satırı (`TableRow`) eklendi.
+  - **Modüler Mantık ve Birim Testleri (`taxCalendar.ts` & `taxCalendar.test.ts`):** Filtreleme ve geçmiş sayım algoritmaları saf fonksiyonlara ayrılarak 4 yeni Vitest testi ile doğrulandı.
+
 ## Web 1.0.11 — `629f858`
 - **Tüm kullanıcı arayüzüne akıcı sayfa geçişleri, modern mikro etkileşimler ve animasyonlar eklendi (`web/`):**
   - **Sayfa Geçiş Animasyonu (Next.js App Router `template.tsx`):** `web/src/app/(app)/template.tsx` şablonu oluşturularak sayfalar arası her gezinmede (`/fisler`, `/efaturalar`, `/kdv`, `/butce`, `/ayarlar`, `/firmalar` vb.) sayfa içeriğinin `animate-in fade-in-50 slide-in-from-bottom-2 duration-200 ease-out` ile yukarıya doğru hafifçe süzülerek pürüzsüz belirmesi sağlandı.
