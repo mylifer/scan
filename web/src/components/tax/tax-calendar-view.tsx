@@ -17,6 +17,8 @@ import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -25,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { countPastDeadlines, filterTaxDeadlines } from "@/lib/taxCalendar";
 
 const TAX_KIND_LABELS: Record<TaxKind, string> = {
   kdv: "KDV",
@@ -38,6 +41,7 @@ const TAX_KIND_LABELS: Record<TaxKind, string> = {
 export function TaxCalendarView() {
   const [selectedYear, setSelectedYear] = useState<string>("2026");
   const [kindFilter, setKindFilter] = useState<string>("all");
+  const [showPast, setShowPast] = useState<boolean>(false);
 
   const today = useMemo(() => todayIso(), []);
 
@@ -48,11 +52,19 @@ export function TaxCalendarView() {
     return taxDeadlines(from, to);
   }, [selectedYear]);
 
-  // Filtreleme
+  // Geçmiş kayıt sayısı (seçilen yıl ve türe göre)
+  const pastCount = useMemo(() => {
+    return countPastDeadlines(deadlines, { kind: kindFilter, today });
+  }, [deadlines, kindFilter, today]);
+
+  // Filtreleme (Tür ve Geçmiş Durumu)
   const filteredDeadlines = useMemo(() => {
-    if (kindFilter === "all") return deadlines;
-    return deadlines.filter((d) => d.kind === kindFilter);
-  }, [deadlines, kindFilter]);
+    return filterTaxDeadlines(deadlines, {
+      kind: kindFilter,
+      showPast,
+      today,
+    });
+  }, [deadlines, kindFilter, showPast, today]);
 
   // Yaklaşan ilk yükümlülük
   const nextDeadline = useMemo(() => {
@@ -62,13 +74,13 @@ export function TaxCalendarView() {
   return (
     <div className="space-y-6">
       {/* Başlık ve Filtreler */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
           title="Vergi Takvimi"
           description="Şahıs işletmeleri için yasal beyanname ve vergi ödeme günleri (VUK 18 tatil kaydırmaları dahil)."
         />
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Select value={selectedYear} onValueChange={setSelectedYear}>
             <SelectTrigger className="w-32">
               <SelectValue placeholder="Yıl" />
@@ -92,6 +104,22 @@ export function TaxCalendarView() {
               <SelectItem value="babs">Ba-Bs Formu</SelectItem>
             </SelectContent>
           </Select>
+
+          <div className="flex h-8 items-center gap-2 rounded-lg border border-border bg-card px-2.5 text-sm shadow-2xs">
+            <Checkbox
+              id="show-past-tax"
+              checked={showPast}
+              onCheckedChange={(checked) => setShowPast(Boolean(checked))}
+            />
+            <Label htmlFor="show-past-tax" className="cursor-pointer text-xs font-medium text-foreground">
+              Geçmiş satırları göster
+            </Label>
+            {pastCount > 0 && (
+              <Badge variant="secondary" className="h-4.5 px-1.5 text-[10px]">
+                {pastCount}
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
 
@@ -146,74 +174,94 @@ export function TaxCalendarView() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredDeadlines.map((item, idx) => {
-                const days = daysUntil(item.date, today);
-                const isPast = days < 0;
-                const isToday = days === 0;
-                const isUrgent = days > 0 && days <= 5;
-                const isShifted = item.legalDate !== item.date;
-
-                return (
-                  <TableRow
-                    key={idx}
-                    className={isPast ? "opacity-60" : isUrgent ? "bg-amber-500/5 font-medium" : undefined}
-                  >
-                    <TableCell className="font-semibold tabular-nums text-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="size-3.5 text-muted-foreground" />
-                        {formatTrDate(item.date)}
-                      </div>
-                      {isShifted && (
-                        <div className="text-[10px] text-muted-foreground">
-                          Yasal: {formatTrDate(item.legalDate)}
-                        </div>
-                      )}
-                    </TableCell>
-
-                    <TableCell>
-                      <div className="font-medium text-foreground">{item.title}</div>
-                      <div className="text-xs text-muted-foreground">{TAX_KIND_LABELS[item.kind]}</div>
-                    </TableCell>
-
-                    <TableCell className="text-xs text-muted-foreground">{item.period}</TableCell>
-
-                    <TableCell>
-                      {isPast ? (
-                        <Badge variant="outline" className="text-muted-foreground text-[11px]">
-                          Tamamlandı
-                        </Badge>
-                      ) : isToday ? (
-                        <Badge variant="destructive" className="animate-pulse text-[11px]">
-                          Bugün!
-                        </Badge>
-                      ) : isUrgent ? (
-                        <Badge variant="destructive" className="text-[11px]">
-                          {days} gün kaldı
-                        </Badge>
+              {filteredDeadlines.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center gap-1.5 py-6">
+                      <Clock className="size-6 text-muted-foreground/50" />
+                      <p className="font-medium text-foreground">Görüntülenecek yaklaşan vergi yükümlülüğü bulunamadı.</p>
+                      {pastCount > 0 && !showPast ? (
+                        <p className="text-xs text-muted-foreground">
+                          Seçilen dönemde {pastCount} adet tamamlanmış yükümlülük var. Görmek için yukarıdaki &quot;Geçmiş satırları göster&quot; kutusunu işaretleyebilirsiniz.
+                        </p>
                       ) : (
-                        <Badge variant="secondary" className="text-[11px]">
-                          {days} gün kaldı
-                        </Badge>
+                        <p className="text-xs text-muted-foreground">
+                          Farklı bir yıl veya tür filtresi seçebilirsiniz.
+                        </p>
                       )}
-                    </TableCell>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredDeadlines.map((item, idx) => {
+                  const days = daysUntil(item.date, today);
+                  const isPast = days < 0;
+                  const isToday = days === 0;
+                  const isUrgent = days > 0 && days <= 5;
+                  const isShifted = item.legalDate !== item.date;
 
-                    <TableCell className="text-xs text-muted-foreground">
-                      {item.notes.length > 0 ? (
-                        <div className="space-y-0.5">
-                          {item.notes.map((n, i) => (
-                            <div key={i} className="flex items-center gap-1">
-                              <Info className="size-3 shrink-0 text-muted-foreground" />
-                              <span>{n}</span>
-                            </div>
-                          ))}
+                  return (
+                    <TableRow
+                      key={idx}
+                      className={isPast ? "opacity-60" : isUrgent ? "bg-amber-500/5 font-medium" : undefined}
+                    >
+                      <TableCell className="font-semibold tabular-nums text-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="size-3.5 text-muted-foreground" />
+                          {formatTrDate(item.date)}
                         </div>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                        {isShifted && (
+                          <div className="text-[10px] text-muted-foreground">
+                            Yasal: {formatTrDate(item.legalDate)}
+                          </div>
+                        )}
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="font-medium text-foreground">{item.title}</div>
+                        <div className="text-xs text-muted-foreground">{TAX_KIND_LABELS[item.kind]}</div>
+                      </TableCell>
+
+                      <TableCell className="text-xs text-muted-foreground">{item.period}</TableCell>
+
+                      <TableCell>
+                        {isPast ? (
+                          <Badge variant="outline" className="text-muted-foreground text-[11px]">
+                            Tamamlandı
+                          </Badge>
+                        ) : isToday ? (
+                          <Badge variant="destructive" className="animate-pulse text-[11px]">
+                            Bugün!
+                          </Badge>
+                        ) : isUrgent ? (
+                          <Badge variant="destructive" className="text-[11px]">
+                            {days} gün kaldı
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-[11px]">
+                            {days} gün kaldı
+                          </Badge>
+                        )}
+                      </TableCell>
+
+                      <TableCell className="text-xs text-muted-foreground">
+                        {item.notes.length > 0 ? (
+                          <div className="space-y-0.5">
+                            {item.notes.map((n, i) => (
+                              <div key={i} className="flex items-center gap-1">
+                                <Info className="size-3 shrink-0 text-muted-foreground" />
+                                <span>{n}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
             </TableBody>
           </Table>
         </CardContent>
