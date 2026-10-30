@@ -16,6 +16,16 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.4 — (bekleniyor)
+- **Web uygulamasında shadcn/ui bileşenlerinin state seçicileri ve açık/koyu tema kontrastları düzeltildi (`web/`):**
+  - **Tabs ve TabsTrigger Aktif/Pasif Durum Düzeltmesi (`tabs.tsx`):** Radix UI'ın DOM'a ürettiği `data-state="active"` özniteliği yerine kullanılan hatalı `data-active:` seçicisi, resmi shadcn standardı olan `data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs data-[state=active]:border` ile değiştirildi. "Gelen e-Faturalar" / "Giden e-Faturalar" ve Ayarlar sekmelerinin açık ve koyu temalarda belirgin, yüksek kontrastlı ve dokunsal geçişi sağlandı.
+  - **Checkbox Seçim Durumu Düzeltmesi (`checkbox.tsx`):** Hatalı `data-checked:` seçicisi kaldırılarak standart `data-[state=checked]:bg-primary data-[state=checked]:border-primary` ve `data-[state=indeterminate]:` seçicilerine geçildi; onay kutuları tıklandığında turkuaz birincil renkle net şekilde işaretlenir hâle getirildi.
+  - **Tüm Radix Primitiflerinde State Seçici Standardizasyonu (`dialog.tsx`, `alert-dialog.tsx`, `popover.tsx`, `dropdown-menu.tsx`, `select.tsx`, `sheet.tsx`, `tooltip.tsx`):** Tailwind v4 uyumsuz sahte sözde varyantlar (`data-open:`, `data-closed:`, `data-placeholder:`) elenerek standart `data-[state=open]:`, `data-[state=closed]:`, `data-[state=delayed-open]:` ve `data-[placeholder]:` sözdizimine dönüştürüldü; açılış/kapanış animasyonları eksiksiz çalışır kılındı.
+  - **Kart ve Panel Kenarlıklarında Kontrast Düzeltmesi (`card.tsx`):** Koyu temada silik kalan `ring-1 ring-foreground/10` yerine resmi shadcn standardı `border border-border bg-card text-card-foreground shadow-xs` yapısına geçilerek katmanlı sayfa yapısında kart sınırları netleştirildi.
+  - **Modal ve Çekmece Karartma Katmanı (Overlay) İyileştirmesi:** Neredeyse görünmez olan `bg-black/10` arka plan örtüsü, modern odaklanma sağlayan `bg-black/60 backdrop-blur-xs` ile değiştirildi.
+  - **Buton, Input, Textarea ve Select Kontrastları:** Buton outline varyantı ve form girdilerinde koyu temada çamurlu gri arka plana neden olan `dark:bg-input/30` temizlendi; `bg-transparent border-input shadow-xs` ve `hover:bg-accent` ile standart yüksek kontrastlı görünüme kavuşturuldu.
+  - **Tablo Başlıkları Kontrast Hiyerarşisi (`table.tsx`):** `TableHead` bileşeninde veri hücreleriyle karışan `text-foreground`, standart `text-muted-foreground font-medium` seviyesine çekilerek görsel hiyerarşi tesis edildi.
+
 ## Web 1.0.3 — `07bd0c5`
 - **Web uygulamasında kenar çubuğu (Sidebar) modern SaaS ve Fintrack mimarisine göre baştan tasarlandı (`web/`):**
   - **Masaüstü SaaS Estetiği ve Marka Kimliği:** Üst kısımda yüksek çözünürlüklü marka ikonu ve tipografisi (`FişTarayıcı · Mali İşletme Portalı`), altında ise tek tıkla doğrudan fiş yüklemeyi sağlayan birincil aksiyon butonu (`+ Yeni Fiş Tara`) konumlandırıldı.
