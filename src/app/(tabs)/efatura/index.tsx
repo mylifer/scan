@@ -1,9 +1,10 @@
 import NativeSegmentedControl, { type SegmentedControlProps } from '@react-native-segmented-control/segmented-control';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
-import { type ComponentType, useCallback, useEffect, useRef, useState } from 'react';
+import { type ComponentType, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { EFaturaExportBar } from '../../../components/efatura/EFaturaExportBar';
 import { EFaturaTable } from '../../../components/efatura/EFaturaTable';
 import { PdfViewerModal } from '../../../components/efatura/PdfViewerModal';
 import { StatTiles } from '../../../components/ui/Columns';
@@ -18,7 +19,9 @@ import { capitalizeTr, monthRange } from '../../../lib/format';
 import { haptics } from '../../../lib/haptics';
 import { useWide } from '../../../lib/layout';
 import { fontFamily, type as t, useShadcnTheme, useTheme } from '../../../lib/theme';
+import { showToast } from '../../../lib/toast';
 import { TabsList, TabsTrigger } from '../../../components/web/Tabs';
+import { exportEFaturaExcel, exportEFaturaPdfs } from '../../../services/efatura/efaturaExport';
 import { type EFatura, EFaturaError, type Kontrol, totalsByCurrency, type Yon } from '../../../services/efatura/qnbEfatura';
 import { donemCache as cache, donemGetir, type Donem, qnbDurum } from '../../../services/efatura/donemCache';
 
@@ -90,6 +93,27 @@ export default function EFaturaScreen() {
   const [errors, setErrors] = useState<Record<string, { message: string; login: boolean }>>({});
   const [pulling, setPulling] = useState(false);
   const [pdfModalFatura, setPdfModalFatura] = useState<EFatura | null>(null);
+  const [selectedEttns, setSelectedEttns] = useState<ReadonlySet<string>>(new Set());
+  const [exportingText, setExportingText] = useState<string | null>(null);
+
+  // Dönem veya yön değişince seçimi sıfırla
+  useEffect(() => {
+    setSelectedEttns(new Set());
+  }, [yon, offset]);
+
+  const toggleSelect = useCallback((ettn: string) => {
+    haptics.select();
+    const k = ettn.toLowerCase();
+    setSelectedEttns((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) {
+        next.delete(k);
+      } else {
+        next.add(k);
+      }
+      return next;
+    });
+  }, []);
   /** Genel Özet'te toplamlardan çıkarılan faturalar (olağan dışı yüksek tutar) */
   const [haric, setHaric] = useState<ReadonlySet<string>>(new Set());
   /** Listenin sıralaması (telefonda hatırlanır) */
@@ -130,6 +154,59 @@ export default function EFaturaScreen() {
   const range = monthBounds(offset);
   const key = `${yon}:${range.from}`;
   const items = data[key]?.faturalar;
+
+  const selectedList = useMemo(() => {
+    return (items ?? []).filter((f) => !!f.ettn && selectedEttns.has(f.ettn.toLowerCase()));
+  }, [items, selectedEttns]);
+
+  const allSelected = useMemo(() => {
+    const withEttn = (items ?? []).filter((f) => !!f.ettn);
+    return withEttn.length > 0 && selectedList.length === withEttn.length;
+  }, [items, selectedList]);
+
+  const selectedTotalAmount = useMemo(() => {
+    return selectedList.reduce((acc, f) => acc + (f.tutar ?? 0), 0);
+  }, [selectedList]);
+
+  const toggleSelectAll = useCallback(() => {
+    haptics.select();
+    const withEttn = (items ?? []).filter((f) => !!f.ettn);
+    if (withEttn.every((f) => selectedEttns.has(f.ettn.toLowerCase()))) {
+      setSelectedEttns(new Set());
+    } else {
+      setSelectedEttns(new Set(withEttn.map((f) => f.ettn.toLowerCase())));
+    }
+  }, [items, selectedEttns]);
+
+  const handleExportExcel = async () => {
+    if (selectedList.length === 0) return;
+    try {
+      haptics.select();
+      await exportEFaturaExcel(selectedList, range.label, yon);
+      haptics.success();
+    } catch (e) {
+      showToast(errorMessage(e));
+    }
+  };
+
+  const handleExportPdf = async () => {
+    if (selectedList.length === 0) return;
+    try {
+      haptics.select();
+      setExportingText(selectedList.length > 1 ? `PDF'ler hazırlanıyor (0/${selectedList.length})…` : 'PDF getiriliyor…');
+      const res = await exportEFaturaPdfs(selectedList, yon, range.label, (done, total) => {
+        setExportingText(total > 1 ? `PDF'ler hazırlanıyor (${done}/${total})…` : 'PDF getiriliyor…');
+      });
+      haptics.success();
+      if (res.failed > 0) {
+        showToast(`${res.success} PDF indirildi, ${res.failed} fatura alınamadı.`);
+      }
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setExportingText(null);
+    }
+  };
   const uyari = data[key]?.uyari;
   /** e-Arşiv servisinin kaç kayıt döndürdüğü (liste boşsa nedenini anlamak için) */
   const bilgi = data[key]?.bilgi;
@@ -361,6 +438,18 @@ export default function EFaturaScreen() {
           )}
           {wide ? (
             <>
+              <EFaturaExportBar
+                selectedCount={selectedList.length}
+                totalCount={(items ?? []).filter((f) => !!f.ettn).length}
+                totalAmount={selectedTotalAmount}
+                currency={selectedList[0]?.paraBirimi ?? 'TRY'}
+                allSelected={allSelected}
+                onToggleSelectAll={toggleSelectAll}
+                onClearSelection={() => setSelectedEttns(new Set())}
+                onExportExcel={handleExportExcel}
+                onExportPdf={handleExportPdf}
+                exportingText={exportingText}
+              />
               <EFaturaTable
                 items={sortEFaturalar(items, siralama)}
                 yon={yon}
@@ -369,6 +458,9 @@ export default function EFaturaScreen() {
                 haric={haric}
                 onOpen={(f) => router.push({ pathname: '/efatura-detay', params: { yon, ettn: f.ettn, unvan: f.unvan, tur: f.tur ?? 'efatura', belgeNo: f.belgeNo } })}
                 onViewPdf={(f) => setPdfModalFatura(f)}
+                selected={selectedEttns}
+                onToggleSelect={toggleSelect}
+                onToggleSelectAll={toggleSelectAll}
               />
               <Text style={[t.footnote, { color: theme.secondaryLabel, marginHorizontal: 32, marginTop: 7, marginBottom: 28 }]}>
                 {yon === 'gelen'
@@ -379,16 +471,50 @@ export default function EFaturaScreen() {
           ) : (
           <ListSection
               header={yon === 'gelen' ? 'Gelen faturalar' : 'Giden faturalar'}
-              headerAction={{ label: EFATURA_SORTS.find((o) => o.key === siralama)!.label, onPress: siralamaSec, accessibilityLabel: 'Sıralamayı değiştir' }}
+              headerAction={
+                selectedEttns.size > 0
+                  ? { label: 'Seçimi Kaldır', onPress: () => setSelectedEttns(new Set()), accessibilityLabel: 'Seçimi kaldır' }
+                  : { label: EFATURA_SORTS.find((o) => o.key === siralama)!.label, onPress: siralamaSec, accessibilityLabel: 'Sıralamayı değiştir' }
+              }
               footer={
                 yon === 'gelen'
-                  ? 'QNB eSolutions’tan fatura tarihine göre listelenir. Tutar, faturadaki ödenecek tutardır.'
-                  : 'e-Fatura (gönderim tarihine göre) ve e-Arşiv faturaları birlikte listelenir. İptal edilenler toplama girmez.'
+                  ? 'QNB eSolutions’tan fatura tarihine göre listelenir. Tutar, faturadaki ödenecek tutardır. Çoklu seçim için satıra basılı tutun.'
+                  : 'e-Fatura (gönderim tarihine göre) ve e-Arşiv faturaları birlikte listelenir. İptal edilenler toplama girmez. Çoklu seçim için satıra basılı tutun.'
               }>
+              <EFaturaExportBar
+                selectedCount={selectedList.length}
+                totalCount={(items ?? []).filter((f) => !!f.ettn).length}
+                totalAmount={selectedTotalAmount}
+                currency={selectedList[0]?.paraBirimi ?? 'TRY'}
+                allSelected={allSelected}
+                onToggleSelectAll={toggleSelectAll}
+                onClearSelection={() => setSelectedEttns(new Set())}
+                onExportExcel={handleExportExcel}
+                onExportPdf={handleExportPdf}
+                exportingText={exportingText}
+              />
               {sortEFaturalar(items, siralama).map((f) => (
                 <ListRow
                   key={f.ettn || f.belgeNo}
-                  icon={{ sf: yon === 'gelen' ? 'tray.and.arrow.down.fill' : 'paperplane.fill', ion: yon === 'gelen' ? 'download' : 'send', color: f.iptal ? theme.gray : yon === 'gelen' ? theme.blue : theme.green }}
+                  icon={{
+                    sf: f.ettn && selectedEttns.has(f.ettn.toLowerCase())
+                      ? 'checkmark.circle.fill'
+                      : yon === 'gelen'
+                        ? 'tray.and.arrow.down.fill'
+                        : 'paperplane.fill',
+                    ion: f.ettn && selectedEttns.has(f.ettn.toLowerCase())
+                      ? 'checkmark-circle'
+                      : yon === 'gelen'
+                        ? 'download'
+                        : 'send',
+                    color: f.ettn && selectedEttns.has(f.ettn.toLowerCase())
+                      ? theme.blue
+                      : f.iptal
+                        ? theme.gray
+                        : yon === 'gelen'
+                          ? theme.blue
+                          : theme.green,
+                  }}
                   title={f.unvan}
                   subtitle={[
                     dayMonth(f.tarih),
@@ -418,11 +544,14 @@ export default function EFaturaScreen() {
                       </Pressable>
                     ) : undefined
                   }
-                  chevron={!!f.ettn}
+                  chevron={selectedEttns.size === 0 && !!f.ettn}
+                  onLongPress={f.ettn ? () => toggleSelect(f.ettn) : undefined}
                   onPress={
-                    f.ettn
-                      ? () => router.push({ pathname: '/efatura-detay', params: { yon, ettn: f.ettn, unvan: f.unvan, tur: f.tur ?? 'efatura', belgeNo: f.belgeNo } })
-                      : undefined
+                    selectedEttns.size > 0 && f.ettn
+                      ? () => toggleSelect(f.ettn)
+                      : f.ettn
+                        ? () => router.push({ pathname: '/efatura-detay', params: { yon, ettn: f.ettn, unvan: f.unvan, tur: f.tur ?? 'efatura', belgeNo: f.belgeNo } })
+                        : undefined
                   }
                 />
               ))}

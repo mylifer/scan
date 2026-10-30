@@ -16,6 +16,16 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.51.0 — `PENDING`
+- **e-Fatura sayfasında tekli ve çoklu fatura seçimi ile toplu Excel ve PDF dışa aktarma (export):**
+  - **Fatura Seçim Desteği:** Masaüstü tablosunda her satır için onay kutusu (checkbox) ve tablo başlığında "Tümünü Seç / Temizle" (kısmi seçim destekli indeterminate durum) eklendi. Seçilen satırlar belirgin renkle vurgulanır.
+  - **Mobil Cihaz Desteği:** Mobilde fatura kartına uzun basarak (long-press) veya başlık yanındaki çoklu seçim düğmesine dokunarak seçim moduna geçilebilir.
+  - **Toplu İşlem Çubuğu (`EFaturaExportBar`):** Seçilen fatura sayısı ve seçili faturaların toplam tutarını dinamik gösteren, ekranın altında sabit yüzen eylem çubuğu.
+  - **Excel Dışa Aktarma (`.xlsx`):** Seçilen faturalar; Belge No, ETTN, Tarih, Yön, Tür, Firma Adı, VKN/TCKN, Matrah, KDV Tutarı, Toplam Tutar ve Para Birimi sütunları ile formüllü toplam satırı içeren biçimlendirilmiş bir Excel çalışma kitabına dönüştürülüp indirilir/paylaşılır.
+  - **PDF ve Toplu PDF Paketi (ZIP) Dışa Aktarma:**
+    - Tek bir fatura seçildiyse doğrudan faturanın kendi PDF dosyası indirilir veya paylaşılır.
+    - Birden fazla fatura seçildiyse tüm PDF'ler canlı indirme ilerleme durumuyla çekilir; ardından tüm PDF'ler ve faturaların özet Excel listesi `ZIP` arşivi içinde paketlenerek tek tıkla teslim edilir (`ZipStream`).
+
 ## 1.50.1 — `d10e740`
 - **Web sürümünde yeni yayın sonrası sayfa geçişlerindeki "Loading module failed" hatası giderildi:**
   - **Önceki Parçaları Koruma:** GitHub Actions yayın iş akışında (`deploy-web.yml`) önceki derlemenin JS parçaları önbellekten geri yüklenerek silinmesi engellendi; böylece açık sekmesi olan kullanıcılar 404 hatası almaz.
