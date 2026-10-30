@@ -16,6 +16,15 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.11 — `629f858`
+- **Tüm kullanıcı arayüzüne akıcı sayfa geçişleri, modern mikro etkileşimler ve animasyonlar eklendi (`web/`):**
+  - **Sayfa Geçiş Animasyonu (Next.js App Router `template.tsx`):** `web/src/app/(app)/template.tsx` şablonu oluşturularak sayfalar arası her gezinmede (`/fisler`, `/efaturalar`, `/kdv`, `/butce`, `/ayarlar`, `/firmalar` vb.) sayfa içeriğinin `animate-in fade-in-50 slide-in-from-bottom-2 duration-200 ease-out` ile yukarıya doğru hafifçe süzülerek pürüzsüz belirmesi sağlandı.
+  - **Taktil Buton ve Kontrol Geri Bildirimi (`button.tsx`, `checkbox.tsx`):** Butonlara basıldığında (`active:scale-[0.98] duration-150 active:duration-75`) hafif dokunsal basılma efekti tanımlandı. Onay kutularına (Checkbox) basma ve işaretlenme anında `zoom-in-75` mikro animasyonu uygulandı.
+  - **Sekmeler ve Tablolar (`tabs.tsx`, `table.tsx`):** Sekme tetikleyicilerine (`TabsTrigger`) basılma mikro etkileşimi, sekme içeriklerine (`TabsContent`) `data-[state=active]:animate-in data-[state=active]:fade-in-50 duration-200` geçişi eklendi; tablo satırlarında (`TableRow`) `duration-150` hover renk yumuşatması sağlandı.
+  - **Modal, Sayfa ve Açılır Menü Yumuşatması (`dialog.tsx`, `alert-dialog.tsx`, `sheet.tsx`, `dropdown-menu.tsx`, `popover.tsx`, `tooltip.tsx`):** Diyalog ve çekmece arka plan ve pencerelerindeki ani (100ms) kapanışlar 200ms `ease-out` yumuşak eğrisine uyarlandı; açılır menü, popover ve ipucu kutularında 150ms `ease-out` pürüzsüzlüğü sağlandı.
+  - **Navigasyon ve Tema İyileştirmeleri (`app-sidebar.tsx`, `mobile-nav.tsx`, `theme-toggle.tsx`):** Kenar çubuğu ve mobil gezinme butonlarına `active:scale-[0.98]` / `active:scale-95` basılma hissi, kenar çubuğundaki canlı aylık fiş kartına giriş animasyonu ve tema değiştiricide hafif rotasyon mikro etkileşimi kazandırıldı.
+  - **Global CSS Animasyon Altyapısı (`globals.css`):** `@keyframes fadeIn`, `@keyframes scaleIn` ve `.animate-fade-in`, `.animate-scale-in`, `.stagger-1` - `.stagger-4` sınıfları eklenerek Tailwind v4 uyumlu genel animasyon temeli hazırlandı.
+
 ## Web 1.0.10 — `2300c7b`
 - **e-Fatura detay pop-up genişliği optimize edildi ve tabloda birincil aksiyon (Primary CTA) uygulandı (`web/`):**
   - **Diyalog Genişliği ve Sütun Düzeni (`fatura-detay-dialog.tsx`):** Fatura Detay pop-up'ının genişliği `sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl` seviyesine çıkarıldı. 7 sütunlu Fatura Kalemleri tablosundaki her sütuna oranlı ve net genişlikler (`#`, `Mal / Hizmet`, `Miktar`, `Birim Fiyat`, `KDV %`, `KDV Tutarı`, `Tutar (KDV Hariç)`) tanımlanarak tüm sütunların yatay kaydırma gerektirmeden pop-up'a kusursuz sığması sağlandı. Modaldaki "PDF Görüntüle" butonu da birincil aksiyon stiline (`variant="default"`) geçirildi.
