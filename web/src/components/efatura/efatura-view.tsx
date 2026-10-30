@@ -21,7 +21,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +45,7 @@ import {
   fetchDonemFaturalar,
   getMonthBounds,
   type EFatura,
+  type FaturaDetay,
   type Yon,
 } from "@/lib/efatura";
 import { DonemOzetDialog } from "./donem-ozet-dialog";
@@ -141,6 +142,25 @@ export function EFaturaView() {
     setSelectedIds(new Set());
     setPage(0);
   };
+
+  const handleDetayLoaded = useCallback((ettn: string, detay: FaturaDetay) => {
+    setDataState((prev) => {
+      let changed = false;
+      const updated = prev.data.faturalar.map((f) => {
+        if (f.ettn.toLowerCase() === ettn.toLowerCase() && typeof f.kdv !== "number") {
+          changed = true;
+          return {
+            ...f,
+            kdv: typeof detay.kdvToplam === "number" ? detay.kdvToplam : f.kdv,
+            matrah: typeof detay.araToplam === "number" ? detay.araToplam : f.matrah,
+          };
+        }
+        return f;
+      });
+      if (!changed) return prev;
+      return { ...prev, data: { ...prev.data, faturalar: updated } };
+    });
+  }, []);
 
   // Filtreleme ve Arama
   const filteredFaturalar = useMemo(() => {
@@ -729,6 +749,7 @@ export function EFaturaView() {
           setDetayFatura(null);
           setPdfFatura(f);
         }}
+        onDetayLoaded={handleDetayLoaded}
       />
 
       {/* Dönem KDV & Matrah Özeti Dialog */}

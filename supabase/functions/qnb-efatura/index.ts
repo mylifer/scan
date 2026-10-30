@@ -248,7 +248,8 @@ async function portalList(baslangic: string, bitis: string): Promise<{ list: EFa
  */
 async function tutarlariTamamla(list: EFatura[], yon: Yon, baslangic: string, bitis: string): Promise<void> {
   const unvansiz = (f: EFatura) => !f.unvan || f.unvan === f.vkn || /^\d{10,11}$/.test(f.unvan);
-  const eksikler = () => list.filter((f) => (!f.tutar || unvansiz(f) || !f.tarih) && f.ettn && f.tur !== 'earsiv');
+  const kdvsiz = (f: EFatura) => typeof f.kdv !== 'number';
+  const eksikler = () => list.filter((f) => (!f.tutar || unvansiz(f) || !f.tarih || kdvsiz(f)) && f.ettn && f.tur !== 'earsiv');
   if (!eksikler().length) return;
   if (yon === 'giden') {
     try {
@@ -270,6 +271,10 @@ async function tutarlariTamamla(list: EFatura[], yon: Yon, baslangic: string, bi
         const d = parseUbl(new TextDecoder('utf-8').decode(await belge('efatura', yon, f.ettn, 'UBL')));
         const karsi = yon === 'gelen' ? { unvan: d.saticiUnvan, vkn: d.saticiVkn } : { unvan: d.aliciUnvan, vkn: d.aliciVkn };
         if (!f.tutar && d.odenecek) Object.assign(f, { tutar: d.odenecek, paraBirimi: d.paraBirimi });
+        if (kdvsiz(f) && typeof d.kdvToplam === 'number') {
+          f.kdv = d.kdvToplam;
+          f.matrah = d.araToplam;
+        }
         if (unvansiz(f)) f.unvan = karsi.unvan || f.unvan;
         f.vkn ||= karsi.vkn;
         f.belgeNo ||= d.belgeNo;

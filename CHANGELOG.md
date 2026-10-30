@@ -16,6 +16,11 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.5 — (bekleniyor)
+- **Yeni kesilen giden e-Faturalarda KDV'nin görünmeme sorunu giderildi (`web/` & `supabase/functions/qnb-efatura`):**
+  - **UBL XML Otomatik KDV Tamamlama (Backend):** QNB eSolutions toplu raporlama servisi (`gidenBelgeTutarBilgileriSorgula`) yeni kesilen faturaları hemen KDV tablosuna işlemeyip gecikmeli yansıttığı için, `tutarlariTamamla` fonksiyonuna KDV kontrolü (`typeof f.kdv !== 'number'`) eklendi. KDV bilgisi henüz rapor servisine düşmemiş faturaların UBL XML'i doğrudan indirilerek `kdvToplam` ve `matrah` değerleri anında faturaya işlenir hâle getirildi.
+  - **İstemci Tarafı Anlık KDV Geri Beslemesi (Frontend):** Fatura Detay Modalı (`FaturaDetayDialog`) açıldığında UBL'den çözümlenen KDV ve matrah değerlerinin ana fatura listesine (`onDetayLoaded`) anında aktarılması sağlandı; kullanıcı faturaya tıkladığı anda KDV tablodaki satıra ve dönemin toplam KDV kartına otomatik yansıtıldı.
+
 ## Web 1.0.4 — `f662a30`
 - **Web uygulamasında shadcn/ui bileşenlerinin state seçicileri ve açık/koyu tema kontrastları düzeltildi (`web/`):**
   - **Tabs ve TabsTrigger Aktif/Pasif Durum Düzeltmesi (`tabs.tsx`):** Radix UI'ın DOM'a ürettiği `data-state="active"` özniteliği yerine kullanılan hatalı `data-active:` seçicisi, resmi shadcn standardı olan `data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs data-[state=active]:border` ile değiştirildi. "Gelen e-Faturalar" / "Giden e-Faturalar" ve Ayarlar sekmelerinin açık ve koyu temalarda belirgin, yüksek kontrastlı ve dokunsal geçişi sağlandı.
