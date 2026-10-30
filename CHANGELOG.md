@@ -16,6 +16,13 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.50.1 — `14e9365`
+- **Web sürümünde yeni yayın sonrası sayfa geçişlerindeki "Loading module failed" hatası giderildi:**
+  - **Önceki Parçaları Koruma:** GitHub Actions yayın iş akışında (`deploy-web.yml`) önceki derlemenin JS parçaları önbellekten geri yüklenerek silinmesi engellendi; böylece açık sekmesi olan kullanıcılar 404 hatası almaz.
+  - **Otomatik Sayfa Yenileme:** Tarayıcıda eski parçanın bulunamadığı durumlarda (`Loading module failed`), sayfa otomatik olarak yeni sürüme geçecek şekilde yenilenir.
+  - **Hata Yakalama (ErrorBoundary):** Parça yükleme hatalarında "Bir Şeyler Ters Gitti" yerine kullanıcıya "Yeni Sürüm Yayınlandı" ekranı ve doğrudan "Sayfayı Yenile" butonu sunulur.
+  - **Kenar Çubuğu Güncelleme Bildirimi:** Sol menüdeki sürüm etiketinin yanına "Yenile ↻" rozeti eklendi.
+
 ## 1.50.0 — `243b69f`
 - **e-Fatura listesinde satır bazında anında PDF görüntüleme ve açılır pencere (popup):**
   - **Masaüstü Tablosu:** Her fatura satırına özel `PDF Görüntüle` butonu eklendi; tıklanınca faturanın orijinal PDF'i popup pencere içinde açılır.

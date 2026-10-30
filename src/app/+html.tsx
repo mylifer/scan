@@ -41,6 +41,19 @@ export default function Root({ children }: PropsWithChildren) {
               '}',
           }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              '(function(){' +
+              "function handleChunkError(msg){if(/Loading (module|chunk)|dynamically imported module|failed to fetch/i.test(msg||'')){" +
+              "var k='expo_chunk_retry_'+location.pathname;var last=sessionStorage.getItem(k);var now=Date.now();" +
+              "if(!last||now-parseInt(last,10)>10000){sessionStorage.setItem(k,String(now));window.location.reload();}}" +
+              '}' +
+              "window.addEventListener('error',function(e){handleChunkError(e&&(e.message||(e.error&&e.error.message)));});" +
+              "window.addEventListener('unhandledrejection',function(e){handleChunkError(e&&e.reason&&(e.reason.message||String(e.reason)));});" +
+              '})();',
+          }}
+        />
         {headNodes}
       </head>
       <body {...bodyAttributes}>

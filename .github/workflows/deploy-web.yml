@@ -54,7 +54,28 @@ jobs:
         run: npm test
       - name: Kod denetimi (lint)
         run: npx expo lint
+      - name: Önceki parçaları geri yükle
+        uses: actions/cache/restore@v4
+        with:
+          path: .previous-chunks
+          key: web-chunks-${{ github.sha }}
+          restore-keys: |
+            web-chunks-
       - run: npx expo export --platform web --output-dir dist
+      - name: Önceki parçaları pakete ekle (eski oturumların 404 almasını önler)
+        run: |
+          if [ -d .previous-chunks ]; then
+            mkdir -p dist/_expo/static/js/web
+            cp -n .previous-chunks/*.js dist/_expo/static/js/web/ 2>/dev/null || true
+          fi
+          mkdir -p .previous-chunks
+          cp -n dist/_expo/static/js/web/*.js .previous-chunks/ 2>/dev/null || true
+      - name: Parçaları önbelleğe kaydet
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: .previous-chunks
+          key: web-chunks-${{ github.sha }}
       - name: Yapay zekâ anahtarı pakette olmamalı
         # Google API anahtarları "AIza" ile başlar; pakette bulunursa yayın durdurulur
         run: |

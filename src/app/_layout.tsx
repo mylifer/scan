@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, type ErrorBoundaryProps, router, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -112,6 +112,45 @@ function RootNavigator() {
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const theme = useTheme();
   useEffect(() => reportError('ekran çöktü', error), [error]);
+
+  const isChunkError =
+    Platform.OS === 'web' &&
+    /Loading (module|chunk)|dynamically imported module|failed to fetch/i.test(String(error?.message ?? error));
+
+  useEffect(() => {
+    if (isChunkError && typeof window !== 'undefined') {
+      const k = 'chunk_eb_reload';
+      const last = sessionStorage.getItem(k);
+      const now = Date.now();
+      if (!last || now - parseInt(last, 10) > 10000) {
+        sessionStorage.setItem(k, String(now));
+        window.location.reload();
+      }
+    }
+  }, [isChunkError]);
+
+  if (isChunkError) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: theme.background, padding: 20 }}>
+        <EmptyState
+          icon={{ sf: 'arrow.clockwise.circle', ion: 'reload-outline' }}
+          title="Yeni Sürüm Yayınlandı"
+          message="Uygulama sunucuda güncellendi. En son sürüme geçmek için lütfen sayfayı yenileyin."
+        />
+        <Button
+          title="Sayfayı Yenile"
+          onPress={() => {
+            if (typeof window !== 'undefined') {
+              window.location.reload();
+            } else {
+              retry();
+            }
+          }}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1, justifyContent: 'center', backgroundColor: theme.background, padding: 20 }}>
       <EmptyState

@@ -4,6 +4,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { fontFamily, useShadcnTheme } from '../../lib/theme';
 import { VERSION_LABEL } from '../../lib/version';
+import { reloadApp, useWebUpdateAvailable } from '../../lib/webUpdate';
 import { Badge } from './Badge';
 
 const ICON = require('../../../assets/icon.png');
@@ -14,6 +15,7 @@ const ICON = require('../../../assets/icon.png');
 export function WebSidebar({ state, descriptors, emitter, navigateToTab }: BottomTabBarProps) {
   const t = useShadcnTheme();
   const { session } = useAuth();
+  const updateAvailable = useWebUpdateAvailable();
   const email = session?.user.email ?? '';
   const initial = email ? email[0]?.toUpperCase() : 'F';
 
@@ -37,6 +39,20 @@ export function WebSidebar({ state, descriptors, emitter, navigateToTab }: Botto
             <Badge variant="outline" style={styles.versionBadge}>
               v{VERSION_LABEL}
             </Badge>
+            {updateAvailable && (
+              <Pressable
+                onPress={reloadApp}
+                accessibilityRole="button"
+                accessibilityLabel="Yeni sürüm hazır, sayfayı yenile"
+                style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
+                  styles.updateBadge,
+                  (hovered || pressed) && { opacity: 0.8 },
+                ]}>
+                <Badge variant="default" style={styles.updateBadgeInner}>
+                  Yenile ↻
+                </Badge>
+              </Pressable>
+            )}
           </View>
         </View>
       </View>
@@ -155,8 +171,18 @@ const styles = StyleSheet.create({
   versionRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
   },
   versionBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  updateBadge: {
+    cursor: 'pointer',
+  },
+  updateBadgeInner: {
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 4,
