@@ -1,13 +1,11 @@
 "use client";
 
 import { formatTL } from "@shared/lib/format";
-import {
-  EFATURA_SORTS,
-  sortEFaturalar,
-  type EFaturaSort,
-} from "@shared/lib/efaturaSort";
 import { totalsByCurrency, type Kontrol } from "@shared/services/efatura/qnbEfatura";
 import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -44,15 +42,73 @@ import {
   exportPdfsZip,
   fetchDonemFaturalar,
   getMonthBounds,
+  sortEFaturaList,
   type EFatura,
+  type EFaturaSortColumn,
+  type EFaturaSortDir,
+  type EFaturaSortState,
   type FaturaDetay,
   type Yon,
 } from "@/lib/efatura";
+import { cn } from "@/lib/utils";
 import { DonemOzetDialog } from "./donem-ozet-dialog";
 import { FaturaDetayDialog } from "./fatura-detay-dialog";
 import { PdfViewerDialog } from "./pdf-viewer-dialog";
 
 const PAGE_SIZE = 50;
+
+const SORT_PRESETS: { key: string; label: string; column: EFaturaSortColumn; dir: EFaturaSortDir }[] = [
+  { key: "tarih-desc", label: "Tarih (En Yeni)", column: "tarih", dir: "desc" },
+  { key: "tarih-asc", label: "Tarih (En Eski)", column: "tarih", dir: "asc" },
+  { key: "unvan-asc", label: "Firma (A–Z)", column: "unvan", dir: "asc" },
+  { key: "unvan-desc", label: "Firma (Z–A)", column: "unvan", dir: "desc" },
+  { key: "tip-asc", label: "Tür / Tip (A–Z)", column: "tip", dir: "asc" },
+  { key: "tip-desc", label: "Tür / Tip (Z–A)", column: "tip", dir: "desc" },
+  { key: "kdv-desc", label: "KDV (En Yüksek)", column: "kdv", dir: "desc" },
+  { key: "kdv-asc", label: "KDV (En Düşük)", column: "kdv", dir: "asc" },
+  { key: "tutar-desc", label: "Tutar (En Yüksek)", column: "tutar", dir: "desc" },
+  { key: "tutar-asc", label: "Tutar (En Düşük)", column: "tutar", dir: "asc" },
+];
+
+function SortHeader({
+  label,
+  column,
+  sort,
+  onSort,
+  align,
+  className,
+}: {
+  label: string;
+  column: EFaturaSortColumn;
+  sort: EFaturaSortState;
+  onSort: (c: EFaturaSortColumn) => void;
+  align?: "right";
+  className?: string;
+}) {
+  const active = sort.column === column;
+  const Icon = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <TableHead
+      className={cn(align === "right" && "text-right", className)}
+      aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className={cn(
+          "-mx-2 h-8 px-2 font-medium hover:bg-muted/80 cursor-pointer transition-colors text-muted-foreground",
+          align === "right" && "-mr-2 ml-auto",
+          active && "text-foreground font-semibold"
+        )}
+        onClick={() => onSort(column)}
+      >
+        {label}
+        <Icon className={cn("size-3.5 shrink-0", active ? "text-primary" : "text-muted-foreground/60")} />
+      </Button>
+    </TableHead>
+  );
+}
 
 export function EFaturaView() {
   const [yon, setYon] = useState<Yon>("gelen");
@@ -77,7 +133,7 @@ export function EFaturaView() {
 
   const [search, setSearch] = useState("");
   const [tipFilter, setTipFilter] = useState<string>("all");
-  const [sortKey, setSortKey] = useState<EFaturaSort>("yeni");
+  const [sort, setSort] = useState<EFaturaSortState>({ column: "tarih", dir: "desc" });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
 
@@ -143,6 +199,17 @@ export function EFaturaView() {
     setPage(0);
   };
 
+  const handleSort = (column: EFaturaSortColumn) => {
+    setSort((prev) => {
+      if (prev.column === column) {
+        return { column, dir: prev.dir === "asc" ? "desc" : "asc" };
+      }
+      const defaultDir: EFaturaSortDir = column === "unvan" || column === "tip" ? "asc" : "desc";
+      return { column, dir: defaultDir };
+    });
+    setPage(0);
+  };
+
   const handleDetayLoaded = useCallback((ettn: string, detay: FaturaDetay) => {
     setDataState((prev) => {
       let changed = false;
@@ -186,8 +253,8 @@ export function EFaturaView() {
       );
     }
 
-    return sortEFaturalar(list, sortKey);
-  }, [faturalar, tipFilter, search, sortKey]);
+    return sortEFaturaList(list, sort);
+  }, [faturalar, tipFilter, search, sort]);
 
   // Sayfalama
   const pageCount = Math.max(1, Math.ceil(filteredFaturalar.length / PAGE_SIZE));
@@ -439,17 +506,20 @@ export function EFaturaView() {
 
           {/* Sıralama */}
           <Select
-            value={sortKey}
+            value={`${sort.column}-${sort.dir}`}
             onValueChange={(val) => {
-              setSortKey(val as EFaturaSort);
-              setPage(0);
+              const preset = SORT_PRESETS.find((p) => p.key === val);
+              if (preset) {
+                setSort({ column: preset.column, dir: preset.dir });
+                setPage(0);
+              }
             }}
           >
-            <SelectTrigger className="w-44">
+            <SelectTrigger className="w-48">
               <SelectValue placeholder="Sıralama" />
             </SelectTrigger>
             <SelectContent>
-              {EFATURA_SORTS.map((s) => (
+              {SORT_PRESETS.map((s) => (
                 <SelectItem key={s.key} value={s.key}>
                   {s.label}
                 </SelectItem>
@@ -551,12 +621,26 @@ export function EFaturaView() {
                     aria-label="Tümünü seç"
                   />
                 </TableHead>
-                <TableHead className="w-28">Tarih</TableHead>
+                <SortHeader label="Tarih" column="tarih" sort={sort} onSort={handleSort} className="w-32" />
                 <TableHead className="w-44">Belge No</TableHead>
-                <TableHead>Firma / Ünvan</TableHead>
-                <TableHead className="w-28">Tür / Tip</TableHead>
-                <TableHead className="text-right">KDV</TableHead>
-                <TableHead className="text-right">Toplam Tutar</TableHead>
+                <SortHeader label="Firma / Ünvan" column="unvan" sort={sort} onSort={handleSort} />
+                <SortHeader label="Tür / Tip" column="tip" sort={sort} onSort={handleSort} className="w-32" />
+                <SortHeader
+                  label="KDV"
+                  column="kdv"
+                  sort={sort}
+                  onSort={handleSort}
+                  align="right"
+                  className="w-32 text-right"
+                />
+                <SortHeader
+                  label="Toplam Tutar"
+                  column="tutar"
+                  sort={sort}
+                  onSort={handleSort}
+                  align="right"
+                  className="w-36 text-right"
+                />
                 <TableHead className="w-28 pr-4 text-right">İşlemler</TableHead>
               </TableRow>
             </TableHeader>

@@ -185,3 +185,48 @@ export async function exportPdfsZip(
 
   return { success, failed };
 }
+
+export type EFaturaSortColumn = "tarih" | "unvan" | "tip" | "kdv" | "tutar";
+export type EFaturaSortDir = "asc" | "desc";
+export type EFaturaSortState = { column: EFaturaSortColumn; dir: EFaturaSortDir };
+
+const trCollator = new Intl.Collator("tr-TR", { sensitivity: "base" });
+
+export function getFaturaTipLabel(f: EFatura): string {
+  if (f.tur === "earsiv") return "e-Arşiv";
+  if (f.tip) return f.tip;
+  if (f.profil) return f.profil;
+  return "e-Fatura";
+}
+
+export function sortEFaturaList(list: EFatura[], { column, dir }: EFaturaSortState): EFatura[] {
+  const tie = (a: EFatura, b: EFatura) =>
+    b.tarih.localeCompare(a.tarih) || b.belgeNo.localeCompare(a.belgeNo);
+
+  const sign = dir === "asc" ? 1 : -1;
+
+  return [...list].sort((a, b) => {
+    let diff = 0;
+    switch (column) {
+      case "tarih":
+        diff = a.tarih.localeCompare(b.tarih) || a.belgeNo.localeCompare(b.belgeNo);
+        break;
+      case "unvan":
+        diff = trCollator.compare(a.unvan || "", b.unvan || "");
+        break;
+      case "tip":
+        diff = trCollator.compare(getFaturaTipLabel(a), getFaturaTipLabel(b));
+        break;
+      case "kdv": {
+        const ak = typeof a.kdv === "number" ? a.kdv : (dir === "asc" ? Infinity : -Infinity);
+        const bk = typeof b.kdv === "number" ? b.kdv : (dir === "asc" ? Infinity : -Infinity);
+        diff = ak - bk;
+        break;
+      }
+      case "tutar":
+        diff = a.tutar - b.tutar;
+        break;
+    }
+    return diff * sign || tie(a, b);
+  });
+}
