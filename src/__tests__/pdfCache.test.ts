@@ -89,4 +89,12 @@ describe('pdfCache', () => {
       prefetchInvoicePdf('gelen', 'some-ettn');
     });
   });
+
+  it('React Native ortamında (document yokken) Blob hatası fırlatmadan bytes döner', async () => {
+    const mockInvoker = async () => ({ data: { pdf: 'JVBERi0xLjQK' }, error: null });
+    const res = await fetchInvoicePdf('gelen', 'rn-test-ettn', 'efatura', mockInvoker);
+    assert.equal(res.base64, 'JVBERi0xLjQK');
+    assert.ok(res.bytes instanceof Uint8Array);
+    assert.equal(res.blobUrl, undefined);
+  });
 });

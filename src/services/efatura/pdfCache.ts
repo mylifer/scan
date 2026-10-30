@@ -72,9 +72,21 @@ export async function fetchInvoicePdf(
       const bytes = base64ToBytes(b64);
       let blobUrl: string | undefined;
 
-      if (typeof Blob !== 'undefined' && typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
-        const blob = new Blob([bytes as unknown as BlobPart], { type: 'application/pdf' });
-        blobUrl = URL.createObjectURL(blob);
+      // Web tarayıcısında iframe önizlemesi için Blob URL üret.
+      // React Native (iOS/Android) ArrayBuffer'dan Blob üretimini desteklemez; mobil ortamda document tanımlı değildir.
+      if (
+        typeof window !== 'undefined' &&
+        typeof document !== 'undefined' &&
+        typeof Blob !== 'undefined' &&
+        typeof URL !== 'undefined' &&
+        typeof URL.createObjectURL === 'function'
+      ) {
+        try {
+          const blob = new Blob([bytes as unknown as BlobPart], { type: 'application/pdf' });
+          blobUrl = URL.createObjectURL(blob);
+        } catch {
+          // Web tarayıcısında blob oluşturulamazsa sessizce geç
+        }
       }
 
       const cached: CachedPdf = { base64: b64, blobUrl, bytes };

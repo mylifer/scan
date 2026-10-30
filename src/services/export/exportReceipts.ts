@@ -78,7 +78,7 @@ async function shareFile(bytes: Uint8Array, filename: string, mimeType: string, 
   }
   const file = new File(Paths.cache, filename);
   if (file.exists) file.delete();
-  file.write(bytes);
+  await file.write(bytes);
   await shareCachedFile(file, filename, mimeType, uti);
 }
 
