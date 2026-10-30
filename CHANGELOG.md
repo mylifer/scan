@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## Web 1.0.0 — (bekleniyor)
+## Web 1.0.0 — `f702dc1`
 - **Yeni masaüstü-yoğun Next.js web dashboardu yayına alındı (GitHub Pages):**
   - **Modern Web Mimarisi:** Web uygulaması tamamen Expo web'den ayrılarak Next.js 16 (App Router), React 19, Tailwind v4 ve gerçek shadcn UI (radix-nova) ile baştan inşa edildi.
   - **Canlı Yayın Entegrasyonu:** `.github/workflows/deploy-web.yml` iş akışı, doğrudan `web/` klasörünü derleyip `web/out` statik çıktısını `https://mylifer.github.io/scan/` adresine yayınlayacak şekilde güncellendi.
