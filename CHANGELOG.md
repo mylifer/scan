@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## Web 1.0.1 — (bekleniyor)
+## Web 1.0.1 — `934f076`
 - **Web uygulamasında sidebar responsive davranışı, hover ve aktif durum stilleri iyileştirildi (`web/`):**
   - **Yüksek Kontrastlı Hover ve Aktif Efektleri:** `--sidebar-accent` ve `--sidebar-background` renk değişkenleri görünür kontrast sağlayacak şekilde güncellendi. Aktif sayfa bağlantıları için turkuaz dikey hap göstergesi (`before:bg-primary`), turkuaz ikon rengi (`text-primary`) ve hafif arka plan dolgusu (`bg-primary/10`) eklendi.
   - **İmleç ve Etkileşim:** Tüm kenar çubuğu buton ve bağlantılarına `cursor-pointer` ve yumuşak 150ms geçiş animasyonları uygulandı.
