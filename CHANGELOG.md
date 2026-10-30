@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.52.0 — (bekleniyor)
+## 1.52.0 — `f7f5fc8`
 - **Web sürümü masaüstünde yerel Shadcn UI tasarımına ve zengin web UX mimarisine dönüştürüldü:**
   - **Yeni Shadcn UI Web Bileşenleri (`src/components/web/`):**
     - `Button`: `default`, `secondary`, `outline`, `ghost`, `destructive` varyantları, `default`, `sm`, `lg`, `icon` boyutları, yüklenme göstergesi, ikon desteği ve web imleç davranışları.
