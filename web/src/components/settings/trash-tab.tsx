@@ -152,7 +152,7 @@ export function TrashTab() {
             </div>
           ) : (
             <div className="overflow-x-auto rounded-md border">
-              <Table>
+              <Table className="min-w-[620px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Firma</TableHead>

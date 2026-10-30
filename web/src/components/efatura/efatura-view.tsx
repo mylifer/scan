@@ -521,7 +521,7 @@ export function EFaturaView() {
       {/* e-Fatura Tablosu */}
       <Card>
         <CardContent className="p-0">
-          <Table>
+          <Table className="min-w-[780px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12 pl-4">

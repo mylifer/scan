@@ -297,7 +297,7 @@ export function BudgetView() {
           <CardDescription>Bu dönemdeki harcamalarınızın kategorilere göre dökümü</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
+          <Table className="min-w-[500px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Kategori</TableHead>

@@ -83,35 +83,37 @@ function FaturaDetayContent({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col p-4 sm:p-6">
-        <DialogHeader className="flex flex-row items-start justify-between border-b pb-4">
-          <div className="space-y-1 pr-6">
-            <div className="flex items-center gap-2">
-              <DialogTitle className="text-base sm:text-lg">
-                Fatura Detayı · {fatura.belgeNo || fatura.ettn}
-              </DialogTitle>
-              {state.detay?.tip && <Badge variant="secondary">{state.detay.tip}</Badge>}
+      <DialogContent className="flex max-h-[90vh] w-full max-w-[calc(100vw-2rem)] sm:max-w-4xl flex-col p-4 sm:p-6 overflow-hidden">
+        <DialogHeader className="border-b pb-4 pr-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <DialogTitle className="truncate text-base sm:text-lg font-semibold" title={fatura.belgeNo || fatura.ettn}>
+                  Fatura Detayı · {fatura.belgeNo || fatura.ettn}
+                </DialogTitle>
+                {state.detay?.tip && <Badge variant="secondary">{state.detay.tip}</Badge>}
+              </div>
+              <DialogDescription className="break-all text-xs sm:text-sm text-muted-foreground">
+                Tarih: {state.detay?.tarih || fatura.tarih} · ETTN: <span className="font-mono text-xs">{fatura.ettn}</span>
+              </DialogDescription>
             </div>
-            <DialogDescription className="text-xs sm:text-sm">
-              Tarih: {state.detay?.tarih || fatura.tarih} · ETTN: {fatura.ettn}
-            </DialogDescription>
-          </div>
 
-          {onOpenPdf && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onOpenPdf(fatura)}
-              className="mr-6 shrink-0 gap-1.5"
-            >
-              <FileText className="size-4" />
-              PDF Gör
-            </Button>
-          )}
+            {onOpenPdf && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onOpenPdf(fatura)}
+                className="shrink-0 gap-1.5"
+              >
+                <FileText className="size-4" />
+                PDF Gör
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
-        <div className="flex-1 space-y-6 overflow-y-auto pr-1 pt-2">
+        <div className="flex-1 min-h-0 space-y-6 overflow-y-auto pr-1 pt-2">
           {state.loading && (
             <div className="space-y-4 py-8">
               <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -146,9 +148,9 @@ function FaturaDetayContent({
                       Satıcı (Gönderen)
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-1 text-sm">
-                    <p className="font-medium text-foreground">{state.detay.saticiUnvan || "—"}</p>
-                    <p className="text-xs text-muted-foreground">
+                  <CardContent className="min-w-0 space-y-1 text-sm">
+                    <p className="font-medium text-foreground break-words">{state.detay.saticiUnvan || "—"}</p>
+                    <p className="text-xs text-muted-foreground break-all">
                       VKN/TCKN: <span className="font-mono text-foreground">{state.detay.saticiVkn || "—"}</span>
                     </p>
                   </CardContent>
@@ -160,9 +162,9 @@ function FaturaDetayContent({
                       Alıcı (Müşteri)
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-1 text-sm">
-                    <p className="font-medium text-foreground">{state.detay.aliciUnvan || "—"}</p>
-                    <p className="text-xs text-muted-foreground">
+                  <CardContent className="min-w-0 space-y-1 text-sm">
+                    <p className="font-medium text-foreground break-words">{state.detay.aliciUnvan || "—"}</p>
+                    <p className="text-xs text-muted-foreground break-all">
                       VKN/TCKN: <span className="font-mono text-foreground">{state.detay.aliciVkn || "—"}</span>
                     </p>
                   </CardContent>
@@ -172,8 +174,8 @@ function FaturaDetayContent({
               {/* Kalemler Tablosu */}
               <div className="space-y-2">
                 <h4 className="text-xs font-semibold uppercase text-muted-foreground">Fatura Kalemleri</h4>
-                <div className="rounded-lg border">
-                  <Table>
+                <div className="w-full overflow-x-auto rounded-lg border">
+                  <Table className="min-w-[650px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-12">#</TableHead>
@@ -189,18 +191,18 @@ function FaturaDetayContent({
                       {state.detay.kalemler.map((k, idx) => (
                         <TableRow key={idx}>
                           <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
-                          <TableCell className="font-medium">{k.ad}</TableCell>
-                          <TableCell className="text-right tabular-nums">
+                          <TableCell className="font-medium min-w-[200px] break-words">{k.ad}</TableCell>
+                          <TableCell className="text-right whitespace-nowrap tabular-nums">
                             {k.miktar} {k.birim}
                           </TableCell>
-                          <TableCell className="text-right tabular-nums">
+                          <TableCell className="text-right whitespace-nowrap tabular-nums">
                             {formatTL(k.birimFiyat)} {currency}
                           </TableCell>
-                          <TableCell className="text-right tabular-nums">%{k.kdvOrani}</TableCell>
-                          <TableCell className="text-right tabular-nums">
+                          <TableCell className="text-right whitespace-nowrap tabular-nums">%{k.kdvOrani}</TableCell>
+                          <TableCell className="text-right whitespace-nowrap tabular-nums">
                             {formatTL(k.kdvTutari)} {currency}
                           </TableCell>
-                          <TableCell className="text-right font-medium tabular-nums">
+                          <TableCell className="text-right font-medium whitespace-nowrap tabular-nums">
                             {formatTL(k.tutar)} {currency}
                           </TableCell>
                         </TableRow>
@@ -215,8 +217,8 @@ function FaturaDetayContent({
                 {/* KDV Dağılım Tablosu */}
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold uppercase text-muted-foreground">KDV Dağılımı</h4>
-                  <div className="rounded-lg border">
-                    <Table>
+                  <div className="w-full overflow-x-auto rounded-lg border">
+                    <Table className="min-w-[280px]">
                       <TableHeader>
                         <TableRow>
                           <TableHead>Oran</TableHead>
@@ -228,10 +230,10 @@ function FaturaDetayContent({
                         {state.detay.kdvler.map((kd, idx) => (
                           <TableRow key={idx}>
                             <TableCell className="font-medium">%{kd.oran}</TableCell>
-                            <TableCell className="text-right tabular-nums">
+                            <TableCell className="text-right whitespace-nowrap tabular-nums">
                               {formatTL(kd.matrah)} {currency}
                             </TableCell>
-                            <TableCell className="text-right tabular-nums">
+                            <TableCell className="text-right whitespace-nowrap tabular-nums">
                               {formatTL(kd.tutar)} {currency}
                             </TableCell>
                           </TableRow>
@@ -247,27 +249,27 @@ function FaturaDetayContent({
                   <div className="space-y-2 rounded-lg border bg-muted/30 p-4 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Ara Toplam (KDV Hariç):</span>
-                      <span className="font-mono font-medium tabular-nums">
+                      <span className="font-mono font-medium whitespace-nowrap tabular-nums">
                         {formatTL(state.detay.araToplam)} {currency}
                       </span>
                     </div>
                     {state.detay.iskonto > 0 && (
                       <div className="flex justify-between text-destructive">
                         <span>İskonto:</span>
-                        <span className="font-mono font-medium tabular-nums">
+                        <span className="font-mono font-medium whitespace-nowrap tabular-nums">
                           -{formatTL(state.detay.iskonto)} {currency}
                         </span>
                       </div>
                     )}
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Toplam KDV:</span>
-                      <span className="font-mono font-medium tabular-nums">
+                      <span className="font-mono font-medium whitespace-nowrap tabular-nums">
                         {formatTL(state.detay.kdvToplam)} {currency}
                       </span>
                     </div>
                     <div className="border-t pt-2 flex justify-between text-base font-semibold">
                       <span>Ödenecek Toplam:</span>
-                      <span className="font-mono tabular-nums text-primary">
+                      <span className="font-mono whitespace-nowrap tabular-nums text-primary">
                         {formatTL(state.detay.odenecek)} {currency}
                       </span>
                     </div>

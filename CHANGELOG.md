@@ -16,6 +16,14 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.2 — (bekleniyor)
+- **Web uygulamasında fatura detay ve modal taşma sorunları çözüldü, genel UI denetimi tamamlandı (`web/`):**
+  - **Diyalog Genişlik ve Taşma Sorunu (`DialogContent` & `AlertDialogContent`):** `dialog.tsx` tabanındaki `sm:max-w-sm` kısıtlaması kaldırıldı. `max-w-[calc(100vw-2rem)]` ve `sm:max-w-lg` tabanıyla geniş modal sınıflarının (`sm:max-w-4xl`, `sm:max-w-5xl`) ezilmesi engellendi. Modal kapatma düğmesi (`X`) ile başlık alanının çakışmaması için sağ iç boşluk (`pr-8`) güvenceye alındı.
+  - **UBL Fatura Detay Modalı (`FaturaDetayDialog`):** 7 sütunlu fatura kalemleri tablosu ve KDV döküm tablosu `overflow-x-auto` taşıyıcı içine alındı ve `min-w-[650px]` ile genişletildi; mal/hizmet adlarının kelime bazında kaydırılması (`break-words`), sayısal değerlerin tek satırda kalması (`whitespace-nowrap`) sağlandı. Satıcı ve alıcı kartlarında uzun unvan ve VKN taşmaları önlendi.
+  - **Dönem Özeti ve PDF Önizleme Modalları (`DonemOzetDialog`, `PdfViewerDialog`):** Fatura dağılımı tablosuna yatay kaydırma, olağan dışı tutar listesine `truncate`/`break-words`, PDF iframe taşıyıcısına `min-h-0` ve `overflow-hidden` korumaları getirildi.
+  - **Tüm Tablo ve Sayfa Konteynerlerinde UI Denetimi:** Fişler, e-Faturalar, Firmalar, Vergi Takvimi, Bütçe, Çöp Kutusu ve Hata Günlüğü tablolarına uygun `min-w` genişlikleri atanarak dar/mobil ekranlarda bozulmadan yatay kaydırılması sağlandı. Firma tablosundaki `colSpan={7}` uyumsuzluğu 6'ya düzeltildi. Ana yerleşimde (`SidebarInset` & `main`) `min-w-0` ile esnek taşıyıcı genişleme taşması engellendi.
+  - **Tailwind Sınıf Çakışma Yönetimi (`@/lib/utils`):** Tüm shadcn UI bileşenlerindeki içe aktarımlar standart `tailwind-merge` destekli `cn` fonksiyonuna geçirilerek stil ezilmeleri kusursuz hale getirildi.
+
 ## Web 1.0.1 — `934f076`
 - **Web uygulamasında sidebar responsive davranışı, hover ve aktif durum stilleri iyileştirildi (`web/`):**
   - **Yüksek Kontrastlı Hover ve Aktif Efektleri:** `--sidebar-accent` ve `--sidebar-background` renk değişkenleri görünür kontrast sağlayacak şekilde güncellendi. Aktif sayfa bağlantıları için turkuaz dikey hap göstergesi (`before:bg-primary`), turkuaz ikon rengi (`text-primary`) ve hafif arka plan dolgusu (`bg-primary/10`) eklendi.

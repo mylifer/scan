@@ -135,7 +135,7 @@ export function TaxCalendarView() {
       {/* Yasal Süreler Tablosu */}
       <Card>
         <CardContent className="p-0">
-          <Table>
+          <Table className="min-w-[620px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-40">Son Gün</TableHead>
