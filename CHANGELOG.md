@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## Web 1.0.4 — (bekleniyor)
+## Web 1.0.4 — `f662a30`
 - **Web uygulamasında shadcn/ui bileşenlerinin state seçicileri ve açık/koyu tema kontrastları düzeltildi (`web/`):**
   - **Tabs ve TabsTrigger Aktif/Pasif Durum Düzeltmesi (`tabs.tsx`):** Radix UI'ın DOM'a ürettiği `data-state="active"` özniteliği yerine kullanılan hatalı `data-active:` seçicisi, resmi shadcn standardı olan `data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs data-[state=active]:border` ile değiştirildi. "Gelen e-Faturalar" / "Giden e-Faturalar" ve Ayarlar sekmelerinin açık ve koyu temalarda belirgin, yüksek kontrastlı ve dokunsal geçişi sağlandı.
   - **Checkbox Seçim Durumu Düzeltmesi (`checkbox.tsx`):** Hatalı `data-checked:` seçicisi kaldırılarak standart `data-[state=checked]:bg-primary data-[state=checked]:border-primary` ve `data-[state=indeterminate]:` seçicilerine geçildi; onay kutuları tıklandığında turkuaz birincil renkle net şekilde işaretlenir hâle getirildi.
