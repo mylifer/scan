@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { Pressable, type StyleProp, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 
 import { fontFamily, tabular, useShadcnTheme } from '../../lib/theme';
 
@@ -8,7 +8,7 @@ export function Table({
   style,
 }: {
   children: ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }) {
   const t = useShadcnTheme();
   return (
@@ -31,7 +31,7 @@ export function TableHeader({
   style,
 }: {
   children: ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }) {
   const t = useShadcnTheme();
   return (
@@ -46,7 +46,7 @@ export function TableBody({
   style,
 }: {
   children: ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }) {
   return <View style={style}>{children}</View>;
 }
@@ -61,7 +61,7 @@ export function TableRow({
 }: {
   children: ReactNode;
   onPress?: () => void;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   isHeader?: boolean;
   isLast?: boolean;
   accessibilityLabel?: string;
@@ -108,7 +108,7 @@ export function TableHead({
   flex?: number;
   align?: 'left' | 'right' | 'center';
   onPress?: () => void;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }) {
   const t = useShadcnTheme();
   const textAlign = align;
@@ -155,7 +155,7 @@ export function TableCell({
   flex?: number;
   align?: 'left' | 'right' | 'center';
   numeric?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }) {
   const t = useShadcnTheme();
   return (

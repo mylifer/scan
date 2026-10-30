@@ -13,6 +13,9 @@ import { useWide } from '../../../lib/layout';
 import { type KdvAy, kdvAyHesapla } from '../../../lib/kdvAy';
 import { fontFamily, tabular, type as t, useShadcnTheme, useTheme } from '../../../lib/theme';
 import { Badge } from '../../../components/web/Badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/web/Card';
+import { WebButton } from '../../../components/web/Button';
+import { WebPageHeader } from '../../../components/web/PageHeader';
 import { donemGetir, qnbDurum } from '../../../services/efatura/donemCache';
 import { EFaturaError } from '../../../services/efatura/qnbEfatura';
 import { getSummary } from '../../../services/supabase/receiptsRepository';
@@ -87,8 +90,25 @@ export default function KdvScreen() {
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{ paddingTop: wide ? 20 : 12, paddingHorizontal: wide ? 8 : 0, paddingBottom: 40 }}
+      contentContainerStyle={{ paddingTop: wide ? 24 : 12, paddingHorizontal: wide ? 24 : 0, paddingBottom: 40 }}
       refreshControl={<RefreshControl refreshing={false} onRefresh={() => yukle(true)} />}>
+      {wide ? (
+        <View style={{ maxWidth: 1200, width: '100%', alignSelf: 'center' }}>
+          <WebPageHeader
+            title="KDV Dengesi"
+            description="Aylık hesaplanan, indirilecek KDV ve ödenecek / devreden vergi durumu."
+            actions={
+              <WebButton
+                variant="outline"
+                icon={{ sf: 'arrow.clockwise', ion: 'reload' }}
+                onPress={() => yukle(true)}>
+                Yenile
+              </WebButton>
+            }
+          />
+        </View>
+      ) : null}
+
       <View style={[styles.ayRow, wide && [styles.ayRowWide, { backgroundColor: st.card, borderColor: st.border }], { backgroundColor: wide ? st.card : theme.card }]}>
         <AyButon yon="left" label="Önceki ay" onPress={() => setOffset((o) => o - 1)} />
         <Text style={[wide ? styles.periodTextWide : t.headline, { color: wide ? st.cardForeground : theme.label }]}>{capitalizeTr(ay.label)}</Text>
@@ -168,22 +188,55 @@ export default function KdvScreen() {
       ) : null}
       {kdv && yukleniyor === ay.from ? <ActivityIndicator style={{ marginBottom: 20 }} /> : null}
 
-      <ListSection footer="Önceki aylardan devreden KDV bu hesapta yok. Bilgi amaçlıdır; beyanname için muhasebecinize danışın.">
-        <ListRow
-          title="Faturaları Gör"
-          icon={{ sf: 'doc.richtext.fill', ion: 'document-text', color: theme.blue }}
-          chevron
-          onPress={() => router.navigate('/efatura')}
-        />
-        <ListRow
-          title="Tüm Aylar"
-          subtitle="Başlangıçtan bugüne özet"
-          icon={{ sf: 'chart.bar.xaxis', ion: 'stats-chart', color: theme.purple }}
-          chevron
-          onPress={() => router.push('/efatura-ozet')}
-        />
-        <ListRow title="Vergi Takvimi" icon={{ sf: 'calendar', ion: 'calendar', color: theme.red }} chevron onPress={() => router.push('/tax-calendar')} />
-      </ListSection>
+      {wide ? (
+        <Card style={{ marginHorizontal: 16, marginTop: 20, maxWidth: 1200, width: '100%', alignSelf: 'center' }}>
+          <CardHeader>
+            <CardTitle>Raporlar & Hızlı Erişim</CardTitle>
+            <CardDescription>
+              Önceki aylardan devreden KDV bu hesapta yer almaz. Bilgi amaçlıdır; beyanname için muhasebecinize danışın.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
+              <WebButton
+                variant="outline"
+                icon={{ sf: 'doc.richtext.fill', ion: 'document-text' }}
+                onPress={() => router.navigate('/efatura')}>
+                Faturaları Gör
+              </WebButton>
+              <WebButton
+                variant="outline"
+                icon={{ sf: 'chart.bar.xaxis', ion: 'stats-chart' }}
+                onPress={() => router.push('/efatura-ozet')}>
+                Tüm Aylar Özeti
+              </WebButton>
+              <WebButton
+                variant="outline"
+                icon={{ sf: 'calendar', ion: 'calendar' }}
+                onPress={() => router.push('/tax-calendar')}>
+                Vergi Takvimi
+              </WebButton>
+            </View>
+          </CardContent>
+        </Card>
+      ) : (
+        <ListSection footer="Önceki aylardan devreden KDV bu hesapta yok. Bilgi amaçlıdır; beyanname için muhasebecinize danışın.">
+          <ListRow
+            title="Faturaları Gör"
+            icon={{ sf: 'doc.richtext.fill', ion: 'document-text', color: theme.blue }}
+            chevron
+            onPress={() => router.navigate('/efatura')}
+          />
+          <ListRow
+            title="Tüm Aylar"
+            subtitle="Başlangıçtan bugüne özet"
+            icon={{ sf: 'chart.bar.xaxis', ion: 'stats-chart', color: theme.purple }}
+            chevron
+            onPress={() => router.push('/efatura-ozet')}
+          />
+          <ListRow title="Vergi Takvimi" icon={{ sf: 'calendar', ion: 'calendar', color: theme.red }} chevron onPress={() => router.push('/tax-calendar')} />
+        </ListSection>
+      )}
     </ScrollView>
   );
 }

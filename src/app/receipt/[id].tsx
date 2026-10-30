@@ -2,18 +2,25 @@ import { errorMessage } from '../../lib/errors';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Switch, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Switch, Text, View } from 'react-native';
 
 import { fromFormValues, ReceiptForm, type ReceiptFormValues, toFormValues, validateForm } from '../../components/ReceiptForm';
 import { ReceiptPhoto } from '../../components/ReceiptPhoto';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { HeaderTextButton } from '../../components/ui/HeaderButton';
 import { ListRow, ListSection } from '../../components/ui/List';
+import { Badge } from '../../components/web/Badge';
+import { WebButton } from '../../components/web/Button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/web/Card';
+import { WebPageHeader } from '../../components/web/PageHeader';
+import { WebSwitch } from '../../components/web/Switch';
 import { confirmDestructive, showActionSheet } from '../../lib/actionSheet';
 import { showAlert } from '../../lib/alert';
 import { confirmIfDuplicate } from '../../lib/confirmDuplicate';
+import { formatTL, parseAmount, shortTrDate } from '../../lib/format';
 import { haptics } from '../../lib/haptics';
-import { useTheme } from '../../lib/theme';
+import { useWide } from '../../lib/layout';
+import { categoryMeta, fontFamily, useShadcnTheme, useTheme } from '../../lib/theme';
 import { shareReceipt } from '../../services/export/shareReceipt';
 import { prepareArchiveImage } from '../../services/image/prepareReceiptImages';
 import { showToast } from '../../lib/toast';
@@ -35,6 +42,8 @@ import { useConfirmLeave } from '../../hooks/useConfirmLeave';
 /** Kaydedilmiş bir fişi görüntüle, düzenle ya da sil. */
 export default function ReceiptDetailScreen() {
   const theme = useTheme();
+  const wide = useWide();
+  const st = useShadcnTheme();
   const runOnce = useSingleFlight();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [record, setRecord] = useState<ReceiptRecord | null>(null);
@@ -213,6 +222,122 @@ export default function ReceiptDetailScreen() {
   }
 
   if (!values || !record) return <ActivityIndicator style={{ marginTop: 120 }} />;
+
+  if (wide) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <ScrollView contentContainerStyle={{ paddingVertical: 24, paddingHorizontal: 32, alignItems: 'center' }}>
+          <View style={{ maxWidth: 1100, width: '100%', gap: 24 }}>
+            <WebPageHeader
+              title={values.firmaAdi || record.firma_adi || 'Fiş Detayı'}
+              description={`${formatTL(parseAmount(values.toplamTutar))} · ${shortTrDate(values.tarih || record.tarih)} · ${categoryMeta(values.kategori).label}`}
+              onBack={() => router.back()}
+              badge={
+                record.muhasebe_gonderildi_at ? (
+                  <Badge variant="secondary">Muhasebeye Gönderildi</Badge>
+                ) : undefined
+              }
+              actions={
+                <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                  <WebButton
+                    variant="outline"
+                    icon={{ sf: 'square.and.arrow.up', ion: 'share-outline' }}
+                    onPress={share}
+                    loading={sharing}>
+                    Paylaş
+                  </WebButton>
+                  <WebButton
+                    variant="outline"
+                    icon={{ sf: 'camera.fill', ion: 'camera' }}
+                    onPress={choosePhoto}
+                    loading={attaching}>
+                    {record.image_path ? 'Fotoğrafı Değiştir' : 'Fotoğraf Ekle'}
+                  </WebButton>
+                  <WebButton
+                    variant="destructive"
+                    icon={{ sf: 'trash.fill', ion: 'trash' }}
+                    onPress={remove}
+                    disabled={saving}>
+                    Fişi Sil
+                  </WebButton>
+                  <WebButton
+                    variant="default"
+                    icon={{ sf: 'checkmark', ion: 'checkmark' }}
+                    onPress={save}
+                    disabled={!dirty}
+                    loading={saving}>
+                    Kaydet
+                  </WebButton>
+                </View>
+              }
+            />
+
+            <View style={{ flexDirection: 'row', gap: 24, alignItems: 'flex-start' }}>
+              <View style={{ flex: 1, gap: 20 }}>
+                {record.image_path ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Fiş Fotoğrafı</CardTitle>
+                      <CardDescription>Orijinal taranan fiş görüntüsü.</CardDescription>
+                    </CardHeader>
+                    <CardContent style={{ alignItems: 'center' }}>
+                      <ReceiptPhoto uri={imageUrl} />
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Fiş Fotoğrafı</CardTitle>
+                      <CardDescription>Bu fişe henüz bir fotoğraf eklenmedi.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <WebButton variant="outline" icon={{ sf: 'camera.fill', ion: 'camera' }} onPress={choosePhoto}>
+                        Fotoğraf Ekle
+                      </WebButton>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Muhasebe Durumu</CardTitle>
+                    <CardDescription>
+                      Muhasebeciye gönderilen fişleri işaretleyin; dışa aktarırken hariç tutabilirsiniz.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 }}>
+                      <View style={{ gap: 2, flex: 1, paddingRight: 12 }}>
+                        <Text style={{ fontFamily, fontSize: 13, fontWeight: '600', color: st.cardForeground }}>
+                          Muhasebeciye Gönderildi
+                        </Text>
+                        <Text style={{ fontFamily, fontSize: 12, color: st.mutedForeground }}>
+                          {record.muhasebe_gonderildi_at
+                            ? `${sentLabel(record.muhasebe_gonderildi_at)} tarihinde işaretlendi`
+                            : 'Henüz gönderilmedi'}
+                        </Text>
+                      </View>
+                      <WebSwitch
+                        checked={!!record.muhasebe_gonderildi_at}
+                        onCheckedChange={toggleSent}
+                        disabled={marking}
+                        accessibilityLabel="Muhasebeciye gönderildi"
+                      />
+                    </View>
+                  </CardContent>
+                </Card>
+              </View>
+
+              <View style={{ flex: 1.4 }}>
+                <ReceiptForm values={values} onChange={setValues} />
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>

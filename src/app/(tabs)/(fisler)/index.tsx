@@ -32,7 +32,12 @@ import { receiptMatcher } from '../../../lib/search';
 import { monthlyInsights } from '../../../lib/insights';
 import { groupByMonth, SORT_OPTIONS, type SortKey, sortReceipts } from '../../../lib/sort';
 import { useMonthlyBudget } from '../../../lib/budget';
-import { categoryMeta, type as t, useTheme } from '../../../lib/theme';
+import { categoryMeta, tabular, type as t, useShadcnTheme, useTheme } from '../../../lib/theme';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../../components/web/Card';
+import { WebButton } from '../../../components/web/Button';
+import { WebInput } from '../../../components/web/Input';
+import { WebPageHeader } from '../../../components/web/PageHeader';
+import { ReceiptTable } from '../../../components/web/ReceiptTable';
 import { showToast } from '../../../lib/toast';
 import { compareWithPreviousMonth } from '../../../lib/trend';
 import { VERSION_LABEL } from '../../../lib/version';
@@ -51,6 +56,7 @@ export default function DashboardScreen() {
   const theme = useTheme();
   const toolbarHeight = useToolbarHeight(1, true);
   const wide = useWide();
+  const st = useShadcnTheme();
   const { summary: s, previousCategories, trend, loading, error, offlineSince, refresh, remove, period, label, showMonthly, showYearly, showAll, prev, next, goToMonth } =
     useMonthlySummary();
   const { drafts, processor } = useDrafts();
@@ -564,6 +570,45 @@ export default function DashboardScreen() {
             }}
           />
         }>
+        {wide && (
+          <View style={{ maxWidth: 1200, width: '100%', alignSelf: 'center', paddingHorizontal: 16 }}>
+            <WebPageHeader
+              title="Fişler & Giderler"
+              description="Fiş tarama, dönem harcamaları, kategori analizi ve muhasebe aktarımı."
+              actions={
+                <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                  <WebButton
+                    variant="default"
+                    icon={{ sf: 'camera.fill', ion: 'camera' }}
+                    onPress={() => router.push('/camera')}>
+                    Fiş Tara
+                  </WebButton>
+                  <WebButton
+                    variant="secondary"
+                    icon={{ sf: 'square.stack.3d.up', ion: 'albums-outline' }}
+                    onPress={addMultiple}>
+                    Çoklu Fotoğraf
+                  </WebButton>
+                  <WebButton
+                    variant="outline"
+                    icon={{ sf: 'square.and.pencil', ion: 'create-outline' }}
+                    onPress={() => router.push('/manual')}>
+                    Elle Fiş Ekle
+                  </WebButton>
+                  {(drafts.length > 0 || processor.running) && (
+                    <WebButton
+                      variant="outline"
+                      icon={{ sf: 'square.stack.3d.up.fill', ion: 'layers' }}
+                      onPress={() => router.push('/batch')}>
+                      Taslaklar ({drafts.length})
+                    </WebButton>
+                  )}
+                </View>
+              }
+            />
+          </View>
+        )}
+
         {wide ? (
           <Columns>
             <Column flex={3}>
@@ -575,19 +620,191 @@ export default function DashboardScreen() {
                 <>
                   {summaryCard}
                   {draftsRow}
-                  {empty ? emptyState : s && <>{trendSection}{receiptList}</>}
+                  {empty ? (
+                    emptyState
+                  ) : s ? (
+                    <>
+                      {trend && trend.some((p) => p.total > 0) && (
+                        <Card style={{ marginHorizontal: 16, marginBottom: 20 }}>
+                          <CardHeader>
+                            <CardTitle>Son 12 Ay Harcama Trendi</CardTitle>
+                            <CardDescription>Aylık toplam gider dağılımı ve geçmiş dönem karşılaştırması.</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <TrendChart
+                              key={`${period.mode}${offset}`}
+                              data={trend}
+                              currentOffset={isMonth ? offset : null}
+                              onOpenMonth={goToMonth}
+                            />
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      <Card style={{ marginHorizontal: 16, marginBottom: 20 }}>
+                        <CardHeader
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 12,
+                            flexWrap: 'wrap',
+                          }}>
+                          <View style={{ gap: 2 }}>
+                            <CardTitle>Fiş Listesi</CardTitle>
+                            <CardDescription>
+                              {filtering ? `${filtered.length} / ${s.fisler.length} fiş filtrelendi` : `Toplam ${s.fisler.length} kayıtlı fiş`}
+                            </CardDescription>
+                          </View>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <WebInput
+                              value={query}
+                              onChangeText={setQuery}
+                              onClear={() => setQuery('')}
+                              placeholder="Firma, tutar, etiket ara..."
+                              icon={{ sf: 'magnifyingglass', ion: 'search' }}
+                              containerStyle={{ width: 200 }}
+                            />
+                            {s.fisler.length > 1 && (
+                              <WebButton
+                                variant="outline"
+                                size="sm"
+                                onPress={chooseSort}>
+                                {SORT_OPTIONS.find((o) => o.key === sort)!.label}
+                              </WebButton>
+                            )}
+                            <WebButton
+                              variant={selecting ? 'secondary' : 'outline'}
+                              size="sm"
+                              onPress={() => setSelecting(!selecting)}>
+                              {selecting ? 'Seçimi Bitir' : 'Çoklu Seç'}
+                            </WebButton>
+                          </View>
+                        </CardHeader>
+                        <CardContent style={{ paddingHorizontal: 0, paddingBottom: 0 }}>
+                          {filtered.length === 0 ? (
+                            <View style={{ padding: 32, alignItems: 'center' }}>
+                              <Text style={{ fontSize: 13, color: st.mutedForeground }}>Aramanızla eşleşen fiş bulunamadı.</Text>
+                            </View>
+                          ) : (
+                            <ReceiptTable
+                              receipts={shown}
+                              sort={sort}
+                              onSort={setSort}
+                              onOpen={(r) => router.push({ pathname: '/receipt/[id]', params: { id: r.id } })}
+                              onDelete={(r) => deleteReceipt(r)}
+                              selected={selected}
+                              onToggleSelect={toggle}
+                              onToggleSelectAll={() => setSelected(allSelected ? new Set() : new Set(shown.map((r) => r.id)))}
+                              selecting={selecting}
+                            />
+                          )}
+                        </CardContent>
+                        {filtered.length > visible && (
+                          <CardFooter style={{ justifyContent: 'center', paddingVertical: 12 }}>
+                            <WebButton variant="ghost" size="sm" onPress={() => setVisible((v) => v + PAGE)}>
+                              Daha Fazla Göster ({filtered.length - visible} fiş)
+                            </WebButton>
+                          </CardFooter>
+                        )}
+                      </Card>
+                    </>
+                  ) : null}
                 </>
               )}
             </Column>
             <Column flex={2}>
-              <ListSection header={selecting ? `${selectedList.length} fiş seçildi` : 'Fiş Ekle'}>
-                <View style={{ padding: 12 }}>{actions}</View>
-              </ListSection>
-              {navRows}
+              {selecting ? (
+                <Card style={{ marginHorizontal: 16, marginBottom: 20 }}>
+                  <CardHeader>
+                    <CardTitle>{selectedList.length} Fiş Seçildi</CardTitle>
+                    <CardDescription>Seçili fişler için toplu eylem seçin.</CardDescription>
+                  </CardHeader>
+                  <CardContent style={{ gap: 8 }}>
+                    <WebButton
+                      variant="secondary"
+                      icon={{ sf: 'tag', ion: 'pricetag-outline' }}
+                      onPress={bulkCategory}
+                      disabled={!selectedList.length || bulkBusy}>
+                      Kategori Değiştir
+                    </WebButton>
+                    <WebButton
+                      variant="secondary"
+                      icon={{ sf: 'paperplane', ion: 'paper-plane-outline' }}
+                      onPress={bulkSent}
+                      disabled={!selectedList.length || bulkBusy}>
+                      Gönderildi Olarak İşaretle
+                    </WebButton>
+                    <WebButton
+                      variant="destructive"
+                      icon={{ sf: 'trash', ion: 'trash-outline' }}
+                      onPress={bulkDelete}
+                      disabled={!selectedList.length || bulkBusy}
+                      loading={bulkBusy}>
+                      Seçilenleri Sil ({selectedList.length})
+                    </WebButton>
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              <Card style={{ marginHorizontal: 16, marginBottom: 20 }}>
+                <CardHeader>
+                  <CardTitle>Hızlı Erişim</CardTitle>
+                </CardHeader>
+                <CardContent style={{ gap: 8 }}>
+                  <WebButton
+                    variant="outline"
+                    icon={{ sf: 'clock.fill', ion: 'time' }}
+                    onPress={() => router.push('/recent')}
+                    style={{ justifyContent: 'flex-start' }}>
+                    Son Eklenenler
+                  </WebButton>
+                  <WebButton
+                    variant="outline"
+                    icon={{ sf: 'doc.text.fill', ion: 'document-text' }}
+                    onPress={() => router.push('/receipts')}
+                    style={{ justifyContent: 'flex-start' }}>
+                    Tüm Fişler
+                  </WebButton>
+                  <WebButton
+                    variant="outline"
+                    icon={{ sf: 'building.2.fill', ion: 'business' }}
+                    onPress={() => router.push('/firms')}
+                    style={{ justifyContent: 'flex-start' }}>
+                    Firmalar
+                  </WebButton>
+                </CardContent>
+              </Card>
+
               {!empty && s && (
                 <>
                   <InsightsSection items={insights} />
-                  {kdvSection}
+                  <Card style={{ marginHorizontal: 16, marginBottom: 20 }}>
+                    <CardHeader>
+                      <CardTitle>KDV Dağılımı</CardTitle>
+                      <CardDescription>Dönem fişlerinin oranlarına göre KDV toplamları.</CardDescription>
+                    </CardHeader>
+                    <CardContent style={{ gap: 10 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 13, color: st.mutedForeground }}>%1 KDV</Text>
+                        <Text style={[{ fontSize: 13, fontWeight: '600', color: st.cardForeground }, tabular]}>
+                          {formatTL(s.kdv1)}
+                        </Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 13, color: st.mutedForeground }}>%10 KDV</Text>
+                        <Text style={[{ fontSize: 13, fontWeight: '600', color: st.cardForeground }, tabular]}>
+                          {formatTL(s.kdv10)}
+                        </Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 13, color: st.mutedForeground }}>%20 KDV</Text>
+                        <Text style={[{ fontSize: 13, fontWeight: '600', color: st.cardForeground }, tabular]}>
+                          {formatTL(s.kdv20)}
+                        </Text>
+                      </View>
+                    </CardContent>
+                  </Card>
                   <CategorySection items={s.kategoriToplamlari} selected={category} onSelect={setCategory} />
                   <ExportSection summary={s} label={label} range={range} />
                 </>

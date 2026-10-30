@@ -1,17 +1,21 @@
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 
 import { emptyForm, fromFormValues, ReceiptForm, type ReceiptFormValues, toFormValues, validateForm } from '../components/ReceiptForm';
 import { HeaderTextButton } from '../components/ui/HeaderButton';
 import { ListRow, ListSection } from '../components/ui/List';
+import { WebButton } from '../components/web/Button';
+import { Card, CardContent } from '../components/web/Card';
+import { WebPageHeader } from '../components/web/PageHeader';
 import { showAlert } from '../lib/alert';
 import { confirmIfDuplicate } from '../lib/confirmDuplicate';
 import { errorMessage } from '../lib/errors';
 import type { GibQrData } from '../lib/gibQr';
 import { haptics } from '../lib/haptics';
 import { takePendingQr } from '../lib/pendingQr';
-import { type as t, useTheme } from '../lib/theme';
+import { useWide } from '../lib/layout';
+import { fontFamily, type as t, useShadcnTheme, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 import { reportError } from '../services/errorLog';
 import { pdfPickerAvailable, pickInvoicePdf } from '../services/invoice/pickInvoicePdf';
@@ -27,6 +31,8 @@ import type { ReceiptData, ReceiptField } from '../types/receipt';
  */
 export default function ManualReceiptScreen() {
   const theme = useTheme();
+  const wide = useWide();
+  const st = useShadcnTheme();
   const runOnce = useSingleFlight();
   const [initial] = useState<ReceiptFormValues>(emptyForm);
   const [values, setValues] = useState<ReceiptFormValues>(initial);
@@ -109,6 +115,55 @@ export default function ManualReceiptScreen() {
         setSaving(false);
       }
     });
+  }
+
+  if (wide) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <ScrollView contentContainerStyle={{ paddingVertical: 24, paddingHorizontal: 32, alignItems: 'center' }}>
+          <View style={{ maxWidth: 800, width: '100%', gap: 24 }}>
+            <WebPageHeader
+              title="Elle Fiş Ekle"
+              description="Fotoğrafsız fiş veya fatura kaydı. Fiş bilgilerini elle girebilir ya da PDF yükleyebilirsiniz."
+              onBack={() => router.back()}
+              actions={
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {canPickPdf && (
+                    <WebButton
+                      variant="outline"
+                      icon={{ sf: 'doc.richtext.fill', ion: 'document-text' }}
+                      onPress={fillFromPdf}
+                      disabled={!!filling || saving}
+                      loading={filling === 'pdf'}>
+                      PDF’ten Doldur
+                    </WebButton>
+                  )}
+                  <WebButton
+                    variant="default"
+                    icon={{ sf: 'checkmark', ion: 'checkmark' }}
+                    onPress={save}
+                    disabled={!!filling || saving}
+                    loading={saving}>
+                    Kaydet
+                  </WebButton>
+                </View>
+              }
+            />
+
+            {source && (
+              <Card style={{ backgroundColor: st.muted, borderColor: st.border }}>
+                <CardContent style={{ padding: 14 }}>
+                  <Text style={{ fontFamily, fontSize: 13, color: st.cardForeground }}>{source}</Text>
+                </CardContent>
+              </Card>
+            )}
+
+            <ReceiptForm values={values} onChange={setValues} />
+          </View>
+        </ScrollView>
+      </View>
+    );
   }
 
   return (

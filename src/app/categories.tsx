@@ -1,16 +1,23 @@
-import { useFocusEffect } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import { type ReactNode, useCallback, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { Icon } from '../components/ui/Icon';
 import { IconTile } from '../components/ui/IconTile';
 import { ListRow, ListSection } from '../components/ui/List';
+import { Badge } from '../components/web/Badge';
+import { WebButton } from '../components/web/Button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/web/Card';
+import { WebInput } from '../components/web/Input';
+import { WebPageHeader } from '../components/web/PageHeader';
 import { confirmDestructive, showActionSheet } from '../lib/actionSheet';
 import { showAlert } from '../lib/alert';
 import { categoryNameError, customCategories, isBuiltinCategory, useCategories } from '../lib/categories';
 import { showCategoryPicker } from '../lib/categoryPicker';
 import { errorMessage } from '../lib/errors';
 import { haptics } from '../lib/haptics';
-import { categoryMeta, fontFamily, type as t, useTheme } from '../lib/theme';
+import { useWide } from '../lib/layout';
+import { categoryMeta, fontFamily, tabular, type as t, useShadcnTheme, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 import { addCustomCategory, deleteCustomCategory, getCategoryCounts, renameCustomCategory } from '../services/supabase/categoriesRepository';
 import type { Kategori } from '../types/receipt';
@@ -18,6 +25,8 @@ import type { Kategori } from '../types/receipt';
 /** Kategoriler: kendi kategorilerini ekle, yeniden adlandır, sil; hazır kategorileri ve fiş sayılarını gör. */
 export default function CategoriesScreen() {
   const theme = useTheme();
+  const wide = useWide();
+  const st = useShadcnTheme();
   const categories = useCategories();
   const custom = categories.filter((k) => !isBuiltinCategory(k));
   const builtins = categories.filter((k) => isBuiltinCategory(k));
@@ -129,6 +138,186 @@ export default function CategoriesScreen() {
         },
       ],
     });
+  }
+
+  if (wide) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <ScrollView contentContainerStyle={{ paddingVertical: 24, paddingHorizontal: 32, alignItems: 'center' }}>
+          <View style={{ maxWidth: 840, width: '100%', gap: 24 }}>
+            <WebPageHeader
+              title="Kategoriler"
+              description="Fişlerinizi sınıflandırmak, aramak ve vergi dönemlerinde filtrelemek için kategoriler."
+              onBack={() => router.back()}
+            />
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Yeni Kategori Ekle</CardTitle>
+                <CardDescription>
+                  Eklediğiniz kategoriler fiş formunda ve yapay zekâ taramalarında anında kullanılabilir.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                  <WebInput
+                    value={newName}
+                    onChangeText={setNewName}
+                    placeholder="Kategori adı (ör. Ofis Malzemeleri, Yazılım Lisansları)"
+                    maxLength={40}
+                    onSubmitEditing={add}
+                    containerStyle={{ flex: 1 }}
+                  />
+                  <WebButton
+                    variant="default"
+                    icon={{ sf: 'plus', ion: 'add' }}
+                    onPress={add}
+                    disabled={!newName.trim() || busy}
+                    loading={busy}>
+                    Ekle
+                  </WebButton>
+                </View>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Özel Kategorileriniz ({custom.length})</CardTitle>
+                <CardDescription>
+                  Tanımladığınız özel kategoriler. Bir kategoriyi sildiğinizde bağlı fişler dilediğiniz başka bir kategoriye aktarılır.
+                </CardDescription>
+              </CardHeader>
+              <CardContent style={{ gap: 8 }}>
+                {custom.length === 0 ? (
+                  <Text style={{ fontFamily, fontSize: 13, color: st.mutedForeground, paddingVertical: 12 }}>
+                    Henüz özel bir kategori tanımlamadınız. Yukarıdaki alandan ekleyebilirsiniz.
+                  </Text>
+                ) : (
+                  custom.map((k) => {
+                    const meta = categoryMeta(k);
+                    const isRenaming = renaming?.from === k;
+
+                    if (isRenaming) {
+                      return (
+                        <View
+                          key={k}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 12,
+                            padding: 10,
+                            borderRadius: 8,
+                            backgroundColor: st.muted,
+                          }}>
+                          <WebInput
+                            value={renaming.to}
+                            onChangeText={(to) => setRenaming({ from: k, to })}
+                            autoFocus
+                            maxLength={40}
+                            onSubmitEditing={saveRename}
+                            containerStyle={{ flex: 1 }}
+                          />
+                          <WebButton variant="outline" size="sm" onPress={() => setRenaming(null)}>
+                            Vazgeç
+                          </WebButton>
+                          <WebButton variant="default" size="sm" onPress={saveRename} loading={busy}>
+                            Kaydet
+                          </WebButton>
+                        </View>
+                      );
+                    }
+
+                    return (
+                      <View
+                        key={k}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          paddingVertical: 10,
+                          paddingHorizontal: 12,
+                          borderRadius: 8,
+                          borderWidth: 1,
+                          borderColor: st.border,
+                        }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                          <Icon sf={meta.sf} ion={meta.ion} size={18} color={theme[meta.color] as string} />
+                          <Text style={{ fontFamily, fontSize: 14, fontWeight: '600', color: st.cardForeground }}>
+                            {meta.label}
+                          </Text>
+                          <Badge variant="secondary">
+                            {countOf(k)} fiş
+                          </Badge>
+                        </View>
+                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                          <WebButton
+                            variant="ghost"
+                            size="sm"
+                            icon={{ sf: 'pencil', ion: 'pencil' }}
+                            onPress={() => setRenaming({ from: k, to: meta.label })}>
+                            Düzenle
+                          </WebButton>
+                          <WebButton
+                            variant="ghost"
+                            size="sm"
+                            icon={{ sf: 'trash', ion: 'trash' }}
+                            onPress={() => openCustom(k)}>
+                            Sil
+                          </WebButton>
+                        </View>
+                      </View>
+                    );
+                  })
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Hazır Kategoriler ({builtins.length})</CardTitle>
+                <CardDescription>
+                  Sistem tarafından ön tanımlı standart gider kategorileri ve toplam fiş adetleri.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                  {builtins.map((k) => {
+                    const meta = categoryMeta(k);
+                    return (
+                      <View
+                        key={k}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          width: '48%',
+                          minWidth: 260,
+                          paddingVertical: 10,
+                          paddingHorizontal: 12,
+                          borderRadius: 8,
+                          borderWidth: 1,
+                          borderColor: st.border,
+                        }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                          <Icon sf={meta.sf} ion={meta.ion} size={18} color={theme[meta.color] as string} />
+                          <Text style={{ fontFamily, fontSize: 13, fontWeight: '500', color: st.cardForeground }}>
+                            {meta.label}
+                          </Text>
+                        </View>
+                        <Badge variant="outline" style={tabular}>
+                          {countOf(k)}
+                        </Badge>
+                      </View>
+                    );
+                  })}
+                </View>
+              </CardContent>
+            </Card>
+          </View>
+        </ScrollView>
+      </View>
+    );
   }
 
   return (

@@ -20,6 +20,10 @@ import { haptics } from '../../../lib/haptics';
 import { useWide } from '../../../lib/layout';
 import { fontFamily, type as t, useShadcnTheme, useTheme } from '../../../lib/theme';
 import { showToast } from '../../../lib/toast';
+import { Badge } from '../../../components/web/Badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/web/Card';
+import { WebButton } from '../../../components/web/Button';
+import { WebPageHeader } from '../../../components/web/PageHeader';
 import { TabsList, TabsTrigger } from '../../../components/web/Tabs';
 import { exportEFaturaExcel, exportEFaturaPdfs } from '../../../services/efatura/efaturaExport';
 import { type EFatura, EFaturaError, type Kontrol, totalsByCurrency, type Yon } from '../../../services/efatura/qnbEfatura';
@@ -309,6 +313,22 @@ export default function EFaturaScreen() {
             }}
           />
         }>
+      {wide ? (
+        <View style={{ maxWidth: 1200, width: '100%', alignSelf: 'center', paddingHorizontal: 16 }}>
+          <WebPageHeader
+            title="e-Faturalar"
+            description="QNB eSolutions entegrasyonu ile gelen ve giden e-Arşiv / e-Fatura listesi."
+            actions={
+              <WebButton
+                variant="outline"
+                icon={{ sf: 'arrow.clockwise', ion: 'reload' }}
+                onPress={refresh}>
+                Yenile
+              </WebButton>
+            }
+          />
+        </View>
+      ) : null}
       <View style={[styles.controls, wide && styles.controlsWide]}>
         {wide ? (
           <TabsList>
@@ -534,34 +554,84 @@ export default function EFaturaScreen() {
           )}
         </>
       ) : null}
-      <ListSection
-        header="Denetim"
-        footer={
-          denetim && !denetimSuruyor && denetim.length
-            ? denetimSorun
-              ? `${denetimSorun} ayda QNB'nin saydığı e-Fatura listede tam görünmüyor (⚠). O aya girip uyarıyı okuyun.`
-              : 'Son 12 ayın tamamında listedeki e-Fatura sayısı QNB’nin saydığıyla aynı.'
-            : 'Her ay için listedeki e-Fatura sayısını QNB’nin kendi sayımıyla karşılaştırır (gelen/giden). Birkaç dakika sürebilir.'
-        }>
-        <ListRow
-          title="Son 12 Ayı Denetle"
-          subtitle={denetimDurum ?? undefined}
-          icon={{ sf: 'checklist', ion: 'checkmark-done', color: theme.indigo }}
-          tone="action"
-          disabled={denetimSuruyor}
-          accessory={denetimSuruyor ? <ActivityIndicator /> : undefined}
-          onPress={denetle}
-        />
-        {(denetim ?? []).map((d) => (
+      {wide ? (
+        <Card style={{ marginHorizontal: 16, marginTop: 24, marginBottom: 20 }}>
+          <CardHeader style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+            <View style={{ gap: 2, flex: 1, minWidth: 260 }}>
+              <CardTitle>QNB Senkronizasyon Denetimi</CardTitle>
+              <CardDescription>
+                {denetim && !denetimSuruyor && denetim.length
+                  ? denetimSorun
+                    ? `${denetimSorun} ayda QNB'nin saydığı e-Fatura listede tam görünmüyor (⚠).`
+                    : 'Son 12 ayın tamamında listedeki e-Fatura sayısı QNB ile tam eşleşiyor.'
+                  : 'Her ay için listedeki fatura sayısı ile QNB resmi sayımını karşılaştırır.'}
+              </CardDescription>
+            </View>
+            <WebButton
+              variant="outline"
+              size="sm"
+              icon={{ sf: 'checklist', ion: 'checkmark-done' }}
+              onPress={denetle}
+              loading={denetimSuruyor}
+              disabled={denetimSuruyor}>
+              {denetimDurum ? denetimDurum : 'Son 12 Ayı Denetle'}
+            </WebButton>
+          </CardHeader>
+          {denetim && denetim.length > 0 && (
+            <CardContent style={{ gap: 8 }}>
+              {denetim.map((d) => (
+                <View
+                  key={d.label}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingVertical: 8,
+                    borderBottomWidth: StyleSheet.hairlineWidth,
+                    borderBottomColor: st.border,
+                  }}>
+                  <Text style={{ fontSize: 13, fontWeight: '500', color: st.cardForeground }}>{d.label}</Text>
+                  <Text style={{ fontSize: 12, color: st.mutedForeground }}>
+                    Gelen {d.gelen ?? '…'} · Giden {d.giden ?? '…'}
+                  </Text>
+                  <Badge variant={d.sorun ? 'destructive' : 'success'}>
+                    {d.sorun ? 'Uyuşmazlık (⚠)' : 'Tam Uyumlu (✓)'}
+                  </Badge>
+                </View>
+              ))}
+            </CardContent>
+          )}
+        </Card>
+      ) : (
+        <ListSection
+          header="Denetim"
+          footer={
+            denetim && !denetimSuruyor && denetim.length
+              ? denetimSorun
+                ? `${denetimSorun} ayda QNB'nin saydığı e-Fatura listede tam görünmüyor (⚠). O aya girip uyarıyı okuyun.`
+                : 'Son 12 ayın tamamında listedeki e-Fatura sayısı QNB’nin saydığıyla aynı.'
+              : 'Her ay için listedeki e-Fatura sayısını QNB’nin kendi sayımıyla karşılaştırır (gelen/giden). Birkaç dakika sürebilir.'
+          }>
           <ListRow
-            key={d.label}
-            title={d.label}
-            subtitle={`Gelen ${d.gelen ?? '…'} · Giden ${d.giden ?? '…'}`}
-            value={d.sorun ? '⚠' : '✓'}
-            valueColor={d.sorun ? theme.orange : theme.green}
+            title="Son 12 Ayı Denetle"
+            subtitle={denetimDurum ?? undefined}
+            icon={{ sf: 'checklist', ion: 'checkmark-done', color: theme.indigo }}
+            tone="action"
+            disabled={denetimSuruyor}
+            accessory={denetimSuruyor ? <ActivityIndicator /> : undefined}
+            onPress={denetle}
           />
-        ))}
-      </ListSection>
+          {(denetim ?? []).map((d) => (
+            <ListRow
+              key={d.label}
+              title={d.label}
+              subtitle={`Gelen ${d.gelen ?? '…'} · Giden ${d.giden ?? '…'}`}
+              value={d.sorun ? '⚠' : '✓'}
+              valueColor={d.sorun ? theme.orange : theme.green}
+            />
+          ))}
+        </ListSection>
+      )}
     </ScrollView>
 
     {/* Sabit Yüzen Toplu İşlem Çubuğu */}
