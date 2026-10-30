@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## Web 1.0.10 — (bekleniyor)
+## Web 1.0.10 — `2300c7b`
 - **e-Fatura detay pop-up genişliği optimize edildi ve tabloda birincil aksiyon (Primary CTA) uygulandı (`web/`):**
   - **Diyalog Genişliği ve Sütun Düzeni (`fatura-detay-dialog.tsx`):** Fatura Detay pop-up'ının genişliği `sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl` seviyesine çıkarıldı. 7 sütunlu Fatura Kalemleri tablosundaki her sütuna oranlı ve net genişlikler (`#`, `Mal / Hizmet`, `Miktar`, `Birim Fiyat`, `KDV %`, `KDV Tutarı`, `Tutar (KDV Hariç)`) tanımlanarak tüm sütunların yatay kaydırma gerektirmeden pop-up'a kusursuz sığması sağlandı. Modaldaki "PDF Görüntüle" butonu da birincil aksiyon stiline (`variant="default"`) geçirildi.
   - **Tabloda Fatura Görüntüleme Butonuna Primary CTA (`efatura-view.tsx`):** e-Faturalar tablosundaki satır içi fatura görüntüleme eylemi, soluk/görünmez ikon yerine turkuaz birincil aksiyon düğmesine (`variant="default" size="sm"`, `[ 📄 Görüntüle ]`) dönüştürüldü; yanına ikincil detay inceleme ikonu konumlandırılarak net bir işlem hiyerarşisi tesis edildi.
