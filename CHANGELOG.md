@@ -16,6 +16,12 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.9 — (bekleniyor)
+- **Fatura Detay modalı ve finansal kartlardaki tutar alanları Geist Sans tipografisine uyarlandı (`web/`):**
+  - **Fatura Detay Tutar Özeti Kartı (`fatura-detay-dialog.tsx`):** Sağ altta yer alan Ara Toplam, İskonto, Toplam KDV ve Ödenecek Toplam satırlarında kullanılan `font-mono` (monospace) sınıfı kaldırılarak sistemin geri kalanıyla uyumlu `Geist Sans` (`tabular-nums font-medium/font-semibold`) tipografisine geçirildi; para birimi ve rakamların modern ve tutarlı görünmesi sağlandı.
+  - **Dönem Analizi ve KDV Özeti Kartları (`donem-ozet-dialog.tsx` & `kdv-view.tsx`):** Olağan dışı matrah listesi ve KDV dağılım kartlarındaki tutar gösterimlerinde `font-mono` yerine standart `tabular-nums` uygulanarak tüm parasal verilerde Geist Sans bütünlüğü sağlandı.
+  - **Diyalog Primitiflerinde Font Güvencesi (`dialog.tsx` & `alert-dialog.tsx`):** Portal olarak gövdeye bağlanan modallara doğrudan `font-sans` sınıfı eklenerek Geist Sans kalıtımı pekiştirildi.
+
 ## Web 1.0.8 — `2067979`
 - **Sistem genelindeki font ailesi modern Geist font ailesine geçirildi (`web/` & `src/`):**
   - **Geist Sans & Geist Mono Entegrasyonu (`layout.tsx`):** `next/font/google` üzerinden resmi `Geist` (ana metin ve arayüz) ve `Geist_Mono` (belge no, VKN, tarih, kod ve sayısal tablolar) font değişkenleri (`--font-geist-sans`, `--font-geist-mono`) kök düzenine bağlandı.
