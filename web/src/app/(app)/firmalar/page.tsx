@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { FirmsView } from "@/components/firms/firms-view";
 
 export const metadata: Metadata = { title: "Firmalar · Fiş Tarayıcı" };
 
 export default function Page() {
-  return <PlaceholderPage title="Firmalar" />;
+  return <FirmsView />;
 }
