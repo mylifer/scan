@@ -294,7 +294,11 @@ export default function EFaturaScreen() {
       <ScrollView
         style={{ backgroundColor: theme.background }}
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ paddingTop: wide ? 20 : 16, paddingHorizontal: wide ? 8 : 0, paddingBottom: 40 }}
+        contentContainerStyle={{
+          paddingTop: wide ? 20 : 16,
+          paddingHorizontal: wide ? 8 : 0,
+          paddingBottom: selectedList.length > 0 ? 96 : 40,
+        }}
         refreshControl={
           <RefreshControl
             refreshing={pulling}
@@ -438,18 +442,6 @@ export default function EFaturaScreen() {
           )}
           {wide ? (
             <>
-              <EFaturaExportBar
-                selectedCount={selectedList.length}
-                totalCount={(items ?? []).filter((f) => !!f.ettn).length}
-                totalAmount={selectedTotalAmount}
-                currency={selectedList[0]?.paraBirimi ?? 'TRY'}
-                allSelected={allSelected}
-                onToggleSelectAll={toggleSelectAll}
-                onClearSelection={() => setSelectedEttns(new Set())}
-                onExportExcel={handleExportExcel}
-                onExportPdf={handleExportPdf}
-                exportingText={exportingText}
-              />
               <EFaturaTable
                 items={sortEFaturalar(items, siralama)}
                 yon={yon}
@@ -481,39 +473,13 @@ export default function EFaturaScreen() {
                   ? 'QNB eSolutions’tan fatura tarihine göre listelenir. Tutar, faturadaki ödenecek tutardır. Çoklu seçim için satıra basılı tutun.'
                   : 'e-Fatura (gönderim tarihine göre) ve e-Arşiv faturaları birlikte listelenir. İptal edilenler toplama girmez. Çoklu seçim için satıra basılı tutun.'
               }>
-              <EFaturaExportBar
-                selectedCount={selectedList.length}
-                totalCount={(items ?? []).filter((f) => !!f.ettn).length}
-                totalAmount={selectedTotalAmount}
-                currency={selectedList[0]?.paraBirimi ?? 'TRY'}
-                allSelected={allSelected}
-                onToggleSelectAll={toggleSelectAll}
-                onClearSelection={() => setSelectedEttns(new Set())}
-                onExportExcel={handleExportExcel}
-                onExportPdf={handleExportPdf}
-                exportingText={exportingText}
-              />
               {sortEFaturalar(items, siralama).map((f) => (
                 <ListRow
                   key={f.ettn || f.belgeNo}
                   icon={{
-                    sf: f.ettn && selectedEttns.has(f.ettn.toLowerCase())
-                      ? 'checkmark.circle.fill'
-                      : yon === 'gelen'
-                        ? 'tray.and.arrow.down.fill'
-                        : 'paperplane.fill',
-                    ion: f.ettn && selectedEttns.has(f.ettn.toLowerCase())
-                      ? 'checkmark-circle'
-                      : yon === 'gelen'
-                        ? 'download'
-                        : 'send',
-                    color: f.ettn && selectedEttns.has(f.ettn.toLowerCase())
-                      ? theme.blue
-                      : f.iptal
-                        ? theme.gray
-                        : yon === 'gelen'
-                          ? theme.blue
-                          : theme.green,
+                    sf: yon === 'gelen' ? 'tray.and.arrow.down.fill' : 'paperplane.fill',
+                    ion: yon === 'gelen' ? 'download' : 'send',
+                    color: f.iptal ? theme.gray : yon === 'gelen' ? theme.blue : theme.green,
                   }}
                   title={f.unvan}
                   subtitle={[
@@ -530,7 +496,16 @@ export default function EFaturaScreen() {
                   value={money(f.tutar, f.paraBirimi)}
                   valueColor={f.iptal ? theme.secondaryLabel : theme.label}
                   accessory={
-                    f.ettn ? (
+                    selectedEttns.size > 0 ? (
+                      <View style={{ marginLeft: 6 }}>
+                        <Icon
+                          sf={selectedEttns.has(f.ettn.toLowerCase()) ? 'checkmark.circle.fill' : 'circle'}
+                          ion={selectedEttns.has(f.ettn.toLowerCase()) ? 'checkmark-circle' : 'ellipse-outline'}
+                          size={22}
+                          color={selectedEttns.has(f.ettn.toLowerCase()) ? theme.blue : theme.tertiaryLabel}
+                        />
+                      </View>
+                    ) : f.ettn ? (
                       <Pressable
                         onPress={(e) => {
                           (e as unknown as { stopPropagation?: () => void })?.stopPropagation?.();
@@ -588,6 +563,21 @@ export default function EFaturaScreen() {
         ))}
       </ListSection>
     </ScrollView>
+
+    {/* Sabit Yüzen Toplu İşlem Çubuğu */}
+    <EFaturaExportBar
+      selectedCount={selectedList.length}
+      totalCount={(items ?? []).filter((f) => !!f.ettn).length}
+      totalAmount={selectedTotalAmount}
+      currency={selectedList[0]?.paraBirimi ?? 'TRY'}
+      allSelected={allSelected}
+      onToggleSelectAll={toggleSelectAll}
+      onClearSelection={() => setSelectedEttns(new Set())}
+      onExportExcel={handleExportExcel}
+      onExportPdf={handleExportPdf}
+      exportingText={exportingText}
+    />
+
     <PdfViewerModal
       visible={!!pdfModalFatura}
       fatura={pdfModalFatura}

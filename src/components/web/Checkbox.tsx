@@ -12,7 +12,7 @@ interface CheckboxProps {
 }
 
 /**
- * Shadcn UI Checkbox bileşeni.
+ * Shadcn UI Checkbox bileşeni (16x16, yuvarlatılmış köşeli, erişilebilir).
  */
 export function Checkbox({ checked, onCheckedChange, indeterminate, disabled, accessibilityLabel }: CheckboxProps) {
   const t = useShadcnTheme();
@@ -25,17 +25,17 @@ export function Checkbox({ checked, onCheckedChange, indeterminate, disabled, ac
       accessibilityRole="checkbox"
       accessibilityState={{ checked: indeterminate ? 'mixed' : checked, disabled }}
       accessibilityLabel={accessibilityLabel}
-      hitSlop={6}
+      hitSlop={8}
       style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
         styles.box,
         {
           borderColor: isActive ? t.primary : hovered ? t.foreground : t.border,
           backgroundColor: isActive ? t.primary : 'transparent',
-          opacity: disabled ? 0.4 : pressed ? 0.8 : 1,
+          opacity: disabled ? 0.35 : pressed ? 0.8 : 1,
         },
       ]}>
       {checked ? (
-        <Icon sf="checkmark" ion="checkmark" size={12} color={t.primaryForeground} weight="bold" />
+        <Icon sf="checkmark" ion="checkmark" size={11} color={t.primaryForeground} weight="bold" />
       ) : indeterminate ? (
         <View style={[styles.indeterminateBar, { backgroundColor: t.primaryForeground }]} />
       ) : null}
@@ -45,15 +45,16 @@ export function Checkbox({ checked, onCheckedChange, indeterminate, disabled, ac
 
 const styles = StyleSheet.create({
   box: {
-    width: 17,
-    height: 17,
+    width: 16,
+    height: 16,
     borderRadius: 4,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    cursor: 'pointer',
   },
   indeterminateBar: {
-    width: 9,
+    width: 8,
     height: 2,
     borderRadius: 1,
   },
