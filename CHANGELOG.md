@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.51.0 — `PENDING`
+## 1.51.0 — `d055851`
 - **e-Fatura sayfasında tekli ve çoklu fatura seçimi ile toplu Excel ve PDF dışa aktarma (export):**
   - **Fatura Seçim Desteği:** Masaüstü tablosunda her satır için onay kutusu (checkbox) ve tablo başlığında "Tümünü Seç / Temizle" (kısmi seçim destekli indeterminate durum) eklendi. Seçilen satırlar belirgin renkle vurgulanır.
   - **Mobil Cihaz Desteği:** Mobilde fatura kartına uzun basarak (long-press) veya başlık yanındaki çoklu seçim düğmesine dokunarak seçim moduna geçilebilir.
