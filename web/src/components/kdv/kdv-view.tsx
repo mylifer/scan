@@ -239,24 +239,24 @@ export function KdvView() {
             <CardDescription>Giden satış faturalarından doğan KDV yükümlülüğü</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2 rounded-lg border bg-muted/20 p-4 text-sm">
+            <div className="space-y-2 rounded-lg border bg-muted/20 p-4 text-sm font-sans">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Faturada Yazan KDV:</span>
-                <span className="font-mono font-medium tabular-nums">
+                <span className="font-medium tabular-nums">
                   {loading ? <Skeleton className="h-4 w-20" /> : `${formatTL(kdv?.kestigim.faturada ?? 0)} TL`}
                 </span>
               </div>
               {(kdv?.kestigim.tevkifat ?? 0) > 0 && (
                 <div className="flex justify-between text-muted-foreground">
                   <span>Tevkifat Kesintisi (Alıcı öder):</span>
-                  <span className="font-mono tabular-nums">
+                  <span className="tabular-nums">
                     -{formatTL(kdv?.kestigim.tevkifat ?? 0)} TL
                   </span>
                 </div>
               )}
               <div className="border-t pt-2 flex justify-between font-semibold">
                 <span>Beyan Edilecek KDV:</span>
-                <span className="font-mono tabular-nums text-foreground">
+                <span className="tabular-nums text-foreground">
                   {loading ? <Skeleton className="h-4 w-24" /> : `${formatTL(kdv?.kestigim.beyan ?? 0)} TL`}
                 </span>
               </div>
@@ -278,12 +278,12 @@ export function KdvView() {
             <CardDescription>Alış faturaları ve taranan POS fişlerinden düşülecek KDV</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2 rounded-lg border bg-muted/20 p-4 text-sm">
+            <div className="space-y-2 rounded-lg border bg-muted/20 p-4 text-sm font-sans">
               <div className="flex justify-between">
                 <span className="flex items-center gap-1.5 text-muted-foreground">
                   <FileSpreadsheet className="size-3.5" /> Gelen e-Faturalar ({kdv?.gelenEfatura.adet ?? 0}):
                 </span>
-                <span className="font-mono font-medium tabular-nums">
+                <span className="font-medium tabular-nums">
                   {loading ? <Skeleton className="h-4 w-20" /> : `${formatTL(kdv?.gelenEfatura.kdv ?? 0)} TL`}
                 </span>
               </div>
@@ -292,7 +292,7 @@ export function KdvView() {
                 <span className="flex items-center gap-1.5 text-muted-foreground">
                   <Receipt className="size-3.5" /> Taranan POS Fişleri ({kdv?.fis.adet ?? 0}):
                 </span>
-                <span className="font-mono font-medium tabular-nums">
+                <span className="font-medium tabular-nums">
                   {loading ? <Skeleton className="h-4 w-20" /> : `${formatTL(kdv?.fis.kdv ?? 0)} TL`}
                 </span>
               </div>
@@ -300,7 +300,7 @@ export function KdvView() {
               {(kdv?.iade.adet ?? 0) > 0 && (
                 <div className="flex justify-between text-destructive">
                   <span>Kestiğim İadeler ({kdv?.iade.adet} adet):</span>
-                  <span className="font-mono tabular-nums">
+                  <span className="tabular-nums">
                     -{formatTL(kdv?.iade.kdv ?? 0)} TL
                   </span>
                 </div>
@@ -308,7 +308,7 @@ export function KdvView() {
 
               <div className="border-t pt-2 flex justify-between font-semibold">
                 <span>Toplam Düşülebilir KDV:</span>
-                <span className="font-mono tabular-nums text-foreground">
+                <span className="tabular-nums text-foreground">
                   {loading ? <Skeleton className="h-4 w-24" /> : `${formatTL(kdv?.dusulebilir ?? 0)} TL`}
                 </span>
               </div>

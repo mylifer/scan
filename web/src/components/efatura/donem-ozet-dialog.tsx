@@ -186,7 +186,7 @@ export function DonemOzetDialog({
                       <span className="font-medium">{od.belgeNo || od.ettn}</span> · {od.tarih}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-semibold">{formatTL(od.matrah)} TL</span>
+                      <span className="font-semibold tabular-nums">{formatTL(od.matrah)} TL</span>
                       <Badge variant="outline" className="text-[10px]">
                         {od.kat}× ortalama
                       </Badge>

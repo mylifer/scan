@@ -252,30 +252,30 @@ function FaturaDetayContent({
                 {/* Toplam Özeti Kartı */}
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold uppercase text-muted-foreground">Tutar Özeti</h4>
-                  <div className="space-y-2 rounded-lg border bg-muted/30 p-4 text-sm">
+                  <div className="space-y-2 rounded-lg border bg-muted/30 p-4 text-sm font-sans">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Ara Toplam (KDV Hariç):</span>
-                      <span className="font-mono font-medium whitespace-nowrap tabular-nums">
+                      <span className="font-medium whitespace-nowrap tabular-nums text-foreground">
                         {formatTL(state.detay.araToplam)} {currency}
                       </span>
                     </div>
                     {state.detay.iskonto > 0 && (
                       <div className="flex justify-between text-destructive">
                         <span>İskonto:</span>
-                        <span className="font-mono font-medium whitespace-nowrap tabular-nums">
+                        <span className="font-medium whitespace-nowrap tabular-nums">
                           -{formatTL(state.detay.iskonto)} {currency}
                         </span>
                       </div>
                     )}
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Toplam KDV:</span>
-                      <span className="font-mono font-medium whitespace-nowrap tabular-nums">
+                      <span className="font-medium whitespace-nowrap tabular-nums text-foreground">
                         {formatTL(state.detay.kdvToplam)} {currency}
                       </span>
                     </div>
                     <div className="border-t pt-2 flex justify-between text-base font-semibold">
                       <span>Ödenecek Toplam:</span>
-                      <span className="font-mono whitespace-nowrap tabular-nums text-primary">
+                      <span className="whitespace-nowrap tabular-nums text-primary font-bold">
                         {formatTL(state.detay.odenecek)} {currency}
                       </span>
                     </div>
