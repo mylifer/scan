@@ -6,6 +6,7 @@ import { prefetchInvoicePdf } from '../../services/efatura/pdfCache';
 import type { EFatura, Yon } from '../../services/efatura/qnbEfatura';
 import { Icon } from '../ui/Icon';
 import { Badge } from '../web/Badge';
+import { Checkbox } from '../web/Checkbox';
 
 const AY = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
 
@@ -46,6 +47,9 @@ export function EFaturaTable({
   onOpen,
   onViewPdf,
   haric,
+  selected,
+  onToggleSelect,
+  onToggleSelectAll,
 }: {
   items: EFatura[];
   yon: Yon;
@@ -54,6 +58,9 @@ export function EFaturaTable({
   onOpen: (f: EFatura) => void;
   onViewPdf?: (f: EFatura) => void;
   haric: ReadonlySet<string>;
+  selected?: ReadonlySet<string>;
+  onToggleSelect?: (ettn: string) => void;
+  onToggleSelectAll?: () => void;
 }) {
   const t = useShadcnTheme();
 
@@ -61,6 +68,19 @@ export function EFaturaTable({
     <View style={[styles.table, { backgroundColor: t.card, borderColor: t.border }]} accessibilityRole="list">
       {/* Table Header */}
       <View style={[styles.row, styles.head, { borderBottomColor: t.border, backgroundColor: t.muted }]}>
+        {onToggleSelectAll && (
+          <View style={[styles.cell, styles.checkCell]}>
+            <Checkbox
+              checked={items.length > 0 && items.every((f) => !!f.ettn && selected?.has(f.ettn.toLowerCase()))}
+              indeterminate={
+                items.some((f) => !!f.ettn && selected?.has(f.ettn.toLowerCase())) &&
+                !items.every((f) => !!f.ettn && selected?.has(f.ettn.toLowerCase()))
+              }
+              onCheckedChange={onToggleSelectAll}
+              accessibilityLabel="Tümünü seç"
+            />
+          </View>
+        )}
         {SUTUNLAR.map((c) => {
           const aktif = c.siralama?.includes(siralama);
           const ok = aktif ? (siralama === c.siralama![0] ? (c.ad === 'Firma' ? '↑' : '↓') : '↑') : '';
@@ -100,6 +120,7 @@ export function EFaturaTable({
       {/* Table Body */}
       {items.map((f, i) => {
         const isHaric = haric.has(f.ettn.toLowerCase());
+        const isSelected = !!f.ettn && !!selected?.has(f.ettn.toLowerCase());
         const soluk = f.iptal || isHaric;
         const renk = soluk ? t.mutedForeground : t.cardForeground;
 
@@ -115,9 +136,30 @@ export function EFaturaTable({
             accessibilityLabel={`${f.unvan}, ${para(f.tutar, f.paraBirimi)}`}
             style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
               styles.row,
+              isSelected && { backgroundColor: t.secondary },
               i < items.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.border },
               (hovered || pressed) && { backgroundColor: t.muted },
             ]}>
+            {/* Seçim Kutusu */}
+            {onToggleSelect && (
+              <Pressable
+                onPress={(e) => {
+                  (e as unknown as { stopPropagation?: () => void })?.stopPropagation?.();
+                  if (f.ettn) onToggleSelect(f.ettn);
+                }}
+                disabled={!f.ettn}
+                accessibilityRole="button"
+                accessibilityLabel={`${f.unvan} faturasını seç`}
+                style={[styles.cell, styles.checkCell]}>
+                <Checkbox
+                  checked={isSelected}
+                  disabled={!f.ettn}
+                  onCheckedChange={() => f.ettn && onToggleSelect(f.ettn)}
+                  accessibilityLabel={`${f.unvan} faturasını seç`}
+                />
+              </Pressable>
+            )}
+
             {/* Tarih */}
             <View style={[styles.cell, { flex: 1.1 }]}>
               <Text style={[styles.dateText, tabular, { color: renk }]} numberOfLines={1}>
@@ -251,6 +293,13 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     minWidth: 0,
     justifyContent: 'center',
+  },
+  checkCell: {
+    width: 44,
+    flex: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 0,
   },
   sag: {
     textAlign: 'right',
