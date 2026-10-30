@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.50.1 — `14e9365`
+## 1.50.1 — `d10e740`
 - **Web sürümünde yeni yayın sonrası sayfa geçişlerindeki "Loading module failed" hatası giderildi:**
   - **Önceki Parçaları Koruma:** GitHub Actions yayın iş akışında (`deploy-web.yml`) önceki derlemenin JS parçaları önbellekten geri yüklenerek silinmesi engellendi; böylece açık sekmesi olan kullanıcılar 404 hatası almaz.
   - **Otomatik Sayfa Yenileme:** Tarayıcıda eski parçanın bulunamadığı durumlarda (`Loading module failed`), sayfa otomatik olarak yeni sürüme geçecek şekilde yenilenir.
