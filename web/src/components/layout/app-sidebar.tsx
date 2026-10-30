@@ -150,48 +150,71 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar select-none">
       {/* ── Üst Logo & Başlık ── */}
-      <SidebarHeader className="p-3 border-b border-sidebar-border/60">
-        <div className="flex items-center justify-between">
-          <Link
-            href="/fisler/"
-            onClick={handleLinkClick}
-            className={cn(
-              "flex items-center gap-2.5 rounded-xl transition-all cursor-pointer p-1 hover:bg-sidebar-accent/50",
-              isCollapsed && "mx-auto"
-            )}
-          >
-            <div className="flex aspect-square size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-black text-sm select-none shadow-xs shrink-0">
-              <ScanLine className="size-5" />
-            </div>
-            {!isCollapsed && (
-              <div className="flex flex-col leading-tight min-w-0">
-                <span className="font-bold text-[15px] tracking-tight text-foreground">
+      <SidebarHeader
+        className={cn(
+          "border-b border-sidebar-border/60 transition-all duration-200",
+          isCollapsed
+            ? "p-1.5 flex items-center justify-center"
+            : "p-3 group-data-[collapsible=icon]:p-1.5 group-data-[collapsible=icon]:justify-center"
+        )}
+      >
+        {isCollapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href="/fisler/"
+                onClick={handleLinkClick}
+                className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 transition-all cursor-pointer shrink-0"
+                aria-label="FişTarayıcı Ana Sayfa"
+              >
+                <ScanLine className="size-5" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">FişTarayıcı</TooltipContent>
+          </Tooltip>
+        ) : (
+          <div className="flex items-center justify-between w-full group-data-[collapsible=icon]:justify-center">
+            <Link
+              href="/fisler/"
+              onClick={handleLinkClick}
+              className="flex items-center gap-2.5 rounded-xl transition-all cursor-pointer p-1 hover:bg-sidebar-accent/50 min-w-0 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:gap-0"
+            >
+              <div className="flex aspect-square size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-black text-sm select-none shadow-xs shrink-0">
+                <ScanLine className="size-5" />
+              </div>
+              <div className="flex flex-col leading-tight min-w-0 group-data-[collapsible=icon]:hidden">
+                <span className="font-bold text-[15px] tracking-tight text-foreground truncate">
                   Fiş<span className="text-primary">Tarayıcı</span>
                 </span>
-                <span className="text-[10.5px] font-medium text-muted-foreground mt-0.5">
+                <span className="text-[10.5px] font-medium text-muted-foreground mt-0.5 truncate">
                   Mali İşletme Portalı
                 </span>
               </div>
-            )}
-          </Link>
+            </Link>
 
-          {isMobile && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => setOpenMobile(false)}
-              className="text-muted-foreground hover:text-foreground cursor-pointer"
-              aria-label="Menüyü kapat"
-            >
-              <X className="size-4" />
-            </Button>
-          )}
-        </div>
+            {isMobile && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setOpenMobile(false)}
+                className="text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+                aria-label="Menüyü kapat"
+              >
+                <X className="size-4" />
+              </Button>
+            )}
+          </div>
+        )}
       </SidebarHeader>
 
       {/* ── Yeni Fiş Ekle Hızlı Aksiyon Butonu ── */}
-      <div className="px-3 pt-3 pb-1 flex-shrink-0">
+      <div
+        className={cn(
+          "pt-3 pb-1 flex-shrink-0 transition-all",
+          isCollapsed ? "px-1.5 flex justify-center" : "px-3 group-data-[collapsible=icon]:px-1.5"
+        )}
+      >
         {!isCollapsed ? (
           <Link
             href="/fisler/yeni/"
@@ -220,7 +243,12 @@ export function AppSidebar() {
       </div>
 
       {/* ── Gruplanmış Navigasyon ── */}
-      <SidebarContent className="px-2.5 py-2 space-y-3 overflow-y-auto">
+      <SidebarContent
+        className={cn(
+          "py-2 space-y-3 overflow-y-auto transition-all",
+          isCollapsed ? "px-1.5" : "px-2.5 group-data-[collapsible=icon]:px-1.5"
+        )}
+      >
         {NAV_GROUPS.map((group) => (
           <div key={group.label} className="flex flex-col gap-0.5">
             {!isCollapsed && (
@@ -284,7 +312,12 @@ export function AppSidebar() {
       </SidebarContent>
 
       {/* ── Footer: Durum Kartı + Profil + Ayarlar + Çıkış ── */}
-      <SidebarFooter className="border-t border-sidebar-border/60 p-2.5 flex flex-col gap-1.5 flex-shrink-0">
+      <SidebarFooter
+        className={cn(
+          "border-t border-sidebar-border/60 flex flex-col gap-1.5 flex-shrink-0 transition-all duration-200",
+          isCollapsed ? "p-1.5" : "p-2.5 group-data-[collapsible=icon]:p-1.5"
+        )}
+      >
         {/* Canlı Aylık Özet Kartı */}
         {!isCollapsed && <SidebarMonthlyCard />}
 
