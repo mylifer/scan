@@ -16,6 +16,14 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.3 — (bekleniyor)
+- **Web uygulamasında kenar çubuğu (Sidebar) modern SaaS ve Fintrack mimarisine göre baştan tasarlandı (`web/`):**
+  - **Masaüstü SaaS Estetiği ve Marka Kimliği:** Üst kısımda yüksek çözünürlüklü marka ikonu ve tipografisi (`FişTarayıcı · Mali İşletme Portalı`), altında ise tek tıkla doğrudan fiş yüklemeyi sağlayan birincil aksiyon butonu (`+ Yeni Fiş Tara`) konumlandırıldı.
+  - **Rafine Menü ve Hover Mimarisi:** Fintrack mimarisine dayalı `rounded-[10px]` satır yapısı, yumuşak `bg-primary/10` aktif durumu, turkuaz ikon vurguları (`text-primary`) ve yüksek kontrastlı `hover:bg-sidebar-accent/70` etkileşimleri uygulandı. Clunky kılcal şeritler temizlendi.
+  - **Canlı Aylık Fiş Durum Kartı (`SidebarMonthlyCard`):** Fintrack'in "Net Varlık Kartı" gibi kenar çubuğuna entegre, cari aya ait harcama toplamını ve fiş adedini gerçek zamanlı gösteren ve Bütçe ekranına yönlendiren dinamik kart eklendi.
+  - **Kullanıcı Profili ve Hızlı Kontroller:** Kenar çubuğu alt paneline kullanıcı e-postası ve baş harf avatarı, Ayarlar ve Tema Değiştirici (`ThemeToggle`) tek satırda ve tek tıkla oturum kapatma (`Çıkış Yap`) eylemi yerleştirildi.
+  - **Akıllı Simge Modu ve Mobil Çekmece:** Masaüstü daraltma modunda (`collapsed`) simgeler Tooltip desteğiyle kompakt çalışırken, mobil ekranlarda yan çekmeceden (`Sheet`) dokunulduğunda pürüzsüz kapanma davranışı korundu.
+
 ## Web 1.0.2 — `e47bbec`
 - **Web uygulamasında fatura detay ve modal taşma sorunları çözüldü, genel UI denetimi tamamlandı (`web/`):**
   - **Diyalog Genişlik ve Taşma Sorunu (`DialogContent` & `AlertDialogContent`):** `dialog.tsx` tabanındaki `sm:max-w-sm` kısıtlaması kaldırıldı. `max-w-[calc(100vw-2rem)]` ve `sm:max-w-lg` tabanıyla geniş modal sınıflarının (`sm:max-w-4xl`, `sm:max-w-5xl`) ezilmesi engellendi. Modal kapatma düğmesi (`X`) ile başlık alanının çakışmaması için sağ iç boşluk (`pr-8`) güvenceye alındı.
