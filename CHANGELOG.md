@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## Web 0.5.0 — (bekleniyor)
+## Web 0.5.0 — `b74b5f6`
 - **Web uygulamasında Ayarlar, Çöp Kutusu, Yedekleme, Hata Günlüğü ve Yapay Zeka ile Fiş Tarama tamamlandı (`web/`):**
   - **Ayarlar Hub (`/ayarlar`):** Oturum & profil yönetimi, çıkış yapma, sistem bilgisi ve açık/koyu/sistem tema geçişleri.
   - **Çöp Kutusu (`TrashTab`):** Silinen fişlerin 30 gün boyunca listelenmesi, kalan gün sayaçları (`trashLeftLabel`), tek tıkla geri alma (`restoreFromTrash`), kalıcı silme ve tümünü boşaltma onay dialogu.
