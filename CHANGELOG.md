@@ -16,6 +16,14 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 0.4.0 — (bekleniyor)
+- **Web uygulamasında mali araçlar ve yönetim ekranları tamamlandı (`web/`):**
+  - **KDV Takibi (`/kdv`):** Aylık KDV durumu, indirilecek ve hesaplanan KDV dökümü, net ödenecek/devreden KDV kartı, orana göre matrah dağılımı ve geçmiş aylar tablosu.
+  - **Vergi Takvimi (`/vergi-takvimi`):** Türkiye mali takvimi (KDV, Geçici Vergi, Gelir/Kurumlar Vergisi, Muhtasar, Ba-Bs), tatil ve hafta sonu ertelemeleri, kalan gün sayaçları ve yaklaşan ödemeler özeti.
+  - **Bütçe Takibi (`/butce`):** Aylık harcama hedefi belirleme (yerel hafızalı), anlık harcama oranı ve %80 uyarı rozeti, kategori bazında harcama dağılımı ve harcama dökümü tablosu.
+  - **Firmalar (`/firmalar`):** Harcama yapılan tüm firmalar, toplam harcama ve fiş adedi dökümü, arama, sıralama ve akıllı benzer firma adı birleştirme önerileri (`FirmMergeDialog`).
+  - **Kategoriler (`/kategoriler`):** Hazır 25 kategori ve fiş sayıları, işletmeye özel yeni kategori ekleme, kategori adı güncelleme (fişleri otomatik aktarma) ve silme dialogları.
+
 ## Web 0.3.0 — `31730c8`
 - **Web uygulamasında e-Faturalar ekranı, PDF önizleme, detay ve dışa aktarım tamamlandı (`web/`):**
   - **e-Fatura Listesi (`/efaturalar`):** Gelen / Giden sekmeleri, ay gezintisi, canlı arama, tip filtresi, sıralama, özet metrik kartları (Adet, Toplam Tutar, Net KDV, QNB kontrol durumu).

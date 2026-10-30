@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { CategoriesView } from "@/components/categories/categories-view";
 
 export const metadata: Metadata = { title: "Kategoriler · Fiş Tarayıcı" };
 
 export default function Page() {
-  return <PlaceholderPage title="Kategoriler" />;
+  return <CategoriesView />;
 }

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { TaxCalendarView } from "@/components/tax/tax-calendar-view";
 
 export const metadata: Metadata = { title: "Vergi Takvimi · Fiş Tarayıcı" };
 
 export default function Page() {
-  return <PlaceholderPage title="Vergi Takvimi" />;
+  return <TaxCalendarView />;
 }

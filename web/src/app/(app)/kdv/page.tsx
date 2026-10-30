@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { KdvView } from "@/components/kdv/kdv-view";
 
-export const metadata: Metadata = { title: "KDV · Fiş Tarayıcı" };
+export const metadata: Metadata = { title: "KDV Durumu · Fiş Tarayıcı" };
 
 export default function Page() {
-  return <PlaceholderPage title="KDV" />;
+  return <KdvView />;
 }

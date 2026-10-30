@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { BudgetView } from "@/components/budget/budget-view";
 
-export const metadata: Metadata = { title: "Bütçe · Fiş Tarayıcı" };
+export const metadata: Metadata = { title: "Bütçe Takibi · Fiş Tarayıcı" };
 
 export default function Page() {
-  return <PlaceholderPage title="Bütçe" />;
+  return <BudgetView />;
 }
