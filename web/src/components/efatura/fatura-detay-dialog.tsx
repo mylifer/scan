@@ -24,6 +24,7 @@ interface FaturaDetayDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOpenPdf?: (fatura: EFatura) => void;
+  onDetayLoaded?: (ettn: string, detay: FaturaDetay) => void;
 }
 
 function FaturaDetayContent({
@@ -32,12 +33,14 @@ function FaturaDetayContent({
   open,
   onOpenChange,
   onOpenPdf,
+  onDetayLoaded,
 }: {
   fatura: EFatura;
   yon: Yon;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOpenPdf?: (fatura: EFatura) => void;
+  onDetayLoaded?: (ettn: string, detay: FaturaDetay) => void;
 }) {
   const [state, setState] = useState<{
     detay: FaturaDetay | null;
@@ -53,7 +56,10 @@ function FaturaDetayContent({
     let cancelled = false;
     void fetchDetay(yon, fatura.ettn, fatura.tur)
       .then((res) => {
-        if (!cancelled) setState({ detay: res, loading: false, error: null });
+        if (!cancelled) {
+          setState({ detay: res, loading: false, error: null });
+          onDetayLoaded?.(fatura.ettn, res);
+        }
       })
       .catch((err) => {
         if (!cancelled) {
@@ -66,7 +72,7 @@ function FaturaDetayContent({
     return () => {
       cancelled = true;
     };
-  }, [fatura.ettn, fatura.tur, yon]);
+  }, [fatura.ettn, fatura.tur, yon, onDetayLoaded]);
 
   const handleRetry = () => {
     setState({ detay: null, loading: true, error: null });
@@ -302,6 +308,7 @@ export function FaturaDetayDialog({
   open,
   onOpenChange,
   onOpenPdf,
+  onDetayLoaded,
 }: FaturaDetayDialogProps) {
   if (!open || !fatura) return null;
   return (
@@ -312,6 +319,7 @@ export function FaturaDetayDialog({
       open={open}
       onOpenChange={onOpenChange}
       onOpenPdf={onOpenPdf}
+      onDetayLoaded={onDetayLoaded}
     />
   );
 }
