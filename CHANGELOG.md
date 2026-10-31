@@ -16,6 +16,16 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.20 — `f1bdd62`
+- **e-Faturalar sayfasındaki üst metrik widget'ları Apple Native Glass tasarımına uyarlandı (`web/`):**
+  - **macOS Tahoe & Frosted Glass Kart Yapısı (`efatura-view.tsx`):** Düz ve şablon görünümlü eski `StatCard` bileşeni yerine Fişler sayfasıyla birebir uyumlu `rounded-2xl border border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)]` buzlu cam kartları getirildi.
+  - **4 Finansal Metrik Kartı:**
+    - *Toplam Belge:* Mavi squircle simgesi (`FileText`), `${stats.count} Belge` rozeti, net adet ve QNB senkronizasyon durum noktası.
+    - *Toplam Tutar:* Zümrüt squircle simgesi (`Receipt`), "KDV Dahil" hap rozeti, büyük punto TRY tutarı ve döviz (EUR/USD) döküm alt bilgisi.
+    - *Net KDV Toplamı:* İndigo/mor squircle simgesi (`ReceiptText`), "İndirilecek / Hesaplanan KDV" rozeti ve beyanname bilgilendirme noktası.
+    - *Dönem Analizi:* Amber squircle simgesi (`BarChart3`), "Rapor & Döküm" rozeti ve Matrah & KDV özet modalını tetikleyen şık Tahoe buton entegrasyonu.
+  - **e-Fatura Tablo Çerçevesi:** Tabloyu saran dış kart da Tahoe cam estetiği (`rounded-2xl dark:border-white/[0.05]`) ve yumuşatılmış başlık satırıyla uyumlu hale getirildi.
+
 ## Web 1.0.19 — `08629ae`
 - **Koyu modda tablo satır çizgileri (row dividers) ultra-soft %2 seviyesine çekildi (`web/`):**
   - **Ultra Düşük Kontrastlı Satır Çizgileri (`globals.css`):** Koyu modda (`.dark table tbody tr`) satırlar arasındaki yatay çizgi opaklığı `%5`'ten `%2`'ye (`rgba(255, 255, 255, 0.02) !important`) indirilerek arka planla neredeyse pürüzsüzce bütünleşen, gözü yormayan fısıltı seviyesinde bir sınır sağlandı.
