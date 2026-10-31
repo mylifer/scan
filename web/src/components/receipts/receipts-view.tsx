@@ -553,11 +553,11 @@ export function ReceiptsView() {
       )}
 
       {/* Apple Glass Fiş Tablosu */}
-      <Card className="py-0 rounded-2xl overflow-hidden border-border/80 dark:border-white/[0.08] bg-card/75 backdrop-blur-xl shadow-xs">
+      <Card className="py-0 rounded-2xl overflow-hidden border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl shadow-xs">
         <CardContent className="px-0">
           <Table className="min-w-[700px]">
             <TableHeader className="bg-muted/30">
-              <TableRow className="border-b border-border/60 dark:border-white/[0.08] hover:bg-transparent">
+              <TableRow className="border-b border-border/60 dark:border-white/[0.04] hover:bg-transparent">
                 <TableHead className="w-10 pl-4">
                   <Checkbox
                     aria-label="Tümünü seç"
@@ -578,7 +578,7 @@ export function ReceiptsView() {
             <TableBody>
               {loading &&
                 Array.from({ length: 6 }, (_, i) => (
-                  <TableRow key={i} className="border-b border-border/40 dark:border-white/[0.04]">
+                  <TableRow key={i} className="border-b border-border/40 dark:border-white/[0.02]">
                     <TableCell colSpan={7} className="px-4 py-3.5">
                       <Skeleton className="h-6 w-full rounded-xl" />
                     </TableCell>
@@ -595,7 +595,7 @@ export function ReceiptsView() {
                     <TableRow
                       key={r.id}
                       data-state={selected.has(r.id) ? "selected" : undefined}
-                      className="cursor-pointer border-b border-border/40 dark:border-white/[0.05] hover:bg-muted/30 transition-colors duration-150 group"
+                      className="cursor-pointer border-b border-border/40 dark:border-white/[0.02] hover:bg-muted/30 transition-colors duration-150 group"
                       onClick={() => router.push(href)}
                     >
                       <TableCell className="pl-4 py-3" onClick={(e) => e.stopPropagation()}>

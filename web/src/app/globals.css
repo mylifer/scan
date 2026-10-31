@@ -225,13 +225,13 @@
    kontrast durmasını engeller, yumuşak ve zarif bir sınır sağlar.
    ───────────────────────────────────────────────────────────────── */
 .dark table tbody tr {
-  border-bottom-color: rgba(255, 255, 255, 0.05);
+  border-bottom-color: rgba(255, 255, 255, 0.02) !important;
 }
 .dark table thead tr {
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+  border-bottom-color: rgba(255, 255, 255, 0.04) !important;
 }
 .dark table tfoot tr {
-  border-top-color: rgba(255, 255, 255, 0.08);
+  border-top-color: rgba(255, 255, 255, 0.04) !important;
 }
 
 /* ─────────────────────────────────────────────────────────────────
