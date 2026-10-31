@@ -16,6 +16,13 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.19 — `08629ae`
+- **Koyu modda tablo satır çizgileri (row dividers) ultra-soft %2 seviyesine çekildi (`web/`):**
+  - **Ultra Düşük Kontrastlı Satır Çizgileri (`globals.css`):** Koyu modda (`.dark table tbody tr`) satırlar arasındaki yatay çizgi opaklığı `%5`'ten `%2`'ye (`rgba(255, 255, 255, 0.02) !important`) indirilerek arka planla neredeyse pürüzsüzce bütünleşen, gözü yormayan fısıltı seviyesinde bir sınır sağlandı.
+  - **Başlık ve Altbilgi Çizgisi Yumuşatması (`globals.css` & `table.tsx`):** Tablo başlık satırı (`thead tr`) ve altbilgi çizgileri `%8`'den `%4`'e (`rgba(255, 255, 255, 0.04)`) çekildi.
+  - **Fişler Tablosu ve Kart Sınırı (`receipts-view.tsx`):** Fiş satırları `dark:border-white/[0.02]`, iskelet satırları `dark:border-white/[0.02]` ve cam kart sınırı `dark:border-white/[0.05]` olarak güncellendi.
+  - **Sistem Geneli Bütünlük:** Fişler, e-Faturalar, Bütçe, Firmalar, Vergi Takvimi ve Çöp Kutusu dahil tüm tablolarda yüksek kontrastlı ızgara hissi giderildi.
+
 ## Web 1.0.18 — `11ad07b`
 - **Seçenek 02: Minimalist Monogram & Status Dot (Linear & Swiss B2B Enterprise) stili uygulandı (`web/`):**
   - **Emojisiz, Sessiz ve Profesyonel Tasarım Dili (`category-badge.tsx`):** Emojiler kaldırılarak yerine canlı ve parıldayan dairesel durum noktası (`dotColor`, örn. amber-400, rose-400, emerald-400, indigo-400 glow efektli), 2 harfli büyük harf mikro monogram (`AK`, `RE`, `MA`, `TE`, `OF`, `UL`, `KO` vb.) ve Geist typography ile kategori etiketi getirildi.
