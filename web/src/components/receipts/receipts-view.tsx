@@ -62,78 +62,12 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { deleteReceipt, listReceipts, loadCustomCategories, markReceiptsSent } from "@/lib/receipts";
 import { exportExcel, exportPackage } from "@/lib/receiptExport";
 import { sortRows, type SortColumn, type SortState } from "@/lib/receiptTable";
+import { CategoryBadge, getCategoryVisuals } from "@/components/ui/category-badge";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 50;
 
 type Loaded = { key: string; rows: ReceiptRecord[]; error?: string };
-
-/** Apple Native Squircle ve Kategori Rozet Renk Eşleşmesi */
-function getCategoryVisuals(cat: string) {
-  const norm = (cat || "").toLowerCase();
-  if (norm.includes("akaryakıt") || norm.includes("yakıt")) {
-    return {
-      bg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-      squircle: "bg-gradient-to-tr from-amber-500 to-orange-400 text-white shadow-amber-500/20",
-      icon: "⛽️",
-      initial: "AK",
-    };
-  }
-  if (norm.includes("restoran") || norm.includes("yemek") || norm.includes("kafe")) {
-    return {
-      bg: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
-      squircle: "bg-gradient-to-tr from-rose-500 to-pink-400 text-white shadow-rose-500/20",
-      icon: "🍽️",
-      initial: "RE",
-    };
-  }
-  if (norm.includes("market") || norm.includes("gıda")) {
-    return {
-      bg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
-      squircle: "bg-gradient-to-tr from-emerald-500 to-teal-400 text-white shadow-emerald-500/20",
-      icon: "🛒",
-      initial: "MA",
-    };
-  }
-  if (norm.includes("teknoloji") || norm.includes("elektronik") || norm.includes("yazılım")) {
-    return {
-      bg: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
-      squircle: "bg-gradient-to-tr from-indigo-500 to-violet-500 text-white shadow-indigo-500/20",
-      icon: "💻",
-      initial: "TE",
-    };
-  }
-  if (norm.includes("ofis") || norm.includes("kırtasiye")) {
-    return {
-      bg: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20",
-      squircle: "bg-gradient-to-tr from-sky-500 to-cyan-400 text-white shadow-sky-500/20",
-      icon: "📎",
-      initial: "OF",
-    };
-  }
-  if (norm.includes("ulaşım") || norm.includes("taksi") || norm.includes("otopark")) {
-    return {
-      bg: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
-      squircle: "bg-gradient-to-tr from-blue-500 to-indigo-400 text-white shadow-blue-500/20",
-      icon: "🚗",
-      initial: "UL",
-    };
-  }
-  if (norm.includes("konaklama") || norm.includes("otel")) {
-    return {
-      bg: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
-      squircle: "bg-gradient-to-tr from-purple-500 to-pink-500 text-white shadow-purple-500/20",
-      icon: "🏨",
-      initial: "KO",
-    };
-  }
-  return {
-    bg: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20",
-    squircle: "bg-gradient-to-tr from-slate-600 to-zinc-500 text-white shadow-slate-500/20",
-    icon: "📄",
-    initial: (cat.slice(0, 2) || "Fİ").toLocaleUpperCase("tr-TR"),
-  };
-}
 
 export function ReceiptsView() {
   const router = useRouter();
@@ -471,41 +405,60 @@ export function ReceiptsView() {
         {/* Kategori Filtresi */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 rounded-xl border-border/70 bg-background/80 text-xs gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "h-8 rounded-xl border-border/70 bg-background/80 text-xs gap-1.5 transition-colors",
+                catFilter.size > 0 && "border-primary/50 text-foreground bg-accent/40 font-semibold",
+              )}
+            >
               <Filter className="size-3.5" /> Kategori
               {catFilter.size > 0 && (
-                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] rounded-md">
+                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] rounded-md tabular-nums font-bold">
                   {catFilter.size}
                 </Badge>
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="max-h-80 w-56 overflow-y-auto rounded-2xl">
-            <DropdownMenuLabel className="text-xs">Kategoriler</DropdownMenuLabel>
+          <DropdownMenuContent align="start" className="max-h-80 w-60 overflow-y-auto rounded-2xl p-1.5">
+            <DropdownMenuLabel className="text-xs font-semibold">Kategoriye Göre Filtrele</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {categories.map((k) => (
-              <DropdownMenuCheckboxItem
-                key={k}
-                checked={catFilter.has(k)}
-                onSelect={(e) => e.preventDefault()}
-                onCheckedChange={(on) => {
-                  setCatFilter((s) => {
-                    const next = new Set(s);
-                    if (on) next.add(k);
-                    else next.delete(k);
-                    return next;
-                  });
-                  resetView();
-                }}
-                className="text-xs"
-              >
-                {categoryLabel(k)}
-              </DropdownMenuCheckboxItem>
-            ))}
+            {categories.map((k) => {
+              const v = getCategoryVisuals(k);
+              return (
+                <DropdownMenuCheckboxItem
+                  key={k}
+                  checked={catFilter.has(k)}
+                  onSelect={(e) => e.preventDefault()}
+                  onCheckedChange={(on) => {
+                    setCatFilter((s) => {
+                      const next = new Set(s);
+                      if (on) next.add(k);
+                      else next.delete(k);
+                      return next;
+                    });
+                    resetView();
+                  }}
+                  className="text-xs cursor-pointer py-1.5 rounded-lg flex items-center justify-between"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="text-sm shrink-0">{v.icon}</span>
+                    <span>{categoryLabel(k)}</span>
+                  </span>
+                </DropdownMenuCheckboxItem>
+              );
+            })}
             {catFilter.size > 0 && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => setCatFilter(new Set())} className="text-xs text-destructive">
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setCatFilter(new Set());
+                    resetView();
+                  }}
+                  className="text-xs text-destructive cursor-pointer rounded-lg"
+                >
                   <X className="size-3.5" /> Filtreyi temizle
                 </DropdownMenuItem>
               </>
@@ -535,6 +488,46 @@ export function ReceiptsView() {
           </Button>
         </div>
       </div>
+
+      {/* Aktif Kategori Filtresi Chipleri (Option 04 Dual-Tone Segmented) */}
+      {catFilter.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-card/50 border border-border/70 px-3.5 py-2 text-xs shadow-2xs animate-in fade-in-50 duration-150">
+          <span className="text-[11px] text-muted-foreground font-semibold">Filtrelenen Kategoriler:</span>
+          {Array.from(catFilter).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => {
+                setCatFilter((s) => {
+                  const next = new Set(s);
+                  next.delete(k);
+                  return next;
+                });
+                resetView();
+              }}
+              className="group inline-flex items-center gap-1 hover:opacity-85 transition-opacity cursor-pointer"
+              title={`${categoryLabel(k)} filtresini kaldır`}
+            >
+              <CategoryBadge category={k} size="sm" />
+              <span className="size-4 rounded-full bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-destructive group-hover:text-destructive-foreground transition-colors">
+                <X className="size-2.5" />
+              </span>
+            </button>
+          ))}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setCatFilter(new Set());
+              resetView();
+            }}
+            className="h-6 text-[11px] text-muted-foreground hover:text-destructive px-2 ml-auto"
+          >
+            Tümünü Kaldır
+          </Button>
+        </div>
+      )}
 
       {/* Çoklu Seçim Eylem Şeridi */}
       {selectedRows.length > 0 && (
@@ -649,17 +642,9 @@ export function ReceiptsView() {
                         </Link>
                       </TableCell>
 
-                      {/* Kategori Apple Rozeti */}
+                      {/* Kategori Dual-Tone Segmentli Rozet (Option 04) */}
                       <TableCell>
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border",
-                            catVisual.bg,
-                          )}
-                        >
-                          <span>{catVisual.icon}</span>
-                          <span>{categoryLabel(r.kategori)}</span>
-                        </span>
+                        <CategoryBadge category={r.kategori} />
                       </TableCell>
 
                       {/* KDV Tutarı */}

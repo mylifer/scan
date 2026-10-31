@@ -1,5 +1,6 @@
 "use client";
 
+import { getCategoryVisuals } from "@/components/ui/category-badge";
 import { allCategories, categoryLabel } from "@shared/lib/categories";
 import { formatTL, parseAmount, round2 } from "@shared/lib/format";
 import {
@@ -346,7 +347,10 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                     <SelectContent className="max-h-60">
                       {activeCategories.map((kat) => (
                         <SelectItem key={kat} value={kat}>
-                          {categoryLabel(kat)}
+                          <span className="flex items-center gap-2">
+                            <span className="shrink-0">{getCategoryVisuals(kat).icon}</span>
+                            <span>{categoryLabel(kat)}</span>
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>

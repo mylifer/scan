@@ -24,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { CategoryBadge } from "@/components/ui/category-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -244,22 +245,18 @@ export function CategoriesView() {
               <CardDescription>Fiş Tarayıcı ile birlikte gelen 25 adet standart muhasebe kategorisi.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {KATEGORILER.map((cat) => {
                   const count = counts.get(cat) ?? 0;
                   return (
-                    <Badge
-                      key={cat}
-                      variant="outline"
-                      className="flex items-center gap-1.5 py-1 px-2.5 text-xs text-foreground"
-                    >
-                      <span>{categoryLabel(cat)}</span>
+                    <div key={cat} className="inline-flex items-center gap-1.5">
+                      <CategoryBadge category={cat} />
                       {count > 0 && (
-                        <span className="tabular-nums text-[10px] text-muted-foreground">
-                          ({count})
+                        <span className="tabular-nums text-[10px] text-muted-foreground font-semibold px-1.5 py-0.5 rounded-full bg-muted border border-border/50">
+                          {count}
                         </span>
                       )}
-                    </Badge>
+                    </div>
                   );
                 })}
               </div>

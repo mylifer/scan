@@ -15,6 +15,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
+import { CategoryBadge } from "@/components/ui/category-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -309,7 +310,9 @@ export function BudgetView() {
             <TableBody>
               {categoryBreakdown.map((item) => (
                 <TableRow key={item.kategori}>
-                  <TableCell className="font-medium">{item.label}</TableCell>
+                  <TableCell>
+                    <CategoryBadge category={item.kategori} />
+                  </TableCell>
                   <TableCell className="text-right tabular-nums text-muted-foreground">
                     {item.count} adet
                   </TableCell>
