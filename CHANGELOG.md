@@ -16,6 +16,14 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.15 — `a261b27`
+- **Sistem genelinde Geist tipografisi zorunlu kılındı ve font-mono kullanımı kaldırıldı (`web/` & `src/`):**
+  - **Fişler Sayfası ve Kartlar (`receipts-view.tsx`):** Metrik kartlardaki tutar alanları (`₺0,00`), fiş sayıları, KDV dökümleri, teslim oranları ve fiş tablosundaki tarih/tutar sütunlarında yer alan `font-mono` sınıfları kaldırılarak sistemin asıl fontu olan `Geist Sans` (`tabular-nums font-semibold/font-bold`) tipografisine geçirildi.
+  - **e-Fatura ve Modal Alanları (`efatura-view.tsx` & `fatura-detay-dialog.tsx`):** Belge no, VKN/TCKN ve ETTN alanlarındaki `font-mono` sınıfları yerine `tabular-nums` uygulanarak Geist bütünlüğü sağlandı.
+  - **Vergi Takvimi ve Kategoriler (`tax-calendar-view.tsx`, `categories-view.tsx`):** Kalan gün rozeti ve kategori sayaçlarındaki `font-mono` kaldırılarak Geist Sans'a uyarlandı.
+  - **Latin-Extended Türkçe Desteği (`layout.tsx`):** `Geist` ve `Geist_Mono` font tanımlarına `"latin-ext"` alt kümesi eklenerek Türkçe karakterlerin (`ş`, `ğ`, `ı`, `İ`, `ö`, `ç`) sistem fontlarına düşmeden özgün Geist glifleriyle çizilmesi sağlandı.
+  - **Font Ailesi Tanımları (`globals.css` & `theme.ts`):** `--font-sans` ve paylaşılan `theme.ts` doğrudan `Geist` öncelikli hale getirildi, arayüzde yabancı font kullanımının önüne geçildi.
+
 ## Web 1.0.14 — `caf3fdc`
 - **Fişler sayfasında Apple Native Glass (macOS Tahoe & Apple Wallet) tasarımı uygulandı (`web/`):**
   - **Buzlu Cam (Frosted Glass) Yüzeyler & Elevated Hiyerarşi (`receipts-view.tsx`):** Generic/şablon hissi veren düz kartlar yerine modern macOS Tahoe ve Apple Wallet estetiğinde frosted cam yüzeyler (`backdrop-blur-xl bg-card/75 border-border/80 shadow-[0_2px_16px_rgba(0,0,0,0.03)]`) uygulandı.
