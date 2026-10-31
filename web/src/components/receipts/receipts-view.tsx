@@ -2,7 +2,7 @@
 
 import { allCategories, categoryLabel } from "@shared/lib/categories";
 import { formatTL, isoToTrDate } from "@shared/lib/format";
-import { periodRange } from "@shared/lib/period";
+import { periodRange, stepPeriod, switchMode, type Period } from "@shared/lib/period";
 import { receiptMatcher } from "@shared/lib/search";
 import { isSent, summarizeReceipts } from "@shared/lib/summary";
 import type { ReceiptRecord } from "@shared/types/receipt";
@@ -52,12 +52,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { deleteReceipt, listReceipts, loadCustomCategories, markReceiptsSent } from "@/lib/receipts";
 import { exportExcel, exportPackage } from "@/lib/receiptExport";
-import { periodFromKey, periodOptions, sortRows, type SortColumn, type SortState } from "@/lib/receiptTable";
+import { sortRows, type SortColumn, type SortState } from "@/lib/receiptTable";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 50;
@@ -66,7 +66,7 @@ type Loaded = { key: string; rows: ReceiptRecord[]; error?: string };
 
 export function ReceiptsView() {
   const router = useRouter();
-  const [periodKey, setPeriodKey] = useState("m0");
+  const [period, setPeriod] = useState<Period>({ mode: "all" });
   const [reloadTick, setReloadTick] = useState(0);
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [categories, setCategories] = useState<readonly string[]>(() => allCategories());
@@ -78,9 +78,8 @@ export function ReceiptsView() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
 
-  const period = useMemo(() => periodFromKey(periodKey), [periodKey]);
   const range = useMemo(() => periodRange(period), [period]);
-  const options = useMemo(() => periodOptions(), []);
+  const periodKey = period.mode === "all" ? "all" : `${period.mode[0]}${period.offset}`;
   const loadKey = `${periodKey}:${reloadTick}`;
   const loading = loaded?.key !== loadKey;
 
@@ -218,24 +217,54 @@ export function ReceiptsView() {
             aria-label="Fişlerde ara"
           />
         </div>
-        <Select
-          value={periodKey}
+        {/* Dönem Modu Switch (Tüm Zamanlar / Aylık / Yıllık) */}
+        <Tabs
+          value={period.mode}
           onValueChange={(v) => {
-            setPeriodKey(v);
+            setPeriod((p) => switchMode(p, v as Period["mode"]));
             resetView();
           }}
         >
-          <SelectTrigger className="w-44" aria-label="Dönem">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {options.map((o) => (
-              <SelectItem key={o.key} value={o.key}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <TabsList className="h-9">
+            <TabsTrigger value="all">Tüm Zamanlar</TabsTrigger>
+            <TabsTrigger value="month">Aylık</TabsTrigger>
+            <TabsTrigger value="year">Yıllık</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {/* Aylık / Yıllık moddayken İleri/Geri Butonları */}
+        {period.mode !== "all" && (
+          <div className="flex items-center gap-1 rounded-lg border bg-card px-1.5 py-1 shadow-xs">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => {
+                setPeriod((p) => stepPeriod(p, -1));
+                resetView();
+              }}
+              aria-label={period.mode === "month" ? "Önceki ay" : "Önceki yıl"}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <span className="min-w-28 text-center text-sm font-semibold capitalize">
+              {range?.label}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              disabled={period.offset >= 0}
+              onClick={() => {
+                setPeriod((p) => stepPeriod(p, 1));
+                resetView();
+              }}
+              aria-label={period.mode === "month" ? "Sonraki ay" : "Sonraki yıl"}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline">

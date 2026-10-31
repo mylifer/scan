@@ -7,6 +7,7 @@ import { isLikelyDuplicate } from '../../lib/receiptExtras';
 import { type PeriodSummary, summarizeReceipts } from '../../lib/summary';
 import { learnedCategoryFor } from '../../lib/search';
 import { buildMonthlySeries, type MonthPoint } from '../../lib/trend';
+import { fisAyaAitMi, fisKdvAyi, simdikiIstanbulAyi } from '../../lib/kdvAy';
 import type { Kategori, ReceiptData, ReceiptRecord } from '../../types/receipt';
 import { trashCutoff } from '../../lib/trash';
 import { supabase } from './client';
@@ -116,6 +117,48 @@ export async function getSummary(range?: { from: string; to: string }): Promise<
   }
 
   return summarizeReceipts(rows);
+}
+
+/**
+ * KDV hesabı için döneme ait fişler:
+ * 1) Bu ay muhasebeciye gönderilmiş fişler (fiş tarihi eski/farklı olsa bile bu ay indirilir).
+ * 2) Henüz gönderilmemiş fişler mevcut ayda indirilir (önceki aylardan devredenler dahil).
+ * Başka bir ay muhasebeciye gönderilmiş fişler (fiş tarihi bu ay olsa bile) hariç tutulur.
+ */
+export async function getKdvReceipts(range: { from: string; to: string }): Promise<ReceiptRecord[]> {
+  const month = range.from.slice(0, 7);
+  const currentMonth = simdikiIstanbulAyi();
+  const tzFrom = `${range.from}T00:00:00+03:00`;
+  const tzTo = `${range.to}T00:00:00+03:00`;
+
+  const rows: ReceiptRecord[] = [];
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    let query = supabase.from(TABLE).select('*');
+    if (month === currentMonth) {
+      // Mevcut ay: bu ay gönderilenler VEYA henüz gönderilmemiş olup tarihi bu ay veya öncesi olanlar
+      query = query.or(
+        `and(muhasebe_gonderildi_at.gte.${tzFrom},muhasebe_gonderildi_at.lt.${tzTo}),and(muhasebe_gonderildi_at.is.null,tarih.lt.${range.to})`
+      );
+    } else {
+      // Geçmiş veya gelecek ay: fiş tarihi bu ay olanlar VEYA muhasebe_gonderildi_at bu ay olanlar
+      query = query.or(
+        `and(tarih.gte.${range.from},tarih.lt.${range.to}),and(muhasebe_gonderildi_at.gte.${tzFrom},muhasebe_gonderildi_at.lt.${tzTo})`
+      );
+    }
+    const { data, error } = await query
+      .order('tarih', { ascending: false })
+      .order('created_at', { ascending: false })
+      .order('id')
+      .range(offset, offset + PAGE_SIZE - 1);
+    if (error) {
+      console.warn('KDV fiş sorgusu hatası, fallback yapılıyor:', error.message);
+      const fallback = await getSummary(month === currentMonth ? { from: '2000-01-01', to: range.to } : range);
+      return fallback.fisler.filter((r) => fisAyaAitMi(r, month, currentMonth));
+    }
+    rows.push(...(data ?? []).map(toRecord));
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+  return rows.filter((r) => fisAyaAitMi(r, month, currentMonth));
 }
 
 /** Son `months` ayın aylık toplamları (grafik için; yalnızca gereken sütunlar indirilir). */

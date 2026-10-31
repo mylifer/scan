@@ -18,7 +18,7 @@ import { WebButton } from '../../../components/web/Button';
 import { WebPageHeader } from '../../../components/web/PageHeader';
 import { donemGetir, qnbDurum } from '../../../services/efatura/donemCache';
 import { EFaturaError } from '../../../services/efatura/qnbEfatura';
-import { getSummary } from '../../../services/supabase/receiptsRepository';
+import { getKdvReceipts } from '../../../services/supabase/receiptsRepository';
 
 /** Ayın ilk ve son günü (QNB'de bitiş dahil) ve fiş sorgusu için bir sonraki ayın ilk günü */
 function ayAraligi(offset: number) {
@@ -63,12 +63,12 @@ export default function KdvScreen() {
       }
       setYukleniyor(a.from);
       try {
-        const [gelen, giden, fis] = await Promise.all([
+        const [gelen, giden, fisler] = await Promise.all([
           donemGetir('gelen', a.from, a.to, yenile),
           donemGetir('giden', a.from, a.to, yenile),
-          getSummary({ from: a.from, to: a.sonraki }),
+          getKdvReceipts({ from: a.from, to: a.sonraki }),
         ]);
-        setSonuclar((s) => ({ ...s, [a.from]: kdvAyHesapla(gelen.faturalar, giden.faturalar, fis.fisler, haric) }));
+        setSonuclar((s) => ({ ...s, [a.from]: kdvAyHesapla(gelen.faturalar, giden.faturalar, fisler, haric, a.from.slice(0, 7)) }));
         setHatalar(({ [a.from]: _, ...rest }) => rest);
       } catch (e) {
         setHatalar((h) => ({ ...h, [a.from]: { message: errorMessage(e), login: e instanceof EFaturaError && e.loginFailed } }));
@@ -141,13 +141,22 @@ export default function KdvScreen() {
             tutar={kdv.dusulebilir}
             satirlar={[
               { ad: `Gelen e-Faturalar (${kdv.gelenEfatura.adet})`, tutar: kdv.gelenEfatura.kdv },
-              { ad: `Taranan fişler (${kdv.fis.adet})`, tutar: kdv.fis.kdv },
+              ...(kdv.fis.devredenler && kdv.fis.devredenler.length > 0
+                ? [
+                    { ad: `${capitalizeTr(ay.label.split(' ')[0] ?? '')} Fişleri (${kdv.fis.buAyAdet ?? 0})`, tutar: kdv.fis.buAyKdv ?? 0 },
+                    ...kdv.fis.devredenler.map((d) => ({
+                      ad: `${d.etiket} (${d.adet})`,
+                      tutar: d.kdv,
+                    })),
+                  ]
+                : [{ ad: `Taranan fişler (${kdv.fis.adet})`, tutar: kdv.fis.kdv }]),
               ...(kdv.iade.adet ? [{ ad: `İade ettiğim alışlar (${kdv.iade.adet})`, tutar: -kdv.iade.kdv }] : []),
             ]}
             not={[
               kdv.fis.eslesen ? `${kdv.fis.eslesen} fiş bir e-Faturayla aynı alışveriş olduğu için iki kez sayılmadı.` : '',
               kdv.gelenEfatura.eksik ? `${kdv.gelenEfatura.eksik} e-Faturanın KDV bilgisi QNB'den gelmedi.` : '',
               kdv.iade.adet ? 'Kestiğim iade faturalarının KDV\'si, o alışları daha önce indirdiğim için buradan düşüldü.' : '',
+              kdv.fis.adet ? 'Muhasebeciye gönderilmemiş fişler mevcut ayda düşürülür; gönderilmeyenler sonraki aya devreder.' : '',
             ]
               .filter(Boolean)
               .join(' ')}

@@ -7,6 +7,7 @@ import {
   Calculator,
   ChevronLeft,
   ChevronRight,
+  Clock,
   FileSpreadsheet,
   Info,
   Receipt,
@@ -22,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchDonemFaturalar, getMonthBounds, type EFatura } from "@/lib/efatura";
-import { listReceipts } from "@/lib/receipts";
+import { listReceiptsForKdv } from "@/lib/receipts";
 
 export function KdvView() {
   const [offset, setOffset] = useState(0);
@@ -61,7 +62,7 @@ export function KdvView() {
     void Promise.all([
       fetchDonemFaturalar("gelen", offset),
       fetchDonemFaturalar("giden", offset),
-      listReceipts({ from: monthInfo.baslangic, to }),
+      listReceiptsForKdv({ from: monthInfo.baslangic, to }),
     ])
       .then(([gelenRes, gidenRes, fislerRes]) => {
         if (!cancelled) {
@@ -106,7 +107,7 @@ export function KdvView() {
       const [gelenRes, gidenRes, fislerRes] = await Promise.all([
         fetchDonemFaturalar("gelen", offset, true),
         fetchDonemFaturalar("giden", offset, true),
-        listReceipts({ from: monthInfo.baslangic, to }),
+        listReceiptsForKdv({ from: monthInfo.baslangic, to }),
       ]);
       setState({
         key: activeKey,
@@ -127,8 +128,8 @@ export function KdvView() {
   // KDV hesaplaması
   const kdv = useMemo<KdvAy | null>(() => {
     if (state.key !== activeKey) return null;
-    return kdvAyHesapla(state.gelen, state.giden, state.fisler);
-  }, [state.key, activeKey, state.gelen, state.giden, state.fisler]);
+    return kdvAyHesapla(state.gelen, state.giden, state.fisler, undefined, monthInfo.baslangic.slice(0, 7));
+  }, [state.key, activeKey, state.gelen, state.giden, state.fisler, monthInfo.baslangic]);
 
   const isOdenecek = (kdv?.sonuc ?? 0) > 0;
   const isDevreden = (kdv?.sonuc ?? 0) < 0;
@@ -288,14 +289,27 @@ export function KdvView() {
                 </span>
               </div>
 
+              {/* Taranan POS Fişleri (Bu ayın fişleri) */}
               <div className="flex justify-between">
                 <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <Receipt className="size-3.5" /> Taranan POS Fişleri ({kdv?.fis.adet ?? 0}):
+                  <Receipt className="size-3.5" /> {(kdv?.fis.devredenler?.length ?? 0) > 0 ? `${monthInfo.label.split(" ")[0]} Fişleri` : "Taranan POS Fişleri"} ({kdv?.fis.buAyAdet ?? kdv?.fis.adet ?? 0}):
                 </span>
                 <span className="font-medium tabular-nums">
-                  {loading ? <Skeleton className="h-4 w-20" /> : `${formatTL(kdv?.fis.kdv ?? 0)} TL`}
+                  {loading ? <Skeleton className="h-4 w-20" /> : `${formatTL(kdv?.fis.buAyKdv ?? kdv?.fis.kdv ?? 0)} TL`}
                 </span>
               </div>
+
+              {/* Önceki aylardan devreden KDV kalemleri */}
+              {kdv?.fis.devredenler?.map((d) => (
+                <div key={d.ay} className="flex justify-between text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="size-3.5 text-amber-500" /> {d.etiket} ({d.adet}):
+                  </span>
+                  <span className="font-medium tabular-nums text-foreground">
+                    {formatTL(d.kdv)} TL
+                  </span>
+                </div>
+              ))}
 
               {(kdv?.iade.adet ?? 0) > 0 && (
                 <div className="flex justify-between text-destructive">
@@ -335,7 +349,8 @@ export function KdvView() {
           </div>
           <p>
             Hesaplanan KDV (Beyan) ile İndirilecek KDV (Gelen faturalar + Fişler − İadeler) arasındaki fark alınır.
-            Önceki aydan devreden KDV varsa muhasebeciniz bu tutardan ilave olarak düşecektir.
+            Muhasebeciye gönderilmemiş fişler mevcut ayda düşürülür; gönderilmeyenler sonraki aya devreder ve devreden KDV kalemi olarak listelenir.
+            Muhasebeciye gönderilmiş fişler ise yalnızca işaretlendikleri ayın KDV indirimine dahil edilir.
           </p>
         </CardContent>
       </Card>

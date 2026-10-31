@@ -14,7 +14,7 @@ export type { Period } from '../lib/period';
 type CategoryTotals = { kategori: Kategori; toplam: number }[];
 
 export function useMonthlySummary() {
-  const [period, setPeriod] = useState<Period>({ mode: 'month', offset: 0 });
+  const [period, setPeriod] = useState<Period>({ mode: 'all' });
   /** Özet, ait olduğu dönemin anahtarıyla saklanır; dönem değişince eski dönemin verisi gösterilmez */
   const [data, setData] = useState<{ key: string; summary: PeriodSummary; previous: CategoryTotals | null } | null>(null);
   const [trend, setTrend] = useState<MonthPoint[] | null>(null);
