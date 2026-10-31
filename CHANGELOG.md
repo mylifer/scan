@@ -16,6 +16,13 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.17 — `4059c80`
+- **Koyu modda tablo satır çizgileri (row dividers) yumuşatıldı ve yüksek kontrast giderildi (`web/`):**
+  - **Global Tablo Çizgisi Yumuşatması (`globals.css`):** Koyu modda (`.dark`) tablo gövdesi satırlarının alt sınır rengi `%14` parlak beyazdan `%5` opaklığa (`rgba(255, 255, 255, 0.05)`) indirilerek parlak kafes/çizgi parlaması ortadan kaldırıldı; başlık satır çizgisi ise `%8` opaklığa ayarlandı.
+  - **Koyu Mod Sınır Belirteci (`globals.css`):** `.dark` kök değişkenlerindeki genel `--border` opaklığı `%14`'ten `%9`'a çekilerek tüm arayüzdeki kenarlık sertliği optimize edildi.
+  - **Temel Tablo Bileşeni (`table.tsx`):** `TableRow`, `TableHeader` ve `TableFooter` bileşenlerine `dark:border-white/[0.05]` ve `dark:[&_tr]:border-white/[0.08]` tanımlanarak sistemdeki tüm tablolarda (Fişler, e-Faturalar, Firmalar, Vergi Takvimi, Bütçe, Çöp Kutusu vb.) tutarlı yumuşaklık sağlandı.
+  - **Fişler Tablosu Kartı ve Satırları (`receipts-view.tsx`):** Fiş satırları ve kart kenarlıkları yumuşatılmış koyu mod değerlerine uyarlandı.
+
 ## Web 1.0.16 — `fe080cb`
 - **Seçenek 04: Dual-Tone Segmentli Kategori Rozetleri (Stripe & Developer Stili) tüm sisteme uygulandı (`web/`):**
   - **Yeni `CategoryBadge` Bileşeni (`category-badge.tsx`):** Sol tarafı doymuş renkli ikon bloğu (`bg-amber-500 text-zinc-950 font-bold`), sağ tarafı yarı saydam pastel metin alanı (`bg-amber-500/10 text-amber-700 dark:text-amber-300`) ve renkli kenarlığı (`border-amber-500/30`) barındıran iki parçalı modern rozet mimarisi kuruldu.
