@@ -443,7 +443,8 @@ export function ReceiptsView() {
                   className="text-xs cursor-pointer py-1.5 rounded-lg flex items-center justify-between"
                 >
                   <span className="flex items-center gap-2">
-                    <span className="text-sm shrink-0">{v.icon}</span>
+                    <span className={cn("size-2 rounded-full shrink-0", v.dotColor)} />
+                    <span className="text-[10px] font-bold text-muted-foreground w-4">{v.initial}</span>
                     <span>{categoryLabel(k)}</span>
                   </span>
                 </DropdownMenuCheckboxItem>
@@ -489,7 +490,7 @@ export function ReceiptsView() {
         </div>
       </div>
 
-      {/* Aktif Kategori Filtresi Chipleri (Option 04 Dual-Tone Segmented) */}
+      {/* Aktif Kategori Filtresi Chipleri (Option 02 Minimalist Monogram & Status Dot) */}
       {catFilter.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-card/50 border border-border/70 px-3.5 py-2 text-xs shadow-2xs animate-in fade-in-50 duration-150">
           <span className="text-[11px] text-muted-foreground font-semibold">Filtrelenen Kategoriler:</span>
@@ -642,7 +643,7 @@ export function ReceiptsView() {
                         </Link>
                       </TableCell>
 
-                      {/* Kategori Dual-Tone Segmentli Rozet (Option 04) */}
+                      {/* Kategori Minimalist Monogram & Status Dot Rozeti (Option 02) */}
                       <TableCell>
                         <CategoryBadge category={r.kategori} />
                       </TableCell>

@@ -1,6 +1,7 @@
 "use client";
 
 import { getCategoryVisuals } from "@/components/ui/category-badge";
+import { cn } from "@/lib/utils";
 import { allCategories, categoryLabel } from "@shared/lib/categories";
 import { formatTL, parseAmount, round2 } from "@shared/lib/format";
 import {
@@ -345,14 +346,18 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                       <SelectValue placeholder="Kategori seçin" />
                     </SelectTrigger>
                     <SelectContent className="max-h-60">
-                      {activeCategories.map((kat) => (
-                        <SelectItem key={kat} value={kat}>
-                          <span className="flex items-center gap-2">
-                            <span className="shrink-0">{getCategoryVisuals(kat).icon}</span>
-                            <span>{categoryLabel(kat)}</span>
-                          </span>
-                        </SelectItem>
-                      ))}
+                      {activeCategories.map((kat) => {
+                        const v = getCategoryVisuals(kat);
+                        return (
+                          <SelectItem key={kat} value={kat}>
+                            <span className="flex items-center gap-2">
+                              <span className={cn("size-2 rounded-full shrink-0", v.dotColor)} />
+                              <span className="text-[10px] font-bold text-muted-foreground w-4">{v.initial}</span>
+                              <span>{categoryLabel(kat)}</span>
+                            </span>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
