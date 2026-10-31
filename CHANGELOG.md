@@ -16,6 +16,14 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.16 — `fe080cb`
+- **Seçenek 04: Dual-Tone Segmentli Kategori Rozetleri (Stripe & Developer Stili) tüm sisteme uygulandı (`web/`):**
+  - **Yeni `CategoryBadge` Bileşeni (`category-badge.tsx`):** Sol tarafı doymuş renkli ikon bloğu (`bg-amber-500 text-zinc-950 font-bold`), sağ tarafı yarı saydam pastel metin alanı (`bg-amber-500/10 text-amber-700 dark:text-amber-300`) ve renkli kenarlığı (`border-amber-500/30`) barındıran iki parçalı modern rozet mimarisi kuruldu.
+  - **Fişler Tablosu Entegrasyonu (`receipts-view.tsx`):** Fiş satırlarındaki kategori sütununa `CategoryBadge` yerleştirildi; 25 hazır kategori ve özel kategoriler için özel renk ve ikon haritalaması sağlandı.
+  - **Aktif Kategori Filtresi Chipleri:** Fişler sayfasında bir veya birden fazla kategori seçildiğinde, arama çubuğunun hemen altında tek tıkla kaldırılabilen Dual-Tone aktif filtre çipleri listelenmesi sağlandı.
+  - **Kategoriler ve Bütçe Tabloları (`categories-view.tsx` & `budget-view.tsx`):** Sistem hazır kategorileri ve aylık bütçe harcama döküm tablosunda da standart `CategoryBadge` uygulanarak tasarım dili tutarlı hale getirildi.
+  - **Fiş Ekleme / Düzenleme Seçicisi (`receipt-form.tsx`):** Kategori açılır menüsündeki her seçeneğin yanına ilgili kategorinin ikon glifi eklendi.
+
 ## Web 1.0.15 — `a261b27`
 - **Sistem genelinde Geist tipografisi zorunlu kılındı ve font-mono kullanımı kaldırıldı (`web/` & `src/`):**
   - **Fişler Sayfası ve Kartlar (`receipts-view.tsx`):** Metrik kartlardaki tutar alanları (`₺0,00`), fiş sayıları, KDV dökümleri, teslim oranları ve fiş tablosundaki tarih/tutar sütunlarında yer alan `font-mono` sınıfları kaldırılarak sistemin asıl fontu olan `Geist Sans` (`tabular-nums font-semibold/font-bold`) tipografisine geçirildi.
