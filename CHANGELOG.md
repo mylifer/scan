@@ -16,6 +16,18 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.14 — `caf3fdc`
+- **Fişler sayfasında Apple Native Glass (macOS Tahoe & Apple Wallet) tasarımı uygulandı (`web/`):**
+  - **Buzlu Cam (Frosted Glass) Yüzeyler & Elevated Hiyerarşi (`receipts-view.tsx`):** Generic/şablon hissi veren düz kartlar yerine modern macOS Tahoe ve Apple Wallet estetiğinde frosted cam yüzeyler (`backdrop-blur-xl bg-card/75 border-border/80 shadow-[0_2px_16px_rgba(0,0,0,0.03)]`) uygulandı.
+  - **Apple Squircle Kategori Rozetleri & Monogramlar:** Fiş tablosunda Akaryakıt (turuncu squircle ⛽️), Yemek/Restoran (gül/rose squircle 🍽️), Market/Gıda (zümrüt squircle 🛒), Teknoloji (mor/indigo squircle 💻), Ulaşım (mavi squircle 🚗) gibi iOS tasarım diliyle squircle monogramları ve renkli yarı saydam hap etiketler yerleştirildi.
+  - **Hiyerarşik 4 Finansal Metrik Kartı:**
+    - *Toplam Harcama:* Mavi squircle simgeli brüt harcama toplamı.
+    - *Düşülebilir Toplam KDV:* Zümrüt squircle simgesi ve %1, %10, %20 oran dağılım hapları.
+    - *Muhasebeye Teslim Edilen:* Mor/indigo squircle simgesi ve dinamik mini ilerleme çubuğu (progress bar) ile teslim oranı.
+    - *Teslim Bekleyen Fişler:* Amber/turuncu uyarı rozeti ve bir sonraki aya devreden tutar bilgilendirmesi.
+  - **Spotlight Tarzı Apple Arama ve Filtre Kontrolleri:** Spotlight tarzı arama alanı, Apple tipi `[Tüm Zamanlar | Aylık | Yıllık]` segmentli kontrol ve `‹ [Dönem] ›` chevron stepper hapı entegre edildi.
+  - **Apple Wallet Boş Durum (Empty State):** Listede fiş bulunmadığında beliren parıltılı squircle ikonlu boş durum ekranı ve doğrudan fiş taramaya yönlendiren şık buton tasarlandı.
+
 ## Web 1.0.13 — `687d3b2`
 - **Fişler sayfasında dönem seçimi modernize edildi ve devreden KDV entegrasyonu tamamlandı (`web/` & `src/`):**
   - **Fişler Sayfasında Varsayılan Açılış "Tüm Zamanlar" Yapıldı (`receipts-view.tsx` & `useMonthlySummary.ts`):** Fişler sayfası açıldığında doğrudan tüm zamanlara ait fişler listelenir.
