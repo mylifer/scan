@@ -126,8 +126,8 @@
   --accent:               oklch(0.274 0.006 286.033);
   --accent-foreground:    oklch(0.985 0.001 106.424);
   --destructive:          oklch(0.704 0.191 22.216);
-  --border:               oklch(1 0 0 / 14%);
-  --input:                oklch(1 0 0 / 20%);
+  --border:               oklch(1 0 0 / 9%);
+  --input:                oklch(1 0 0 / 15%);
   --ring:                 #00D9D9;
 
   --chart-1: oklch(0.488 0.243 264.376);
@@ -217,6 +217,21 @@
   code, kbd, samp, pre {
     font-family: var(--font-mono);
   }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   TABLE BORDERS (DARK MODE SOFTER CONTRAST)
+   Koyu modda tablo satırları arasındaki çizgilerin parlak/yüksek
+   kontrast durmasını engeller, yumuşak ve zarif bir sınır sağlar.
+   ───────────────────────────────────────────────────────────────── */
+.dark table tbody tr {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+.dark table thead tr {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+.dark table tfoot tr {
+  border-top-color: rgba(255, 255, 255, 0.08);
 }
 
 /* ─────────────────────────────────────────────────────────────────
