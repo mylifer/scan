@@ -16,6 +16,12 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.13 — `687d3b2`
+- **Fişler sayfasında dönem seçimi modernize edildi ve devreden KDV entegrasyonu tamamlandı (`web/` & `src/`):**
+  - **Fişler Sayfasında Varsayılan Açılış "Tüm Zamanlar" Yapıldı (`receipts-view.tsx` & `useMonthlySummary.ts`):** Fişler sayfası açıldığında doğrudan tüm zamanlara ait fişler listelenir.
+  - **Açılır Menü (Dropdown) Kaldırıldı, Switch + Stepper Eklendi (`receipts-view.tsx`):** 16 seçenekli açılır menü yerine `[Tüm Zamanlar | Aylık | Yıllık]` segmentli sekmeleri eklendi. Aylık ve yıllık modda hemen yanında beliren `‹ [Ay] ›` ileri/geri butonlarıyla pratik gezinme sağlandı.
+  - **Devreden Fiş KDV'si ve Dökümü (`kdvAy.ts`, `kdv-view.tsx`, `index.tsx`):** Muhasebeciye gönderilmemiş fişlerin mevcut aya devretmesi, aya göre ayrıştırılması (örn. `Ocak Devreden KDV`) ve KDV hesabına dahil edilmesi sağlandı.
+
 ## Web 1.0.12 — `c7d56e0`
 - **Vergi Takvimi tablosunda geçmiş satırlar varsayılan olarak gizlendi ve gösterim onay kutusu (Checkbox) eklendi (`web/`):**
   - **Varsayılan Geçmiş Satır Gizleme (`tax-calendar-view.tsx`):** Vergi Takvimi tablosunda vadesi geçmiş olan tüm satırlar (`daysUntil < 0`) varsayılan olarak filtrelenerek gizlendi. Kullanıcı yalnızca bugün (`daysUntil === 0`) ve gelecekteki yaklaşan vergi yükümlülüklerini odaklı ve sade bir listede görür.
