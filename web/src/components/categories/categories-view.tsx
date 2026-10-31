@@ -255,7 +255,7 @@ export function CategoriesView() {
                     >
                       <span>{categoryLabel(cat)}</span>
                       {count > 0 && (
-                        <span className="font-mono text-[10px] text-muted-foreground">
+                        <span className="tabular-nums text-[10px] text-muted-foreground">
                           ({count})
                         </span>
                       )}

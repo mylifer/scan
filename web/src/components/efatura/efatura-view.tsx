@@ -698,13 +698,13 @@ export function EFaturaView() {
                         />
                       </TableCell>
                       <TableCell className="tabular-nums text-xs">{f.tarih}</TableCell>
-                      <TableCell className="font-mono text-xs font-medium">
+                      <TableCell className="tabular-nums text-xs font-medium">
                         {f.belgeNo || "—"}
                       </TableCell>
                       <TableCell className="max-w-72">
                         <div className="truncate font-medium">{f.unvan}</div>
                         {f.vkn && (
-                          <div className="text-[11px] text-muted-foreground font-mono">
+                          <div className="text-[11px] text-muted-foreground tabular-nums">
                             VKN: {f.vkn}
                           </div>
                         )}

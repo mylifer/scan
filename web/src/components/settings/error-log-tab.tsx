@@ -141,7 +141,7 @@ export function ErrorLogTab() {
                         {err.created_at ? new Date(err.created_at).toLocaleString("tr-TR") : "—"}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-xs font-mono">
+                        <Badge variant="outline" className="text-xs">
                           {err.context || "genel"}
                         </Badge>
                       </TableCell>
@@ -190,7 +190,7 @@ export function ErrorLogTab() {
             <div className="space-y-4 py-2">
               <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-1">
                 <span className="font-semibold text-foreground">Hata Mesajı:</span>
-                <p className="font-mono text-destructive break-words">{selectedError.message}</p>
+                <p className="text-destructive break-words font-medium">{selectedError.message}</p>
               </div>
 
               {selectedError.detail ? (

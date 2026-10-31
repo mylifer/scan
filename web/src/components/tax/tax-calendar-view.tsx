@@ -145,7 +145,7 @@ export function TaxCalendarView() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary" className="font-mono">
+              <Badge variant="secondary" className="tabular-nums">
                 {daysUntil(nextDeadline.date, today) === 0
                   ? "Bugün son gün!"
                   : `${daysUntil(nextDeadline.date, today)} gün kaldı`}

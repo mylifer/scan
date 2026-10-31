@@ -100,7 +100,7 @@ function FaturaDetayContent({
                 {state.detay?.tip && <Badge variant="secondary">{state.detay.tip}</Badge>}
               </div>
               <DialogDescription className="break-all text-xs sm:text-sm text-muted-foreground">
-                Tarih: {state.detay?.tarih || fatura.tarih} · ETTN: <span className="font-mono text-xs">{fatura.ettn}</span>
+                Tarih: {state.detay?.tarih || fatura.tarih} · ETTN: <span className="tabular-nums text-xs">{fatura.ettn}</span>
               </DialogDescription>
             </div>
 
@@ -157,7 +157,7 @@ function FaturaDetayContent({
                   <CardContent className="min-w-0 space-y-1 text-sm">
                     <p className="font-medium text-foreground break-words">{state.detay.saticiUnvan || "—"}</p>
                     <p className="text-xs text-muted-foreground break-all">
-                      VKN/TCKN: <span className="font-mono text-foreground">{state.detay.saticiVkn || "—"}</span>
+                      VKN/TCKN: <span className="tabular-nums text-foreground">{state.detay.saticiVkn || "—"}</span>
                     </p>
                   </CardContent>
                 </Card>
@@ -171,7 +171,7 @@ function FaturaDetayContent({
                   <CardContent className="min-w-0 space-y-1 text-sm">
                     <p className="font-medium text-foreground break-words">{state.detay.aliciUnvan || "—"}</p>
                     <p className="text-xs text-muted-foreground break-all">
-                      VKN/TCKN: <span className="font-mono text-foreground">{state.detay.aliciVkn || "—"}</span>
+                      VKN/TCKN: <span className="tabular-nums text-foreground">{state.detay.aliciVkn || "—"}</span>
                     </p>
                   </CardContent>
                 </Card>

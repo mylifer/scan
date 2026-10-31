@@ -145,7 +145,7 @@ export const tabular: TextStyle = { fontVariant: ['tabular-nums'] };
 
 /** Web ve sistem genelinde Geist font ailesi */
 export const fontFamily = Platform.select({
-  web: 'var(--font-geist-sans), "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  web: 'var(--font-geist-sans), "Geist", sans-serif',
   default: undefined,
 });
 

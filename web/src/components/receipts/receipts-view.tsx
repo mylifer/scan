@@ -291,12 +291,12 @@ export function ReceiptsView() {
             <div className="size-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-sky-400 text-white flex items-center justify-center shadow-sm shadow-sky-500/25">
               <CreditCard className="size-4.5 stroke-[2]" />
             </div>
-            <span className="text-[11px] font-semibold font-mono px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/15">
+            <span className="text-[11px] font-semibold tabular-nums px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/15">
               {summary.fisSayisi} Fiş
             </span>
           </div>
           <div className="text-xs font-medium text-muted-foreground">Toplam Harcama</div>
-          <div className="text-2xl font-bold tracking-tight text-foreground font-mono mt-0.5">
+          <div className="text-2xl font-bold tracking-tight text-foreground tabular-nums mt-0.5">
             {loading ? <Skeleton className="h-7 w-28 my-0.5" /> : `${formatTL(summary.toplamGider)} TL`}
           </div>
           <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5">
@@ -311,15 +311,15 @@ export function ReceiptsView() {
             <div className="size-9 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white flex items-center justify-center shadow-sm shadow-emerald-500/25">
               <ReceiptText className="size-4.5 stroke-[2]" />
             </div>
-            <span className="text-[11px] font-semibold font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/15">
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/15">
               KDV İndirimi
             </span>
           </div>
           <div className="text-xs font-medium text-muted-foreground">Düşülebilir Toplam KDV</div>
-          <div className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+          <div className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums mt-0.5">
             {loading ? <Skeleton className="h-7 w-28 my-0.5" /> : `${formatTL(summary.toplamKdv)} TL`}
           </div>
-          <div className="text-[11px] text-muted-foreground mt-1 font-mono truncate">
+          <div className="text-[11px] text-muted-foreground mt-1 tabular-nums truncate">
             %1: {formatTL(summary.kdv1)} · %10: {formatTL(summary.kdv10)} · %20: {formatTL(summary.kdv20)}
           </div>
         </div>
@@ -330,12 +330,12 @@ export function ReceiptsView() {
             <div className="size-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center shadow-sm shadow-indigo-500/25">
               <CheckCircle2 className="size-4.5 stroke-[2]" />
             </div>
-            <span className="text-[11px] font-semibold font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/15">
+            <span className="text-[11px] font-semibold tabular-nums px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/15">
               %{summary.fisSayisi > 0 ? Math.round((sentCount / summary.fisSayisi) * 100) : 0} Oran
             </span>
           </div>
           <div className="text-xs font-medium text-muted-foreground">Muhasebeye Teslim Edilen</div>
-          <div className="text-2xl font-bold tracking-tight text-foreground font-mono mt-0.5">
+          <div className="text-2xl font-bold tracking-tight text-foreground tabular-nums mt-0.5">
             {loading ? <Skeleton className="h-7 w-24 my-0.5" /> : `${sentCount} / ${summary.fisSayisi}`}
           </div>
           <div className="w-full bg-muted/80 h-1.5 rounded-full mt-2 overflow-hidden">
@@ -353,17 +353,17 @@ export function ReceiptsView() {
               <Clock className="size-4.5 stroke-[2]" />
             </div>
             {pendingCount > 0 ? (
-              <span className="text-[11px] font-semibold font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/15">
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/15">
                 İşlem Bekliyor
               </span>
             ) : (
-              <span className="text-[11px] font-semibold font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/15">
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/15">
                 Eksik Yok
               </span>
             )}
           </div>
           <div className="text-xs font-medium text-muted-foreground">Teslim Bekleyen Fişler</div>
-          <div className="text-2xl font-bold tracking-tight text-foreground font-mono mt-0.5">
+          <div className="text-2xl font-bold tracking-tight text-foreground tabular-nums mt-0.5">
             {loading ? <Skeleton className="h-7 w-20 my-0.5" /> : `${pendingCount} Fiş`}
           </div>
           <div className="text-[11px] text-muted-foreground mt-1">
@@ -540,7 +540,7 @@ export function ReceiptsView() {
       {selectedRows.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-sky-500/20 bg-sky-500/5 backdrop-blur-md px-4 py-2.5 text-sm shadow-xs animate-in fade-in-50 duration-150">
           <span className="font-semibold text-foreground">{selectedRows.length} fiş seçildi</span>
-          <span className="text-muted-foreground font-mono">· {formatTL(summarizeReceipts(selectedRows).toplamGider)} TL</span>
+          <span className="text-muted-foreground tabular-nums">· {formatTL(summarizeReceipts(selectedRows).toplamGider)} TL</span>
           <div className="ml-auto flex flex-wrap items-center gap-2">
             <Button size="sm" variant="outline" className="h-8 rounded-xl text-xs gap-1.5" onClick={() => onMarkSent(true)} disabled={!!busy}>
               <Send className="size-3.5" /> Gönderildi işaretle
@@ -614,7 +614,7 @@ export function ReceiptsView() {
                       </TableCell>
 
                       {/* Tarih */}
-                      <TableCell className="tabular-nums font-mono text-xs text-muted-foreground whitespace-nowrap">
+                      <TableCell className="tabular-nums text-xs text-muted-foreground whitespace-nowrap">
                         {isoToTrDate(r.tarih)}
                       </TableCell>
 
@@ -640,7 +640,7 @@ export function ReceiptsView() {
                               {r.firma_adi || "İsimsiz Firma"}
                             </div>
                             {r.fis_no && (
-                              <div className="text-[11px] text-muted-foreground font-mono">Fiş: #{r.fis_no}</div>
+                              <div className="text-[11px] text-muted-foreground tabular-nums">Fiş: #{r.fis_no}</div>
                             )}
                           </div>
                           {r.image_path && (
@@ -663,12 +663,12 @@ export function ReceiptsView() {
                       </TableCell>
 
                       {/* KDV Tutarı */}
-                      <TableCell className="text-right font-mono text-xs text-muted-foreground tabular-nums">
+                      <TableCell className="text-right text-xs text-muted-foreground tabular-nums">
                         {formatTL(r.toplam_kdv)} TL
                       </TableCell>
 
                       {/* Toplam Tutar */}
-                      <TableCell className="text-right font-mono text-sm font-bold tabular-nums text-foreground">
+                      <TableCell className="text-right text-sm font-bold tabular-nums text-foreground">
                         {formatTL(r.toplam_tutar)} TL
                       </TableCell>
 
@@ -736,7 +736,7 @@ export function ReceiptsView() {
 
       {/* Sayfalama Kontrolleri */}
       {!loading && filtered.length > PAGE_SIZE && (
-        <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground font-mono">
+        <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground tabular-nums">
           <span>
             {currentPage * PAGE_SIZE + 1}–{Math.min(filtered.length, (currentPage + 1) * PAGE_SIZE)} / {filtered.length}
           </span>
