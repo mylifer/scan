@@ -1,5 +1,5 @@
 import { receiptImageName, round2, trDateToIso } from "@shared/lib/format";
-import { fisAyaAitMi, fisKdvAyi, simdikiIstanbulAyi } from "@shared/lib/kdvAy";
+import { fisAyaAitMi, simdikiIstanbulAyi } from "@shared/lib/kdvAy";
 import { setCustomCategories } from "@shared/lib/categories";
 import { chunks, extraColumns, toRecord } from "@shared/services/supabase/receiptRows";
 import type { ReceiptData, ReceiptRecord } from "@shared/types/receipt";
