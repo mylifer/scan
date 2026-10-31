@@ -6,7 +6,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
-  Check,
+  BarChart3,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -15,6 +15,8 @@ import {
   FileText,
   Loader2,
   Package,
+  Receipt,
+  ReceiptText,
   RefreshCw,
   Search,
   X,
@@ -24,7 +26,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
@@ -407,52 +409,121 @@ export function EFaturaView() {
         </div>
       </div>
 
-      {/* Özet Kartları */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Toplam Fatura"
-          value={loading ? <Skeleton className="h-7 w-20" /> : `${stats.count} adet`}
-          description={
-            kontrol ? (
-              <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                <Check className="size-3 text-emerald-500" /> QNB: {kontrol.liste} listelendi
+      {/* Apple Native Glass Metrik Kartları (Tahoe Glass) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {/* Kart 1: Toplam Belge */}
+        <div className="relative overflow-hidden rounded-2xl border border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)] hover:shadow-md transition-all group">
+          <div className="flex items-center justify-between mb-3">
+            <div className="size-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-sky-400 text-white flex items-center justify-center shadow-sm shadow-sky-500/25">
+              <FileText className="size-4.5 stroke-[2]" />
+            </div>
+            <span className="text-[11px] font-semibold tabular-nums px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/15">
+              {stats.count} Belge
+            </span>
+          </div>
+          <div className="text-xs font-medium text-muted-foreground">
+            {yon === "gelen" ? "Gelen Faturalar" : "Giden Faturalar"}
+          </div>
+          <div className="text-2xl font-bold tracking-tight text-foreground tabular-nums mt-0.5">
+            {loading ? <Skeleton className="h-7 w-20 my-0.5" /> : `${stats.count} Adet`}
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5 truncate">
+            {kontrol ? (
+              <>
+                <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
+                <span>QNB: {kontrol.liste} listelendi</span>
+              </>
+            ) : (
+              <>
+                <span className="size-1.5 rounded-full bg-sky-500 shrink-0" />
+                <span>{monthInfo.label} dönemi kayıtları</span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Kart 2: Toplam Tutar */}
+        <div className="relative overflow-hidden rounded-2xl border border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)] hover:shadow-md transition-all group">
+          <div className="flex items-center justify-between mb-3">
+            <div className="size-9 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white flex items-center justify-center shadow-sm shadow-emerald-500/25">
+              <Receipt className="size-4.5 stroke-[2]" />
+            </div>
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/15">
+              KDV Dahil
+            </span>
+          </div>
+          <div className="text-xs font-medium text-muted-foreground">
+            {yon === "gelen" ? "Toplam Gider Tutarı" : "Toplam Satış Tutarı"}
+          </div>
+          <div className="text-2xl font-bold tracking-tight text-foreground tabular-nums mt-0.5">
+            {loading ? <Skeleton className="h-7 w-32 my-0.5" /> : `${formatTL(stats.tryTotal)} TL`}
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5 truncate">
+            {stats.currencies.length > 0 ? (
+              <span className="tabular-nums truncate">
+                {stats.currencies.map((c) => `${formatTL(c.toplam)} ${c.paraBirimi}`).join(" · ")}
               </span>
-            ) : undefined
-          }
-        />
-        <StatCard
-          title="Toplam Tutar"
-          value={loading ? <Skeleton className="h-7 w-32" /> : `${formatTL(stats.tryTotal)} TL`}
-          description={
-            stats.currencies.length > 0
-              ? stats.currencies.map((c) => `${formatTL(c.toplam)} ${c.paraBirimi}`).join(" · ")
-              : "KDV Dahil"
-          }
-        />
-        <StatCard
-          title="Net KDV Toplamı"
-          value={loading ? <Skeleton className="h-7 w-28" /> : `${formatTL(stats.netKdv)} TL`}
-          description={yon === "gelen" ? "İndirilecek KDV" : "Hesaplanan Net KDV"}
-        />
-        <Card size="sm" className="flex flex-col justify-between">
-          <CardHeader className="pb-2">
-            <CardDescription>Raporlar & Analiz</CardDescription>
-            <CardTitle className="text-sm font-medium">Dönem Analizi</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
+            ) : (
+              <>
+                <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
+                <span>TRY cinsinden fatura yekûnu</span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Kart 3: Net KDV Toplamı */}
+        <div className="relative overflow-hidden rounded-2xl border border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)] hover:shadow-md transition-all group">
+          <div className="flex items-center justify-between mb-3">
+            <div className="size-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center shadow-sm shadow-indigo-500/25">
+              <ReceiptText className="size-4.5 stroke-[2]" />
+            </div>
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/15">
+              {yon === "gelen" ? "İndirilecek KDV" : "Hesaplanan KDV"}
+            </span>
+          </div>
+          <div className="text-xs font-medium text-muted-foreground">
+            {yon === "gelen" ? "Düşülebilir Toplam KDV" : "Tahakkuk Eden KDV"}
+          </div>
+          <div className="text-2xl font-bold tracking-tight text-indigo-600 dark:text-indigo-400 tabular-nums mt-0.5">
+            {loading ? <Skeleton className="h-7 w-28 my-0.5" /> : `${formatTL(stats.netKdv)} TL`}
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5 truncate">
+            <span className="size-1.5 rounded-full bg-indigo-500 shrink-0" />
+            <span>{yon === "gelen" ? "Beyannameden düşülebilir vergi" : "Satışlardan doğan KDV yükümlülüğü"}</span>
+          </div>
+        </div>
+
+        {/* Kart 4: Raporlar & Dönem Analizi */}
+        <div className="relative overflow-hidden rounded-2xl border border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)] hover:shadow-md transition-all group flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="size-9 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-400 text-white flex items-center justify-center shadow-sm shadow-amber-500/25">
+                <BarChart3 className="size-4.5 stroke-[2]" />
+              </div>
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/15">
+                Rapor & Döküm
+              </span>
+            </div>
+            <div className="text-xs font-medium text-muted-foreground">Matrah & KDV Dökümü</div>
+            <div className="text-base font-bold tracking-tight text-foreground mt-0.5">
+              Dönem Analizi
+            </div>
+          </div>
+          <div className="pt-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="w-full justify-between text-xs"
+              className="w-full justify-between text-xs h-8 rounded-xl border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-semibold transition-colors"
               onClick={() => setOzetOpen(true)}
               disabled={loading || faturalar.length === 0}
             >
               <span>Matrah & KDV Özeti</span>
-              <FileSpreadsheet className="size-3.5 text-muted-foreground" />
+              <FileSpreadsheet className="size-3.5 shrink-0" />
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Toolbar: Arama, Filtre, Sıralama ve Dışa Aktarım Butonları */}
@@ -608,12 +679,12 @@ export function EFaturaView() {
         </div>
       )}
 
-      {/* e-Fatura Tablosu */}
-      <Card>
-        <CardContent className="p-0">
+      {/* Apple Glass e-Fatura Tablosu */}
+      <Card className="py-0 rounded-2xl overflow-hidden border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl shadow-xs">
+        <CardContent className="px-0">
           <Table className="min-w-[780px]">
-            <TableHeader>
-              <TableRow>
+            <TableHeader className="bg-muted/30">
+              <TableRow className="border-b border-border/60 dark:border-white/[0.04] hover:bg-transparent">
                 <TableHead className="w-12 pl-4">
                   <Checkbox
                     checked={allPageSelected ? true : somePageSelected ? "indeterminate" : false}
@@ -851,22 +922,4 @@ export function EFaturaView() {
   );
 }
 
-function StatCard({
-  title,
-  value,
-  description,
-}: {
-  title: string;
-  value: React.ReactNode;
-  description?: React.ReactNode;
-}) {
-  return (
-    <Card size="sm">
-      <CardHeader className="pb-2">
-        <CardDescription>{title}</CardDescription>
-        <CardTitle className="text-xl tabular-nums">{value}</CardTitle>
-        {description && <div className="text-xs text-muted-foreground">{description}</div>}
-      </CardHeader>
-    </Card>
-  );
-}
+
