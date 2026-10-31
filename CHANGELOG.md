@@ -16,6 +16,14 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.18 — `11ad07b`
+- **Seçenek 02: Minimalist Monogram & Status Dot (Linear & Swiss B2B Enterprise) stili uygulandı (`web/`):**
+  - **Emojisiz, Sessiz ve Profesyonel Tasarım Dili (`category-badge.tsx`):** Emojiler kaldırılarak yerine canlı ve parıldayan dairesel durum noktası (`dotColor`, örn. amber-400, rose-400, emerald-400, indigo-400 glow efektli), 2 harfli büyük harf mikro monogram (`AK`, `RE`, `MA`, `TE`, `OF`, `UL`, `KO` vb.) ve Geist typography ile kategori etiketi getirildi.
+  - **Hafif & Şık Kapsayıcı (`CategoryBadge`):** Düz hatlı, yumuşak tonlu yarı saydam kapsayıcı (`bg-muted/70 border-border/80 dark:bg-zinc-900/90 dark:border-white/[0.08]`) ile hem aydınlık hem koyu modda üst seviye SaaS/Linear estetiği sağlandı.
+  - **Fişler Tablosu ve Aktif Filtre Chipleri (`receipts-view.tsx`):** Fiş satırlarındaki kategori rozetleri ve filtre araç çubuğu altındaki dinamik aktif çip listesi Seçenek 02 ile güncellendi.
+  - **Açılır Menülerde Durum Noktası & Monogram (`receipts-view.tsx` & `receipt-form.tsx`):** Kategori filtre menüsü ve fiş formu kategori açılır listesindeki emojiler yerine ışıltılı durum noktası ve mikro monogram kodu yerleştirildi.
+  - **Kategoriler ve Bütçe Tablosu (`categories-view.tsx` & `budget-view.tsx`):** 25 hazır kategori listesi ve aylık harcama bütçe tablosu yeni stil ile tam uyumlu hale getirildi.
+
 ## Web 1.0.17 — `4059c80`
 - **Koyu modda tablo satır çizgileri (row dividers) yumuşatıldı ve yüksek kontrast giderildi (`web/`):**
   - **Global Tablo Çizgisi Yumuşatması (`globals.css`):** Koyu modda (`.dark`) tablo gövdesi satırlarının alt sınır rengi `%14` parlak beyazdan `%5` opaklığa (`rgba(255, 255, 255, 0.05)`) indirilerek parlak kafes/çizgi parlaması ortadan kaldırıldı; başlık satır çizgisi ise `%8` opaklığa ayarlandı.
