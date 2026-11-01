@@ -10,7 +10,7 @@ import { Breadcrumbs, Separator } from "@heroui/react";
 export function AppHeader() {
   const title = titleForPath(usePathname());
   return (
-    <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-2 border-b bg-background px-4">
+    <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-2 bg-background px-4">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-2 h-4" />
       <Breadcrumbs>
