@@ -301,7 +301,7 @@ export function ReceiptsView() {
             {loading ? <Skeleton className="h-7 w-20 my-0.5" /> : `${pendingCount} Fiş`}
           </div>
           <div className="text-[11px] text-muted-foreground mt-1">
-            {pendingCount > 0 ? "Sonraki aya devredebilir" : "Tüm fişler muhasebeleştirildi"}
+            {pendingCount > 0 ? "Gönderilince önceki ayın KDV'sinden düşer" : "Tüm fişler muhasebeleştirildi"}
           </div>
         </div>
       </div>

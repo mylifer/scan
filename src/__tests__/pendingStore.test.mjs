@@ -30,12 +30,18 @@ test('kopyalar, listeler, siler', async () => {
   assert.ok(!files.has(p.uri), 'dosya silinir');
 });
 
-test('3 başarısız denemeden sonra bırakılır', async () => {
+test('başarısız denemeler sayılır ama fotoğraf silinmez (fiş kaybolmasın)', async () => {
   files.set('cache:/b.jpg', true);
   const p = await s.persistPhoto('cache:/b.jpg', 1000, 'u1');
-  assert.equal(await s.markFailed(p.key), false);
-  assert.equal(await s.markFailed(p.key), false);
-  assert.equal(await s.markFailed(p.key), true);
+  assert.equal(await s.markFailed(p.key), 1);
+  assert.equal(await s.markFailed(p.key), 2);
+  assert.equal(await s.markFailed(p.key), 3);
+  const kalan = await s.loadPending('u1');
+  assert.equal(kalan.length, 1, 'fotoğraf bekleyenlerde kalır');
+  assert.equal(kalan[0].attempts, s.MAX_ATTEMPTS, 'otomatik deneme sınırına ulaşır');
+  assert.ok(files.has(p.uri), 'dosya silinmez');
+  // Yalnızca kullanıcı "Vazgeç" derse silinir
+  await s.removePending(p.key);
   assert.equal((await s.loadPending('u1')).length, 0);
 });
 

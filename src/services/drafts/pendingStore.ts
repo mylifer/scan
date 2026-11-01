@@ -16,7 +16,7 @@ export interface PendingPhoto {
 }
 
 const STORAGE_KEY = 'pending-uploads:v1';
-/** Bozuk bir dosya her açılışta sonsuza dek denenmesin */
+/** Bu kadar başarısız denemeden sonra otomatik tekrar denenmez (kullanıcı "Tekrar Dene" ile dener) */
 export const MAX_ATTEMPTS = 3;
 
 function folder() {
@@ -87,18 +87,18 @@ export async function removePending(key: string) {
   });
 }
 
-/** Başarısız deneme sayısını artırır; sınırı aştıysa kaydı siler ve true döner */
-export async function markFailed(key: string): Promise<boolean> {
+/**
+ * Başarısız deneme sayısını artırır. Fotoğraf asla otomatik silinmez (fiş kaybolmasın);
+ * yalnızca kullanıcı "Vazgeç" derse removePending ile silinir.
+ * @returns güncel deneme sayısı
+ */
+export async function markFailed(key: string): Promise<number> {
   const item = await update((list) => {
     const p = list.find((x) => x.key === key);
     if (p) p.attempts += 1;
     return p;
   });
-  if (item && item.attempts >= MAX_ATTEMPTS) {
-    await removePending(key);
-    return true;
-  }
-  return false;
+  return item?.attempts ?? 0;
 }
 
 /** Bu kullanıcının, dosyası hâlâ duran bekleyen fotoğrafları (dosyası kaybolanlar listeden temizlenir) */

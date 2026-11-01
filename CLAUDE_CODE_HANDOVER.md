@@ -61,7 +61,8 @@ Claude Code'un bıraktığı **v1.48.0** sürümünden itibaren projede iki para
   - *"Tümünü Göster" artık eksik veriyi sessizce göstermiyor:* Yüklenemeyen aylar ve QNB'den gelen uyarılar kalıcı bir uyarı şeridinde gösterilir. Hiçbir ay yüklenemezse hata verilir. Eksik sonuç önbelleğe alınmaz. Kapsam sınırı (36 ay, ilk ay bilinmiyorsa 12 ay) bilgi notu olarak yazılır.
   - *Yeni sürüm koruması:* Önceki yayınların `_next/static` parçaları 30 gün saklanır. Açık sekmeler `version.json` dosyasını okuyup "Yenile" bildirimi gösterir. Eski parça hatasında sayfa bir kez otomatik yenilenir (`VersionGuard`, `(app)/error.tsx`).
 - **Web 1.0.23 (`0a47bae`):** Standart temizliği. Temel `Card` bileşeni cama geçirildi, böylece tüm sayfalar aynı kartları kullanıyor. Çift para birimi ("₺… TL") 32 yerde düzeltildi. Çöp Kutusu'nda `CategoryBadge` kullanılıyor. Emoji kalıntıları ve Geist Mono kaldırıldı.
-- **Web 1.0.24 (`729b557` — EN GÜNCEL SÜRÜM):** Yedek geri yüklemede PNG/PDF fotoğraflar doğru içerik türüyle yükleniyor, yedek manifestinde gerçek sürüm kodu var, kök lint uyarısız.
+- **Web 1.0.24 (`729b557`):** Yedek geri yüklemede PNG/PDF fotoğraflar doğru içerik türüyle yükleniyor, yedek manifestinde gerçek sürüm kodu var, kök lint uyarısız.
+- **1.53.0 · Web 1.0.25 (`3538f2d` — EN GÜNCEL SÜRÜM):** Devreden KDV kuralı "gönderim ayı − 1" olarak değişti (mobil + web). Toplu fiş eklemede yüklenemeyen fotoğraflar artık kaybolmuyor; "Tümünü Onayla" eklendi.
 
 ---
 
@@ -73,7 +74,7 @@ scan/
 │   ├── app/                     # Expo Router dosya tabanlı rotaları
 │   ├── components/              # Mobil bileşenler
 │   ├── lib/                     # Ortak saf TypeScript yardımcıları ve algoritmaları
-│   └── __tests__/               # Kök testleri (Node native test runner, 211 test)
+│   └── __tests__/               # Kök testleri (Node native test runner, 221 test)
 ├── web/                         # YENİ Next.js 16 Masaüstü Web Uygulaması
 │   ├── src/
 │   │   ├── app/                 # Next.js 16 App Router
@@ -114,7 +115,12 @@ Claude Code olarak projede çalışırken aşağıdaki kurallara **mutlaka** uyu
 ### B. e-Fatura ve Finansal Hesaplamalar
 1. **UBL KDV Fallback:** Yeni kesilen giden faturalarda QNB servisinden KDV boş gelebilir. Mantık `supabase/functions/qnb-efatura/index.ts` → `tutarlariTamamla` içindedir (ayrı `ublFallback.ts` dosyası **yoktur**). Bilinen sınırlar: yalnızca KDV *boş* (`typeof kdv !== 'number'`) ise tamamlanır, `0` gelen KDV tamamlanmaz; istek başına en fazla 25 fatura UBL'den (5'erli paralel) tamamlanır. Fonksiyon değişikliği `supabase-functions.yml` ile yayınlanır. Bozulmamalıdır.
 2. **Tümünü Göster Modu:** e-Faturalarda "Tümünü Göster" açıkken tarihe göre kümülatif sorgu (`fetchAllFaturalar`, `web/src/lib/efatura.ts`) çalışır. QNB API kotasını korumak için sorgular `limit: 3` eşzamanlı parçalarla gönderilir. Saf yardımcılar test edilir: `tumuAyAraligi` (ay aralığı, `TUMU_MAX_AY = 36`, `TUMU_VARSAYILAN_AY = 12`) ve `aySonuclariniBirlestir` (tekilleştirme, uyarıları koruma, eksik ay bildirimi). Kurallar: eksik sonuç (yüklenemeyen ay veya alınamayan ilk ay) **önbelleğe alınmaz**, hiçbir ay yüklenemezse hata fırlatılır, uyarılar kullanıcıya gösterilir.
-3. **Devreden KDV Mantığı:** Muhasebeciye teslim edilmiş fişler geçmiş aylar hesabında kalır; teslim edilmemiş fişler ise bulunulan aya devreden KDV olarak yansıtılır.
+3. **Devreden KDV Mantığı (1.53.0'dan itibaren, `src/lib/kdvAy.ts` → `fisKdvAyi`):** Muhasebeciye bir ay içinde gönderilen fişler bir önceki ayın beyannamesine girer.
+   - Gönderilmiş fiş: **gönderim ayı − 1** (Kasım'da gönderilen → Ekim).
+   - Gönderilmemiş fiş: **bulunulan ay − 1** (Kasım'dayken → Ekim). Son gönderimin ne zaman yapıldığına bakılmaz.
+   - Fiş tarihinden önceki bir aya düşülemez: fiş tarihi daha yeniyse kendi ayında kalır (Kasım'da eklenen Kasım fişi → Kasım).
+   - Veritabanı sorgusu `kdvFisFiltresi` ile mobil (`getKdvReceipts`) ve web (`listReceiptsForKdv`) arasında ortaktır; kesin eleme `fisAyaAitMi` ile yapılır.
+4. **Toplu Fiş Ekleme (mobil):** Yüklenemeyen fotoğraflar **asla otomatik silinmez** (`pendingStore.markFailed` yalnızca sayar). Aynı oturumda 2 kez daha denenir (`withRetry`), uygulama öne gelince ve "Tekrar Dene" ile yeniden yüklenir; yalnızca kullanıcı "Vazgeç ve Sil" derse silinir. "Tümünü Onayla" (`lib/bulkApprove.ts`) hatalı, olası mükerrer ve yapay zekânın emin olamadığı (`belirsiz`) fişleri kaydetmez, incelemeye bırakır.
 
 ### C. Yeni Sürüm Koruması (Chunk 404)
 GitHub Pages özel header göndermediği için Next.js'in `deploymentId` sürüm uyumsuzluğu koruması çalışmaz. Yerine şunlar kullanılır, kaldırılmamalıdır:
@@ -126,7 +132,7 @@ GitHub Pages özel header göndermediği için Next.js'in `deploymentId` sürüm
 Herhangi bir görevi tamamlamadan önce kök ve web dizinlerinde kalite kapılarını çalıştırınız:
 
 ```bash
-# 1. Kök testleri (Mobil & ortak kodlar - 211 test):
+# 1. Kök testleri (Mobil & ortak kodlar - 221 test):
 npm test -- --run
 npx expo lint
 npx tsc --noEmit
