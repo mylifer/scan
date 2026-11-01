@@ -44,9 +44,14 @@ jobs:
                   print(json.dumps(data, ensure_ascii=False)[:2000]); return
               for r in rows:
                   print(json.dumps(r, ensure_ascii=False)[:600])
-          show("cagrilar (sure, durum)", logs(
-              "select datetime(timestamp) as t, m.function_id, r.status_code, m.execution_time_ms "
-              "from function_edge_logs cross join unnest(metadata) as m cross join unnest(m.response) as r "
-              "order by timestamp desc limit 60"))
-          show("konsol", logs(
-              "select datetime(timestamp) as t, event_message from function_logs order by timestamp desc limit 120"))
+          # Yeni logs uç noktasında tablo adları değişti: olası adlar sırayla denenir
+          for t in ["function_edge_logs", "edge_logs", "function_logs", "functions_logs", "edge_function_logs", "function_runtime_logs", "deno_logs", "function.logs"]:
+              d = logs(f"select timestamp, event_message from {t} order by timestamp desc limit 1")
+              print(t, "->", json.dumps(d, ensure_ascii=False)[:300])
+          for t in ["function_edge_logs", "edge_logs", "edge_function_logs"]:
+              show(f"{t}: cagrilar", logs(
+                  f"select datetime(timestamp) as t, m.function_id, r.status_code, m.execution_time_ms "
+                  f"from {t} cross join unnest(metadata) as m cross join unnest(m.response) as r "
+                  f"order by timestamp desc limit 60"))
+          for t in ["function_logs", "functions_logs", "function_runtime_logs"]:
+              show(f"{t}: konsol", logs(f"select datetime(timestamp) as t, event_message from {t} order by timestamp desc limit 120"))
