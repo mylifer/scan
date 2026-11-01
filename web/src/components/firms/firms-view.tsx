@@ -98,7 +98,7 @@ export function FirmsView() {
           <GitMerge className="size-4 text-accent" />
           Firma Adlarını Birleştir
           {mergeGroups.length > 0 && (
-            <Chip size="sm" variant="soft" className="ml-1">
+            <Chip size="sm" variant="secondary" className="ml-1">
               {mergeGroups.length}
             </Chip>
           )}

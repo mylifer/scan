@@ -285,6 +285,7 @@ export function ReceiptsView() {
       <Card className="flex flex-row flex-wrap items-center gap-2.5">
         {/* Spotlight Tarzı Arama Alanı */}
         <SearchField
+          variant="secondary"
           aria-label="Fişlerde ara"
           className="flex-1 min-w-[220px] max-w-sm"
           value={query}
@@ -373,7 +374,7 @@ export function ReceiptsView() {
             >
               <Filter className="size-3.5" /> Kategori
               {catFilter.size > 0 && (
-                <Chip size="sm" variant="soft" className="tabular-nums">
+                <Chip size="sm" variant="secondary" className="tabular-nums">
                   {catFilter.size}
                 </Chip>
               )}

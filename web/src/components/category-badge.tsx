@@ -208,26 +208,10 @@ export function CategoryBadge({
   const label = categoryLabel(category);
 
   return (
-    <Chip
-      variant="secondary"
-      size={size}
-      className={cn(
-        "gap-1.5 shrink-0",
-        "",
-        size === "sm" ? "" : "",
-        className,
-      )}
-    >
+    <Chip variant="secondary" size={size} className={cn("shrink-0 select-none", className)}>
       <span className={cn("rounded-full shrink-0", size === "sm" ? "size-1.5" : "size-2", visual.dotColor)} />
-      <span
-        className={cn(
-          "font-bold uppercase tracking-wider text-muted dark:text-zinc-400",
-          size === "sm" ? "text-[9px]" : "text-[10px]",
-        )}
-      >
-        {visual.initial}
-      </span>
-      <Chip.Label className="truncate">{label}</Chip.Label>
+      <span className="font-semibold uppercase tracking-wider text-muted">{visual.initial}</span>
+      <Chip.Label>{label}</Chip.Label>
     </Chip>
   );
 }

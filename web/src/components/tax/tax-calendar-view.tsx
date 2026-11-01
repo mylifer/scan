@@ -8,15 +8,11 @@ import {
   type TaxDeadline,
   type TaxKind,
 } from "@shared/lib/taxCalendar";
-import {
-  Calendar,
-  Clock,
-  Info,
-} from "lucide-react";
+import { Clock, Info } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { countPastDeadlines, filterTaxDeadlines } from "@/lib/taxCalendar";
-import { Card, Checkbox, Chip, Label, ListBox, Select, Table } from "@heroui/react";
+import { Card, Chip, ListBox, Select, Switch, Table } from "@heroui/react";
 
 const TAX_KIND_LABELS: Record<TaxKind, string> = {
   kdv: "KDV",
@@ -26,6 +22,22 @@ const TAX_KIND_LABELS: Record<TaxKind, string> = {
   yillik: "Yıllık Gelir Vergisi",
   "yillik-taksit": "Gelir Vergisi 2. Taksit",
 };
+
+const KIND_OPTIONS = [
+  { id: "all", label: "Tüm yükümlülükler" },
+  { id: "kdv", label: "KDV beyannamesi" },
+  { id: "gecici", label: "Geçici vergi" },
+  { id: "yillik", label: "Yıllık gelir vergisi" },
+  { id: "muhtasar", label: "Muhtasar (stopaj)" },
+  { id: "babs", label: "Ba-Bs formu" },
+];
+
+/** "2 Kasım 2026 Pazartesi" → ["2 Kasım 2026", "Pazartesi"] */
+function splitTrDate(iso: string): [string, string] {
+  const full = formatTrDate(iso);
+  const i = full.lastIndexOf(" ");
+  return [full.slice(0, i), full.slice(i + 1)];
+}
 
 export function TaxCalendarView() {
   const [selectedYear, setSelectedYear] = useState<string>("2026");
@@ -60,242 +72,173 @@ export function TaxCalendarView() {
     return deadlines.find((d) => daysUntil(d.date, today) >= 0);
   }, [deadlines, today]);
 
+  const remaining = (days: number) => (days === 0 ? "Bugün son gün" : `${days} gün kaldı`);
+  const nextDays = nextDeadline ? daysUntil(nextDeadline.date, today) : 0;
+
   return (
     <div className="space-y-6">
-      {/* Başlık ve Filtreler */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <PageHeader
-          title="Vergi Takvimi"
-          description="Şahıs işletmeleri için yasal beyanname ve vergi ödeme günleri (VUK 18 tatil kaydırmaları dahil)."
-        />
+      <PageHeader
+        title="Vergi Takvimi"
+        description="Şahıs işletmeleri için yasal beyanname ve ödeme son günleri (VUK 18 tatil kaydırmaları dahil)."
+      />
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Select className="w-32" placeholder="Yıl" aria-label="Yıl" value={selectedYear} onChange={(key) => setSelectedYear(String(key))}>
-            <Select.Trigger>
-              <Select.Value />
-              <Select.Indicator />
-            </Select.Trigger>
-            <Select.Popover>
-              <ListBox>
-                <ListBox.Item id="2026">
-                  2026 Yılı
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
-                <ListBox.Item id="2027">
-                  2027 Yılı
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
-              </ListBox>
+      {/* Filtreler */}
+      <div className="flex flex-wrap items-center gap-3">
+        <Select className="w-36" aria-label="Yıl" value={selectedYear} onChange={(key) => setSelectedYear(String(key))}>
+          <Select.Trigger>
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              <ListBox.Item id="2026">
+                2026
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+              <ListBox.Item id="2027">
+                2027
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+            </ListBox>
           </Select.Popover>
-          </Select>
+        </Select>
 
-          <Select className="w-44" placeholder="Tür Filtresi" aria-label="Tür Filtresi" value={kindFilter} onChange={(key) => setKindFilter(String(key))}>
-            <Select.Trigger>
-              <Select.Value />
-              <Select.Indicator />
-            </Select.Trigger>
-            <Select.Popover>
-              <ListBox>
-                <ListBox.Item id="all">
-                  Tüm Yükümlülükler
+        <Select className="w-56" aria-label="Yükümlülük türü" value={kindFilter} onChange={(key) => setKindFilter(String(key))}>
+          <Select.Trigger>
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              {KIND_OPTIONS.map((o) => (
+                <ListBox.Item key={o.id} id={o.id}>
+                  {o.label}
                   <ListBox.ItemIndicator />
                 </ListBox.Item>
-                <ListBox.Item id="kdv">
-                  KDV Beyannamesi
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
-                <ListBox.Item id="gecici">
-                  Geçici Vergi
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
-                <ListBox.Item id="yillik">
-                  Yıllık Gelir Vergisi
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
-                <ListBox.Item id="muhtasar">
-                  Muhtasar (Stopaj)
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
-                <ListBox.Item id="babs">
-                  Ba-Bs Formu
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
-              </ListBox>
+              ))}
+            </ListBox>
           </Select.Popover>
-          </Select>
+        </Select>
 
-          <div className="flex h-8 items-center gap-2 rounded-lg border border-border bg-surface px-2.5 text-sm shadow-2xs">
-            <Checkbox variant="secondary" isSelected={showPast} onChange={setShowPast}>
-              <Checkbox.Content>
-                <Checkbox.Control>
-                  <Checkbox.Indicator />
-                </Checkbox.Control>
-                <Label className="cursor-pointer text-xs font-medium text-foreground">Geçmiş satırları göster</Label>
-              </Checkbox.Content>
-            </Checkbox>
-            {pastCount > 0 && (
-              <Chip size="sm" variant="soft">
-                {pastCount}
-              </Chip>
-            )}
-          </div>
-        </div>
+        <Switch isSelected={showPast} onChange={setShowPast} className="ms-1">
+          <Switch.Content>
+            <Switch.Control>
+              <Switch.Thumb />
+            </Switch.Control>
+            <span className="whitespace-nowrap text-sm">Geçmişi göster{pastCount > 0 ? ` (${pastCount})` : ""}</span>
+          </Switch.Content>
+        </Switch>
       </div>
 
-      {/* Yaklaşan İlk Beyanname Kartı */}
+      {/* Sıradaki yükümlülük */}
       {nextDeadline && (
         <Card>
-          <Card.Header>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase text-accent">
-              <Clock className="size-4" />
-              Sıradaki En Yakın Yükümlülük
+          <Card.Header className="flex-row flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-col gap-1">
+              <span className="flex items-center gap-1.5 text-xs font-medium text-muted">
+                <Clock className="size-3.5" />
+                Sıradaki yükümlülük
+              </span>
+              <h2 className="text-lg font-semibold">{nextDeadline.title}</h2>
+              <Card.Description>
+                {nextDeadline.period} · Son gün{" "}
+                <span className="font-medium text-foreground">{formatTrDate(nextDeadline.date)}</span>
+              </Card.Description>
             </div>
-            <Card.Title className="text-xl">
-              {nextDeadline.title} ({nextDeadline.period})
-            </Card.Title>
-            <Card.Description>
-              Son Gün: <span className="font-semibold text-foreground">{formatTrDate(nextDeadline.date)}</span>
-              {nextDeadline.legalDate !== nextDeadline.date && (
-                <span className="ml-1 text-muted">
-                  (Yasal son gün {formatTrDate(nextDeadline.legalDate)}, tatil nedeniyle kaydırıldı)
-                </span>
-              )}
-            </Card.Description>
+            <Chip size="lg" color={nextDays <= 5 ? "danger" : "accent"} variant="soft" className="shrink-0 tabular-nums">
+              {remaining(nextDays)}
+            </Chip>
           </Card.Header>
-          <Card.Content>
-            <div className="flex flex-wrap items-center gap-2">
-              <Chip size="sm" variant="soft" className="tabular-nums">
-                {daysUntil(nextDeadline.date, today) === 0
-                  ? "Bugün son gün!"
-                  : `${daysUntil(nextDeadline.date, today)} gün kaldı`}
-              </Chip>
-              {nextDeadline.notes.map((note, idx) => (
-                <span key={idx} className="text-xs text-muted">
-                  • {note}
-                </span>
-              ))}
-            </div>
-          </Card.Content>
+          {nextDeadline.notes.length > 0 && (
+            <Card.Content>
+              <ul className="flex flex-col gap-1 text-sm text-muted">
+                {nextDeadline.notes.map((note, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <Info className="mt-0.5 size-3.5 shrink-0" />
+                    {note}
+                  </li>
+                ))}
+              </ul>
+            </Card.Content>
+          )}
         </Card>
       )}
 
-      {/* Yasal Süreler Tablosu */}
+      {/* Yasal süreler tablosu */}
       <Table>
         <Table.ScrollContainer>
-          <Table.Content aria-label="Vergi takvimi" className="min-w-[620px]">
+          <Table.Content aria-label="Vergi takvimi" className="min-w-[1000px]">
             <Table.Header>
-              <Table.Column isRowHeader className="w-40">Son Gün</Table.Column>
-              <Table.Column>Yükümlülük</Table.Column>
-              <Table.Column className="w-44">Dönem</Table.Column>
-              <Table.Column className="w-32">Kalan Süre</Table.Column>
-              <Table.Column>Açıklama / Notlar</Table.Column>
+              <Table.Column className="w-40">Son gün</Table.Column>
+              <Table.Column isRowHeader className="w-80">Yükümlülük</Table.Column>
+              <Table.Column className="w-52">Dönem</Table.Column>
+              <Table.Column className="w-36">Kalan süre</Table.Column>
+              <Table.Column>Not</Table.Column>
             </Table.Header>
-            <Table.Body>
-              {filteredDeadlines.length === 0 ? (
-                <Table.Row>
-                  <Table.Cell colSpan={5} className="text-center text-muted">
-                    <div className="flex flex-col items-center justify-center gap-1.5 py-6">
-                      <Clock className="size-6 text-muted/50" />
-                      <p className="font-medium text-foreground">Görüntülenecek yaklaşan vergi yükümlülüğü bulunamadı.</p>
-                      {pastCount > 0 && !showPast ? (
-                        <p className="text-xs text-muted">
-                          Seçilen dönemde {pastCount} adet tamamlanmış yükümlülük var. Görmek için yukarıdaki &quot;Geçmiş satırları göster&quot; kutusunu işaretleyebilirsiniz.
-                        </p>
-                      ) : (
-                        <p className="text-xs text-muted">
-                          Farklı bir yıl veya tür filtresi seçebilirsiniz.
-                        </p>
-                      )}
-                    </div>
-                  </Table.Cell>
-                </Table.Row>
-              ) : (
-                filteredDeadlines.map((item, idx) => {
-                  const days = daysUntil(item.date, today);
-                  const isPast = days < 0;
-                  const isToday = days === 0;
-                  const isUrgent = days > 0 && days <= 5;
-                  const isShifted = item.legalDate !== item.date;
-
-                  return (
-                    <Table.Row
-                      key={idx} id={idx}
-                      className={isPast ? "opacity-60" : isUrgent ? "bg-amber-500/5 font-medium" : undefined}
-                    >
-                      <Table.Cell className="font-semibold tabular-nums text-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="size-3.5 text-muted" />
-                          {formatTrDate(item.date)}
-                        </div>
-                        {isShifted && (
-                          <div className="text-[10px] text-muted">
-                            Yasal: {formatTrDate(item.legalDate)}
-                          </div>
-                        )}
-                      </Table.Cell>
-
-                      <Table.Cell>
-                        <div className="font-medium text-foreground">{item.title}</div>
-                        <div className="text-xs text-muted">{TAX_KIND_LABELS[item.kind]}</div>
-                      </Table.Cell>
-
-                      <Table.Cell className="text-xs text-muted">{item.period}</Table.Cell>
-
-                      <Table.Cell>
-                        {isPast ? (
-                          <Chip size="sm" variant="secondary">
-                            Tamamlandı
-                          </Chip>
-                        ) : isToday ? (
-                          <Chip size="sm" color="danger" variant="soft">
-                            Bugün!
-                          </Chip>
-                        ) : isUrgent ? (
-                          <Chip size="sm" color="danger" variant="soft">
-                            {days} gün kaldı
-                          </Chip>
-                        ) : (
-                          <Chip size="sm" variant="soft">
-                            {days} gün kaldı
-                          </Chip>
-                        )}
-                      </Table.Cell>
-
-                      <Table.Cell className="text-xs text-muted">
-                        {item.notes.length > 0 ? (
-                          <div className="space-y-0.5">
-                            {item.notes.map((n, i) => (
-                              <div key={i} className="flex items-center gap-1">
-                                <Info className="size-3 shrink-0 text-muted" />
-                                <span>{n}</span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          "—"
-                        )}
-                      </Table.Cell>
-                    </Table.Row>
-                  );
-                })
+            <Table.Body
+              renderEmptyState={() => (
+                <div className="flex flex-col items-center gap-1.5 py-8 text-center">
+                  <Clock className="size-6 text-muted" />
+                  <p className="text-sm font-medium">Görüntülenecek yükümlülük yok.</p>
+                  <p className="text-sm text-muted">
+                    {pastCount > 0 && !showPast
+                      ? `Bu yılda ${pastCount} tamamlanmış yükümlülük var; görmek için "Geçmişi göster"i açın.`
+                      : "Farklı bir yıl veya tür seçebilirsiniz."}
+                  </p>
+                </div>
               )}
+            >
+              {filteredDeadlines.map((item, idx) => {
+                const days = daysUntil(item.date, today);
+                const [datePart, weekday] = splitTrDate(item.date);
+                return (
+                  <Table.Row key={idx} id={idx}>
+                    <Table.Cell>
+                      <div className="whitespace-nowrap text-sm font-medium tabular-nums">{datePart}</div>
+                      <div className="text-xs text-muted">{weekday}</div>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <div className="text-sm font-medium">{item.title}</div>
+                      <div className="text-xs text-muted">{TAX_KIND_LABELS[item.kind]}</div>
+                    </Table.Cell>
+                    <Table.Cell className="whitespace-nowrap text-sm text-muted">{item.period}</Table.Cell>
+                    <Table.Cell>
+                      {days < 0 ? (
+                        <Chip size="sm" color="success" variant="soft">Tamamlandı</Chip>
+                      ) : (
+                        <Chip
+                          size="sm"
+                          color={days <= 5 ? "danger" : days <= 15 ? "warning" : "default"}
+                          variant={days <= 15 ? "soft" : "secondary"}
+                          className="whitespace-nowrap tabular-nums"
+                        >
+                          {remaining(days)}
+                        </Chip>
+                      )}
+                    </Table.Cell>
+                    <Table.Cell className="text-xs text-muted">
+                      {item.notes.length > 0 ? item.notes.join(" ") : "—"}
+                    </Table.Cell>
+                  </Table.Row>
+                );
+              })}
             </Table.Body>
           </Table.Content>
         </Table.ScrollContainer>
       </Table>
 
-      {/* Yasal Bilgilendirme Kartı */}
+      {/* Yasal bilgilendirme */}
       <Card>
-        <Card.Content className="space-y-2 text-xs text-muted">
-          <div className="flex items-center gap-1.5 font-medium text-foreground">
-            <Info className="size-4 text-accent" />
-            Yasal Dayanak ve Süre Uzatımları
-          </div>
-          <p>
-            VUK 18. maddesi uyarınca, resmî tatile veya hafta sonuna denk gelen son günler otomatik olarak izleyen ilk iş gününe kaydırılmıştır.
-            Gelir İdaresi Başkanlığı&apos;nın (GİB) sonradan ilan edebileceği münferit süre uzatımları resmi duyurulardan teyit edilmelidir.
-          </p>
-        </Card.Content>
+        <Card.Header>
+          <Card.Title className="flex items-center gap-1.5">
+            <Info className="size-4 text-muted" />
+            Yasal dayanak ve süre uzatımları
+          </Card.Title>
+          <Card.Description>
+            VUK 18. madde uyarınca resmî tatile veya hafta sonuna denk gelen son günler izleyen ilk iş gününe kaydırılmıştır.
+            GİB&apos;in sonradan ilan edebileceği süre uzatımları resmî duyurulardan teyit edilmelidir.
+          </Card.Description>
+        </Card.Header>
       </Card>
     </div>
   );

@@ -131,7 +131,7 @@ export function CategoriesView() {
             </Card.Header>
             <Card.Content>
               <form onSubmit={handleAddCategory} className="flex gap-2">
-                <Input fullWidth
+                <Input fullWidth variant="secondary"
                   placeholder="Kategori adı (Örn: Dijital Reklam, Ofis İkramı, Danışmanlık)"
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
@@ -176,7 +176,7 @@ export function CategoriesView() {
                         <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
                           <Tag className="size-4 text-accent shrink-0" />
                           <span className="font-semibold text-foreground text-sm truncate">{categoryLabel(cat)}</span>
-                          <Chip size="sm" variant="soft" className="shrink-0">
+                          <Chip size="sm" variant="secondary" className="shrink-0">
                             {count} fiş
                           </Chip>
                         </div>
@@ -255,7 +255,7 @@ export function CategoriesView() {
             <form onSubmit={handleSaveEdit} className="space-y-4 pt-2">
               <div className="space-y-2">
                 <Label htmlFor="edit-name">Yeni Kategori Adı</Label>
-                <Input fullWidth
+                <Input fullWidth variant="secondary"
                   id="edit-name"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}

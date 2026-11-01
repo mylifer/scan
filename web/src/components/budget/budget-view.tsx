@@ -175,7 +175,7 @@ export function BudgetView() {
             </Button>
           ) : (
             <form onSubmit={handleSaveBudget} className="flex items-center gap-2">
-              <Input fullWidth
+              <Input fullWidth variant="secondary"
                 placeholder="Örn: 50.000"
                 className="w-36 tabular-nums"
                 value={budgetValue}
