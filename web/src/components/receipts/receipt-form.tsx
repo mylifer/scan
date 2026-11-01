@@ -205,7 +205,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
       <div className="space-y-6">
         <PageHeader title="Fiş Yükleniyor…" />
         <Card>
-          <Card.Content className="space-y-4 pt-6">
+          <Card.Content className="space-y-4">
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
@@ -278,7 +278,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
           {/* Ana Bilgiler */}
           <Card>
             <Card.Header>
-              <Card.Title className="text-base font-semibold">Temel Bilgiler</Card.Title>
+              <Card.Title>Temel Bilgiler</Card.Title>
               <Card.Description>Firma, tarih ve kategori alanları zorunludur.</Card.Description>
             </Card.Header>
             <Card.Content className="space-y-4">
@@ -286,7 +286,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                 <Label htmlFor="firmaAdi">
                   Firma Adı <span className="text-danger">*</span>
                 </Label>
-                <Input
+                <Input fullWidth
                   id="firmaAdi"
                   placeholder="Örn: Migros, Shell, Metro Grossmarket"
                   value={form.firmaAdi}
@@ -300,7 +300,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                   <Label htmlFor="tarih">
                     Tarih <span className="text-danger">*</span>
                   </Label>
-                  <Input
+                  <Input fullWidth
                     id="tarih"
                     placeholder="GG.AA.YYYY (Örn: 24.10.2026)"
                     value={form.tarih}
@@ -348,10 +348,10 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                 <Label htmlFor="toplamTutar">
                   Toplam Tutar (TL) <span className="text-danger">*</span>
                 </Label>
-                <Input
+                <Input fullWidth
                   id="toplamTutar"
                   placeholder="0,00"
-                  className="font-medium tabular-nums"
+                  className="tabular-nums"
                   value={form.toplamTutar}
                   onChange={(e) => updateField("toplamTutar", e.target.value)}
                   required
@@ -362,9 +362,9 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
 
           {/* KDV Dağılımı */}
           <Card>
-            <Card.Header className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <Card.Header className="flex flex-row items-center justify-between space-y-0">
               <div>
-                <Card.Title className="text-base font-semibold">KDV Dağılımı</Card.Title>
+                <Card.Title>KDV Dağılımı</Card.Title>
                 <Card.Description>Fişteki vergi dilimlerini belirtin.</Card.Description>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
@@ -372,7 +372,6 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-7 text-xs"
                   onPress={() => applyQuickKdv(20)}
                 >
                   %20 KDV
@@ -381,7 +380,6 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-7 text-xs"
                   onPress={() => applyQuickKdv(10)}
                 >
                   %10 KDV
@@ -390,7 +388,6 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-7 text-xs"
                   onPress={() => applyQuickKdv(1)}
                 >
                   %1 KDV
@@ -399,7 +396,6 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-xs text-muted"
                   onPress={() => applyQuickKdv(0)}
                 >
                   Sıfırla
@@ -410,7 +406,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="kdvYuzde1">%1 KDV (TL)</Label>
-                  <Input
+                  <Input fullWidth
                     id="kdvYuzde1"
                     placeholder="0,00"
                     className="tabular-nums"
@@ -420,7 +416,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="kdvYuzde10">%10 KDV (TL)</Label>
-                  <Input
+                  <Input fullWidth
                     id="kdvYuzde10"
                     placeholder="0,00"
                     className="tabular-nums"
@@ -430,7 +426,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="kdvYuzde20">%20 KDV (TL)</Label>
-                  <Input
+                  <Input fullWidth
                     id="kdvYuzde20"
                     placeholder="0,00"
                     className="tabular-nums"
@@ -461,14 +457,14 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
           {/* Ek Bilgiler */}
           <Card>
             <Card.Header>
-              <Card.Title className="text-base font-semibold">Ek Bilgiler</Card.Title>
+              <Card.Title>Ek Bilgiler</Card.Title>
               <Card.Description>Fiş no, vergi kimlik numarası, etiket ve notlar.</Card.Description>
             </Card.Header>
             <Card.Content className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="fisNo">Fiş / Belge No</Label>
-                  <Input
+                  <Input fullWidth
                     id="fisNo"
                     placeholder="Örn: 0042 veya ABC2026..."
                     value={form.fisNo}
@@ -477,7 +473,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="vkn">VKN / TCKN</Label>
-                  <Input
+                  <Input fullWidth
                     id="vkn"
                     placeholder="10 veya 11 haneli numara"
                     value={form.vkn}
@@ -489,7 +485,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
 
               <div className="space-y-2">
                 <Label htmlFor="etiketler">Etiketler</Label>
-                <Input
+                <Input fullWidth
                   id="etiketler"
                   placeholder="Virgülle ayırın: yemek, temsil, yazılım"
                   value={form.etiketler}
@@ -499,7 +495,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
 
               <div className="space-y-2">
                 <Label htmlFor="notlar">Notlar</Label>
-                <TextArea
+                <TextArea fullWidth
                   id="notlar"
                   placeholder="Fişle ilgili ek açıklamalar..."
                   rows={3}
@@ -530,7 +526,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
         <div className="space-y-6">
           <Card>
             <Card.Header>
-              <Card.Title className="text-base font-semibold">Fiş Fotoğrafı</Card.Title>
+              <Card.Title>Fiş Fotoğrafı</Card.Title>
               <Card.Description>
                 {previewUrl || existingImageUrl
                   ? "Fişin taranmış görüntüsü."
@@ -573,7 +569,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                       variant="secondary"
                       size="sm"
                       onPress={() => void scanFile(photoFile)}
-                      className="w-full gap-1.5 text-xs"
+                      className="w-full gap-1.5"
                     >
                       <Sparkles className="size-3.5 text-accent" />
                       Yapay Zeka ile Tekrar Tara
@@ -620,7 +616,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                       Tıklayın veya fotoğraf dosyasını seçin; bilgiler otomatik dolsun
                     </p>
                   </div>
-                  <Chip size="sm" variant="soft" className="text-[10px]">
+                  <Chip size="sm" variant="soft">
                     JPG, PNG, PDF
                   </Chip>
                 </div>

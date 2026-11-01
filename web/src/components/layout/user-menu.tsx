@@ -10,7 +10,7 @@ export function UserMenu() {
   const email = session?.user.email ?? "";
   return (
     <Dropdown>
-      <Button variant="ghost" size="sm" isIconOnly className="rounded-full" aria-label="Kullanıcı menüsü">
+      <Button variant="ghost" size="sm" isIconOnly aria-label="Kullanıcı menüsü">
         <Avatar size="sm" className="size-7">
           <Avatar.Fallback className="text-xs">{(email[0] ?? "?").toUpperCase()}</Avatar.Fallback>
         </Avatar>

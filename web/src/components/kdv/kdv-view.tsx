@@ -175,7 +175,7 @@ export function KdvView() {
       </div>
 
       {!loading && state.key === activeKey && state.qnb ? (
-        <div className="rounded-2xl border border-border/80 dark:border-white/[0.05] bg-surface/75 backdrop-blur-xl px-4 py-3 shadow-[0_2px_16px_rgba(0,0,0,0.03)] text-xs">
+        <Card className="text-xs">
           {state.qnb.durum === "yukleniyor" ? (
             <div className="flex items-start gap-2 text-muted">
               <Loader2 className="size-3.5 mt-px shrink-0 animate-spin" />
@@ -198,7 +198,7 @@ export function KdvView() {
               </span>
             </div>
           )}
-        </div>
+        </Card>
       ) : null}
 
       {/* Ana Net KDV Sonuç Kartı */}
@@ -213,7 +213,7 @@ export function KdvView() {
                 : "border-default"
         }
       >
-        <Card.Header className="pb-3">
+        <Card.Header>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase text-muted">
               <Calculator className="size-4" />
@@ -225,7 +225,7 @@ export function KdvView() {
               </Chip>
             )}
           </div>
-          <Card.Title className="text-3xl font-bold tabular-nums">
+          <Card.Title className="text-3xl tabular-nums">
             {loading ? (
               <Skeleton className="h-9 w-48" />
             ) : kdv ? (
@@ -254,7 +254,7 @@ export function KdvView() {
         <Card>
           <Card.Header>
             <div className="flex items-center justify-between">
-              <Card.Title className="text-base font-semibold">1. Kestiğim Faturalar (Hesaplanan)</Card.Title>
+              <Card.Title>1. Kestiğim Faturalar (Hesaplanan)</Card.Title>
               <TrendingUp className="size-4 text-amber-500" />
             </div>
             <Card.Description>Giden satış faturalarından doğan KDV yükümlülüğü</Card.Description>
@@ -293,7 +293,7 @@ export function KdvView() {
         <Card>
           <Card.Header>
             <div className="flex items-center justify-between">
-              <Card.Title className="text-base font-semibold">2. Düşülebilir KDV (İndirilecek)</Card.Title>
+              <Card.Title>2. Düşülebilir KDV (İndirilecek)</Card.Title>
               <TrendingDown className="size-4 text-emerald-500" />
             </div>
             <Card.Description>Alış faturaları ve taranan POS fişlerinden düşülecek KDV</Card.Description>
@@ -361,8 +361,8 @@ export function KdvView() {
       </div>
 
       {/* Hesaplama Açıklaması */}
-      <Card className="bg-default/30">
-        <Card.Content className="space-y-2 pt-4 text-xs text-muted">
+      <Card>
+        <Card.Content className="space-y-2 text-xs text-muted">
           <div className="flex items-center gap-1.5 font-medium text-foreground">
             <Info className="size-4 text-accent" />
             KDV Hesabı Nasıl Yapılır?

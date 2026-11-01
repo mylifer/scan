@@ -20,7 +20,6 @@ import {
   Plus,
   Receipt,
   ReceiptText,
-  Search,
   Send,
   Trash2,
   X,
@@ -28,7 +27,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { type Selection, AlertDialog, Button, Card, Checkbox, Chip, Dropdown, Header, Input, Label, Skeleton, Table, Tabs, toast } from "@heroui/react";
+import { AlertDialog, Button, Card, Checkbox, Chip, Dropdown, Header, Label, SearchField, type Selection, Skeleton, Table, Tabs, toast, ProgressBar, Tag, TagGroup } from "@heroui/react";
 import { buttonVariants } from "@heroui/styles";
 import { deleteReceipt, listReceipts, loadCustomCategories, markReceiptsSent } from "@/lib/receipts";
 import { exportExcel, exportPackage } from "@/lib/receiptExport";
@@ -181,7 +180,7 @@ export function ReceiptsView() {
         <div className="flex items-center gap-2.5">
           <Link
             href="/fisler/yeni/"
-            className={buttonVariants({ size: "sm", className: "rounded-full bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white shadow-[0_2px_14px_rgba(14,165,233,0.3)] border border-white/20 active:scale-95 transition-all font-semibold px-4 h-9 gap-1.5" })}
+            className={buttonVariants({ size: "sm" })}
           >
             <Plus className="size-4 stroke-[2.5]" />
             <span>Yeni Fiş</span>
@@ -192,14 +191,14 @@ export function ReceiptsView() {
       {/* Apple Native Glass Metrik Kartları (Tahoe Glass) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* Kart 1: Toplam Harcama */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-surface/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)] hover:shadow-md transition-all group">
+        <Card className="relative overflow-hidden group">
           <div className="flex items-center justify-between mb-3">
             <div className="size-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-sky-400 text-white flex items-center justify-center shadow-sm shadow-sky-500/25">
               <CreditCard className="size-4.5 stroke-[2]" />
             </div>
-            <span className="text-[11px] font-semibold tabular-nums px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/15">
+            <Chip size="sm" variant="soft" color="accent" className="tabular-nums">
               {summary.fisSayisi} Fiş
-            </span>
+            </Chip>
           </div>
           <div className="text-xs font-medium text-muted">Toplam Harcama</div>
           <div className="text-2xl font-bold tracking-tight text-foreground tabular-nums mt-0.5">
@@ -209,17 +208,17 @@ export function ReceiptsView() {
             <span className="size-1.5 rounded-full bg-sky-500"></span>
             <span>Kayıtlı brüt gider toplamı</span>
           </div>
-        </div>
+        </Card>
 
         {/* Kart 2: İndirilebilir KDV */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-surface/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)] hover:shadow-md transition-all group">
+        <Card className="relative overflow-hidden group">
           <div className="flex items-center justify-between mb-3">
             <div className="size-9 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white flex items-center justify-center shadow-sm shadow-emerald-500/25">
               <ReceiptText className="size-4.5 stroke-[2]" />
             </div>
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/15">
+            <Chip size="sm" variant="soft" color="success">
               KDV İndirimi
-            </span>
+            </Chip>
           </div>
           <div className="text-xs font-medium text-muted">Düşülebilir Toplam KDV</div>
           <div className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums mt-0.5">
@@ -228,44 +227,48 @@ export function ReceiptsView() {
           <div className="text-[11px] text-muted mt-1 tabular-nums truncate">
             %1: {formatTL(summary.kdv1)} · %10: {formatTL(summary.kdv10)} · %20: {formatTL(summary.kdv20)}
           </div>
-        </div>
+        </Card>
 
         {/* Kart 3: Muhasebeye Teslim Oranı */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-surface/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)] hover:shadow-md transition-all group">
+        <Card className="relative overflow-hidden group">
           <div className="flex items-center justify-between mb-3">
             <div className="size-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center shadow-sm shadow-indigo-500/25">
               <CheckCircle2 className="size-4.5 stroke-[2]" />
             </div>
-            <span className="text-[11px] font-semibold tabular-nums px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/15">
+            <Chip size="sm" variant="soft" color="accent" className="tabular-nums">
               %{summary.fisSayisi > 0 ? Math.round((sentCount / summary.fisSayisi) * 100) : 0} Oran
-            </span>
+            </Chip>
           </div>
           <div className="text-xs font-medium text-muted">Muhasebeye Teslim Edilen</div>
           <div className="text-2xl font-bold tracking-tight text-foreground tabular-nums mt-0.5">
             {loading ? <Skeleton className="h-7 w-24 my-0.5" /> : `${sentCount} / ${summary.fisSayisi}`}
           </div>
-          <div className="w-full bg-default/80 h-1.5 rounded-full mt-2 overflow-hidden">
-            <div
-              className="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full rounded-full transition-all duration-300"
-              style={{ width: `${summary.fisSayisi > 0 ? (sentCount / summary.fisSayisi) * 100 : 0}%` }}
-            />
-          </div>
-        </div>
+          <ProgressBar
+            aria-label="Muhasebeye teslim oranı"
+            size="sm"
+            className="mt-2"
+            value={summary.fisSayisi > 0 ? (sentCount / summary.fisSayisi) * 100 : 0}
+          >
+            <ProgressBar.Track>
+              <ProgressBar.Fill />
+            </ProgressBar.Track>
+          </ProgressBar>
+        </Card>
 
         {/* Kart 4: İşlem Bekleyen Fişler */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-surface/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)] hover:shadow-md transition-all group">
+        <Card className="relative overflow-hidden group">
           <div className="flex items-center justify-between mb-3">
             <div className="size-9 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-400 text-white flex items-center justify-center shadow-sm shadow-amber-500/25">
               <Clock className="size-4.5 stroke-[2]" />
             </div>
             {pendingCount > 0 ? (
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/15">
+              <Chip size="sm" variant="soft" color="warning">
                 İşlem Bekliyor
-              </span>
+              </Chip>
             ) : (
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/15">
+              <Chip size="sm" variant="soft" color="success">
                 Eksik Yok
-              </span>
+              </Chip>
             )}
           </div>
           <div className="text-xs font-medium text-muted">Teslim Bekleyen Fişler</div>
@@ -275,39 +278,30 @@ export function ReceiptsView() {
           <div className="text-[11px] text-muted mt-1">
             {pendingCount > 0 ? "Gönderilince önceki ayın KDV'sinden düşer" : "Tüm fişler muhasebeleştirildi"}
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Apple Spotlight Arama, Segmented Switch & Filtre Araç Çubuğu */}
-      <div className="flex flex-wrap items-center gap-2.5 rounded-2xl bg-surface/60 backdrop-blur-xl border border-border/70 p-2 shadow-xs">
+      <Card className="flex flex-row flex-wrap items-center gap-2.5">
         {/* Spotlight Tarzı Arama Alanı */}
-        <div className="relative flex-1 min-w-[220px] max-w-sm">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
-          <Input
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
+        <SearchField
+          aria-label="Fişlerde ara"
+          className="flex-1 min-w-[220px] max-w-sm"
+          value={query}
+          onChange={(v) => {
+              setQuery(v);
               resetView();
             }}
-            placeholder="Firma, not, etiket, tutar ara…"
-            className="pl-9 h-9 rounded-xl bg-background/80 border-border/60 focus:bg-background text-xs"
-            aria-label="Fişlerde ara"
-          />
-          {query && (
-            <button
-              onClick={() => {
-                setQuery("");
-                resetView();
-              }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-foreground p-0.5 rounded-full"
-            >
-              <X className="size-3.5" />
-            </button>
-          )}
-        </div>
+        >
+          <SearchField.Group>
+            <SearchField.SearchIcon />
+            <SearchField.Input placeholder="Firma, not, etiket, tutar ara…" />
+            <SearchField.ClearButton />
+          </SearchField.Group>
+        </SearchField>
 
         {/* Dönem seçici (HeroUI Tabs) */}
-        <Tabs
+        <Tabs className="w-fit shrink-0"
           selectedKey={period.mode}
           onSelectionChange={(key) => {
             setPeriod((p) => switchMode(p, key as Period["mode"]));
@@ -316,15 +310,15 @@ export function ReceiptsView() {
         >
           <Tabs.ListContainer>
             <Tabs.List aria-label="Dönem">
-                <Tabs.Tab id="all" className="h-7 px-3 text-xs font-medium whitespace-nowrap">
+                <Tabs.Tab id="all" className="whitespace-nowrap">
                   Tüm Zamanlar
                   <Tabs.Indicator />
                 </Tabs.Tab>
-                <Tabs.Tab id="month" className="h-7 px-3 text-xs font-medium whitespace-nowrap">
+                <Tabs.Tab id="month" className="whitespace-nowrap">
                   Aylık
                   <Tabs.Indicator />
                 </Tabs.Tab>
-                <Tabs.Tab id="year" className="h-7 px-3 text-xs font-medium whitespace-nowrap">
+                <Tabs.Tab id="year" className="whitespace-nowrap">
                   Yıllık
                   <Tabs.Indicator />
                 </Tabs.Tab>
@@ -339,7 +333,7 @@ export function ReceiptsView() {
               type="button"
               variant="ghost"
               size="sm" isIconOnly
-              className="size-6 rounded-lg"
+             
               onPress={() => {
                 setPeriod((p) => stepPeriod(p, -1));
                 resetView();
@@ -355,7 +349,7 @@ export function ReceiptsView() {
               type="button"
               variant="ghost"
               size="sm" isIconOnly
-              className="size-6 rounded-lg"
+             
               isDisabled={period.offset >= 0}
               onPress={() => {
                 setPeriod((p) => stepPeriod(p, 1));
@@ -374,18 +368,17 @@ export function ReceiptsView() {
               variant="outline"
               size="sm"
               className={cn(
-                "h-8 rounded-xl border-border/70 bg-background/80 text-xs gap-1.5 transition-colors",
-                catFilter.size > 0 && "border-accent/50 text-foreground bg-default/40 font-semibold",
+                "gap-1.5",
               )}
             >
               <Filter className="size-3.5" /> Kategori
               {catFilter.size > 0 && (
-                <Chip size="sm" variant="soft" className="h-5 px-1.5 text-[10px] rounded-md tabular-nums font-bold">
+                <Chip size="sm" variant="soft" className="tabular-nums">
                   {catFilter.size}
                 </Chip>
               )}
             </Button>
-          <Dropdown.Popover placement="bottom start" className="max-h-80 w-60 overflow-y-auto rounded-2xl">
+          <Dropdown.Popover placement="bottom start" className="max-h-80 w-60 overflow-y-auto">
             <Dropdown.Menu
               aria-label="Kategoriye göre filtrele"
               onAction={(key) => {
@@ -407,7 +400,7 @@ export function ReceiptsView() {
                 {categories.map((k) => {
                   const v = getCategoryVisuals(k);
                   return (
-                    <Dropdown.Item key={k} id={k} textValue={categoryLabel(k)} className="text-xs py-1.5 rounded-lg">
+                    <Dropdown.Item key={k} id={k} textValue={categoryLabel(k)}>
                       <span className={cn("size-2 rounded-full shrink-0", v.dotColor)} />
                       <span className="text-[10px] font-bold text-muted w-4">{v.initial}</span>
                       <Label className="text-xs">{categoryLabel(k)}</Label>
@@ -418,7 +411,7 @@ export function ReceiptsView() {
               </Dropdown.Section>
               {catFilter.size > 0 ? (
                 <Dropdown.Section>
-                  <Dropdown.Item id="__temizle" textValue="Filtreyi temizle" variant="danger" className="text-xs rounded-lg">
+                  <Dropdown.Item id="__temizle" textValue="Filtreyi temizle" variant="danger">
                     <X className="size-3.5" />
                     <Label className="text-xs">Filtreyi temizle</Label>
                   </Dropdown.Item>
@@ -435,7 +428,7 @@ export function ReceiptsView() {
             size="sm"
             onPress={onExcel}
             isDisabled={!exportRows.length || !!busy}
-            className="h-8 rounded-xl border-border/70 bg-background/80 text-xs gap-1.5"
+            className="gap-1.5"
           >
             <FileSpreadsheet className="size-3.5 text-emerald-600 dark:text-emerald-400" /> Excel
           </Button>
@@ -444,38 +437,33 @@ export function ReceiptsView() {
             size="sm"
             onPress={onPackage}
             isDisabled={!exportRows.length || !!busy}
-            className="h-8 rounded-xl border-border/70 bg-background/80 text-xs gap-1.5"
+            className="gap-1.5"
           >
             <Package className="size-3.5 text-sky-600 dark:text-sky-400" /> Paket (ZIP)
           </Button>
         </div>
-      </div>
+      </Card>
 
-      {/* Aktif Kategori Filtresi Chipleri (Option 02 Minimalist Monogram & Status Dot) */}
+      {/* Aktif kategori filtreleri (HeroUI TagGroup, X ile kaldırılır) */}
       {catFilter.size > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-surface/50 border border-border/70 px-3.5 py-2 text-xs shadow-2xs animate-in fade-in-50 duration-150">
-          <span className="text-[11px] text-muted font-semibold">Filtrelenen Kategoriler:</span>
-          {Array.from(catFilter).map((k) => (
-            <button
-              key={k}
-              type="button"
-              onClick={() => {
-                setCatFilter((s) => {
-                  const next = new Set(s);
-                  next.delete(k);
-                  return next;
-                });
-                resetView();
-              }}
-              className="group inline-flex items-center gap-1 hover:opacity-85 transition-opacity cursor-pointer"
-              title={`${categoryLabel(k)} filtresini kaldır`}
-            >
-              <CategoryBadge category={k} size="sm" />
-              <span className="size-4 rounded-full bg-default flex items-center justify-center text-muted group-hover:bg-danger group-hover:text-destructive-foreground transition-colors">
-                <X className="size-2.5" />
-              </span>
-            </button>
-          ))}
+        <Card className="flex flex-row flex-wrap items-center gap-2">
+          <TagGroup
+            aria-label="Filtrelenen kategoriler"
+            onRemove={(keys) => {
+              setCatFilter((s) => new Set([...s].filter((k) => !keys.has(k))));
+              resetView();
+            }}
+          >
+            <Label>Filtrelenen Kategoriler</Label>
+            <TagGroup.List>
+              {Array.from(catFilter).map((k) => (
+                <Tag key={k} id={k} textValue={categoryLabel(k)}>
+                  <span className={cn("size-2 rounded-full shrink-0", getCategoryVisuals(k).dotColor)} />
+                  {categoryLabel(k)}
+                </Tag>
+              ))}
+            </TagGroup.List>
+          </TagGroup>
           <Button
             type="button"
             variant="ghost"
@@ -484,217 +472,212 @@ export function ReceiptsView() {
               setCatFilter(new Set());
               resetView();
             }}
-            className="h-6 text-[11px] text-muted hover:text-danger px-2 ml-auto"
+            className="ml-auto"
           >
             Tümünü Kaldır
           </Button>
-        </div>
+        </Card>
       )}
 
       {/* Çoklu Seçim Eylem Şeridi */}
       {selectedRows.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-sky-500/20 bg-sky-500/5 backdrop-blur-md px-4 py-2.5 text-sm shadow-xs animate-in fade-in-50 duration-150">
+        <Card className="flex flex-row flex-wrap items-center gap-2 text-sm animate-in fade-in-50">
           <span className="font-semibold text-foreground">{selectedRows.length} fiş seçildi</span>
           <span className="text-muted tabular-nums">· {formatTL(summarizeReceipts(selectedRows).toplamGider)}</span>
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <Button size="sm" variant="outline" className="h-8 rounded-xl text-xs gap-1.5" onPress={() => onMarkSent(true)} isDisabled={!!busy}>
+            <Button size="sm" variant="outline" className="gap-1.5" onPress={() => onMarkSent(true)} isDisabled={!!busy}>
               <Send className="size-3.5" /> Gönderildi işaretle
             </Button>
-            <Button size="sm" variant="outline" className="h-8 rounded-xl text-xs gap-1.5" onPress={() => onMarkSent(false)} isDisabled={!!busy}>
+            <Button size="sm" variant="outline" className="gap-1.5" onPress={() => onMarkSent(false)} isDisabled={!!busy}>
               <X className="size-3.5" /> İşareti kaldır
             </Button>
-            <Button size="sm" variant="danger-soft" className="h-8 rounded-xl text-xs gap-1.5" onPress={() => setConfirmDelete(true)} isDisabled={!!busy}>
+            <Button size="sm" variant="danger-soft" className="gap-1.5" onPress={() => setConfirmDelete(true)} isDisabled={!!busy}>
               <Trash2 className="size-3.5" /> Sil
             </Button>
-            <Button size="sm" variant="ghost" className="h-8 rounded-xl text-xs" onPress={() => setSelected(new Set())}>
+            <Button size="sm" variant="ghost" onPress={() => setSelected(new Set())}>
               Seçimi temizle
             </Button>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Apple Glass Fiş Tablosu */}
-      <Card className="py-0 rounded-2xl overflow-hidden border-border/80 dark:border-white/[0.05] bg-surface/75 backdrop-blur-xl shadow-xs">
-        <Card.Content className="px-0">
-          <Table variant="secondary">
-            <Table.ScrollContainer>
-              <Table.Content aria-label="Fişler" className="min-w-[700px]"
-                selectionMode="multiple"
-                  selectedKeys={selected}
-                  onSelectionChange={onTableSelection}
-                  disabledKeys={loading ? Array.from({ length: 6 }, (_, i) => `iskelet-${i}`) : ["bos"]}
-                  sortDescriptor={{ column: sort.column, direction: sort.dir === "asc" ? "ascending" : "descending" }}
-                onSortChange={(d) => toggleSort(d.column as SortColumn)}
-              >
-                <Table.Header className="bg-default/30">
-                  <Table.Column className="w-10 pl-4">
-                    <Checkbox
-                      slot="selection"
-                      aria-label="Tümünü seç"
-                      variant="secondary"
+      <Table>
+        <Table.ScrollContainer>
+          <Table.Content aria-label="Fişler" className="min-w-[700px]"
+            selectionMode="multiple"
+              selectedKeys={selected}
+              onSelectionChange={onTableSelection}
+              disabledKeys={loading ? Array.from({ length: 6 }, (_, i) => `iskelet-${i}`) : ["bos"]}
+              sortDescriptor={{ column: sort.column, direction: sort.dir === "asc" ? "ascending" : "descending" }}
+            onSortChange={(d) => toggleSort(d.column as SortColumn)}
+          >
+            <Table.Header>
+              <Table.Column className="w-10">
+                <Checkbox
+                  slot="selection"
+                  aria-label="Tümünü seç"
+                  variant="secondary"
+                >
+                  <Checkbox.Content>
+                    <Checkbox.Control>
+                      <Checkbox.Indicator />
+                    </Checkbox.Control>
+                  </Checkbox.Content>
+                </Checkbox>
+              </Table.Column>
+              <SortHead label="Tarih" column="tarih" />
+              <SortHead label="Firma & Fiş No" column="firma_adi" isRowHeader />
+              <SortHead label="Kategori" column="kategori" />
+              <SortHead label="KDV Tutarı" column="toplam_kdv" align="right" />
+              <SortHead label="Toplam Tutar" column="toplam_tutar" align="right" />
+              <Table.Column className="w-28 text-right">Durum</Table.Column>
+            </Table.Header>
+            <Table.Body>
+              {loading &&
+                Array.from({ length: 6 }, (_, i) => (
+                  <Table.Row key={i} id={`iskelet-${i}`}>
+                    <Table.Cell colSpan={7}>
+                      <Skeleton className="h-6 w-full rounded-xl" />
+                    </Table.Cell>
+                  </Table.Row>
+                ))}
+
+              {!loading &&
+                visible.map((r) => {
+                  const href = `/fisler/detay/?id=${encodeURIComponent(r.id)}`;
+                  const catVisual = getCategoryVisuals(r.kategori);
+                  const isDelivered = isSent(r);
+
+                  return (
+                    <Table.Row
+                      key={r.id}
+                      id={r.id}
+                      onAction={() => router.push(href)}
                     >
-                      <Checkbox.Content>
-                        <Checkbox.Control>
-                          <Checkbox.Indicator />
-                        </Checkbox.Control>
-                      </Checkbox.Content>
-                    </Checkbox>
-                  </Table.Column>
-                  <SortHead label="Tarih" column="tarih" />
-                  <SortHead label="Firma & Fiş No" column="firma_adi" isRowHeader />
-                  <SortHead label="Kategori" column="kategori" />
-                  <SortHead label="KDV Tutarı" column="toplam_kdv" align="right" />
-                  <SortHead label="Toplam Tutar" column="toplam_tutar" align="right" />
-                  <Table.Column className="w-28 pr-4 text-right">Durum</Table.Column>
-                </Table.Header>
-                <Table.Body>
-                  {loading &&
-                    Array.from({ length: 6 }, (_, i) => (
-                      <Table.Row key={i} id={`iskelet-${i}`} className="border-b border-border/40 dark:border-white/[0.02]">
-                        <Table.Cell colSpan={7} className="px-4 py-3.5">
-                          <Skeleton className="h-6 w-full rounded-xl" />
-                        </Table.Cell>
-                      </Table.Row>
-                    ))}
-
-                  {!loading &&
-                    visible.map((r) => {
-                      const href = `/fisler/detay/?id=${encodeURIComponent(r.id)}`;
-                      const catVisual = getCategoryVisuals(r.kategori);
-                      const isDelivered = isSent(r);
-
-                      return (
-                        <Table.Row
-                          key={r.id}
-                          id={r.id}
-                          className="cursor-pointer border-b border-border/40 dark:border-white/[0.02] hover:bg-default/30 transition-colors duration-150 group"
-                          onAction={() => router.push(href)}
+                      <Table.Cell>
+                        <Checkbox
+                          slot="selection"
+                          aria-label={`${r.firma_adi} seç`}
+                          variant="secondary"
                         >
-                          <Table.Cell className="pl-4 py-3">
-                            <Checkbox
-                              slot="selection"
-                              aria-label={`${r.firma_adi} seç`}
-                              variant="secondary"
-                            >
-                              <Checkbox.Content>
-                                <Checkbox.Control>
-                                  <Checkbox.Indicator />
-                                </Checkbox.Control>
-                              </Checkbox.Content>
-                            </Checkbox>
-                          </Table.Cell>
+                          <Checkbox.Content>
+                            <Checkbox.Control>
+                              <Checkbox.Indicator />
+                            </Checkbox.Control>
+                          </Checkbox.Content>
+                        </Checkbox>
+                      </Table.Cell>
 
-                          {/* Tarih */}
-                          <Table.Cell className="tabular-nums text-xs text-muted whitespace-nowrap">
-                            {isoToTrDate(r.tarih)}
-                          </Table.Cell>
+                      {/* Tarih */}
+                      <Table.Cell className="tabular-nums text-xs text-muted whitespace-nowrap">
+                        {isoToTrDate(r.tarih)}
+                      </Table.Cell>
 
-                          {/* Firma, Squircle Monogram & Fiş No */}
-                          <Table.Cell className="max-w-72">
-                            <Link
-                              href={href}
-                              className="flex items-center gap-2.5 truncate font-medium group-hover:text-accent transition-colors"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <div
-                                className={cn(
-                                  "size-8 rounded-xl flex items-center justify-center text-xs font-bold shadow-xs shrink-0 select-none",
-                                  catVisual.squircle,
-                                )}
-                              >
-                                <span>
-                                  {r.firma_adi ? r.firma_adi.slice(0, 2).toLocaleUpperCase("tr-TR") : catVisual.initial}
-                                </span>
-                              </div>
-                              <div className="truncate">
-                                <div className="truncate font-semibold text-foreground text-xs md:text-sm">
-                                  {r.firma_adi || "İsimsiz Firma"}
-                                </div>
-                                {r.fis_no && (
-                                  <div className="text-[11px] text-muted tabular-nums">Fiş: #{r.fis_no}</div>
-                                )}
-                              </div>
-                              {r.image_path && (
-                                <ImageIcon className="size-3.5 shrink-0 text-muted/70" aria-label="Fotoğraflı" />
-                              )}
-                            </Link>
-                          </Table.Cell>
-
-                          {/* Kategori Minimalist Monogram & Status Dot Rozeti (Option 02) */}
-                          <Table.Cell>
-                            <CategoryBadge category={r.kategori} />
-                          </Table.Cell>
-
-                          {/* KDV Tutarı */}
-                          <Table.Cell className="text-right text-xs text-muted tabular-nums">
-                            {formatTL(r.toplam_kdv)}
-                          </Table.Cell>
-
-                          {/* Toplam Tutar */}
-                          <Table.Cell className="text-right text-sm font-bold tabular-nums text-foreground">
-                            {formatTL(r.toplam_tutar)}
-                          </Table.Cell>
-
-                          {/* Muhasebe Durumu */}
-                          <Table.Cell className="pr-4 text-right">
-                            {isDelivered ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                <Check className="size-3 stroke-[2.5]" /> Gönderildi
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                <span className="size-1.5 rounded-full bg-amber-500"></span> Bekliyor
-                              </span>
+                      {/* Firma, Squircle Monogram & Fiş No */}
+                      <Table.Cell className="max-w-72">
+                        <Link
+                          href={href}
+                          className="flex items-center gap-2.5 truncate font-medium group-hover:text-accent transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div
+                            className={cn(
+                              "size-8 rounded-xl flex items-center justify-center text-xs font-bold shadow-xs shrink-0 select-none",
+                              catVisual.squircle,
                             )}
-                          </Table.Cell>
-                        </Table.Row>
-                      );
-                    })}
-
-                  {/* Apple-style Boş Durum (Empty State) */}
-                  {!loading && !filtered.length && (
-                    <Table.Row id="bos" className="hover:bg-transparent">
-                      <Table.Cell colSpan={7} className="py-20 text-center">
-                        <div className="max-w-md mx-auto space-y-3.5">
-                          <div className="size-14 rounded-3xl bg-gradient-to-tr from-sky-500/20 to-blue-500/20 text-sky-500 flex items-center justify-center mx-auto border border-sky-500/20 shadow-xs">
-                            <Receipt className="size-7 stroke-[1.75]" />
+                          >
+                            <span>
+                              {r.firma_adi ? r.firma_adi.slice(0, 2).toLocaleUpperCase("tr-TR") : catVisual.initial}
+                            </span>
                           </div>
-                          <div className="space-y-1">
-                            <h4 className="text-base font-semibold text-foreground">
-                              {loaded?.error
-                                ? "Fişler Yüklenemedi"
-                                : rows.length
-                                  ? "Aramanıza Uygun Fiş Bulunamadı"
-                                  : "Bu Dönemde Henüz Fiş Yok"}
-                            </h4>
-                            <p className="text-xs text-muted leading-relaxed">
-                              {loaded?.error
-                                ? loaded.error
-                                : rows.length
-                                  ? "Farklı bir arama terimi veya kategori filtresi deneyebilirsiniz."
-                                  : "Seçili dönemde kayıtlı bir harcama veya POS fişi bulunmuyor. Yeni bir fiş ekleyerek başlayabilirsiniz."}
-                            </p>
-                          </div>
-                          {!rows.length && !loaded?.error && (
-                            <div className="pt-1">
-                              <Link
-                                href="/fisler/yeni/"
-                                className={buttonVariants({ size: "sm", className: "rounded-full bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 text-white font-medium shadow-sm gap-1.5" })}
-                              >
-                                <Plus className="size-3.5" /> Yeni Fiş Tara
-                              </Link>
+                          <div className="truncate">
+                            <div className="truncate font-semibold text-foreground text-xs md:text-sm">
+                              {r.firma_adi || "İsimsiz Firma"}
                             </div>
+                            {r.fis_no && (
+                              <div className="text-[11px] text-muted tabular-nums">Fiş: #{r.fis_no}</div>
+                            )}
+                          </div>
+                          {r.image_path && (
+                            <ImageIcon className="size-3.5 shrink-0 text-muted/70" aria-label="Fotoğraflı" />
                           )}
-                        </div>
+                        </Link>
+                      </Table.Cell>
+
+                      {/* Kategori Minimalist Monogram & Status Dot Rozeti (Option 02) */}
+                      <Table.Cell>
+                        <CategoryBadge category={r.kategori} />
+                      </Table.Cell>
+
+                      {/* KDV Tutarı */}
+                      <Table.Cell className="text-right text-xs text-muted tabular-nums">
+                        {formatTL(r.toplam_kdv)}
+                      </Table.Cell>
+
+                      {/* Toplam Tutar */}
+                      <Table.Cell className="text-right text-sm font-bold tabular-nums text-foreground">
+                        {formatTL(r.toplam_tutar)}
+                      </Table.Cell>
+
+                      {/* Muhasebe Durumu */}
+                      <Table.Cell className="text-right">
+                        {isDelivered ? (
+                          <Chip size="sm" variant="soft" color="success">
+                            <Check className="size-3 stroke-[2.5]" /> Gönderildi
+                          </Chip>
+                        ) : (
+                          <Chip size="sm" variant="soft" color="warning">
+                            <span className="size-1.5 rounded-full bg-amber-500"></span> Bekliyor
+                          </Chip>
+                        )}
                       </Table.Cell>
                     </Table.Row>
-                  )}
-                </Table.Body>
-              </Table.Content>
-            </Table.ScrollContainer>
-          </Table>
-        </Card.Content>
-      </Card>
+                  );
+                })}
+
+              {/* Apple-style Boş Durum (Empty State) */}
+              {!loading && !filtered.length && (
+                <Table.Row id="bos">
+                  <Table.Cell colSpan={7} className="text-center">
+                    <div className="max-w-md mx-auto space-y-3.5">
+                      <div className="size-14 rounded-3xl bg-gradient-to-tr from-sky-500/20 to-blue-500/20 text-sky-500 flex items-center justify-center mx-auto border border-sky-500/20 shadow-xs">
+                        <Receipt className="size-7 stroke-[1.75]" />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-base font-semibold text-foreground">
+                          {loaded?.error
+                            ? "Fişler Yüklenemedi"
+                            : rows.length
+                              ? "Aramanıza Uygun Fiş Bulunamadı"
+                              : "Bu Dönemde Henüz Fiş Yok"}
+                        </h4>
+                        <p className="text-xs text-muted leading-relaxed">
+                          {loaded?.error
+                            ? loaded.error
+                            : rows.length
+                              ? "Farklı bir arama terimi veya kategori filtresi deneyebilirsiniz."
+                              : "Seçili dönemde kayıtlı bir harcama veya POS fişi bulunmuyor. Yeni bir fiş ekleyerek başlayabilirsiniz."}
+                        </p>
+                      </div>
+                      {!rows.length && !loaded?.error && (
+                        <div className="pt-1">
+                          <Link
+                            href="/fisler/yeni/"
+                            className={buttonVariants({ size: "sm" })}
+                          >
+                            <Plus className="size-3.5" /> Yeni Fiş Tara
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  </Table.Cell>
+                </Table.Row>
+              )}
+            </Table.Body>
+          </Table.Content>
+        </Table.ScrollContainer>
+      </Table>
 
       {/* Sayfalama Kontrolleri */}
       {!loading && filtered.length > PAGE_SIZE && (
@@ -708,7 +691,7 @@ export function ReceiptsView() {
             aria-label="Önceki sayfa"
             isDisabled={currentPage === 0}
             onPress={() => setPage(currentPage - 1)}
-            className="size-7 rounded-lg"
+            className="size-7"
           >
             <ChevronLeft className="size-3.5" />
           </Button>
@@ -718,7 +701,7 @@ export function ReceiptsView() {
             aria-label="Sonraki sayfa"
             isDisabled={currentPage >= pageCount - 1}
             onPress={() => setPage(currentPage + 1)}
-            className="size-7 rounded-lg"
+            className="size-7"
           >
             <ChevronRight className="size-3.5" />
           </Button>
@@ -728,7 +711,7 @@ export function ReceiptsView() {
       {/* Silme Onay Modalı */}
       <AlertDialog.Backdrop isOpen={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialog.Container>
-          <AlertDialog.Dialog className="rounded-3xl">
+          <AlertDialog.Dialog>
             <AlertDialog.Header>
               <AlertDialog.Heading>{selectedRows.length} fiş silinsin mi?</AlertDialog.Heading>
               <p className="text-sm text-muted">
@@ -736,13 +719,12 @@ export function ReceiptsView() {
               </p>
             </AlertDialog.Header>
             <AlertDialog.Footer>
-              <Button slot="close" variant="tertiary" size="sm" isDisabled={busy === "delete"} className="rounded-xl">
+              <Button slot="close" variant="tertiary" size="sm" isDisabled={busy === "delete"}>
                 Vazgeç
               </Button>
               <Button size="sm"
                 variant="danger"
                 isDisabled={busy === "delete"}
-                className="rounded-xl"
                 onPress={() => {
                   void onDelete();
                 }}

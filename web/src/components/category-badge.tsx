@@ -212,9 +212,9 @@ export function CategoryBadge({
       variant="secondary"
       size={size}
       className={cn(
-        "gap-1.5 rounded-lg select-none shrink-0 border-border/80 bg-default/70 text-foreground",
-        "dark:bg-zinc-900/90 dark:border-white/[0.08] dark:text-zinc-200",
-        size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
+        "gap-1.5 shrink-0",
+        "",
+        size === "sm" ? "" : "",
         className,
       )}
     >
@@ -227,7 +227,7 @@ export function CategoryBadge({
       >
         {visual.initial}
       </span>
-      <Chip.Label className="px-0 font-semibold text-foreground dark:text-zinc-200 truncate">{label}</Chip.Label>
+      <Chip.Label className="truncate">{label}</Chip.Label>
     </Chip>
   );
 }

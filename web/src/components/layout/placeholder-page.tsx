@@ -7,7 +7,7 @@ export function PlaceholderPage({ title }: { title: string }) {
     <div className="flex flex-col gap-4">
       <PageHeader title={title} />
       <Card>
-        <Card.Content className="flex flex-col items-center gap-2 py-16 text-center">
+        <Card.Content className="flex flex-col items-center gap-2 text-center">
           <Construction className="size-8 text-muted" />
           <p className="text-sm text-muted">Bu sayfa yakında yeni web arayüzüne taşınacak</p>
         </Card.Content>

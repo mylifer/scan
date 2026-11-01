@@ -185,7 +185,7 @@ export function AppSidebar() {
                 variant="ghost"
                 size="sm" isIconOnly
                 onPress={() => setOpenMobile(false)}
-                className="text-muted hover:text-foreground cursor-pointer shrink-0"
+                className="shrink-0"
                 aria-label="Menüyü kapat"
               >
                 <X className="size-4" />
@@ -346,14 +346,16 @@ export function AppSidebar() {
             </div>
 
             {/* Çıkış Yap */}
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="flex items-center gap-2.5 w-full px-2.5 py-1.5 rounded-[10px] text-xs font-medium text-muted hover:text-danger hover:bg-danger/10 transition-all duration-150 active:scale-[0.98] text-left cursor-pointer"
+            <Button
+              variant="ghost"
+              size="sm"
+              fullWidth
+              onPress={handleSignOut}
+              className="justify-start"
             >
               <LogOut className="size-4 shrink-0" />
-              <span>Çıkış Yap</span>
-            </button>
+              Çıkış Yap
+            </Button>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 py-1">
@@ -386,8 +388,8 @@ export function AppSidebar() {
             size="sm"
             onPress={toggleSidebar}
             className={cn(
-              "w-full text-xs text-muted hover:text-foreground hover:bg-sidebar-accent cursor-pointer",
-              isCollapsed ? "justify-center px-0 h-9" : "justify-start gap-2 h-8"
+              "w-full",
+              isCollapsed ? "justify-center" : "justify-start gap-2"
             )}
             aria-label={isCollapsed ? "Kenar çubuğunu genişlet" : "Kenar çubuğunu daralt"}
           >

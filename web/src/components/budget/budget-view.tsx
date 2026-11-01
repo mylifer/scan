@@ -139,11 +139,11 @@ export function BudgetView() {
 
       {/* Ana Bütçe İlerleme Kartı */}
       <Card>
-        <Card.Header className="flex flex-row items-start justify-between pb-4">
+        <Card.Header className="flex flex-row items-start justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Wallet className="size-4 text-accent" />
-              <Card.Title className="text-base font-semibold">Aylık Bütçe Durumu</Card.Title>
+              <Card.Title>Aylık Bütçe Durumu</Card.Title>
               {monthlyBudget ? (
                 <Chip size="sm" color={status.level === "ok" ? "default" : "danger"} variant="soft">
                   {status.level === "over"
@@ -175,7 +175,7 @@ export function BudgetView() {
             </Button>
           ) : (
             <form onSubmit={handleSaveBudget} className="flex items-center gap-2">
-              <Input
+              <Input fullWidth
                 placeholder="Örn: 50.000"
                 className="w-36 tabular-nums"
                 value={budgetValue}
@@ -279,12 +279,12 @@ export function BudgetView() {
         <Card.Header>
           <div className="flex items-center gap-2">
             <PieChart className="size-4 text-accent" />
-            <Card.Title className="text-base font-semibold">Kategori Bazında Harcamalar</Card.Title>
+            <Card.Title>Kategori Bazında Harcamalar</Card.Title>
           </div>
           <Card.Description>Bu dönemdeki harcamalarınızın kategorilere göre dökümü</Card.Description>
         </Card.Header>
-        <Card.Content className="p-0">
-          <Table variant="secondary">
+        <Card.Content>
+          <Table>
             <Table.ScrollContainer>
               <Table.Content aria-label="Kategori harcama dağılımı" className="min-w-[500px]">
                 <Table.Header>
@@ -323,7 +323,7 @@ export function BudgetView() {
 
                   {!loading && categoryBreakdown.length === 0 && (
                     <Table.Row>
-                      <Table.Cell colSpan={4} className="py-12 text-center text-sm text-muted">
+                      <Table.Cell colSpan={4} className="text-center text-sm text-muted">
                         Bu ay henüz kayıtlı fiş bulunmuyor.
                       </Table.Cell>
                     </Table.Row>

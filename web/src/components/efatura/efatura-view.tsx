@@ -16,12 +16,10 @@ import {
   Receipt,
   ReceiptText,
   RefreshCw,
-  Search,
   TriangleAlert,
-  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { type Selection, Button, Card, Checkbox, Chip, Input, ListBox, Select, Skeleton, Table, Tabs, toast } from "@heroui/react";
+import { Button, Card, Checkbox, Chip, ListBox, SearchField, Select, type Selection, Skeleton, Table, Tabs, toast } from "@heroui/react";
 import { PageHeader } from "@/components/layout/page-header";
 import {
   exportExcel,
@@ -362,14 +360,14 @@ export function EFaturaView() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Yön Değiştirici (Gelen / Giden) */}
-          <Tabs selectedKey={yon} onSelectionChange={(key) => handleYonChange(key as Yon)}>
+          <Tabs className="w-fit shrink-0" selectedKey={yon} onSelectionChange={(key) => handleYonChange(key as Yon)}>
             <Tabs.ListContainer>
               <Tabs.List aria-label="Fatura yönü">
-                <Tabs.Tab id="gelen">
+                <Tabs.Tab id="gelen" className="whitespace-nowrap">
                   Gelen e-Faturalar
                   <Tabs.Indicator />
                 </Tabs.Tab>
-                <Tabs.Tab id="giden">
+                <Tabs.Tab id="giden" className="whitespace-nowrap">
                   Giden e-Faturalar
                   <Tabs.Indicator />
                 </Tabs.Tab>
@@ -378,17 +376,17 @@ export function EFaturaView() {
           </Tabs>
 
           {/* Dönem modu (Tümünü Göster / Aylık) */}
-          <Tabs
+          <Tabs className="w-fit shrink-0"
             selectedKey={periodMode}
             onSelectionChange={(key) => handlePeriodModeChange(key as "month" | "all")}
           >
             <Tabs.ListContainer>
               <Tabs.List aria-label="Dönem modu">
-                <Tabs.Tab id="all" className="h-7 px-3 text-xs font-medium whitespace-nowrap">
+                <Tabs.Tab id="all" className="whitespace-nowrap">
                   Tümünü Göster
                   <Tabs.Indicator />
                 </Tabs.Tab>
-                <Tabs.Tab id="month" className="h-7 px-3 text-xs font-medium whitespace-nowrap">
+                <Tabs.Tab id="month" className="whitespace-nowrap">
                   Aylık
                   <Tabs.Indicator />
                 </Tabs.Tab>
@@ -402,7 +400,7 @@ export function EFaturaView() {
               type="button"
               variant="ghost"
               size="sm" isIconOnly
-              className="size-7 rounded-lg"
+             
               onPress={() => handleOffsetChange(-1)}
               aria-label="Önceki dönem"
             >
@@ -415,7 +413,7 @@ export function EFaturaView() {
               type="button"
               variant="ghost"
               size="sm" isIconOnly
-              className="size-7 rounded-lg"
+             
               isDisabled={offset >= 0}
               onPress={() => handleOffsetChange(1)}
               aria-label="Sonraki dönem"
@@ -430,7 +428,7 @@ export function EFaturaView() {
             size="sm"
             onPress={handleRefresh}
             isDisabled={refreshing || loading}
-            className="h-9 rounded-xl border-border/70 bg-background/80 text-xs gap-1.5"
+            className="gap-1.5"
           >
             <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} />
             Yenile
@@ -440,7 +438,7 @@ export function EFaturaView() {
 
       {/* Apple Native Glass Metrik Kartları (Tahoe Glass) */}
       {!loading && (tumuUyari || tumuBilgi) ? (
-        <div className="rounded-2xl border border-border/80 dark:border-white/[0.05] bg-surface/75 backdrop-blur-xl px-4 py-3 shadow-[0_2px_16px_rgba(0,0,0,0.03)] space-y-1.5 text-xs">
+        <Card className="space-y-1.5 text-xs">
           {tumuUyari ? (
             <div className="flex items-start gap-2 text-amber-700 dark:text-amber-400">
               <TriangleAlert className="size-3.5 mt-px shrink-0" />
@@ -453,19 +451,19 @@ export function EFaturaView() {
               <span>{tumuBilgi}</span>
             </div>
           ) : null}
-        </div>
+        </Card>
       ) : null}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* Kart 1: Toplam Belge */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/80 dark:border-white/[0.05] bg-surface/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)] hover:shadow-md transition-all group">
+        <Card className="relative overflow-hidden group">
           <div className="flex items-center justify-between mb-3">
             <div className="size-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-sky-400 text-white flex items-center justify-center shadow-sm shadow-sky-500/25">
               <FileText className="size-4.5 stroke-[2]" />
             </div>
-            <span className="text-[11px] font-semibold tabular-nums px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/15">
+            <Chip size="sm" variant="soft" color="accent" className="tabular-nums">
               {stats.count} Belge
-            </span>
+            </Chip>
           </div>
           <div className="text-xs font-medium text-muted">
             {yon === "gelen" ? "Gelen Faturalar" : "Giden Faturalar"}
@@ -486,17 +484,17 @@ export function EFaturaView() {
               </>
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Kart 2: Toplam Tutar */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/80 dark:border-white/[0.05] bg-surface/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)] hover:shadow-md transition-all group">
+        <Card className="relative overflow-hidden group">
           <div className="flex items-center justify-between mb-3">
             <div className="size-9 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white flex items-center justify-center shadow-sm shadow-emerald-500/25">
               <Receipt className="size-4.5 stroke-[2]" />
             </div>
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/15">
+            <Chip size="sm" variant="soft" color="success">
               KDV Dahil
-            </span>
+            </Chip>
           </div>
           <div className="text-xs font-medium text-muted">
             {yon === "gelen" ? "Toplam Gider Tutarı" : "Toplam Satış Tutarı"}
@@ -516,17 +514,17 @@ export function EFaturaView() {
               </>
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Kart 3: Net KDV Toplamı */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/80 dark:border-white/[0.05] bg-surface/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)] hover:shadow-md transition-all group">
+        <Card className="relative overflow-hidden group">
           <div className="flex items-center justify-between mb-3">
             <div className="size-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center shadow-sm shadow-indigo-500/25">
               <ReceiptText className="size-4.5 stroke-[2]" />
             </div>
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/15">
+            <Chip size="sm" variant="soft" color="accent">
               {yon === "gelen" ? "İndirilecek KDV" : "Hesaplanan KDV"}
-            </span>
+            </Chip>
           </div>
           <div className="text-xs font-medium text-muted">
             {yon === "gelen" ? "Düşülebilir Toplam KDV" : "Tahakkuk Eden KDV"}
@@ -538,18 +536,18 @@ export function EFaturaView() {
             <span className="size-1.5 rounded-full bg-indigo-500 shrink-0" />
             <span>{yon === "gelen" ? "Beyannameden düşülebilir vergi" : "Satışlardan doğan KDV yükümlülüğü"}</span>
           </div>
-        </div>
+        </Card>
 
         {/* Kart 4: Raporlar & Dönem Analizi */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/80 dark:border-white/[0.05] bg-surface/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)] hover:shadow-md transition-all group flex flex-col justify-between">
+        <Card className="relative overflow-hidden group flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="size-9 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-400 text-white flex items-center justify-center shadow-sm shadow-amber-500/25">
                 <BarChart3 className="size-4.5 stroke-[2]" />
               </div>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/15">
+              <Chip size="sm" variant="soft" color="warning">
                 Rapor & Döküm
-              </span>
+              </Chip>
             </div>
             <div className="text-xs font-medium text-muted">Matrah & KDV Dökümü</div>
             <div className="text-base font-bold tracking-tight text-foreground mt-0.5">
@@ -561,7 +559,7 @@ export function EFaturaView() {
               type="button"
               variant="outline"
               size="sm"
-              className="w-full justify-between text-xs h-8 rounded-xl border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-semibold transition-colors"
+              className="w-full justify-between"
               onPress={() => setOzetOpen(true)}
               isDisabled={loading || faturalar.length === 0}
             >
@@ -569,36 +567,28 @@ export function EFaturaView() {
               <FileSpreadsheet className="size-3.5 shrink-0" />
             </Button>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Toolbar: Arama, Filtre, Sıralama ve Dışa Aktarım Butonları */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           {/* Arama */}
-          <div className="relative min-w-56 max-w-sm flex-1">
-            <Search className="absolute left-2.5 top-2.5 size-4 text-muted" />
-            <Input
-              placeholder="Firma adı, belge no, VKN veya tutar…"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(0);
-              }}
-              className="pl-8"
-            />
-            {search && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm" isIconOnly
-                onPress={() => setSearch("")}
-                className="absolute right-1 top-1 size-7"
-              >
-                <X className="size-3.5" />
-              </Button>
-            )}
-          </div>
+          <SearchField
+            aria-label="e-Faturalarda ara"
+            className="min-w-56 max-w-sm flex-1"
+            value={search}
+            onChange={(v) => {
+              setSearch(v);
+              setPage(0);
+            }}
+          >
+            <SearchField.Group>
+              <SearchField.SearchIcon />
+              <SearchField.Input placeholder="Firma adı, belge no, VKN veya tutar…" />
+              <SearchField.ClearButton />
+            </SearchField.Group>
+          </SearchField>
 
           {/* Tip Filtresi */}
           <Select className="w-40" placeholder="Fatura Tipi" aria-label="Fatura Tipi"
@@ -721,7 +711,7 @@ export function EFaturaView() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-7 text-xs gap-1"
+              className="gap-1"
               onPress={() => handleExportExcel(selectedFaturalar)}
             >
               <FileSpreadsheet className="size-3.5" />
@@ -731,7 +721,7 @@ export function EFaturaView() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-7 text-xs gap-1"
+              className="gap-1"
               isDisabled={exportingZip}
               onPress={() => handleExportZip(selectedFaturalar)}
             >
@@ -742,7 +732,6 @@ export function EFaturaView() {
               type="button"
               variant="ghost"
               size="sm"
-              className="h-7 text-xs text-muted"
               onPress={() => setSelectedIds(new Set())}
             >
               Seçimi Kaldır
@@ -752,196 +741,190 @@ export function EFaturaView() {
       )}
 
       {/* Apple Glass e-Fatura Tablosu */}
-      <Card className="py-0 rounded-2xl overflow-hidden border-border/80 dark:border-white/[0.05] bg-surface/75 backdrop-blur-xl shadow-xs">
-        <Card.Content className="px-0">
-          <Table variant="secondary">
-            <Table.ScrollContainer>
-              <Table.Content aria-label="e-Faturalar" className="min-w-[780px]"
-                selectionMode="multiple"
-                  selectedKeys={selectedIds}
-                  onSelectionChange={onTableSelection}
-                  disabledKeys={loading ? Array.from({ length: 6 }, (_, i) => `iskelet-${i}`) : ["bos"]}
-                  sortDescriptor={{ column: sort.column, direction: sort.dir === "asc" ? "ascending" : "descending" }}
-                onSortChange={(d) => handleSort(d.column as EFaturaSortColumn)}
-              >
-                <Table.Header className="bg-default/30">
-                  <Table.Column className="w-12 pl-4">
-                    <Checkbox
-                      slot="selection"
-                      variant="secondary"
-                      aria-label="Tümünü seç"
+      <Table>
+        <Table.ScrollContainer>
+          <Table.Content aria-label="e-Faturalar" className="min-w-[780px]"
+            selectionMode="multiple"
+              selectedKeys={selectedIds}
+              onSelectionChange={onTableSelection}
+              disabledKeys={loading ? Array.from({ length: 6 }, (_, i) => `iskelet-${i}`) : ["bos"]}
+              sortDescriptor={{ column: sort.column, direction: sort.dir === "asc" ? "ascending" : "descending" }}
+            onSortChange={(d) => handleSort(d.column as EFaturaSortColumn)}
+          >
+            <Table.Header>
+              <Table.Column className="w-12">
+                <Checkbox
+                  slot="selection"
+                  variant="secondary"
+                  aria-label="Tümünü seç"
+                >
+                  <Checkbox.Content>
+                    <Checkbox.Control>
+                      <Checkbox.Indicator />
+                    </Checkbox.Control>
+                  </Checkbox.Content>
+                </Checkbox>
+              </Table.Column>
+              <SortHeader label="Tarih" column="tarih" className="w-32" />
+              <Table.Column className="w-44">Belge No</Table.Column>
+              <SortHeader label="Firma / Ünvan" column="unvan" isRowHeader />
+              <SortHeader label="Tür / Tip" column="tip" className="w-32" />
+              <SortHeader
+                label="KDV"
+                column="kdv"
+                align="right"
+                className="w-32 text-right"
+              />
+              <SortHeader
+                label="Toplam Tutar"
+                column="tutar"
+                align="right"
+                className="w-36 text-right"
+              />
+              <Table.Column className="w-40 text-right">İşlemler</Table.Column>
+            </Table.Header>
+
+            <Table.Body>
+              {loading &&
+                Array.from({ length: 6 }).map((_, i) => (
+                  <Table.Row key={i} id={`iskelet-${i}`}>
+                    <Table.Cell>
+                      <Skeleton className="size-4" />
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Skeleton className="h-4 w-20" />
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Skeleton className="h-4 w-28" />
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Skeleton className="h-4 w-48" />
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Skeleton className="h-4 w-16" />
+                    </Table.Cell>
+                    <Table.Cell className="text-right">
+                      <Skeleton className="ml-auto h-4 w-16" />
+                    </Table.Cell>
+                    <Table.Cell className="text-right">
+                      <Skeleton className="ml-auto h-4 w-20" />
+                    </Table.Cell>
+                    <Table.Cell className="text-right">
+                      <Skeleton className="ml-auto h-8 w-28" />
+                    </Table.Cell>
+                  </Table.Row>
+                ))}
+
+              {!loading &&
+                pagedRows.map((f) => {
+                  const id = f.ettn || f.belgeNo;
+                  const isIade = f.tip === "IADE";
+                  const isEarsiv = f.tur === "earsiv";
+
+                  return (
+                    <Table.Row
+                      key={id}
+                      id={id}
+                      onAction={() => setPdfFatura(f)}
                     >
-                      <Checkbox.Content>
-                        <Checkbox.Control>
-                          <Checkbox.Indicator />
-                        </Checkbox.Control>
-                      </Checkbox.Content>
-                    </Checkbox>
-                  </Table.Column>
-                  <SortHeader label="Tarih" column="tarih" className="w-32" />
-                  <Table.Column className="w-44">Belge No</Table.Column>
-                  <SortHeader label="Firma / Ünvan" column="unvan" isRowHeader />
-                  <SortHeader label="Tür / Tip" column="tip" className="w-32" />
-                  <SortHeader
-                    label="KDV"
-                    column="kdv"
-                    align="right"
-                    className="w-32 text-right"
-                  />
-                  <SortHeader
-                    label="Toplam Tutar"
-                    column="tutar"
-                    align="right"
-                    className="w-36 text-right"
-                  />
-                  <Table.Column className="w-40 pr-4 text-right">İşlemler</Table.Column>
-                </Table.Header>
-
-                <Table.Body>
-                  {loading &&
-                    Array.from({ length: 6 }).map((_, i) => (
-                      <Table.Row key={i} id={`iskelet-${i}`}>
-                        <Table.Cell className="pl-4">
-                          <Skeleton className="size-4" />
-                        </Table.Cell>
-                        <Table.Cell>
-                          <Skeleton className="h-4 w-20" />
-                        </Table.Cell>
-                        <Table.Cell>
-                          <Skeleton className="h-4 w-28" />
-                        </Table.Cell>
-                        <Table.Cell>
-                          <Skeleton className="h-4 w-48" />
-                        </Table.Cell>
-                        <Table.Cell>
-                          <Skeleton className="h-4 w-16" />
-                        </Table.Cell>
-                        <Table.Cell className="text-right">
-                          <Skeleton className="ml-auto h-4 w-16" />
-                        </Table.Cell>
-                        <Table.Cell className="text-right">
-                          <Skeleton className="ml-auto h-4 w-20" />
-                        </Table.Cell>
-                        <Table.Cell className="pr-4 text-right">
-                          <Skeleton className="ml-auto h-8 w-28" />
-                        </Table.Cell>
-                      </Table.Row>
-                    ))}
-
-                  {!loading &&
-                    pagedRows.map((f) => {
-                      const id = f.ettn || f.belgeNo;
-                      const isIade = f.tip === "IADE";
-                      const isEarsiv = f.tur === "earsiv";
-
-                      return (
-                        <Table.Row
-                          key={id}
-                          id={id}
-                          className="cursor-pointer transition-colors"
-                          onAction={() => setPdfFatura(f)}
+                      <Table.Cell>
+                        <Checkbox
+                          slot="selection"
+                          variant="secondary"
+                          aria-label={`${f.belgeNo} seç`}
                         >
-                          <Table.Cell className="pl-4">
-                            <Checkbox
-                              slot="selection"
-                              variant="secondary"
-                              aria-label={`${f.belgeNo} seç`}
-                            >
-                              <Checkbox.Content>
-                                <Checkbox.Control>
-                                  <Checkbox.Indicator />
-                                </Checkbox.Control>
-                              </Checkbox.Content>
-                            </Checkbox>
-                          </Table.Cell>
-                          <Table.Cell className="tabular-nums text-xs">{f.tarih}</Table.Cell>
-                          <Table.Cell className="tabular-nums text-xs font-medium">
-                            {f.belgeNo || "—"}
-                          </Table.Cell>
-                          <Table.Cell className="max-w-72">
-                            <div className="truncate font-medium">{f.unvan}</div>
-                            {f.vkn && (
-                              <div className="text-[11px] text-muted tabular-nums">
-                                VKN: {f.vkn}
-                              </div>
-                            )}
-                          </Table.Cell>
-                          <Table.Cell>
-                            <div className="flex flex-wrap gap-1">
-                              {isEarsiv ? (
-                                <Chip size="sm" variant="secondary" className="text-[10px]">
-                                  e-Arşiv
-                                </Chip>
-                              ) : (
-                                <Chip size="sm" variant="soft" className="text-[10px]">
-                                  e-Fatura
-                                </Chip>
-                              )}
-                              {isIade && (
-                                <Chip size="sm" color="danger" variant="soft" className="text-[10px]">
-                                  İade
-                                </Chip>
-                              )}
-                              {f.iptal && (
-                                <Chip size="sm" color="danger" variant="soft" className="text-[10px]">
-                                  İptal
-                                </Chip>
-                              )}
-                            </div>
-                          </Table.Cell>
-                          <Table.Cell className="text-right text-xs tabular-nums text-muted">
-                            {typeof f.kdv === "number" ? `${formatTL(f.kdv)}` : "—"}
-                          </Table.Cell>
-                          <Table.Cell className="text-right text-sm font-semibold tabular-nums">
-                            {isIade ? `-${formatTL(f.tutar)}` : formatTL(f.tutar)}{" "}
-                            <span className="text-xs font-normal text-muted">
-                              {f.paraBirimi}
-                            </span>
-                          </Table.Cell>
-                          <Table.Cell className="pr-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <Button
-                                type="button"
-                                variant="primary"
-                                size="sm"
-                                className="h-8 gap-1.5 px-2.5 text-xs font-semibold shadow-xs cursor-pointer"
-                                aria-label="Faturayı Görüntüle"
-                                onPress={() => setPdfFatura(f)}
-                              >
-                                <FileText className="size-3.5" />
-                                <span>Görüntüle</span>
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm" isIconOnly
-                                className="cursor-pointer"
-                                aria-label="Fatura Kalem Detayları"
-                                onPress={() => setDetayFatura(f)}
-                              >
-                                <Eye className="size-4 text-muted hover:text-foreground" />
-                              </Button>
-                            </div>
-                          </Table.Cell>
-                        </Table.Row>
-                      );
-                    })}
-
-                  {!loading && filteredFaturalar.length === 0 && (
-                    <Table.Row id="bos">
-                      <Table.Cell colSpan={8} className="py-16 text-center text-sm text-muted">
-                        {search || tipFilter !== "all"
-                          ? "Aramanıza uyan e-fatura bulunamadı."
-                          : `${displayPeriodLabel} döneminde kayıtlı e-fatura yok.`}
+                          <Checkbox.Content>
+                            <Checkbox.Control>
+                              <Checkbox.Indicator />
+                            </Checkbox.Control>
+                          </Checkbox.Content>
+                        </Checkbox>
+                      </Table.Cell>
+                      <Table.Cell className="tabular-nums text-xs">{f.tarih}</Table.Cell>
+                      <Table.Cell className="tabular-nums text-xs font-medium">
+                        {f.belgeNo || "—"}
+                      </Table.Cell>
+                      <Table.Cell className="max-w-72">
+                        <div className="truncate font-medium">{f.unvan}</div>
+                        {f.vkn && (
+                          <div className="text-[11px] text-muted tabular-nums">
+                            VKN: {f.vkn}
+                          </div>
+                        )}
+                      </Table.Cell>
+                      <Table.Cell>
+                        <div className="flex flex-wrap gap-1">
+                          {isEarsiv ? (
+                            <Chip size="sm" variant="secondary">
+                              e-Arşiv
+                            </Chip>
+                          ) : (
+                            <Chip size="sm" variant="soft">
+                              e-Fatura
+                            </Chip>
+                          )}
+                          {isIade && (
+                            <Chip size="sm" color="danger" variant="soft">
+                              İade
+                            </Chip>
+                          )}
+                          {f.iptal && (
+                            <Chip size="sm" color="danger" variant="soft">
+                              İptal
+                            </Chip>
+                          )}
+                        </div>
+                      </Table.Cell>
+                      <Table.Cell className="text-right text-xs tabular-nums text-muted">
+                        {typeof f.kdv === "number" ? `${formatTL(f.kdv)}` : "—"}
+                      </Table.Cell>
+                      <Table.Cell className="text-right text-sm font-semibold tabular-nums">
+                        {isIade ? `-${formatTL(f.tutar)}` : formatTL(f.tutar)}{" "}
+                        <span className="text-xs font-normal text-muted">
+                          {f.paraBirimi}
+                        </span>
+                      </Table.Cell>
+                      <Table.Cell className="text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            type="button"
+                            variant="primary"
+                            size="sm"
+                            className="gap-1.5"
+                            aria-label="Faturayı Görüntüle"
+                            onPress={() => setPdfFatura(f)}
+                          >
+                            <FileText className="size-3.5" />
+                            <span>Görüntüle</span>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm" isIconOnly
+                            aria-label="Fatura Kalem Detayları"
+                            onPress={() => setDetayFatura(f)}
+                          >
+                            <Eye className="size-4 text-muted hover:text-foreground" />
+                          </Button>
+                        </div>
                       </Table.Cell>
                     </Table.Row>
-                  )}
-                </Table.Body>
-              </Table.Content>
-            </Table.ScrollContainer>
-          </Table>
-        </Card.Content>
-      </Card>
+                  );
+                })}
+
+              {!loading && filteredFaturalar.length === 0 && (
+                <Table.Row id="bos">
+                  <Table.Cell colSpan={8} className="text-center text-sm text-muted">
+                    {search || tipFilter !== "all"
+                      ? "Aramanıza uyan e-fatura bulunamadı."
+                      : `${displayPeriodLabel} döneminde kayıtlı e-fatura yok.`}
+                  </Table.Cell>
+                </Table.Row>
+              )}
+            </Table.Body>
+          </Table.Content>
+        </Table.ScrollContainer>
+      </Table>
 
       {/* Sayfalama */}
       {!loading && filteredFaturalar.length > PAGE_SIZE && (

@@ -78,13 +78,13 @@ function FaturaDetayContent({
   return (
     <Modal.Backdrop isOpen={open} onOpenChange={onOpenChange}>
       <Modal.Container className="sm:w-full">
-        <Modal.Dialog className="flex max-h-[92vh] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl flex-col p-4 sm:p-6 overflow-hidden">
+        <Modal.Dialog className="flex max-h-[92vh] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl flex-col overflow-hidden">
           <Modal.CloseTrigger />
-          <Modal.Header className="border-b pb-4 pr-8">
+          <Modal.Header>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Modal.Heading className="truncate text-base sm:text-lg font-semibold" title={fatura.belgeNo || fatura.ettn}>
+                  <Modal.Heading className="truncate sm:text-lg" title={fatura.belgeNo || fatura.ettn}>
                     Fatura Detayı · {fatura.belgeNo || fatura.ettn}
                   </Modal.Heading>
                   {state.detay?.tip && <Chip size="sm" variant="soft">{state.detay.tip}</Chip>}
@@ -100,7 +100,7 @@ function FaturaDetayContent({
                   variant="primary"
                   size="sm"
                   onPress={() => onOpenPdf(fatura)}
-                  className="shrink-0 gap-1.5 shadow-xs"
+                  className="shrink-0 gap-1.5"
                 >
                   <FileText className="size-4" />
                   <span>PDF Görüntüle</span>
@@ -139,8 +139,8 @@ function FaturaDetayContent({
                 {/* Taraflar Kartları */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Card>
-                    <Card.Header className="pb-2">
-                      <Card.Title className="text-xs font-semibold uppercase text-muted">
+                    <Card.Header>
+                      <Card.Title className="uppercase text-muted">
                         Satıcı (Gönderen)
                       </Card.Title>
                     </Card.Header>
@@ -153,8 +153,8 @@ function FaturaDetayContent({
                   </Card>
 
                   <Card>
-                    <Card.Header className="pb-2">
-                      <Card.Title className="text-xs font-semibold uppercase text-muted">
+                    <Card.Header>
+                      <Card.Title className="uppercase text-muted">
                         Alıcı (Müşteri)
                       </Card.Title>
                     </Card.Header>
@@ -171,22 +171,22 @@ function FaturaDetayContent({
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold uppercase text-muted">Fatura Kalemleri</h4>
                   <div className="w-full overflow-x-auto rounded-lg border">
-                    <Table variant="secondary">
+                    <Table>
                       <Table.ScrollContainer>
                         <Table.Content aria-label="Fatura kalemleri" className="w-full min-w-[720px]">
                           <Table.Header>
-                            <Table.Column isRowHeader className="w-12 pl-3">#</Table.Column>
+                            <Table.Column isRowHeader className="w-12">#</Table.Column>
                             <Table.Column className="min-w-48">Mal / Hizmet</Table.Column>
                             <Table.Column className="w-28 text-right">Miktar</Table.Column>
                             <Table.Column className="w-32 text-right">Birim Fiyat</Table.Column>
                             <Table.Column className="w-20 text-right">KDV %</Table.Column>
                             <Table.Column className="w-32 text-right">KDV Tutarı</Table.Column>
-                            <Table.Column className="w-36 pr-3 text-right">Tutar (KDV Hariç)</Table.Column>
+                            <Table.Column className="w-36 text-right">Tutar (KDV Hariç)</Table.Column>
                           </Table.Header>
                           <Table.Body>
                             {state.detay.kalemler.map((k, idx) => (
                               <Table.Row key={idx} id={idx}>
-                                <Table.Cell className="pl-3 text-xs text-muted">{idx + 1}</Table.Cell>
+                                <Table.Cell className="text-xs text-muted">{idx + 1}</Table.Cell>
                                 <Table.Cell className="font-medium min-w-48 break-words">{k.ad}</Table.Cell>
                                 <Table.Cell className="text-right whitespace-nowrap tabular-nums">
                                   {k.miktar} {k.birim}
@@ -198,7 +198,7 @@ function FaturaDetayContent({
                                 <Table.Cell className="text-right whitespace-nowrap tabular-nums">
                                   {formatTL(k.kdvTutari)} {currency}
                                 </Table.Cell>
-                                <Table.Cell className="pr-3 text-right font-medium whitespace-nowrap tabular-nums">
+                                <Table.Cell className="text-right font-medium whitespace-nowrap tabular-nums">
                                   {formatTL(k.tutar)} {currency}
                                 </Table.Cell>
                               </Table.Row>
@@ -216,7 +216,7 @@ function FaturaDetayContent({
                   <div className="space-y-2">
                     <h4 className="text-xs font-semibold uppercase text-muted">KDV Dağılımı</h4>
                     <div className="w-full overflow-x-auto rounded-lg border">
-                      <Table variant="secondary">
+                      <Table>
                         <Table.ScrollContainer>
                           <Table.Content aria-label="Fatura kalemleri (2)" className="min-w-[280px]">
                             <Table.Header>
