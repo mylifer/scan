@@ -57,7 +57,7 @@ Claude Code'un bıraktığı **v1.48.0** sürümünden itibaren projede iki para
 - **Web 1.0.17 – 1.0.19 (`4059c80`, `08629ae`):** Koyu modda tablolardaki parlak beyaz ızgara hissinin tamamen yok edilmesi; satır çizgisi opaklığının `%14` -> `%5` -> **ultra-soft %2 (`rgba(255, 255, 255, 0.02) !important`)** seviyesine indirilmesi.
 - **Web 1.0.20 (`f1bdd62`):** e-Faturalar sayfasındaki üst metrik kartlarının da Apple Native Glass tasarımına geçirilmesi (4 kart: Toplam Belge, Toplam Tutar, Net KDV, Dönem Analizi).
 - **Web 1.0.21 (`b009dbb`):** e-Faturalar sayfasına Apple Segmented Switch ile **"Tümünü Göster (O Tarihe Kadar)"** dönemi eklenmesi. QNB portalındaki ilk faturadan seçilen aya kadar 3'erli paralel sorguyla tüm faturaları çeken ve tekilleştiren `fetchAllFaturalar` motoru.
-- **Web 1.0.22 (EN GÜNCEL SÜRÜM):** İnceleme düzeltmeleri.
+- **Web 1.0.22 (`38e17fa` — EN GÜNCEL SÜRÜM):** İnceleme düzeltmeleri.
   - *"Tümünü Göster" artık eksik veriyi sessizce göstermiyor:* Yüklenemeyen aylar ve QNB'den gelen uyarılar kalıcı bir uyarı şeridinde gösterilir. Hiçbir ay yüklenemezse hata verilir. Eksik sonuç önbelleğe alınmaz. Kapsam sınırı (36 ay, ilk ay bilinmiyorsa 12 ay) bilgi notu olarak yazılır.
   - *Yeni sürüm koruması:* Önceki yayınların `_next/static` parçaları 30 gün saklanır. Açık sekmeler `version.json` dosyasını okuyup "Yenile" bildirimi gösterir. Eski parça hatasında sayfa bir kez otomatik yenilenir (`VersionGuard`, `(app)/error.tsx`).
 

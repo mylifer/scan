@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## Web 1.0.22 — `COMMIT`
+## Web 1.0.22 — `38e17fa`
 - **e-Faturalar "Tümünü Göster" artık eksik veriyi sessizce göstermiyor (`web/src/lib/efatura.ts`, `efatura-view.tsx`):**
   - Yüklenemeyen aylar ("2 ay yüklenemedi (Eylül 2026, Ekim 2026)…") ve QNB'den gelen uyarılar kalıcı bir uyarı şeridinde gösteriliyor; hiçbir ay yüklenemezse (ör. QNB bilgileri eksik) hata bildirimi çıkıyor.
   - Eksik sonuç önbelleğe alınmıyor; "Yenile" yalnızca eksik ayları tekrar çekiyor. İlk fatura ayı alınamazsa bu hata da önbelleğe alınmıyor.
