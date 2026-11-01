@@ -10,23 +10,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { CategoryBadge } from "@/components/ui/category-badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, Button, Card, Chip, Skeleton, Table, toast } from "@heroui/react";
+import { CategoryBadge } from "@/components/category-badge";
 import {
   listTrash,
   purgeTrash,
@@ -47,7 +32,7 @@ export function TrashTab() {
     void listTrash()
       .then((data) => setItems(data))
       .catch((err) => {
-        toast.error(err instanceof Error ? err.message : "Çöp kutusu yüklenemedi.");
+        toast.danger(err instanceof Error ? err.message : "Çöp kutusu yüklenemedi.");
       })
       .finally(() => setLoading(false));
   };
@@ -63,7 +48,7 @@ export function TrashTab() {
       setItems((prev) => prev.filter((i) => i.id !== item.id));
       toast.success(`"${item.receipt.firma_adi}" fişi başarıyla geri alındı.`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Geri alınamadı.");
+      toast.danger(err instanceof Error ? err.message : "Geri alınamadı.");
     } finally {
       setActingId(null);
     }
@@ -76,7 +61,7 @@ export function TrashTab() {
       setItems((prev) => prev.filter((i) => i.id !== item.id));
       toast.success(`"${item.receipt.firma_adi}" fişi kalıcı olarak silindi.`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Silinemedi.");
+      toast.danger(err instanceof Error ? err.message : "Silinemedi.");
     } finally {
       setActingId(null);
     }
@@ -91,7 +76,7 @@ export function TrashTab() {
       setEmptyDialogOpen(false);
       toast.success("Çöp kutusundaki tüm fişler kalıcı olarak silindi.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Çöp kutusu boşaltılamadı.");
+      toast.danger(err instanceof Error ? err.message : "Çöp kutusu boşaltılamadı.");
     } finally {
       setEmptying(false);
     }
@@ -100,23 +85,23 @@ export function TrashTab() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
+        <Card.Header className="flex flex-row items-center justify-between gap-4 pb-4">
           <div className="space-y-1">
-            <CardTitle className="text-base font-semibold">Son Silinen Fişler</CardTitle>
-            <CardDescription>
+            <Card.Title className="text-base font-semibold">Son Silinen Fişler</Card.Title>
+            <Card.Description>
               Silinen fişler 30 gün boyunca burada saklanır ve dilediğiniz zaman geri alabilirsiniz.
-            </CardDescription>
+            </Card.Description>
           </div>
           <div className="flex items-center gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => {
+              onPress={() => {
                 setLoading(true);
                 fetchItems();
               }}
-              disabled={loading}
+              isDisabled={loading}
               className="gap-1.5"
             >
               <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
@@ -125,9 +110,9 @@ export function TrashTab() {
             {items.length > 0 && (
               <Button
                 type="button"
-                variant="destructive"
+                variant="danger-soft"
                 size="sm"
-                onClick={() => setEmptyDialogOpen(true)}
+                onPress={() => setEmptyDialogOpen(true)}
                 className="gap-1.5"
               >
                 <Trash2 className="size-3.5" />
@@ -135,8 +120,8 @@ export function TrashTab() {
               </Button>
             )}
           </div>
-        </CardHeader>
-        <CardContent>
+        </Card.Header>
+        <Card.Content>
           {loading ? (
             <div className="space-y-2 py-4">
               <Skeleton className="h-10 w-full" />
@@ -145,117 +130,122 @@ export function TrashTab() {
             </div>
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Check className="size-8 text-muted-foreground/60 mb-2" />
+              <Check className="size-8 text-muted/60 mb-2" />
               <p className="text-sm font-medium text-foreground">Çöp kutusu boş</p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted mt-1">
                 Silinen fişleriniz olduğunda burada görüntülenecektir.
               </p>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-md border">
-              <Table className="min-w-[620px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Firma</TableHead>
-                    <TableHead>Fiş Tarihi</TableHead>
-                    <TableHead className="text-right">Tutar</TableHead>
-                    <TableHead>Kategori</TableHead>
-                    <TableHead>Silinme Zamanı</TableHead>
-                    <TableHead>Kalan Süre</TableHead>
-                    <TableHead className="text-right">İşlemler</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {items.map((item) => {
-                    const days = trashDaysLeft(item.deleted_at);
-                    const isActing = actingId === item.id;
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium text-foreground">
-                          {item.receipt.firma_adi || "İsimsiz"}
-                        </TableCell>
-                        <TableCell className="tabular-nums text-muted-foreground text-xs">
-                          {isoToTrDate(item.receipt.tarih)}
-                        </TableCell>
-                        <TableCell className="text-right font-medium tabular-nums">
-                          {formatTL(item.receipt.toplam_tutar)}
-                        </TableCell>
-                        <TableCell>
-                          <CategoryBadge category={item.receipt.kategori} size="sm" />
-                        </TableCell>
-                        <TableCell className="tabular-nums text-xs text-muted-foreground">
-                          {isoToTrDate(item.deleted_at.slice(0, 10))}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={days <= 1 ? "destructive" : "outline"}
-                            className="gap-1 text-xs"
-                          >
-                            <Clock className="size-3" />
-                            {trashLeftLabel(days)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              disabled={isActing}
-                              onClick={() => handleRestore(item)}
-                              className="gap-1 text-xs h-7 px-2"
-                            >
-                              {isActing ? (
-                                <Loader2 className="size-3 animate-spin" />
-                              ) : (
-                                <ArchiveRestore className="size-3 text-primary" />
-                              )}
-                              Geri Al
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              disabled={isActing}
-                              onClick={() => handlePurgeSingle(item)}
-                              className="gap-1 text-xs h-7 px-2 text-destructive hover:bg-destructive/10"
-                            >
-                              Kalıcı Sil
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
+              <Table variant="secondary">
+                <Table.ScrollContainer>
+                  <Table.Content aria-label="Son silinen fişler" className="min-w-[620px]">
+                    <Table.Header>
+                      <Table.Column isRowHeader>Firma</Table.Column>
+                      <Table.Column>Fiş Tarihi</Table.Column>
+                      <Table.Column className="text-right">Tutar</Table.Column>
+                      <Table.Column>Kategori</Table.Column>
+                      <Table.Column>Silinme Zamanı</Table.Column>
+                      <Table.Column>Kalan Süre</Table.Column>
+                      <Table.Column className="text-right">İşlemler</Table.Column>
+                    </Table.Header>
+                    <Table.Body>
+                      {items.map((item) => {
+                        const days = trashDaysLeft(item.deleted_at);
+                        const isActing = actingId === item.id;
+                        return (
+                          <Table.Row key={item.id} id={item.id}>
+                            <Table.Cell className="font-medium text-foreground">
+                              {item.receipt.firma_adi || "İsimsiz"}
+                            </Table.Cell>
+                            <Table.Cell className="tabular-nums text-muted text-xs">
+                              {isoToTrDate(item.receipt.tarih)}
+                            </Table.Cell>
+                            <Table.Cell className="text-right font-medium tabular-nums">
+                              {formatTL(item.receipt.toplam_tutar)}
+                            </Table.Cell>
+                            <Table.Cell>
+                              <CategoryBadge category={item.receipt.kategori} size="sm" />
+                            </Table.Cell>
+                            <Table.Cell className="tabular-nums text-xs text-muted">
+                              {isoToTrDate(item.deleted_at.slice(0, 10))}
+                            </Table.Cell>
+                            <Table.Cell>
+                              <Chip size="sm"
+                                color={days <= 1 ? "danger" : "default"}
+                                variant={days <= 1 ? "soft" : "secondary"}
+                                className="gap-1 text-xs"
+                              >
+                                <Clock className="size-3" />
+                                {trashLeftLabel(days)}
+                              </Chip>
+                            </Table.Cell>
+                            <Table.Cell className="text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  isDisabled={isActing}
+                                  onPress={() => handleRestore(item)}
+                                  className="gap-1 text-xs h-7 px-2"
+                                >
+                                  {isActing ? (
+                                    <Loader2 className="size-3 animate-spin" />
+                                  ) : (
+                                    <ArchiveRestore className="size-3 text-accent" />
+                                  )}
+                                  Geri Al
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  isDisabled={isActing}
+                                  onPress={() => handlePurgeSingle(item)}
+                                  className="gap-1 text-xs h-7 px-2 text-danger hover:bg-danger/10"
+                                >
+                                  Kalıcı Sil
+                                </Button>
+                              </div>
+                            </Table.Cell>
+                          </Table.Row>
+                        );
+                      })}
+                    </Table.Body>
+                  </Table.Content>
+                </Table.ScrollContainer>
               </Table>
             </div>
           )}
-        </CardContent>
+        </Card.Content>
       </Card>
 
       {/* Tümünü Boşalt Onay Dialogu */}
-      <AlertDialog open={emptyDialogOpen} onOpenChange={setEmptyDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Çöp Kutusunu Boşalt</AlertDialogTitle>
-            <AlertDialogDescription>
-              Çöp kutusundaki {items.length} adet fiş ve varsa saklanan fotoğrafları kalıcı olarak
-              silinecek. Bu işlem geri alınamaz. Devam etmek istiyor musunuz?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={emptying}>İptal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleEmptyAll}
-              disabled={emptying}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {emptying ? "Siliniyor…" : "Tümünü Kalıcı Olarak Sil"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <AlertDialog.Backdrop isOpen={emptyDialogOpen} onOpenChange={setEmptyDialogOpen}>
+        <AlertDialog.Container>
+          <AlertDialog.Dialog>
+            <AlertDialog.Header>
+              <AlertDialog.Heading>Çöp Kutusunu Boşalt</AlertDialog.Heading>
+              <p className="text-sm text-muted">
+                Çöp kutusundaki {items.length} adet fiş ve varsa saklanan fotoğrafları kalıcı olarak
+                silinecek. Bu işlem geri alınamaz. Devam etmek istiyor musunuz?
+              </p>
+            </AlertDialog.Header>
+            <AlertDialog.Footer>
+              <Button slot="close" variant="tertiary" size="sm" isDisabled={emptying}>İptal</Button>
+              <Button size="sm"
+                onPress={handleEmptyAll}
+                isDisabled={emptying}
+                className="bg-danger text-destructive-foreground hover:bg-danger/90"
+              >
+                {emptying ? "Siliniyor…" : "Tümünü Kalıcı Olarak Sil"}
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
     </div>
   );
 }

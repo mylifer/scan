@@ -11,7 +11,7 @@
 Claude Code'un bıraktığı **v1.48.0** sürümünden itibaren projede iki paralel ve köklü dönüşüm gerçekleştirilmiştir:
 
 1. **Mobil Uygulama (Expo SDK 58 / React Native):** Kök dizinde (`src/`) korunmuş, test kapsamı 211 teste yükseltilmiş, e-fatura PDF blob hatası çözülmüş ve mobil kararlılığı %100 muhafaza edilmiştir.
-2. **Yeni Web Mimarisi (`web/` — Next.js 16 + shadcn/ui):** Mobil web kısıtlamalarını aşmak ve tam teşekküllü bir masaüstü FinTech SaaS paneli sunmak amacıyla, bağımsız bir **Next.js 16 (App Router), React 19, Tailwind CSS v4 ve resmi shadcn/ui** projesi kurulmuştur. Web 0.1.0'dan Web 1.0.21'e kadar 21+ sürüm geliştirilerek canlıya alınmıştır.
+2. **Yeni Web Mimarisi (`web/` — Next.js 16 + HeroUI v3; Web 1.1.0 öncesi shadcn/ui):** Mobil web kısıtlamalarını aşmak ve tam teşekküllü bir masaüstü FinTech SaaS paneli sunmak amacıyla, bağımsız bir **Next.js 16 (App Router), React 19, Tailwind CSS v4 ve resmi shadcn/ui** projesi kurulmuştur. Web 0.1.0'dan Web 1.0.21'e kadar 21+ sürüm geliştirilerek canlıya alınmıştır.
 
 ---
 
@@ -93,7 +93,7 @@ scan/
 │   │   │   │   └── template.tsx # Sayfa geçiş animasyonu (slide & fade)
 │   │   │   ├── globals.css      # Tailwind v4 tema değişkenleri ve ultra-soft satır çizgileri
 │   │   │   └── layout.tsx       # Root layout, Geist font tanımları (latin-ext)
-│   │   ├── components/          # shadcn/ui & sayfa bileşenleri
+│   │   ├── components/          # HeroUI tabanlı sayfa bileşenleri (components/ui yok)
 │   │   └── lib/                 # Web veri katmanı ve algoritmaları (10 dosya, 35 Vitest testi)
 ├── .github/workflows/
 │   ├── deploy-web.yml           # Web uygulamasını GitHub Pages'e derleyip yayınlayan iş akışı
@@ -111,7 +111,7 @@ Claude Code olarak projede çalışırken aşağıdaki kurallara **mutlaka** uyu
 1. **Yalnızca Geist Fontu:** Sistemde `font-mono`, `Inter` veya sistem fontu kullanılmaz. Parasal değerler, tarihler ve kodlarda `font-mono` yerine `Geist Sans` ile birlikte `tabular-nums` sınıfı kullanılır (`latin-ext` destekli).
 2. **Kategori Rozetleri:** Emojiler kesinlikle kullanılmaz. `CategoryBadge` bileşeni kullanılır (`dotColor` parıltılı neon nokta + 2 harfli büyük harf monogram).
 3. **Koyu Mod Tablo Çizgileri:** Tablolarda yüksek kontrastlı border kullanılmaz. `.dark table tbody tr` satırları `rgba(255, 255, 255, 0.02)` ultra-soft sınır seviyesindedir.
-4. **Cam Efekti (Apple Native Glass):** Özet metrik kartları ve paneller `rounded-2xl border border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)]` standardındadır. Temel `Card` bileşeni (`components/ui/card.tsx`) bu stili varsayılan olarak uygular; yeni kartlarda sınıfları elle tekrarlamak yerine `Card` kullanın. Kenarlığı değiştiren vurgulu kartlarda koyu mod için `dark:border-...` da verin (aksi halde `dark:border-white/[0.05]` ezer).
+4. **Cam Efekti (Apple Native Glass):** Özet metrik kartları ve paneller `rounded-2xl border border-border/80 dark:border-white/[0.05] bg-surface/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)]` standardındadır. HeroUI `Card` bileşeni bu stili `globals.css` içindeki `.card` özelleştirmesiyle varsayılan olarak uygular; yeni kartlarda sınıfları elle tekrarlamak yerine `Card` kullanın. Kenarlığı değiştiren vurgulu kartlarda koyu mod için `dark:border-...` da verin (aksi halde `dark:border-white/[0.05]` ezer).
 5. **Para Birimi:** `formatTL` sonucu "₺1.234,56" biçimindedir; sonuna " TL" eklenmez.
 
 ### B. e-Fatura ve Finansal Hesaplamalar

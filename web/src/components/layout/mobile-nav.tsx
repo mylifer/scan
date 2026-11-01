@@ -30,12 +30,12 @@ export function MobileNav() {
               className={cn(
                 "relative flex flex-1 flex-col items-center justify-center py-1.5 transition-all duration-150 active:scale-95 cursor-pointer",
                 isActive
-                  ? "text-primary font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "text-accent font-semibold"
+                  : "text-muted hover:text-foreground"
               )}
             >
               {isActive && (
-                <span className="absolute top-0 h-0.5 w-6 rounded-full bg-primary animate-in fade-in zoom-in-75 duration-200" />
+                <span className="absolute top-0 h-0.5 w-6 rounded-full bg-accent animate-in fade-in zoom-in-75 duration-200" />
               )}
               <Icon className="size-5 shrink-0" />
               <span className="text-[10px] tracking-tight mt-0.5">{item.label}</span>

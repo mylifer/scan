@@ -6,8 +6,8 @@ import { useAuth } from "@/components/auth-provider";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { MobileNav } from "@/components/layout/mobile-nav";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Skeleton } from "@/components/ui/skeleton";
+import { SidebarInset, SidebarProvider } from "@/components/layout/sidebar-shell";
+import { Skeleton } from "@heroui/react";
 
 /** İstemci tarafı oturum koruması (statik export: middleware yok). */
 export default function AppLayout({ children }: { children: React.ReactNode }) {

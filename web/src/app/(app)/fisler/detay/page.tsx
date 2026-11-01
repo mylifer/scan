@@ -2,11 +2,9 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { toast } from "sonner";
+import { Card, Skeleton, toast } from "@heroui/react";
 import { ReceiptForm } from "@/components/receipts/receipt-form";
 import { PageHeader } from "@/components/layout/page-header";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getReceipt } from "@/lib/receipts";
 import type { ReceiptRecord } from "@shared/types/receipt";
 
@@ -35,7 +33,7 @@ function ReceiptDetailLoader() {
         if (!cancelled) {
           const msg = err instanceof Error ? err.message : "Fiş bulunamadı.";
           setState({ record: null, loading: false, error: msg });
-          toast.error(msg);
+          toast.danger(msg);
         }
       });
     return () => {
@@ -48,9 +46,9 @@ function ReceiptDetailLoader() {
       <div className="space-y-6">
         <PageHeader title="Fiş Bulunamadı" description={state.error} />
         <Card>
-          <CardContent className="py-12 text-center text-sm text-muted-foreground">
+          <Card.Content className="py-12 text-center text-sm text-muted">
             {state.error}
-          </CardContent>
+          </Card.Content>
         </Card>
       </div>
     );
@@ -72,11 +70,11 @@ export default function Page() {
         <div className="space-y-6">
           <PageHeader title="Fiş Yükleniyor…" />
           <Card>
-            <CardContent className="space-y-4 pt-6">
+            <Card.Content className="space-y-4 pt-6">
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
-            </CardContent>
+            </Card.Content>
           </Card>
         </div>
       }

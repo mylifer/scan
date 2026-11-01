@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { toast } from "sonner";
+import { toast } from "@heroui/react";
 import { APP_VERSION, isChunkLoadError, isNewVersion, reloadForChunkError, VERSION_URL } from "@/lib/appVersion";
 
 const CHECK_INTERVAL_MS = 5 * 60_000;
@@ -39,8 +39,8 @@ export function VersionGuard() {
         if (isNewVersion(APP_VERSION, await res.json())) {
           notified.current = true;
           toast.info("Uygulamanın yeni sürümü yayınlandı.", {
-            duration: Infinity,
-            action: { label: "Yenile", onClick: () => window.location.reload() },
+            timeout: 0,
+            actionProps: { children: "Yenile", onPress: () => window.location.reload() },
           });
         }
       } catch {

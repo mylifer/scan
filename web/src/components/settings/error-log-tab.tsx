@@ -9,29 +9,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, Button, Card, Chip, Modal, Skeleton, Table, toast } from "@heroui/react";
 import { clearErrors, listErrors, type AppErrorRecord } from "@/lib/errorLog";
 
 export function ErrorLogTab() {
@@ -45,7 +23,7 @@ export function ErrorLogTab() {
     void listErrors()
       .then((data) => setErrors(data))
       .catch((err) => {
-        toast.error(err instanceof Error ? err.message : "Hata kayıtları yüklenemedi.");
+        toast.danger(err instanceof Error ? err.message : "Hata kayıtları yüklenemedi.");
       })
       .finally(() => setLoading(false));
   };
@@ -62,7 +40,7 @@ export function ErrorLogTab() {
       setClearDialogOpen(false);
       toast.success("Hata kayıtları temizlendi.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Temizlenemedi.");
+      toast.danger(err instanceof Error ? err.message : "Temizlenemedi.");
     } finally {
       setClearing(false);
     }
@@ -71,23 +49,23 @@ export function ErrorLogTab() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
+        <Card.Header className="flex flex-row items-center justify-between gap-4 pb-4">
           <div className="space-y-1">
-            <CardTitle className="text-base font-semibold">Uygulama Hata Kayıtları</CardTitle>
-            <CardDescription>
+            <Card.Title className="text-base font-semibold">Uygulama Hata Kayıtları</Card.Title>
+            <Card.Description>
               Uygulama çalışırken karşılaşılan beklenmedik durumlar ve sistem kayıtları burada listelenir.
-            </CardDescription>
+            </Card.Description>
           </div>
           <div className="flex items-center gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => {
+              onPress={() => {
                 setLoading(true);
                 fetchErrors();
               }}
-              disabled={loading}
+              isDisabled={loading}
               className="gap-1.5"
             >
               <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
@@ -96,9 +74,9 @@ export function ErrorLogTab() {
             {errors.length > 0 && (
               <Button
                 type="button"
-                variant="destructive"
+                variant="danger-soft"
                 size="sm"
-                onClick={() => setClearDialogOpen(true)}
+                onPress={() => setClearDialogOpen(true)}
                 className="gap-1.5"
               >
                 <Trash2 className="size-3.5" />
@@ -106,8 +84,8 @@ export function ErrorLogTab() {
               </Button>
             )}
           </div>
-        </CardHeader>
-        <CardContent>
+        </Card.Header>
+        <Card.Content>
           {loading ? (
             <div className="space-y-2 py-4">
               <Skeleton className="h-10 w-full" />
@@ -116,126 +94,133 @@ export function ErrorLogTab() {
             </div>
           ) : errors.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Check className="size-8 text-muted-foreground/60 mb-2" />
+              <Check className="size-8 text-muted/60 mb-2" />
               <p className="text-sm font-medium text-foreground">Hata kaydı bulunmuyor</p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted mt-1">
                 Tüm servisler sorunsuz çalışıyor.
               </p>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-md border">
-              <Table className="min-w-[600px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tarih & Saat</TableHead>
-                    <TableHead>Bağlam</TableHead>
-                    <TableHead>Mesaj</TableHead>
-                    <TableHead>Platform / Sürüm</TableHead>
-                    <TableHead className="text-right">Detay</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {errors.map((err) => (
-                    <TableRow key={err.id}>
-                      <TableCell className="tabular-nums text-xs text-muted-foreground whitespace-nowrap">
-                        {err.created_at ? new Date(err.created_at).toLocaleString("tr-TR") : "—"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {err.context || "genel"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="max-w-md truncate font-medium text-xs text-foreground">
-                        {err.message}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                        {[err.platform, err.app_version].filter(Boolean).join(" · ") || "—"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedError(err)}
-                          className="h-7 px-2 text-xs gap-1"
-                        >
-                          <FileCode className="size-3" />
-                          İncele
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
+              <Table variant="secondary">
+                <Table.ScrollContainer>
+                  <Table.Content aria-label="Hata kayıtları" className="min-w-[600px]">
+                    <Table.Header>
+                      <Table.Column isRowHeader>Tarih & Saat</Table.Column>
+                      <Table.Column>Bağlam</Table.Column>
+                      <Table.Column>Mesaj</Table.Column>
+                      <Table.Column>Platform / Sürüm</Table.Column>
+                      <Table.Column className="text-right">Detay</Table.Column>
+                    </Table.Header>
+                    <Table.Body>
+                      {errors.map((err) => (
+                        <Table.Row key={err.id} id={err.id}>
+                          <Table.Cell className="tabular-nums text-xs text-muted whitespace-nowrap">
+                            {err.created_at ? new Date(err.created_at).toLocaleString("tr-TR") : "—"}
+                          </Table.Cell>
+                          <Table.Cell>
+                            <Chip size="sm" variant="secondary" className="text-xs">
+                              {err.context || "genel"}
+                            </Chip>
+                          </Table.Cell>
+                          <Table.Cell className="max-w-md truncate font-medium text-xs text-foreground">
+                            {err.message}
+                          </Table.Cell>
+                          <Table.Cell className="text-xs text-muted whitespace-nowrap">
+                            {[err.platform, err.app_version].filter(Boolean).join(" · ") || "—"}
+                          </Table.Cell>
+                          <Table.Cell className="text-right">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onPress={() => setSelectedError(err)}
+                              className="h-7 px-2 text-xs gap-1"
+                            >
+                              <FileCode className="size-3" />
+                              İncele
+                            </Button>
+                          </Table.Cell>
+                        </Table.Row>
+                      ))}
+                    </Table.Body>
+                  </Table.Content>
+                </Table.ScrollContainer>
               </Table>
             </div>
           )}
-        </CardContent>
+        </Card.Content>
       </Card>
 
       {/* Detay Dialogu */}
-      <Dialog open={!!selectedError} onOpenChange={(open) => !open && setSelectedError(null)}>
-        <DialogContent className="w-full max-w-[calc(100vw-2rem)] sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="size-4 text-amber-500" />
-              Hata Detayı
-            </DialogTitle>
-            <DialogDescription>
-              Bağlam: <span className="font-semibold">{selectedError?.context}</span> · Tarih:{" "}
-              {selectedError?.created_at ? new Date(selectedError.created_at).toLocaleString("tr-TR") : "—"}
-            </DialogDescription>
-          </DialogHeader>
+      <Modal.Backdrop isOpen={!!selectedError} onOpenChange={(open) => !open && setSelectedError(null)}>
+        <Modal.Container className="sm:w-full">
+          <Modal.Dialog className="sm:max-w-2xl">
+            <Modal.CloseTrigger />
+            <Modal.Header>
+              <Modal.Heading className="flex items-center gap-2 text-base">
+                <AlertTriangle className="size-4 text-amber-500" />
+                Hata Detayı
+              </Modal.Heading>
+              <p className="text-sm text-muted">
+                Bağlam: <span className="font-semibold">{selectedError?.context}</span> · Tarih:{" "}
+                {selectedError?.created_at ? new Date(selectedError.created_at).toLocaleString("tr-TR") : "—"}
+              </p>
+            </Modal.Header>
 
-          {selectedError && (
-            <div className="space-y-4 py-2">
-              <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-1">
-                <span className="font-semibold text-foreground">Hata Mesajı:</span>
-                <p className="text-destructive break-words font-medium">{selectedError.message}</p>
-              </div>
-
-              {selectedError.detail ? (
-                <div className="space-y-1.5">
-                  <span className="text-xs font-semibold text-muted-foreground">Teknik Detay (Stack Trace):</span>
-                  <pre className="max-h-60 overflow-x-auto rounded-lg border bg-muted/60 p-3 text-xs tabular-nums text-foreground/90 whitespace-pre-wrap break-all">
-                    {selectedError.detail}
-                  </pre>
+            {selectedError && (
+              <div className="space-y-4 py-2">
+                <div className="rounded-lg border bg-default/40 p-3 text-xs space-y-1">
+                  <span className="font-semibold text-foreground">Hata Mesajı:</span>
+                  <p className="text-danger break-words font-medium">{selectedError.message}</p>
                 </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">Ek teknik detay bulunmuyor.</p>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+
+                {selectedError.detail ? (
+                  <div className="space-y-1.5">
+                    <span className="text-xs font-semibold text-muted">Teknik Detay (Stack Trace):</span>
+                    <pre className="max-h-60 overflow-x-auto rounded-lg border bg-default/60 p-3 text-xs tabular-nums text-foreground/90 whitespace-pre-wrap break-all">
+                      {selectedError.detail}
+                    </pre>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted">Ek teknik detay bulunmuyor.</p>
+                )}
+              </div>
+            )}
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
 
       {/* Kayıtları Temizle Onayı */}
-      <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hata Kayıtlarını Temizle</AlertDialogTitle>
-            <AlertDialogDescription>
-              {errors.length} adet hata kaydı kalıcı olarak silinecektir. Devam etmek istiyor musunuz?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={clearing}>İptal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleClearAll}
-              disabled={clearing}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {clearing ? (
-                <>
-                  <Loader2 className="size-3.5 animate-spin mr-1.5" />
-                  Temizleniyor…
-                </>
-              ) : (
-                "Kayıtları Temizle"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <AlertDialog.Backdrop isOpen={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+        <AlertDialog.Container>
+          <AlertDialog.Dialog>
+            <AlertDialog.Header>
+              <AlertDialog.Heading>Hata Kayıtlarını Temizle</AlertDialog.Heading>
+              <p className="text-sm text-muted">
+                {errors.length} adet hata kaydı kalıcı olarak silinecektir. Devam etmek istiyor musunuz?
+              </p>
+            </AlertDialog.Header>
+            <AlertDialog.Footer>
+              <Button slot="close" variant="tertiary" size="sm" isDisabled={clearing}>İptal</Button>
+              <Button size="sm"
+                onPress={handleClearAll}
+                isDisabled={clearing}
+                className="bg-danger text-destructive-foreground hover:bg-danger/90"
+              >
+                {clearing ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin mr-1.5" />
+                    Temizleniyor…
+                  </>
+                ) : (
+                  "Kayıtları Temizle"
+                )}
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
     </div>
   );
 }

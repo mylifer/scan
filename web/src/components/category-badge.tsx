@@ -1,3 +1,4 @@
+import { Chip } from "@heroui/react";
 import { cn } from "@/lib/utils";
 import { categoryLabel } from "@shared/lib/categories";
 
@@ -191,7 +192,7 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
 }
 
 /**
- * Minimalist Monogram & Status Dot Rozeti Bileşeni
+ * Minimalist Monogram & Status Dot Rozeti Bileşeni (HeroUI Chip)
  * Linear & Swiss stili: yuvarlak renkli durum noktası + 2 harfli kod + kategori adı
  */
 export function CategoryBadge({
@@ -207,11 +208,12 @@ export function CategoryBadge({
   const label = categoryLabel(category);
 
   return (
-    <span
+    <Chip
+      variant="secondary"
+      size={size}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-lg font-medium select-none shrink-0 transition-colors",
-        "bg-muted/70 hover:bg-muted border border-border/80 text-foreground",
-        "dark:bg-zinc-900/90 dark:hover:bg-zinc-800 dark:border-white/[0.08] dark:text-zinc-200",
+        "gap-1.5 rounded-lg select-none shrink-0 border-border/80 bg-default/70 text-foreground",
+        "dark:bg-zinc-900/90 dark:border-white/[0.08] dark:text-zinc-200",
         size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
         className,
       )}
@@ -219,15 +221,13 @@ export function CategoryBadge({
       <span className={cn("rounded-full shrink-0", size === "sm" ? "size-1.5" : "size-2", visual.dotColor)} />
       <span
         className={cn(
-          "font-bold uppercase tracking-wider text-muted-foreground dark:text-zinc-400",
+          "font-bold uppercase tracking-wider text-muted dark:text-zinc-400",
           size === "sm" ? "text-[9px]" : "text-[10px]",
         )}
       >
         {visual.initial}
       </span>
-      <span className="font-semibold text-foreground dark:text-zinc-200 truncate">
-        {label}
-      </span>
-    </span>
+      <Chip.Label className="px-0 font-semibold text-foreground dark:text-zinc-200 truncate">{label}</Chip.Label>
+    </Chip>
   );
 }

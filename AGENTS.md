@@ -40,7 +40,7 @@ Docs: https://docs.expo.dev/eas/index.md
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
 
-## Web Application (`web/` — Next.js 16 + shadcn/ui)
+## Web Application (`web/` — Next.js 16 + HeroUI v3)
 
 The web dashboard is a modern desktop-first Next.js 16 (App Router) application located in the `web/` subfolder. It is statically exported and published to GitHub Pages (`https://mylifer.github.io/scan/`). Detailed handover context is in `CLAUDE_CODE_HANDOVER.md`.
 
@@ -56,9 +56,12 @@ npm run build      # Static export build (out/)
 
 ### Design Standards for Web
 - **Typography:** Use only `Geist Sans` with `tabular-nums` for amounts and numbers. No `font-mono`.
-- **Badges:** Emojis are deprecated; use `CategoryBadge` (dotColor status dot + 2-letter uppercase monogram).
+- **Badges:** Emojis are deprecated; use `CategoryBadge` (`components/category-badge.tsx`, HeroUI `Chip` with dotColor status dot + 2-letter uppercase monogram). Other badges use HeroUI `Chip`.
 - **Tables:** Dark mode row dividers use ultra-soft 2% opacity (`rgba(255, 255, 255, 0.02)`).
-- **Cards:** Apple Native Glass / macOS Tahoe frosted glass design (`bg-card/75 backdrop-blur-xl border-border/80`). The base `Card` (`components/ui/card.tsx`) applies it by default — use `Card` instead of repeating the classes.
+- **UI library:** All design components come from **HeroUI v3** (`@heroui/react`, compound API: `Card.Header`, `Modal.Backdrop`, `Table.Content`…; styles via `@import "@heroui/styles"` in `globals.css`). There is no `components/ui/` folder and no shadcn/Radix/sonner — don't reintroduce them. HeroUI has no sidebar: `components/layout/sidebar-shell.tsx` provides it (HeroUI `Drawer` on mobile). Toasts: `toast` from `@heroui/react` (`toast.danger`, not `error`). Docs: https://heroui.com/docs/react
+- **Tokens:** HeroUI semantics — `text-muted` = secondary text (old `text-muted-foreground`), `bg-default` = neutral fill, `bg-accent` = turquoise brand, `bg-surface` = cards, `bg-overlay` = popovers, `danger` = destructive. Theme overrides live in `globals.css` (`:root` / `.dark`).
+- **Tables:** HeroUI `Table` is React Aria based — every table needs one `Table.Column isRowHeader`, row checkboxes must use `slot="selection"` with `selectionMode` on `Table.Content`, and clickable rows use `onAction`.
+- **Cards:** Apple Native Glass / macOS Tahoe frosted glass design (`bg-surface/75 backdrop-blur-xl border-border/80`). HeroUI `Card` gets it by default from the `.card` override in `globals.css` — use `Card` instead of repeating the classes.
 - **KDV period:** Receipts sent to the accountant in month M are deducted in M−1; unsent receipts in (current month − 1); never earlier than the receipt's own month. Single source: `fisKdvAyi` / `kdvFisFiltresi` in `src/lib/kdvAy.ts` (shared by mobile and web).
 - **Currency:** `formatTL` already returns "₺1.234,56"; never append " TL".
 - **e-Fatura:** The UBL KDV fallback lives in `supabase/functions/qnb-efatura/index.ts` (`tutarlariTamamla`); there is no `ublFallback.ts`. "Tümünü Göster" (`fetchAllFaturalar` in `web/src/lib/efatura.ts`) must keep 3-way concurrency, surface failed months/warnings, and never cache incomplete results.

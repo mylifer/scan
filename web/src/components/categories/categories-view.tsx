@@ -12,33 +12,9 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { AlertDialog, Button, Card, Chip, Input, Label, Modal, Skeleton, toast } from "@heroui/react";
 import { PageHeader } from "@/components/layout/page-header";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { CategoryBadge } from "@/components/ui/category-badge";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
+import { CategoryBadge } from "@/components/category-badge";
 import {
   addCustomCategory,
   deleteCustomCategory,
@@ -72,7 +48,7 @@ export function CategoriesView() {
         setCounts(countsMap);
       })
       .catch((err) => {
-        toast.error(err instanceof Error ? err.message : "Kategoriler yüklenemedi.");
+        toast.danger(err instanceof Error ? err.message : "Kategoriler yüklenemedi.");
       })
       .finally(() => {
         setLoading(false);
@@ -94,7 +70,7 @@ export function CategoriesView() {
       toast.success(`"${added}" kategorisi eklendi.`);
       loadData();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Kategori eklenemedi.");
+      toast.danger(err instanceof Error ? err.message : "Kategori eklenemedi.");
     } finally {
       setAdding(false);
     }
@@ -111,7 +87,7 @@ export function CategoriesView() {
       setEditingCat(null);
       loadData();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Kategori güncellenemedi.");
+      toast.danger(err instanceof Error ? err.message : "Kategori güncellenemedi.");
     } finally {
       setSavingEdit(false);
     }
@@ -127,7 +103,7 @@ export function CategoriesView() {
       setDeletingCat(null);
       loadData();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Kategori silinemedi.");
+      toast.danger(err instanceof Error ? err.message : "Kategori silinemedi.");
     } finally {
       setDeleting(false);
     }
@@ -146,14 +122,14 @@ export function CategoriesView() {
         <div className="space-y-6 lg:col-span-2">
           {/* Yeni Kategori Ekleme Kartı */}
           <Card>
-            <CardHeader className="pb-3">
+            <Card.Header className="pb-3">
               <div className="flex items-center gap-2">
-                <FolderPlus className="size-4 text-primary" />
-                <CardTitle className="text-base font-semibold">Yeni Kategori Ekle</CardTitle>
+                <FolderPlus className="size-4 text-accent" />
+                <Card.Title className="text-base font-semibold">Yeni Kategori Ekle</Card.Title>
               </div>
-              <CardDescription>İşletmenizin gider kalemlerine uygun özel bir kategori tanımlayın.</CardDescription>
-            </CardHeader>
-            <CardContent>
+              <Card.Description>İşletmenizin gider kalemlerine uygun özel bir kategori tanımlayın.</Card.Description>
+            </Card.Header>
+            <Card.Content>
               <form onSubmit={handleAddCategory} className="flex gap-2">
                 <Input
                   placeholder="Kategori adı (Örn: Dijital Reklam, Ofis İkramı, Danışmanlık)"
@@ -162,30 +138,30 @@ export function CategoriesView() {
                   disabled={adding}
                   className="flex-1"
                 />
-                <Button type="submit" disabled={adding || !newCatName.trim()} className="gap-1.5 shrink-0">
+                <Button size="sm" type="submit" isDisabled={adding || !newCatName.trim()} className="gap-1.5 shrink-0">
                   {adding ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
                   Kategori Ekle
                 </Button>
               </form>
-            </CardContent>
+            </Card.Content>
           </Card>
 
           {/* Tanımlı Özel Kategoriler Listesi */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-semibold">Özel Kategorileriniz</CardTitle>
-              <CardDescription>
+            <Card.Header>
+              <Card.Title className="text-base font-semibold">Özel Kategorileriniz</Card.Title>
+              <Card.Description>
                 Sizin eklediğiniz kategoriler. Düzenleyebilir veya silebilirsiniz (silinen kategorideki fişler &quot;diğer&quot;e aktarılır).
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+              </Card.Description>
+            </Card.Header>
+            <Card.Content>
               {loading ? (
                 <div className="space-y-2">
                   <Skeleton className="h-10 w-full" />
                   <Skeleton className="h-10 w-full" />
                 </div>
               ) : customList.length === 0 ? (
-                <div className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
+                <div className="rounded-lg border border-dashed py-8 text-center text-sm text-muted">
                   Henüz özel bir kategori tanımlamadınız. Yukarıdaki formdan ekleyebilirsiniz.
                 </div>
               ) : (
@@ -195,37 +171,37 @@ export function CategoriesView() {
                     return (
                       <div
                         key={cat}
-                        className="flex items-center justify-between p-3 transition-colors hover:bg-muted/40"
+                        className="flex items-center justify-between p-3 transition-colors hover:bg-default/40"
                       >
                         <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
-                          <Tag className="size-4 text-primary shrink-0" />
+                          <Tag className="size-4 text-accent shrink-0" />
                           <span className="font-semibold text-foreground text-sm truncate">{categoryLabel(cat)}</span>
-                          <Badge variant="secondary" className="text-xs shrink-0">
+                          <Chip size="sm" variant="soft" className="text-xs shrink-0">
                             {count} fiş
-                          </Badge>
+                          </Chip>
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0">
                           <Button
                             type="button"
                             variant="ghost"
-                            size="icon-sm"
-                            title="Düzenle"
-                            onClick={() => {
+                            size="sm" isIconOnly
+                            aria-label="Düzenle"
+                            onPress={() => {
                               setEditingCat(cat);
                               setEditName(cat);
                             }}
                           >
-                            <Edit2 className="size-3.5 text-muted-foreground" />
+                            <Edit2 className="size-3.5 text-muted" />
                           </Button>
                           <Button
                             type="button"
                             variant="ghost"
-                            size="icon-sm"
-                            title="Sil"
-                            onClick={() => setDeletingCat(cat)}
+                            size="sm" isIconOnly
+                            aria-label="Sil"
+                            onPress={() => setDeletingCat(cat)}
                           >
-                            <Trash2 className="size-3.5 text-destructive" />
+                            <Trash2 className="size-3.5 text-danger" />
                           </Button>
                         </div>
                       </div>
@@ -233,18 +209,18 @@ export function CategoriesView() {
                   })}
                 </div>
               )}
-            </CardContent>
+            </Card.Content>
           </Card>
         </div>
 
         {/* Sağ Kolon: Hazır Sistem Kategorileri */}
         <div className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-semibold">Hazır Sistem Kategorileri</CardTitle>
-              <CardDescription>Fiş Tarayıcı ile birlikte gelen 25 adet standart muhasebe kategorisi.</CardDescription>
-            </CardHeader>
-            <CardContent>
+            <Card.Header>
+              <Card.Title className="text-base font-semibold">Hazır Sistem Kategorileri</Card.Title>
+              <Card.Description>Fiş Tarayıcı ile birlikte gelen 25 adet standart muhasebe kategorisi.</Card.Description>
+            </Card.Header>
+            <Card.Content>
               <div className="flex flex-wrap gap-2">
                 {KATEGORILER.map((cat) => {
                   const count = counts.get(cat) ?? 0;
@@ -252,7 +228,7 @@ export function CategoriesView() {
                     <div key={cat} className="inline-flex items-center gap-1.5">
                       <CategoryBadge category={cat} />
                       {count > 0 && (
-                        <span className="tabular-nums text-[10px] text-muted-foreground font-semibold px-1.5 py-0.5 rounded-full bg-muted border border-border/50">
+                        <span className="tabular-nums text-[10px] text-muted font-semibold px-1.5 py-0.5 rounded-full bg-default border border-border/50">
                           {count}
                         </span>
                       )}
@@ -260,68 +236,72 @@ export function CategoriesView() {
                   );
                 })}
               </div>
-            </CardContent>
+            </Card.Content>
           </Card>
         </div>
       </div>
 
       {/* Düzenleme Dialogu */}
-      <Dialog open={Boolean(editingCat)} onOpenChange={(open) => !open && setEditingCat(null)}>
-        <DialogContent className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Kategori Adını Düzenle</DialogTitle>
-            <DialogDescription>
-              Kategori adı değiştirildiğinde bu kategoriye ait mevcut tüm fişler otomatik olarak yeni ada taşınacaktır.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSaveEdit} className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">Yeni Kategori Adı</Label>
-              <Input
-                id="edit-name"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                autoFocus
-                required
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setEditingCat(null)}>
-                Vazgeç
-              </Button>
-              <Button type="submit" disabled={savingEdit || !editName.trim()} className="gap-1.5">
-                {savingEdit ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-                Kaydet
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <Modal.Backdrop isOpen={Boolean(editingCat)} onOpenChange={(open) => !open && setEditingCat(null)}>
+        <Modal.Container className="sm:w-full">
+          <Modal.Dialog className="sm:max-w-md">
+            <Modal.CloseTrigger />
+            <Modal.Header>
+              <Modal.Heading>Kategori Adını Düzenle</Modal.Heading>
+              <p className="text-sm text-muted">
+                Kategori adı değiştirildiğinde bu kategoriye ait mevcut tüm fişler otomatik olarak yeni ada taşınacaktır.
+              </p>
+            </Modal.Header>
+            <form onSubmit={handleSaveEdit} className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Yeni Kategori Adı</Label>
+                <Input
+                  id="edit-name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  autoFocus
+                  required
+                />
+              </div>
+              <Modal.Footer>
+                <Button size="sm" type="button" variant="outline" onPress={() => setEditingCat(null)}>
+                  Vazgeç
+                </Button>
+                <Button size="sm" type="submit" isDisabled={savingEdit || !editName.trim()} className="gap-1.5">
+                  {savingEdit ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                  Kaydet
+                </Button>
+              </Modal.Footer>
+            </form>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
 
       {/* Silme Onay Dialogu */}
-      <AlertDialog open={Boolean(deletingCat)} onOpenChange={(open) => !open && setDeletingCat(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>&quot;{deletingCat}&quot; kategorisi silinsin mi?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bu kategori silindiğinde, bu kategoride bulunan tüm fişleriniz güvenli bir şekilde &quot;diğer&quot; kategorisine aktarılacaktır. Fişleriniz silinmez.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Vazgeç</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={deleting}
-              onClick={(e) => {
-                e.preventDefault();
-                void handleDelete();
-              }}
-            >
-              {deleting ? "Siliniyor…" : "Kategoriyi Sil"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <AlertDialog.Backdrop isOpen={Boolean(deletingCat)} onOpenChange={(open) => !open && setDeletingCat(null)}>
+        <AlertDialog.Container>
+          <AlertDialog.Dialog>
+            <AlertDialog.Header>
+              <AlertDialog.Heading>&quot;{deletingCat}&quot; kategorisi silinsin mi?</AlertDialog.Heading>
+              <p className="text-sm text-muted">
+                Bu kategori silindiğinde, bu kategoride bulunan tüm fişleriniz güvenli bir şekilde &quot;diğer&quot; kategorisine aktarılacaktır. Fişleriniz silinmez.
+              </p>
+            </AlertDialog.Header>
+            <AlertDialog.Footer>
+              <Button slot="close" variant="tertiary" size="sm" isDisabled={deleting}>Vazgeç</Button>
+              <Button size="sm"
+                variant="danger"
+                isDisabled={deleting}
+                onPress={() => {
+                  void handleDelete();
+                }}
+              >
+                {deleting ? "Siliniyor…" : "Kategoriyi Sil"}
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
     </div>
   );
 }

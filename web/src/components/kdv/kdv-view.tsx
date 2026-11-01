@@ -20,12 +20,8 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { Button, Card, Chip, Skeleton, toast } from "@heroui/react";
 import { PageHeader } from "@/components/layout/page-header";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { fetchDonemFaturalar, getMonthBounds, readPersistedDonem, type EFatura } from "@/lib/efatura";
 import { listReceiptsForKdv } from "@/lib/receipts";
 
@@ -98,7 +94,7 @@ export function KdvView() {
     } catch (err) {
       if (iptal()) return;
       const msg = err instanceof Error ? err.message : "KDV verileri yüklenemedi.";
-      toast.error(msg);
+      toast.danger(msg);
       setState({ key, loading: false, gelen: [], giden: [], fisler: [], error: msg, qnb: null });
     }
   }, [activeKey, monthInfo.baslangic, offset]);
@@ -141,12 +137,12 @@ export function KdvView() {
         />
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 rounded-lg border bg-card px-2 py-1 shadow-xs">
+          <div className="flex items-center gap-1.5 rounded-lg border bg-surface px-2 py-1 shadow-xs">
             <Button
               type="button"
               variant="ghost"
-              size="icon-sm"
-              onClick={() => setOffset((o) => o - 1)}
+              size="sm" isIconOnly
+              onPress={() => setOffset((o) => o - 1)}
               aria-label="Önceki ay"
             >
               <ChevronLeft className="size-4" />
@@ -155,9 +151,9 @@ export function KdvView() {
             <Button
               type="button"
               variant="ghost"
-              size="icon-sm"
-              disabled={offset >= 0}
-              onClick={() => setOffset((o) => o + 1)}
+              size="sm" isIconOnly
+              isDisabled={offset >= 0}
+              onPress={() => setOffset((o) => o + 1)}
               aria-label="Sonraki ay"
             >
               <ChevronRight className="size-4" />
@@ -168,8 +164,8 @@ export function KdvView() {
             type="button"
             variant="outline"
             size="sm"
-            onClick={handleRefresh}
-            disabled={refreshing || loading}
+            onPress={handleRefresh}
+            isDisabled={refreshing || loading}
             className="gap-1.5"
           >
             <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} />
@@ -179,9 +175,9 @@ export function KdvView() {
       </div>
 
       {!loading && state.key === activeKey && state.qnb ? (
-        <div className="rounded-2xl border border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl px-4 py-3 shadow-[0_2px_16px_rgba(0,0,0,0.03)] text-xs">
+        <div className="rounded-2xl border border-border/80 dark:border-white/[0.05] bg-surface/75 backdrop-blur-xl px-4 py-3 shadow-[0_2px_16px_rgba(0,0,0,0.03)] text-xs">
           {state.qnb.durum === "yukleniyor" ? (
-            <div className="flex items-start gap-2 text-muted-foreground">
+            <div className="flex items-start gap-2 text-muted">
               <Loader2 className="size-3.5 mt-px shrink-0 animate-spin" />
               <span>
                 e-Faturalar QNB&apos;den güncelleniyor…{" "}
@@ -214,22 +210,22 @@ export function KdvView() {
               ? "border-amber-500/40 bg-amber-500/5 dark:bg-amber-500/10"
               : isDevreden
                 ? "border-emerald-500/40 bg-emerald-500/5 dark:bg-emerald-500/10"
-                : "border-muted"
+                : "border-default"
         }
       >
-        <CardHeader className="pb-3">
+        <Card.Header className="pb-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase text-muted">
               <Calculator className="size-4" />
               {monthInfo.label} KDV Özeti
             </div>
             {!loading && kdv && (
-              <Badge variant={isOdenecek ? "destructive" : isDevreden ? "secondary" : "outline"}>
+              <Chip size="sm" color={isOdenecek ? "danger" : "default"} variant={isOdenecek || isDevreden ? "soft" : "secondary"}>
                 {isOdenecek ? "Tahmini Ödenecek KDV" : isDevreden ? "Sonraki Aya Devreden KDV" : "Sıfır Fark"}
-              </Badge>
+              </Chip>
             )}
           </div>
-          <CardTitle className="text-3xl font-bold tabular-nums">
+          <Card.Title className="text-3xl font-bold tabular-nums">
             {loading ? (
               <Skeleton className="h-9 w-48" />
             ) : kdv ? (
@@ -237,8 +233,8 @@ export function KdvView() {
             ) : (
               "—"
             )}
-          </CardTitle>
-          <CardDescription>
+          </Card.Title>
+          <Card.Description>
             {loading ? (
               <Skeleton className="h-4 w-72" />
             ) : isOdenecek ? (
@@ -248,31 +244,31 @@ export function KdvView() {
             ) : (
               "Hesaplanan ve indirilecek KDV tutarları birbirine eşittir."
             )}
-          </CardDescription>
-        </CardHeader>
+          </Card.Description>
+        </Card.Header>
       </Card>
 
       {/* İki Sütunlu Ayrıntı: Kestiğim KDV vs Düşülebilir KDV */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Sol Sütun: Kestiğim Faturalar (Hesaplanan KDV) */}
         <Card>
-          <CardHeader>
+          <Card.Header>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">1. Kestiğim Faturalar (Hesaplanan)</CardTitle>
+              <Card.Title className="text-base font-semibold">1. Kestiğim Faturalar (Hesaplanan)</Card.Title>
               <TrendingUp className="size-4 text-amber-500" />
             </div>
-            <CardDescription>Giden satış faturalarından doğan KDV yükümlülüğü</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2 rounded-lg border bg-muted/20 p-4 text-sm font-sans">
+            <Card.Description>Giden satış faturalarından doğan KDV yükümlülüğü</Card.Description>
+          </Card.Header>
+          <Card.Content className="space-y-4">
+            <div className="space-y-2 rounded-lg border bg-default/20 p-4 text-sm font-sans">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Faturada Yazan KDV:</span>
+                <span className="text-muted">Faturada Yazan KDV:</span>
                 <span className="font-medium tabular-nums">
                   {loading ? <Skeleton className="h-4 w-20" /> : `${formatTL(kdv?.kestigim.faturada ?? 0)}`}
                 </span>
               </div>
               {(kdv?.kestigim.tevkifat ?? 0) > 0 && (
-                <div className="flex justify-between text-muted-foreground">
+                <div className="flex justify-between text-muted">
                   <span>Tevkifat Kesintisi (Alıcı öder):</span>
                   <span className="tabular-nums">
                     -{formatTL(kdv?.kestigim.tevkifat ?? 0)}
@@ -287,25 +283,25 @@ export function KdvView() {
               </div>
             </div>
 
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted">
               Toplam <span className="font-semibold text-foreground">{kdv?.kestigim.adet ?? 0}</span> adet giden satış faturası dahil edildi.
             </div>
-          </CardContent>
+          </Card.Content>
         </Card>
 
         {/* Sağ Sütun: Düşülebilir KDV (İndirilecek) */}
         <Card>
-          <CardHeader>
+          <Card.Header>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">2. Düşülebilir KDV (İndirilecek)</CardTitle>
+              <Card.Title className="text-base font-semibold">2. Düşülebilir KDV (İndirilecek)</Card.Title>
               <TrendingDown className="size-4 text-emerald-500" />
             </div>
-            <CardDescription>Alış faturaları ve taranan POS fişlerinden düşülecek KDV</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2 rounded-lg border bg-muted/20 p-4 text-sm font-sans">
+            <Card.Description>Alış faturaları ve taranan POS fişlerinden düşülecek KDV</Card.Description>
+          </Card.Header>
+          <Card.Content className="space-y-4">
+            <div className="space-y-2 rounded-lg border bg-default/20 p-4 text-sm font-sans">
               <div className="flex justify-between">
-                <span className="flex items-center gap-1.5 text-muted-foreground">
+                <span className="flex items-center gap-1.5 text-muted">
                   <FileSpreadsheet className="size-3.5" /> Gelen e-Faturalar ({kdv?.gelenEfatura.adet ?? 0}):
                 </span>
                 <span className="font-medium tabular-nums">
@@ -315,7 +311,7 @@ export function KdvView() {
 
               {/* Taranan POS Fişleri (Bu ayın fişleri) */}
               <div className="flex justify-between">
-                <span className="flex items-center gap-1.5 text-muted-foreground">
+                <span className="flex items-center gap-1.5 text-muted">
                   <Receipt className="size-3.5" /> {(kdv?.fis.devredenler?.length ?? 0) > 0 ? `${monthInfo.label.split(" ")[0]} Fişleri` : "Taranan POS Fişleri"} ({kdv?.fis.buAyAdet ?? kdv?.fis.adet ?? 0}):
                 </span>
                 <span className="font-medium tabular-nums">
@@ -325,7 +321,7 @@ export function KdvView() {
 
               {/* Önceki aylardan devreden KDV kalemleri */}
               {kdv?.fis.devredenler?.map((d) => (
-                <div key={d.ay} className="flex justify-between text-muted-foreground">
+                <div key={d.ay} className="flex justify-between text-muted">
                   <span className="flex items-center gap-1.5">
                     <Clock className="size-3.5 text-amber-500" /> {d.etiket} ({d.adet}):
                   </span>
@@ -336,7 +332,7 @@ export function KdvView() {
               ))}
 
               {(kdv?.iade.adet ?? 0) > 0 && (
-                <div className="flex justify-between text-destructive">
+                <div className="flex justify-between text-danger">
                   <span>Kestiğim İadeler ({kdv?.iade.adet} adet):</span>
                   <span className="tabular-nums">
                     -{formatTL(kdv?.iade.kdv ?? 0)}
@@ -353,22 +349,22 @@ export function KdvView() {
             </div>
 
             {(kdv?.fis.eslesen ?? 0) > 0 && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Info className="size-3.5 text-primary shrink-0" />
+              <div className="flex items-center gap-1.5 text-xs text-muted">
+                <Info className="size-3.5 text-accent shrink-0" />
                 <span>
                   {kdv?.fis.eslesen} adet fiş gelen e-Faturayla mükerrer olmaması için otomatik hariç tutuldu.
                 </span>
               </div>
             )}
-          </CardContent>
+          </Card.Content>
         </Card>
       </div>
 
       {/* Hesaplama Açıklaması */}
-      <Card size="sm" className="bg-muted/30">
-        <CardContent className="space-y-2 pt-4 text-xs text-muted-foreground">
+      <Card className="bg-default/30">
+        <Card.Content className="space-y-2 pt-4 text-xs text-muted">
           <div className="flex items-center gap-1.5 font-medium text-foreground">
-            <Info className="size-4 text-primary" />
+            <Info className="size-4 text-accent" />
             KDV Hesabı Nasıl Yapılır?
           </div>
           <p>
@@ -377,7 +373,7 @@ export function KdvView() {
             Henüz gönderilmemiş fişler de bu ay gönderilecekleri varsayılarak bir önceki ayda gösterilir; bu ay tarihli fişler ise kendi ayında kalır.
             Daha eski tarihli fişler devreden KDV kalemi olarak ayrıca listelenir.
           </p>
-        </CardContent>
+        </Card.Content>
       </Card>
     </div>
   );

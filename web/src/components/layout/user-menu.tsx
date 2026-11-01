@@ -1,38 +1,31 @@
 "use client";
 
+import { Avatar, Button, Dropdown, Header, Label } from "@heroui/react";
 import { LogOut } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/lib/supabase";
 
 export function UserMenu() {
   const { session } = useAuth();
   const email = session?.user.email ?? "";
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="rounded-full" aria-label="Kullanıcı menüsü">
-          <Avatar className="size-7">
-            <AvatarFallback className="text-xs">{(email[0] ?? "?").toUpperCase()}</AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-56">
-        <DropdownMenuLabel className="truncate font-normal text-muted-foreground">{email}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => void supabase.auth.signOut()}>
-          <LogOut /> Çıkış
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Dropdown>
+      <Button variant="ghost" size="sm" isIconOnly className="rounded-full" aria-label="Kullanıcı menüsü">
+        <Avatar size="sm" className="size-7">
+          <Avatar.Fallback className="text-xs">{(email[0] ?? "?").toUpperCase()}</Avatar.Fallback>
+        </Avatar>
+      </Button>
+      <Dropdown.Popover placement="bottom end" className="min-w-56">
+        <Dropdown.Menu aria-label="Kullanıcı menüsü" onAction={(key) => key === "logout" && void supabase.auth.signOut()}>
+          <Dropdown.Section>
+            <Header className="truncate font-normal text-muted">{email}</Header>
+            <Dropdown.Item id="logout" textValue="Çıkış">
+              <LogOut className="size-4 shrink-0 text-muted" />
+              <Label>Çıkış</Label>
+            </Dropdown.Item>
+          </Dropdown.Section>
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown>
   );
 }
