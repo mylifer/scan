@@ -107,4 +107,9 @@ describe("efatura web helpers", () => {
     const asc = sortEFaturaList(sampleList, { column: "tip", dir: "asc" });
     expect(asc[0]?.tur === "earsiv" || asc[0]?.tip === "IADE").toBe(true);
   });
+
+  it("fetchAllFaturalar fonksiyonu dışa aktarılmıştır", async () => {
+    const { fetchAllFaturalar } = await import("./efatura");
+    expect(typeof fetchAllFaturalar).toBe("function");
+  });
 });

@@ -42,6 +42,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   exportExcel,
   exportPdfsZip,
+  fetchAllFaturalar,
   fetchDonemFaturalar,
   getMonthBounds,
   sortEFaturaList,
@@ -114,6 +115,7 @@ function SortHeader({
 
 export function EFaturaView() {
   const [yon, setYon] = useState<Yon>("gelen");
+  const [periodMode, setPeriodMode] = useState<"month" | "all">("month");
   const [offset, setOffset] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -146,17 +148,29 @@ export function EFaturaView() {
   const [exportingZip, setExportingZip] = useState(false);
 
   const monthInfo = useMemo(() => getMonthBounds(offset), [offset]);
-  const activeKey = `${yon}:${offset}`;
+  const displayPeriodLabel = useMemo(() => {
+    if (periodMode === "all") {
+      return offset === 0 ? "Tüm Zamanlar" : `${monthInfo.label}'a Kadar (Tümü)`;
+    }
+    return monthInfo.label;
+  }, [periodMode, offset, monthInfo.label]);
+
+  const activeKey = `${yon}:${periodMode}:${offset}`;
   const loading = dataState.key !== activeKey || dataState.loading;
   const faturalar = useMemo(() => {
     return dataState.key === activeKey ? dataState.data.faturalar : [];
   }, [dataState.key, activeKey, dataState.data.faturalar]);
   const kontrol = dataState.key === activeKey ? dataState.data.kontrol : undefined;
 
-  // Dönem verilerini çek
+  // Dönem veya tüm verileri çek
   useEffect(() => {
     let cancelled = false;
-    void fetchDonemFaturalar(yon, offset)
+    const fetcher =
+      periodMode === "all"
+        ? fetchAllFaturalar(yon, offset)
+        : fetchDonemFaturalar(yon, offset);
+
+    void fetcher
       .then((res) => {
         if (!cancelled) {
           setDataState({ key: activeKey, loading: false, data: res });
@@ -174,12 +188,15 @@ export function EFaturaView() {
     return () => {
       cancelled = true;
     };
-  }, [yon, offset, activeKey]);
+  }, [yon, periodMode, offset, activeKey]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      const res = await fetchDonemFaturalar(yon, offset, true);
+      const res =
+        periodMode === "all"
+          ? await fetchAllFaturalar(yon, offset, true)
+          : await fetchDonemFaturalar(yon, offset, true);
       setDataState({ key: activeKey, loading: false, data: res });
       toast.success("e-Faturalar güncellendi.");
     } catch (err) {
@@ -191,6 +208,12 @@ export function EFaturaView() {
 
   const handleYonChange = (val: Yon) => {
     setYon(val);
+    setSelectedIds(new Set());
+    setPage(0);
+  };
+
+  const handlePeriodModeChange = (mode: "month" | "all") => {
+    setPeriodMode(mode);
     setSelectedIds(new Set());
     setPage(0);
   };
@@ -325,7 +348,7 @@ export function EFaturaView() {
       toast.info("Dışa aktarılacak fatura bulunamadı.");
       return;
     }
-    exportExcel(target, monthInfo.label, yon);
+    exportExcel(target, displayPeriodLabel, yon);
     toast.success("Excel tablosu indirildi.");
   };
 
@@ -338,7 +361,7 @@ export function EFaturaView() {
 
     setExportingZip(true);
     try {
-      const res = await exportPdfsZip(target, monthInfo.label, yon, (done, total) => {
+      const res = await exportPdfsZip(target, displayPeriodLabel, yon, (done, total) => {
         if (total > 5 && done % 5 === 0) {
           toast.loading(`${done}/${total} PDF indiriliyor…`, { id: "zip-progress" });
         }
@@ -362,34 +385,61 @@ export function EFaturaView() {
           description={`${yon === "gelen" ? "Gelen" : "Giden"} faturalarınızı inceleyin, PDF'lerini görüntüleyin ve dışa aktarın.`}
         />
 
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Yön Değiştirici */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Yön Değiştirici (Gelen / Giden) */}
           <Tabs value={yon} onValueChange={(val) => handleYonChange(val as Yon)}>
-            <TabsList>
+            <TabsList className="h-9">
               <TabsTrigger value="gelen">Gelen e-Faturalar</TabsTrigger>
               <TabsTrigger value="giden">Giden e-Faturalar</TabsTrigger>
             </TabsList>
           </Tabs>
 
-          {/* Ay Gezintisi */}
-          <div className="flex items-center gap-1.5 rounded-lg border bg-card px-2 py-1 shadow-xs">
+          {/* Apple Segmented Dönem Modu Switch (Tümünü Göster / Aylık) */}
+          <div className="p-0.5 bg-muted/80 backdrop-blur-md rounded-xl border border-border/50 flex items-center">
+            <Tabs
+              value={periodMode}
+              onValueChange={(val) => handlePeriodModeChange(val as "month" | "all")}
+            >
+              <TabsList className="h-8 bg-transparent p-0 gap-0.5">
+                <TabsTrigger
+                  value="all"
+                  className="h-7 px-3 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs"
+                >
+                  Tümünü Göster
+                </TabsTrigger>
+                <TabsTrigger
+                  value="month"
+                  className="h-7 px-3 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs"
+                >
+                  Aylık
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {/* Dönem Seçici ve İleri / Geri Butonları */}
+          <div className="flex items-center gap-1 rounded-xl border border-border/70 bg-background/80 px-1.5 h-9 shadow-xs">
             <Button
               type="button"
               variant="ghost"
               size="icon-sm"
+              className="size-7 rounded-lg"
               onClick={() => handleOffsetChange(-1)}
-              aria-label="Önceki ay"
+              aria-label="Önceki dönem"
             >
               <ChevronLeft className="size-4" />
             </Button>
-            <span className="min-w-28 text-center text-sm font-semibold">{monthInfo.label}</span>
+            <span className="min-w-28 text-center text-xs font-semibold px-2">
+              {displayPeriodLabel}
+            </span>
             <Button
               type="button"
               variant="ghost"
               size="icon-sm"
+              className="size-7 rounded-lg"
               disabled={offset >= 0}
               onClick={() => handleOffsetChange(1)}
-              aria-label="Sonraki ay"
+              aria-label="Sonraki dönem"
             >
               <ChevronRight className="size-4" />
             </Button>
@@ -401,7 +451,7 @@ export function EFaturaView() {
             size="sm"
             onClick={handleRefresh}
             disabled={refreshing || loading}
-            className="gap-1.5"
+            className="h-9 rounded-xl border-border/70 bg-background/80 text-xs gap-1.5"
           >
             <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} />
             Yenile
@@ -436,7 +486,7 @@ export function EFaturaView() {
             ) : (
               <>
                 <span className="size-1.5 rounded-full bg-sky-500 shrink-0" />
-                <span>{monthInfo.label} dönemi kayıtları</span>
+                <span>{displayPeriodLabel} kayıtları</span>
               </>
             )}
           </div>
@@ -846,7 +896,7 @@ export function EFaturaView() {
                   <TableCell colSpan={8} className="py-16 text-center text-sm text-muted-foreground">
                     {search || tipFilter !== "all"
                       ? "Aramanıza uyan e-fatura bulunamadı."
-                      : `${monthInfo.label} döneminde kayıtlı e-fatura yok.`}
+                      : `${displayPeriodLabel} döneminde kayıtlı e-fatura yok.`}
                   </TableCell>
                 </TableRow>
               )}
@@ -913,7 +963,7 @@ export function EFaturaView() {
       {/* Dönem KDV & Matrah Özeti Dialog */}
       <DonemOzetDialog
         faturalar={faturalar}
-        periodLabel={monthInfo.label}
+        periodLabel={displayPeriodLabel}
         yon={yon}
         open={ozetOpen}
         onOpenChange={setOzetOpen}

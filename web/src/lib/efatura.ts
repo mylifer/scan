@@ -4,6 +4,7 @@ import { buildEFaturaWorkbook } from "@shared/services/efatura/efaturaWorkbook";
 import { fetchInvoicePdf, type CachedPdf } from "@shared/services/efatura/pdfCache";
 import {
   getEFaturaDetay,
+  getIlkAy,
   listEFaturalar,
   type EFatura,
   type FaturaDetay,
@@ -79,6 +80,111 @@ export async function fetchDonemFaturalar(
 
   const result = await listEFaturalar(webInvoker, yon, baslangic, bitis);
   donemCache.set(key, result);
+  return result;
+}
+
+async function mapConcurrent<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = [];
+  for (let i = 0; i < items.length; i += limit) {
+    const chunk = items.slice(i, i + limit);
+    const chunkResults = await Promise.all(chunk.map(fn));
+    results.push(...chunkResults);
+  }
+  return results;
+}
+
+let cachedIlkAy: string | null | undefined = undefined;
+
+export async function fetchIlkAy(): Promise<string | null> {
+  if (cachedIlkAy !== undefined) return cachedIlkAy;
+  try {
+    const res = await getIlkAy(webInvoker);
+    cachedIlkAy = res ?? null;
+    return cachedIlkAy;
+  } catch {
+    cachedIlkAy = null;
+    return null;
+  }
+}
+
+const allFaturalarCache = new Map<string, EFaturaDonemData>();
+
+/**
+ * Belirli bir offset'e (veya tüm geçmişe) kadarki tüm faturaları aylar bazında çeker ve birleştirir.
+ */
+export async function fetchAllFaturalar(
+  yon: Yon,
+  maxOffset = 0,
+  force = false,
+): Promise<EFaturaDonemData> {
+  const cacheKey = `${yon}:all:${maxOffset}`;
+  if (!force && allFaturalarCache.has(cacheKey)) {
+    return allFaturalarCache.get(cacheKey)!;
+  }
+
+  // İlk fatura ayını tespit etmeye çalış
+  let earliestOffset = maxOffset - 11; // varsayılan: geriye dönük 12 ay
+  const ilkAy = await fetchIlkAy();
+  if (ilkAy) {
+    const [y, m] = ilkAy.split("-").map(Number);
+    if (y && m) {
+      const now = new Date();
+      const diff = (y - now.getFullYear()) * 12 + (m - (now.getMonth() + 1));
+      earliestOffset = Math.max(diff, maxOffset - 36);
+    }
+  }
+
+  if (earliestOffset > maxOffset) {
+    earliestOffset = maxOffset;
+  }
+
+  const offsets: number[] = [];
+  for (let o = earliestOffset; o <= maxOffset; o++) {
+    offsets.push(o);
+  }
+
+  // Paralel (3'erli gruplar) çek
+  const monthResults = await mapConcurrent(offsets, 3, async (off) => {
+    try {
+      return await fetchDonemFaturalar(yon, off, force);
+    } catch {
+      return { faturalar: [] };
+    }
+  });
+
+  // Faturaları birleştir ve tekilleştir
+  const seen = new Set<string>();
+  const mergedFaturalar: EFatura[] = [];
+  let totalListe = 0;
+  let totalQnb = 0;
+  let hasQnbCount = false;
+
+  for (const res of monthResults) {
+    if (res.kontrol?.qnb !== null && res.kontrol?.qnb !== undefined) {
+      totalQnb += res.kontrol.qnb;
+      hasQnbCount = true;
+    }
+    totalListe += res.kontrol?.liste ?? res.faturalar.length;
+    for (const f of res.faturalar) {
+      const key = (f.ettn || `${f.belgeNo}:${f.tarih}`).toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        mergedFaturalar.push(f);
+      }
+    }
+  }
+
+  mergedFaturalar.sort((a, b) => (b.tarih || "").localeCompare(a.tarih || ""));
+
+  const result: EFaturaDonemData = {
+    faturalar: mergedFaturalar,
+    kontrol: {
+      liste: totalListe,
+      qnb: hasQnbCount ? totalQnb : null,
+    },
+  };
+
+  allFaturalarCache.set(cacheKey, result);
   return result;
 }
 
