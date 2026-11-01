@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## Web 1.0.24 — `COMMIT`
+## Web 1.0.24 — `729b557`
 - **Yedek geri yükleme:** Fotoğrafların içerik türü dosyanın ilk baytlarından anlaşılıyor (PNG, PDF, WebP, JPEG). Önceden hepsi `image/jpeg` olarak yükleniyordu; PNG ve PDF fişler geri yüklendikten sonra açılmayabiliyordu (`sniffImageContentType`, 1 yeni test).
 - **Yedek manifesti:** Sabit "Web 0.5.0" etiketi yerine derlemedeki commit kodu yazılıyor.
 - **Kök lint:** Kullanılmayan 2 import kaldırıldı; `npx expo lint` artık uyarısız.
