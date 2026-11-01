@@ -64,7 +64,7 @@ Claude Code'un bıraktığı **v1.48.0** sürümünden itibaren projede iki para
 - **Web 1.0.24 (`729b557`):** Yedek geri yüklemede PNG/PDF fotoğraflar doğru içerik türüyle yükleniyor, yedek manifestinde gerçek sürüm kodu var, kök lint uyarısız.
 - **1.53.0 · Web 1.0.25 (`3538f2d`):** Devreden KDV kuralı "gönderim ayı − 1" olarak değişti (mobil + web). Toplu fiş eklemede yüklenemeyen fotoğraflar artık kaybolmuyor; "Tümünü Onayla" eklendi.
 - **1.53.1 · Web 1.0.26 (`651b64c`):** KDV ekranları QNB yanıt vermeyince sonsuza dek yükleniyordu; QNB çağrıları süre sınırlı, gelmezse KDV fişlerle hesaplanıp uyarı gösteriliyor (`src/lib/kdvYukle.ts`).
-- **1.53.2 · Web 1.0.27 (EN GÜNCEL SÜRÜM):** KDV sayfaları kalıcı e-Fatura önbelleğiyle aşamalı açılıyor: önce fişler + kayıtlı sonuç (anında), güncel QNB arka planda.
+- **1.53.2 · Web 1.0.27 (`c008823` — EN GÜNCEL SÜRÜM):** KDV sayfaları kalıcı e-Fatura önbelleğiyle aşamalı açılıyor: önce fişler + kayıtlı sonuç (anında), güncel QNB arka planda.
 
 ---
 

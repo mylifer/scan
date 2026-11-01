@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.53.2 · Web 1.0.27 — `COMMIT`
+## 1.53.2 · Web 1.0.27 — `c008823`
 - **KDV sayfaları artık hemen açılıyor (mobil + web):** QNB e-Fatura servisi yavaş olduğu için sayfa açılışı uzun sürüyordu.
   - **Kalıcı önbellek:** Her ayın e-Fatura sonucu telefonda (AsyncStorage) / tarayıcıda (localStorage) saklanıyor (`kaliciDonemOku`, `readPersistedDonem`).
   - **Aşamalı gösterim:** Sayfa önce fişleri ve kayıtlı e-Fatura sonucunu gösteriyor (testte ~0,4 sn), güncel liste QNB'den arka planda geliyor. Üstte "e-Faturalar QNB'den güncelleniyor… (bugün 14:32 tarihli kayıtlı bilgiler gösteriliyor)" satırı.
