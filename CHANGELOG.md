@@ -16,6 +16,12 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.1.1 — `b07f633`
+- **HeroUI bileşenleri artık heroui.com'daki gibi görünüyor:** Bileşenlere verilen özel stiller (cam efekti, tablo başlık arka planı, sekme yükseklikleri, buton yuvarlatma/gradyanları vb.) kaldırıldı.
+  - Tablolar HeroUI'nin kendi görünümünde (gri başlık, kart gövde); sekmelerdeki kayan gösterge, buton basma ve pencere açılış animasyonları HeroUI'deki gibi.
+  - "Gelen e-Faturalar", "Tüm Zamanlar", "Tümünü Göster" sekmeleri artık iki satıra düşmüyor.
+  - Arama kutuları, KPI kartları, rozetler, teslim oranı çubuğu ve kategori filtre etiketleri de HeroUI bileşenlerine çevrildi.
+
 ## Web 1.1.0 — `953a831`
 - **Web panelinin tüm tasarım bileşenleri HeroUI v3'e geçti:** shadcn/ui, Radix ve sonner kaldırıldı.
   - Butonlar, kartlar, rozetler (Chip), diyaloglar (Modal / AlertDialog), açılır listeler (Select), menüler (Dropdown), sekmeler, tablolar, onay kutuları, ipuçları ve bildirimler artık HeroUI.
