@@ -16,6 +16,12 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.53.1 · Web 1.0.26 — `651b64c`
+- **KDV ekranı sonsuza dek yükleniyordu (mobil + web):** Ekran, fişlerle birlikte QNB'den gelen ve giden e-Faturaları da bekliyordu. QNB yanıt vermezse hiçbir şey göstermeden dönmeye devam ediyordu.
+  - QNB çağrılarına 40 sn, fiş sorgusuna 30 sn süre sınırı kondu (`withTimeout`).
+  - QNB gelmezse KDV fişlerle hesaplanıyor ve "e-Fatura bilgileri alınamadı" uyarısı nedeniyle birlikte gösteriliyor (dokununca / "Yenile" ile tekrar denenir).
+  - Ortak yükleyici `src/lib/kdvYukle.ts` (`kdvVerileriniGetir`) mobil ve web'de aynı. 6 yeni test.
+
 ## 1.53.0 · Web 1.0.25 — `3538f2d`
 - **Devreden KDV kuralı değişti (mobil + web, `src/lib/kdvAy.ts`):** Muhasebeciye bir ay içinde gönderilen fişler artık bir önceki ayın KDV'sinden düşüyor (Kasım'da gönderilen → Ekim). Gönderilmemiş fişler bulunulan aydan bir önceki ayda gösteriliyor (Kasım'dayken → Ekim); yalnızca bu ay tarihli fişler kendi ayında kalıyor. Fiş, kendi tarihinden önceki bir aya düşülmüyor. Veritabanı sorgusu mobil ve web için ortak (`kdvFisFiltresi`). 7 yeni test.
 - **Toplu fiş eklemede fotoğraf kaybı giderildi (iPhone):**

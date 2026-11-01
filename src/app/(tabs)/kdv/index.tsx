@@ -19,6 +19,7 @@ import { WebPageHeader } from '../../../components/web/PageHeader';
 import { donemGetir, qnbDurum } from '../../../services/efatura/donemCache';
 import { EFaturaError } from '../../../services/efatura/qnbEfatura';
 import { getKdvReceipts } from '../../../services/supabase/receiptsRepository';
+import { kdvVerileriniGetir } from '../../../lib/kdvYukle';
 
 /** Ayın ilk ve son günü (QNB'de bitiş dahil) ve fiş sorgusu için bir sonraki ayın ilk günü */
 function ayAraligi(offset: number) {
@@ -40,6 +41,8 @@ export default function KdvScreen() {
   const [sonuclar, setSonuclar] = useState<Record<string, KdvAy>>({});
   const [hatalar, setHatalar] = useState<Record<string, { message: string; login: boolean }>>({});
   const [yukleniyor, setYukleniyor] = useState<string | null>(null);
+  /** e-Fatura bilgileri alınamadığı için KDV'nin yalnızca fişlerle hesaplandığı aylar */
+  const [qnbUyari, setQnbUyari] = useState<Record<string, string>>({});
   const [haric, setHaric] = useState<ReadonlySet<string>>(new Set());
 
   const ay = ayAraligi(offset);
@@ -63,13 +66,20 @@ export default function KdvScreen() {
       }
       setYukleniyor(a.from);
       try {
-        const [gelen, giden, fisler] = await Promise.all([
-          donemGetir('gelen', a.from, a.to, yenile),
-          donemGetir('giden', a.from, a.to, yenile),
-          getKdvReceipts({ from: a.from, to: a.sonraki }),
-        ]);
-        setSonuclar((s) => ({ ...s, [a.from]: kdvAyHesapla(gelen.faturalar, giden.faturalar, fisler, haric, a.from.slice(0, 7)) }));
+        // QNB yanıt vermezse ekran sonsuza dek dönmesin: süre sınırlı, gelmezse yalnızca fişlerle hesaplanır
+        const v = await kdvVerileriniGetir({
+          gelen: () => donemGetir('gelen', a.from, a.to, yenile),
+          giden: () => donemGetir('giden', a.from, a.to, yenile),
+          fisler: () => getKdvReceipts({ from: a.from, to: a.sonraki }),
+        });
+        setSonuclar((s) => ({ ...s, [a.from]: kdvAyHesapla(v.gelen, v.giden, v.fisler, haric, a.from.slice(0, 7)) }));
         setHatalar(({ [a.from]: _, ...rest }) => rest);
+        if (v.qnbHatasi) {
+          if (v.qnbHatasi instanceof EFaturaError && v.qnbHatasi.loginFailed) qnbDurum.loginFailed = true;
+          setQnbUyari((u) => ({ ...u, [a.from]: errorMessage(v.qnbHatasi) }));
+        } else {
+          setQnbUyari(({ [a.from]: _, ...rest }) => rest);
+        }
       } catch (e) {
         setHatalar((h) => ({ ...h, [a.from]: { message: errorMessage(e), login: e instanceof EFaturaError && e.loginFailed } }));
       } finally {
@@ -122,6 +132,18 @@ export default function KdvScreen() {
       ) : null}
 
       {!kdv && !hata ? <ActivityIndicator style={{ marginTop: 40 }} /> : null}
+
+      {kdv && qnbUyari[ay.from] ? (
+        <ListSection footer={`${qnbUyari[ay.from]}\n\nKDV şimdilik yalnızca fişlerle hesaplandı; e-Fatura tutarları eksik.`}>
+          <ListRow
+            title="e-Fatura bilgileri alınamadı"
+            subtitle="Tekrar denemek için dokunun"
+            icon={{ sf: 'exclamationmark.triangle.fill', ion: 'warning', color: theme.orange }}
+            tone="action"
+            onPress={() => yukle(true)}
+          />
+        </ListSection>
+      ) : null}
 
       {kdv ? (
         <View style={[styles.cards, wide && styles.cardsWide]}>

@@ -2,6 +2,7 @@
 
 import { formatTL } from "@shared/lib/format";
 import { kdvAyHesapla, type KdvAy } from "@shared/lib/kdvAy";
+import { kdvVerileriniGetir } from "@shared/lib/kdvYukle";
 import type { ReceiptRecord } from "@shared/types/receipt";
 import {
   Calculator,
@@ -14,6 +15,7 @@ import {
   RefreshCw,
   TrendingDown,
   TrendingUp,
+  TriangleAlert,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -36,6 +38,8 @@ export function KdvView() {
     giden: EFatura[];
     fisler: ReceiptRecord[];
     error: string | null;
+    /** e-Fatura bilgileri alınamadıysa nedeni (KDV yalnızca fişlerle hesaplandı) */
+    qnbHatasi: string | null;
   }>({
     key: "initial",
     loading: true,
@@ -43,6 +47,7 @@ export function KdvView() {
     giden: [],
     fisler: [],
     error: null,
+    qnbHatasi: null,
   });
 
   const monthInfo = useMemo(() => getMonthBounds(offset), [offset]);
@@ -59,20 +64,22 @@ export function KdvView() {
     const nextM = m === 12 ? 1 : m! + 1;
     const to = `${nextY}-${String(nextM).padStart(2, "0")}-01`;
 
-    void Promise.all([
-      fetchDonemFaturalar("gelen", offset),
-      fetchDonemFaturalar("giden", offset),
-      listReceiptsForKdv({ from: monthInfo.baslangic, to }),
-    ])
-      .then(([gelenRes, gidenRes, fislerRes]) => {
+    // QNB yanıt vermezse sayfa sonsuza dek beklemesin: süre sınırlı, gelmezse yalnızca fişlerle hesaplanır
+    void kdvVerileriniGetir({
+      gelen: () => fetchDonemFaturalar("gelen", offset),
+      giden: () => fetchDonemFaturalar("giden", offset),
+      fisler: () => listReceiptsForKdv({ from: monthInfo.baslangic, to }),
+    })
+      .then((v) => {
         if (!cancelled) {
           setState({
             key: activeKey,
             loading: false,
-            gelen: gelenRes.faturalar,
-            giden: gidenRes.faturalar,
-            fisler: fislerRes,
+            gelen: v.gelen,
+            giden: v.giden,
+            fisler: v.fisler,
             error: null,
+            qnbHatasi: v.qnbHatasi ? (v.qnbHatasi instanceof Error ? v.qnbHatasi.message : String(v.qnbHatasi)) : null,
           });
         }
       })
@@ -87,6 +94,7 @@ export function KdvView() {
             giden: [],
             fisler: [],
             error: msg,
+            qnbHatasi: null,
           });
         }
       });
@@ -104,20 +112,23 @@ export function KdvView() {
     const to = `${nextY}-${String(nextM).padStart(2, "0")}-01`;
 
     try {
-      const [gelenRes, gidenRes, fislerRes] = await Promise.all([
-        fetchDonemFaturalar("gelen", offset, true),
-        fetchDonemFaturalar("giden", offset, true),
-        listReceiptsForKdv({ from: monthInfo.baslangic, to }),
-      ]);
+      const v = await kdvVerileriniGetir({
+        gelen: () => fetchDonemFaturalar("gelen", offset, true),
+        giden: () => fetchDonemFaturalar("giden", offset, true),
+        fisler: () => listReceiptsForKdv({ from: monthInfo.baslangic, to }),
+      });
+      const qnbHatasi = v.qnbHatasi ? (v.qnbHatasi instanceof Error ? v.qnbHatasi.message : String(v.qnbHatasi)) : null;
       setState({
         key: activeKey,
         loading: false,
-        gelen: gelenRes.faturalar,
-        giden: gidenRes.faturalar,
-        fisler: fislerRes,
+        gelen: v.gelen,
+        giden: v.giden,
+        fisler: v.fisler,
         error: null,
+        qnbHatasi,
       });
-      toast.success("KDV verileri güncellendi.");
+      if (qnbHatasi) toast.warning("e-Fatura bilgileri alınamadı; KDV yalnızca fişlerle hesaplandı.");
+      else toast.success("KDV verileri güncellendi.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Güncellenemedi.");
     } finally {
@@ -180,6 +191,18 @@ export function KdvView() {
           </Button>
         </div>
       </div>
+
+      {!loading && state.key === activeKey && state.qnbHatasi ? (
+        <div className="rounded-2xl border border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl px-4 py-3 shadow-[0_2px_16px_rgba(0,0,0,0.03)] text-xs">
+          <div className="flex items-start gap-2 text-amber-600 dark:text-amber-400">
+            <TriangleAlert className="size-3.5 mt-px shrink-0" />
+            <span>
+              e-Fatura bilgileri alınamadı ({state.qnbHatasi}). KDV şimdilik yalnızca fişlerle hesaplandı; e-Fatura tutarları
+              eksik. &quot;Yenile&quot; ile tekrar deneyin.
+            </span>
+          </div>
+        </div>
+      ) : null}
 
       {/* Ana Net KDV Sonuç Kartı */}
       <Card
