@@ -39,3 +39,24 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Web Application (`web/` — Next.js 16 + shadcn/ui)
+
+The web dashboard is a modern desktop-first Next.js 16 (App Router) application located in the `web/` subfolder. It is statically exported and published to GitHub Pages (`https://mylifer.github.io/scan/`). Detailed handover context is in `CLAUDE_CODE_HANDOVER.md`.
+
+### Web Commands
+```bash
+cd web
+npm run dev        # Next.js development server
+npm run typecheck  # TypeScript check
+npm run lint       # ESLint check
+npm test           # Vitest unit tests (9 test files, 25 tests)
+npm run build      # Static export build (out/)
+```
+
+### Design Standards for Web
+- **Typography:** Use only `Geist Sans` with `tabular-nums` for amounts and numbers. No `font-mono`.
+- **Badges:** Emojis are deprecated; use `CategoryBadge` (dotColor status dot + 2-letter uppercase monogram).
+- **Tables:** Dark mode row dividers use ultra-soft 2% opacity (`rgba(255, 255, 255, 0.02)`).
+- **Cards:** Apple Native Glass / macOS Tahoe frosted glass design (`bg-card/75 backdrop-blur-xl border-border/80`).
+- Always run root tests (`npm test -- --run`) and web tests (`cd web && npm test && npm run typecheck`) before committing.
