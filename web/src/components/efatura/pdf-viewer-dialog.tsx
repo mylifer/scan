@@ -4,16 +4,7 @@ import { formatTL } from "@shared/lib/format";
 import type { CachedPdf } from "@shared/services/efatura/pdfCache";
 import { Download, FileText, Loader2, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button, Modal, Skeleton, toast } from "@heroui/react";
 import { downloadFile } from "@/lib/download";
 import { fetchPdf, type EFatura, type Yon } from "@/lib/efatura";
 
@@ -55,7 +46,7 @@ function PdfViewerContent({
         if (!cancelled) {
           const msg = err instanceof Error ? err.message : "PDF yüklenemedi.";
           setState({ cached: null, loading: false, error: msg });
-          toast.error(msg);
+          toast.danger(msg);
         }
       });
 
@@ -79,85 +70,88 @@ function PdfViewerContent({
       .catch((err) => {
         const msg = err instanceof Error ? err.message : "PDF yüklenemedi.";
         setState({ cached: null, loading: false, error: msg });
-        toast.error(msg);
+        toast.danger(msg);
       });
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[88vh] w-full max-w-[calc(100vw-2rem)] sm:max-w-5xl flex-col p-4 sm:p-6 overflow-hidden">
-        <DialogHeader className="border-b pb-4 pr-8">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0 flex-1 space-y-1">
-              <DialogTitle className="truncate text-base sm:text-lg font-semibold" title={fatura.unvan || "e-Fatura Önizleme"}>
-                {fatura.unvan || "e-Fatura Önizleme"}
-              </DialogTitle>
-              <DialogDescription className="break-all text-xs sm:text-sm text-muted-foreground">
-                {fatura.belgeNo || fatura.ettn} · {fatura.tarih} ·{" "}
-                <span className="font-semibold text-foreground whitespace-nowrap">
-                  {`${formatTL(fatura.tutar)} ${fatura.paraBirimi}`}
-                </span>
-              </DialogDescription>
-            </div>
+    <Modal.Backdrop isOpen={open} onOpenChange={onOpenChange}>
+      <Modal.Container className="sm:w-full">
+        <Modal.Dialog className="flex h-[88vh] sm:max-w-5xl flex-col p-4 sm:p-6 overflow-hidden">
+          <Modal.CloseTrigger />
+          <Modal.Header className="border-b pb-4 pr-8">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0 flex-1 space-y-1">
+                <Modal.Heading className="truncate text-base sm:text-lg font-semibold" title={fatura.unvan || "e-Fatura Önizleme"}>
+                  {fatura.unvan || "e-Fatura Önizleme"}
+                </Modal.Heading>
+                <p className="text-sm text-muted break-all text-xs sm:text-sm text-muted">
+                  {fatura.belgeNo || fatura.ettn} · {fatura.tarih} ·{" "}
+                  <span className="font-semibold text-foreground whitespace-nowrap">
+                    {`${formatTL(fatura.tutar)} ${fatura.paraBirimi}`}
+                  </span>
+                </p>
+              </div>
 
-            {state.cached && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleDownload}
-                className="shrink-0 gap-1.5"
-              >
-                <Download className="size-4" />
-                İndir
-              </Button>
+              {state.cached && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onPress={handleDownload}
+                  className="shrink-0 gap-1.5"
+                >
+                  <Download className="size-4" />
+                  İndir
+                </Button>
+              )}
+            </div>
+          </Modal.Header>
+
+          <div className="relative flex-1 min-h-0 overflow-hidden pt-2">
+            {state.loading && (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-3">
+                <Loader2 className="size-8 animate-spin text-accent" />
+                <p className="text-sm text-muted">PDF belgesi getiriliyor…</p>
+                <Skeleton className="h-64 w-3/4 rounded-lg" />
+              </div>
+            )}
+
+            {state.error && !state.loading && (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-4 text-center">
+                <FileText className="size-12 text-muted/50" />
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-danger">PDF Yüklenemedi</p>
+                  <p className="max-w-md text-xs text-muted">{state.error}</p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onPress={handleRetry} className="gap-1.5">
+                  <RefreshCw className="size-3.5" />
+                  Tekrar Dene
+                </Button>
+              </div>
+            )}
+
+            {state.cached && !state.loading && state.cached.blobUrl && (
+              <iframe
+                src={state.cached.blobUrl}
+                className="h-full w-full rounded-md border bg-default/20"
+                title="e-Fatura Önizleme"
+              />
+            )}
+
+            {state.cached && !state.loading && !state.cached.blobUrl && (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-4">
+                <p className="text-sm text-muted">Önizleme oluşturulamadı, doğrudan indirebilirsiniz.</p>
+                <Button size="sm" type="button" onPress={handleDownload} className="gap-1.5">
+                  <Download className="size-4" />
+                  PDF Dosyasını İndir
+                </Button>
+              </div>
             )}
           </div>
-        </DialogHeader>
-
-        <div className="relative flex-1 min-h-0 overflow-hidden pt-2">
-          {state.loading && (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-3">
-              <Loader2 className="size-8 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">PDF belgesi getiriliyor…</p>
-              <Skeleton className="h-64 w-3/4 rounded-lg" />
-            </div>
-          )}
-
-          {state.error && !state.loading && (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-4 text-center">
-              <FileText className="size-12 text-muted-foreground/50" />
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-destructive">PDF Yüklenemedi</p>
-                <p className="max-w-md text-xs text-muted-foreground">{state.error}</p>
-              </div>
-              <Button type="button" variant="outline" size="sm" onClick={handleRetry} className="gap-1.5">
-                <RefreshCw className="size-3.5" />
-                Tekrar Dene
-              </Button>
-            </div>
-          )}
-
-          {state.cached && !state.loading && state.cached.blobUrl && (
-            <iframe
-              src={state.cached.blobUrl}
-              className="h-full w-full rounded-md border bg-muted/20"
-              title="e-Fatura Önizleme"
-            />
-          )}
-
-          {state.cached && !state.loading && !state.cached.blobUrl && (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-4">
-              <p className="text-sm text-muted-foreground">Önizleme oluşturulamadı, doğrudan indirebilirsiniz.</p>
-              <Button type="button" onClick={handleDownload} className="gap-1.5">
-                <Download className="size-4" />
-                PDF Dosyasını İndir
-              </Button>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+        </Modal.Dialog>
+      </Modal.Container>
+    </Modal.Backdrop>
   );
 }
 

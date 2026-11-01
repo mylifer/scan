@@ -1,38 +1,17 @@
 @import "tailwindcss";
-@import "tw-animate-css";
+@import "@heroui/styles";
 
-/* shadcn dark variant */
-@custom-variant dark (&:is(.dark *));
+/* Koyu tema yalnız next-themes'in <html class="dark"> işaretiyle açılır.
+   HeroUI'nin varsayılan `dark` varyantı sistem tercihine de düşer; kullanıcı
+   açık temayı seçmişken dark: sınıflarının tetiklenmemesi için ezilir. */
+@custom-variant dark (&:is(.dark, .dark *));
 
 /* ─────────────────────────────────────────────────────────────────
-   SHADCN SEMANTIC TOKEN MAPPING  (Tailwind v4 — @theme inline)
+   UYGULAMAYA ÖZEL TOKEN'LAR (HeroUI'de karşılığı olmayanlar)
+   HeroUI semantik renkleri (background, surface, overlay, default, muted,
+   accent, danger, border, focus…) @heroui/styles içinden gelir.
    ───────────────────────────────────────────────────────────────── */
 @theme inline {
-  --radius-sm:  calc(var(--radius) - 4px);
-  --radius-md:  calc(var(--radius) - 2px);
-  --radius-lg:  var(--radius);
-  --radius-xl:  calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-
-  --color-background:              var(--background);
-  --color-foreground:              var(--foreground);
-  --color-card:                    var(--card);
-  --color-card-foreground:         var(--card-foreground);
-  --color-popover:                 var(--popover);
-  --color-popover-foreground:      var(--popover-foreground);
-  --color-primary:                 var(--primary);
-  --color-primary-foreground:      var(--primary-foreground);
-  --color-secondary:               var(--secondary);
-  --color-secondary-foreground:    var(--secondary-foreground);
-  --color-muted:                   var(--muted);
-  --color-muted-foreground:        var(--muted-foreground);
-  --color-accent:                  var(--accent);
-  --color-accent-foreground:       var(--accent-foreground);
-  --color-destructive:             var(--destructive);
-  --color-border:                  var(--border);
-  --color-input:                   var(--input);
-  --color-ring:                    var(--ring);
-
   --color-chart-1:  var(--chart-1);
   --color-chart-2:  var(--chart-2);
   --color-chart-3:  var(--chart-3);
@@ -54,32 +33,44 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   ZINC NEW YORK — Light (default)
+   HEROUI TEMA — Açık (varsayılan)
+   HeroUI değişkenleri @layer içinde tanımlıdır; buradaki katmansız
+   değerler onları ezer.
    ───────────────────────────────────────────────────────────────── */
-:root {
-  /* Katmanlı nötr zemin: hafif kırık-beyaz sayfa + saf beyaz kartlar (mockup dili) */
+:root,
+.light,
+[data-theme="light"] {
+  --radius:               0.625rem;
+
+  /* Katmanlı nötr zemin: hafif kırık-beyaz sayfa + saf beyaz yüzeyler */
   --background:           #f7f7f6;
   --foreground:           oklch(0.141 0.005 285.82);
-  --card:                 #ffffff;
-  --card-foreground:      oklch(0.141 0.005 285.82);
-  --popover:              #ffffff;
-  --popover-foreground:   oklch(0.141 0.005 285.82);
-  /* Birincil aksan: turkuaz — nötr temadan ayrışır.
-     Aksan parlak (luminans ~0.55) olduğu için üstündeki yazı KOYU olmalı:
-     beyaz metin 1.8:1 ile okunmaz, koyu mürekkep ~11:1 verir. */
-  --primary:              #00D9D9;
-  --primary-foreground:   #062626;
-  --secondary:            oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.034 264.665);
-  --muted:                oklch(0.967 0.001 286.375);
-  --muted-foreground:     oklch(0.552 0.015 285.938);
-  --accent:               oklch(0.967 0.001 286.375);
-  --accent-foreground:    oklch(0.21 0.034 264.665);
-  --destructive:          oklch(0.577 0.245 27.325);
+  --surface:              #ffffff;
+  --surface-foreground:   var(--foreground);
+  --overlay:              #ffffff;
+  --overlay-foreground:   var(--foreground);
+  /* HeroUI'de `muted` ikincil METİN rengidir (shadcn'deki muted-foreground) */
+  --muted:                oklch(0.552 0.015 285.938);
+  /* `default` nötr dolgu (shadcn'deki muted/secondary/accent zemini) */
+  --default:              oklch(0.967 0.001 286.375);
+  --default-foreground:   oklch(0.21 0.034 264.665);
+
+  /* Birincil aksan: turkuaz — parlak olduğu için üstündeki yazı KOYU olmalı
+     (beyaz metin 1.8:1 ile okunmaz, koyu mürekkep ~11:1 verir). */
+  --accent:               #00D9D9;
+  --accent-foreground:    #062626;
+  /* Açık zeminde turkuaz metin okunmaz → yumuşak aksan metni koyulaştırılır */
+  --accent-soft-foreground: #0a7f7f;
+  --link:                 #0a7f7f;
+
+  --danger:               oklch(0.577 0.245 27.325);
   --border:               oklch(0.92 0.004 286.32);
-  --input:                oklch(0.92 0.004 286.32);
-  --ring:                 #00D9D9;
-  --radius:               0.625rem;
+  --separator:            oklch(0.92 0.004 286.32);
+  --focus:                #00D9D9;
+
+  --field-background:     #ffffff;
+  --field-border:         oklch(0.92 0.004 286.32);
+  --field-border-width:   1px;
 
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -91,7 +82,7 @@
   --cf-income:  #16a34a;
   --cf-expense: #dc2626;
 
-  /* Toplu düzenleme (batch edit) seçim aksanı — turkuaz (nötr temadan ayrışır) */
+  /* Toplu düzenleme (batch edit) seçim aksanı — turkuaz */
   --batch-accent:        #00D9D9;
   --batch-accent-soft:   #e8fbfb;
   --batch-accent-border: #a3e9e9;
@@ -107,29 +98,33 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   ZINC NEW YORK — Dark (opt-in via .dark on <html>)
+   HEROUI TEMA — Koyu (<html class="dark">)
    ───────────────────────────────────────────────────────────────── */
-.dark {
-  /* Katmanlı koyu: neredeyse-siyah sayfa + biraz açık gri kartlar (mockup dili) */
+.dark,
+[data-theme="dark"] {
+  /* Katmanlı koyu: neredeyse-siyah sayfa + biraz açık gri yüzeyler */
   --background:           #0a0a0a;
   --foreground:           oklch(0.985 0.001 106.424);
-  --card:                 #151515;
-  --card-foreground:      oklch(0.985 0.001 106.424);
-  --popover:              #1b1b1b;
-  --popover-foreground:   oklch(0.985 0.001 106.424);
-  /* Birincil aksan: koyu temada da aynı turkuaz (zaten koyu zeminde parlak) */
-  --primary:              #00D9D9;
-  --primary-foreground:   #062626;
-  --secondary:            oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0.001 106.424);
-  --muted:                oklch(0.274 0.006 286.033);
-  --muted-foreground:     oklch(0.705 0.015 286.067);
-  --accent:               oklch(0.274 0.006 286.033);
-  --accent-foreground:    oklch(0.985 0.001 106.424);
-  --destructive:          oklch(0.704 0.191 22.216);
+  --surface:              #151515;
+  --surface-foreground:   var(--foreground);
+  --overlay:              #1b1b1b;
+  --overlay-foreground:   var(--foreground);
+  --muted:                oklch(0.705 0.015 286.067);
+  --default:              oklch(0.274 0.006 286.033);
+  --default-foreground:   oklch(0.985 0.001 106.424);
+
+  --accent:               #00D9D9;
+  --accent-foreground:    #062626;
+  --accent-soft-foreground: #5eeaea;
+  --link:                 #5eeaea;
+
+  --danger:               oklch(0.704 0.191 22.216);
   --border:               oklch(1 0 0 / 9%);
-  --input:                oklch(1 0 0 / 15%);
-  --ring:                 #00D9D9;
+  --separator:            oklch(1 0 0 / 9%);
+  --focus:                #00D9D9;
+
+  --field-background:     #1b1b1b;
+  --field-border:         oklch(1 0 0 / 12%);
 
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
@@ -137,7 +132,7 @@
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
 
-  /* Nakit akışı gelir/gider — koyu temada parlak tonlar (koyu zemin kontrastı) */
+  /* Nakit akışı gelir/gider — koyu temada parlak tonlar */
   --cf-income:  #34d399;
   --cf-expense: #fb7185;
 
@@ -154,6 +149,31 @@
   --sidebar-accent-foreground:    oklch(0.985 0.001 106.424);
   --sidebar-border:               oklch(1 0 0 / 12%);
   --sidebar-ring:                 #00D9D9;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   HEROUI BİLEŞEN ÖZELLEŞTİRMELERİ (BEM sınıfları)
+   ───────────────────────────────────────────────────────────────── */
+@layer components {
+  /* Apple Native Glass / macOS Tahoe buzlu cam kart — HeroUI Card'ın
+     varsayılan görünümü. Her kullanımda sınıf tekrarlamaya gerek yok. */
+  .card {
+    @apply gap-4 overflow-hidden rounded-2xl border border-border/80 bg-surface/75 p-0 py-4 text-sm backdrop-blur-xl transition-all duration-200;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.03);
+  }
+  .dark .card { border-color: rgb(255 255 255 / 0.05); }
+  .card--transparent { @apply border-none bg-transparent shadow-none backdrop-blur-none; }
+  .card__header { @apply gap-1 px-4; }
+  .card__title  { @apply text-base leading-snug font-medium; }
+  .card__content { @apply block px-4; }
+  .card__footer { @apply px-4; }
+
+  /* Form alanları kapsayıcısını doldurur (eski düzenler blok input bekliyor) */
+  .input,
+  .textarea { @apply w-full; }
+
+  /* Rozetler / chip'ler tutarlarda tablo rakamı kullanır */
+  .chip { font-variant-numeric: tabular-nums; }
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -206,7 +226,7 @@
 @layer base {
   * {
     border-color: var(--border);
-    outline-color: var(--ring);
+    outline-color: var(--focus);
   }
   body {
     background-color: var(--background);
@@ -289,7 +309,7 @@
 ::-webkit-scrollbar         { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track   { background: transparent; }
 ::-webkit-scrollbar-thumb   { background: var(--border); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {

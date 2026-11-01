@@ -12,18 +12,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Button, Card, Chip, Modal, toast } from "@heroui/react";
 import {
   executeRestore,
   exportFullBackup,
@@ -57,7 +46,7 @@ export function BackupTab() {
         `Yedek hazırlandı: ${res.receiptsCount} fiş ve ${res.photosCount} fotoğraf arşivlendi.`
       );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Yedek alınamadı.");
+      toast.danger(err instanceof Error ? err.message : "Yedek alınamadı.");
     } finally {
       setExporting(false);
       setExportProgress(null);
@@ -77,7 +66,7 @@ export function BackupTab() {
       setPreview(p);
       setPreviewOpen(true);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Yedek dosyası açılamadı.");
+      toast.danger(err instanceof Error ? err.message : "Yedek dosyası açılamadı.");
     } finally {
       setAnalyzing(false);
     }
@@ -94,7 +83,7 @@ export function BackupTab() {
       setPreviewOpen(false);
       setPreview(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Geri yükleme başarısız.");
+      toast.danger(err instanceof Error ? err.message : "Geri yükleme başarısız.");
     } finally {
       setRestoring(false);
       setRestoreProgress(null);
@@ -105,18 +94,18 @@ export function BackupTab() {
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       {/* Yedek Al */}
       <Card>
-        <CardHeader>
+        <Card.Header>
           <div className="flex items-center gap-2">
-            <Archive className="size-5 text-primary" />
-            <CardTitle className="text-base font-semibold">Tam Yedek Al (.zip)</CardTitle>
+            <Archive className="size-5 text-accent" />
+            <Card.Title className="text-base font-semibold">Tam Yedek Al (.zip)</Card.Title>
           </div>
-          <CardDescription>
+          <Card.Description>
             Tüm fiş kayıtlarınız, KDV verileri, etiketler ve fiş fotoğrafları tek bir ZIP arşivinde
             toplanıp cihazınıza indirilir.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
+          </Card.Description>
+        </Card.Header>
+        <Card.Content className="space-y-4">
+          <div className="rounded-lg border bg-default/40 p-3 text-xs text-muted space-y-1">
             <p className="font-medium text-foreground">Yedek Dosyası İçeriği:</p>
             <ul className="list-disc list-inside space-y-0.5">
               <li>yedek.json (tüm fiş kayıtları ve manifest bilgisi)</li>
@@ -125,16 +114,16 @@ export function BackupTab() {
           </div>
 
           {exporting && exportProgress && (
-            <div className="space-y-1.5 rounded-lg border bg-card p-3">
+            <div className="space-y-1.5 rounded-lg border bg-surface p-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-medium text-foreground">{exportProgress.status}</span>
-                <span className="tabular-nums text-muted-foreground">
+                <span className="tabular-nums text-muted">
                   {exportProgress.done} / {exportProgress.total}
                 </span>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-default">
                 <div
-                  className="h-full bg-primary transition-all duration-300"
+                  className="h-full bg-accent transition-all duration-300"
                   style={{
                     width: `${
                       exportProgress.total > 0
@@ -147,11 +136,11 @@ export function BackupTab() {
             </div>
           )}
 
-          <Button
+          <Button size="sm"
             type="button"
             className="w-full gap-2"
-            disabled={exporting}
-            onClick={handleExport}
+            isDisabled={exporting}
+            onPress={handleExport}
           >
             {exporting ? (
               <>
@@ -165,22 +154,22 @@ export function BackupTab() {
               </>
             )}
           </Button>
-        </CardContent>
+        </Card.Content>
       </Card>
 
       {/* Yedekten Geri Yükle */}
       <Card>
-        <CardHeader>
+        <Card.Header>
           <div className="flex items-center gap-2">
-            <UploadCloud className="size-5 text-primary" />
-            <CardTitle className="text-base font-semibold">Yedekten Geri Yükle</CardTitle>
+            <UploadCloud className="size-5 text-accent" />
+            <Card.Title className="text-base font-semibold">Yedekten Geri Yükle</Card.Title>
           </div>
-          <CardDescription>
+          <Card.Description>
             Daha önce aldığınız bir `.zip` yedeğini yükleyerek fişlerinizi ve fotoğraflarınızı
             hesabınıza aktarın.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </Card.Description>
+        </Card.Header>
+        <Card.Content className="space-y-4">
           <input
             type="file"
             ref={fileInputRef}
@@ -191,144 +180,147 @@ export function BackupTab() {
 
           <div
             onClick={() => !analyzing && fileInputRef.current?.click()}
-            className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed p-6 text-center transition-colors hover:bg-muted/30"
+            className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed p-6 text-center transition-colors hover:bg-default/30"
           >
             {analyzing ? (
               <>
-                <Loader2 className="size-8 animate-spin text-primary mb-2" />
+                <Loader2 className="size-8 animate-spin text-accent mb-2" />
                 <p className="text-sm font-medium">Yedek dosyası inceleniyor…</p>
               </>
             ) : (
               <>
-                <FileArchive className="size-8 text-muted-foreground/60 mb-2" />
+                <FileArchive className="size-8 text-muted/60 mb-2" />
                 <p className="text-sm font-medium text-foreground">
                   Yedek Dosyasını Seçin (.zip)
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-muted mt-1">
                   Bilgisayarınızdaki fiş yedeğini buraya tıklayarak yükleyin.
                 </p>
               </>
             )}
           </div>
 
-          <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
+          <div className="rounded-lg border bg-default/40 p-3 text-xs text-muted">
             <p className="flex items-center gap-1 font-medium text-foreground">
-              <CheckCircle2 className="size-3.5 text-primary inline" />
+              <CheckCircle2 className="size-3.5 text-accent inline" />
               Akıllı Çift Kayıt Önleme
             </p>
             <p className="mt-1">
               Hesabınızda zaten kayıtlı olan fişler otomatik olarak tespit edilir ve tekrar eklenmez.
             </p>
           </div>
-        </CardContent>
+        </Card.Content>
       </Card>
 
       {/* İnceleme ve Onay Dialogu */}
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="w-full max-w-[calc(100vw-2rem)] sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ArrowUpCircle className="size-5 text-primary" />
-              Yedek Geri Yükleme Önizlemesi
-            </DialogTitle>
-            <DialogDescription>
-              Yedek dosyasındaki kayıtlar incelendi. Aşağıdaki özeti onayladıktan sonra aktarım
-              başlayacaktır.
-            </DialogDescription>
-          </DialogHeader>
+      <Modal.Backdrop isOpen={previewOpen} onOpenChange={setPreviewOpen}>
+        <Modal.Container className="sm:w-full">
+          <Modal.Dialog className="sm:max-w-lg">
+            <Modal.CloseTrigger />
+            <Modal.Header>
+              <Modal.Heading className="flex items-center gap-2">
+                <ArrowUpCircle className="size-5 text-accent" />
+                Yedek Geri Yükleme Önizlemesi
+              </Modal.Heading>
+              <p className="text-sm text-muted">
+                Yedek dosyasındaki kayıtlar incelendi. Aşağıdaki özeti onayladıktan sonra aktarım
+                başlayacaktır.
+              </p>
+            </Modal.Header>
 
-          {preview && (
-            <div className="space-y-4 py-2">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="rounded-lg border bg-card p-3 space-y-1">
-                  <span className="text-xs text-muted-foreground">Yedek Tarihi</span>
-                  <p className="font-semibold text-foreground">
-                    {isoToTrDate(preview.createdAt.slice(0, 10))}
-                  </p>
-                </div>
-                <div className="rounded-lg border bg-card p-3 space-y-1">
-                  <span className="text-xs text-muted-foreground">Yedeklenen Uygulama</span>
-                  <p className="font-semibold text-foreground">{preview.manifest.appVersion}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2 rounded-lg border bg-muted/30 p-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Toplam Fiş Kaydı:</span>
-                  <span className="font-semibold">{preview.total}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Yeni Eklenecek:</span>
-                  <Badge variant="default">{preview.toInsert.length} Fiş</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Zaten Mevcut (Atlanacak):</span>
-                  <Badge variant="secondary">{preview.skipped} Fiş</Badge>
-                </div>
-              </div>
-
-              {preview.toInsert.length === 0 && (
-                <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400">
-                  <AlertCircle className="size-4 shrink-0 mt-0.5" />
-                  <p>
-                    Bu yedekteki tüm fişler hesabınızda zaten mevcut olduğu için yeni fiş
-                    eklenmeyecektir.
-                  </p>
-                </div>
-              )}
-
-              {restoring && restoreProgress && (
-                <div className="space-y-1.5 rounded-lg border bg-card p-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-foreground">{restoreProgress.status}</span>
-                    <span className="tabular-nums text-muted-foreground">
-                      {restoreProgress.done} / {restoreProgress.total}
-                    </span>
+            {preview && (
+              <div className="space-y-4 py-2">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-lg border bg-surface p-3 space-y-1">
+                    <span className="text-xs text-muted">Yedek Tarihi</span>
+                    <p className="font-semibold text-foreground">
+                      {isoToTrDate(preview.createdAt.slice(0, 10))}
+                    </p>
                   </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-                    <div
-                      className="h-full bg-primary transition-all duration-300"
-                      style={{
-                        width: `${
-                          restoreProgress.total > 0
-                            ? Math.min(100, (restoreProgress.done / restoreProgress.total) * 100)
-                            : 0
-                        }%`,
-                      }}
-                    />
+                  <div className="rounded-lg border bg-surface p-3 space-y-1">
+                    <span className="text-xs text-muted">Yedeklenen Uygulama</span>
+                    <p className="font-semibold text-foreground">{preview.manifest.appVersion}</p>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={restoring}
-              onClick={() => setPreviewOpen(false)}
-            >
-              Vazgeç
-            </Button>
-            <Button
-              type="button"
-              disabled={restoring || !preview?.toInsert.length}
-              onClick={handleStartRestore}
-              className="gap-2"
-            >
-              {restoring ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Aktarılıyor…
-                </>
-              ) : (
-                `Aktarımı Başlat (${preview?.toInsert.length ?? 0} Fiş)`
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                <div className="space-y-2 rounded-lg border bg-default/30 p-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted">Toplam Fiş Kaydı:</span>
+                    <span className="font-semibold">{preview.total}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted">Yeni Eklenecek:</span>
+                    <Chip size="sm" color="accent" variant="primary">{preview.toInsert.length} Fiş</Chip>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted">Zaten Mevcut (Atlanacak):</span>
+                    <Chip size="sm" variant="soft">{preview.skipped} Fiş</Chip>
+                  </div>
+                </div>
+
+                {preview.toInsert.length === 0 && (
+                  <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400">
+                    <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                    <p>
+                      Bu yedekteki tüm fişler hesabınızda zaten mevcut olduğu için yeni fiş
+                      eklenmeyecektir.
+                    </p>
+                  </div>
+                )}
+
+                {restoring && restoreProgress && (
+                  <div className="space-y-1.5 rounded-lg border bg-surface p-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium text-foreground">{restoreProgress.status}</span>
+                      <span className="tabular-nums text-muted">
+                        {restoreProgress.done} / {restoreProgress.total}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-default">
+                      <div
+                        className="h-full bg-accent transition-all duration-300"
+                        style={{
+                          width: `${
+                            restoreProgress.total > 0
+                              ? Math.min(100, (restoreProgress.done / restoreProgress.total) * 100)
+                              : 0
+                          }%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <Modal.Footer>
+              <Button size="sm"
+                type="button"
+                variant="outline"
+                isDisabled={restoring}
+                onPress={() => setPreviewOpen(false)}
+              >
+                Vazgeç
+              </Button>
+              <Button size="sm"
+                type="button"
+                isDisabled={restoring || !preview?.toInsert.length}
+                onPress={handleStartRestore}
+                className="gap-2"
+              >
+                {restoring ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Aktarılıyor…
+                  </>
+                ) : (
+                  `Aktarımı Başlat (${preview?.toInsert.length ?? 0} Fiş)`
+                )}
+              </Button>
+            </Modal.Footer>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
     </div>
   );
 }

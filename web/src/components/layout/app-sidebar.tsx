@@ -21,26 +21,13 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
-import { Button } from "@/components/ui/button";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarRail,
-  useSidebar,
-} from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Sidebar, useSidebar } from "@/components/layout/sidebar-shell";
 import { listReceipts } from "@/lib/receipts";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./theme-toggle";
+import { Button, Tooltip, toast } from "@heroui/react";
 
 interface NavGroup {
   label: string;
@@ -103,16 +90,16 @@ function SidebarMonthlyCard() {
 
   return (
     <div className="mx-2 mb-2 p-3 rounded-xl bg-sidebar-accent/50 border border-sidebar-border/70 flex-shrink-0 space-y-1.5 transition-all duration-200 animate-in fade-in-50">
-      <div className="flex items-center justify-between text-[9.5px] font-bold tracking-[0.12em] uppercase text-muted-foreground">
+      <div className="flex items-center justify-between text-[9.5px] font-bold tracking-[0.12em] uppercase text-muted">
         <span>Bu Ayki Fişler</span>
-        <span className="text-primary font-semibold">{currentMonth.label}</span>
+        <span className="text-accent font-semibold">{currentMonth.label}</span>
       </div>
       <div className="text-[17px] font-bold tabular-nums text-foreground">
         {formatTL(stats.total)}
       </div>
-      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+      <div className="flex items-center justify-between text-[11px] text-muted">
         <span>{stats.count} adet fiş</span>
-        <Link href="/butce/" className="text-xs font-semibold text-primary hover:underline">
+        <Link href="/butce/" className="text-xs font-semibold text-accent hover:underline">
           Bütçe & Dağılım →
         </Link>
       </div>
@@ -143,50 +130,50 @@ export function AppSidebar() {
       toast.success("Oturum kapatıldı.");
       router.push("/login/");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Çıkış yapılamadı.");
+      toast.danger(err instanceof Error ? err.message : "Çıkış yapılamadı.");
     }
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar select-none">
+    <Sidebar className="border-r border-sidebar-border bg-sidebar select-none">
       {/* ── Üst Logo & Başlık ── */}
-      <SidebarHeader
+      <div
         className={cn(
           "border-b border-sidebar-border/60 transition-all duration-200",
           isCollapsed
             ? "p-1.5 flex items-center justify-center"
-            : "p-3 group-data-[collapsible=icon]:p-1.5 group-data-[collapsible=icon]:justify-center"
+            : "p-3"
         )}
       >
         {isCollapsed ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
+          <Tooltip delay={300}>
+            <Tooltip.Trigger>
               <Link
                 href="/fisler/"
                 onClick={handleLinkClick}
-                className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 transition-all cursor-pointer shrink-0"
+                className="flex size-9 items-center justify-center rounded-xl bg-accent text-accent-foreground shadow-xs hover:bg-accent/90 transition-all cursor-pointer shrink-0"
                 aria-label="FişTarayıcı Ana Sayfa"
               >
                 <ScanLine className="size-5" />
               </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">FişTarayıcı</TooltipContent>
+            </Tooltip.Trigger>
+            <Tooltip.Content placement="right">FişTarayıcı</Tooltip.Content>
           </Tooltip>
         ) : (
-          <div className="flex items-center justify-between w-full group-data-[collapsible=icon]:justify-center">
+          <div className="flex items-center justify-between w-full">
             <Link
               href="/fisler/"
               onClick={handleLinkClick}
-              className="flex items-center gap-2.5 rounded-xl transition-all cursor-pointer p-1 hover:bg-sidebar-accent/50 min-w-0 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:gap-0"
+              className="flex items-center gap-2.5 rounded-xl transition-all cursor-pointer p-1 hover:bg-sidebar-accent/50 min-w-0"
             >
-              <div className="flex aspect-square size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-black text-sm select-none shadow-xs shrink-0">
+              <div className="flex aspect-square size-9 items-center justify-center rounded-xl bg-accent text-accent-foreground font-black text-sm select-none shadow-xs shrink-0">
                 <ScanLine className="size-5" />
               </div>
-              <div className="flex flex-col leading-tight min-w-0 group-data-[collapsible=icon]:hidden">
+              <div className="flex flex-col leading-tight min-w-0">
                 <span className="font-bold text-[15px] tracking-tight text-foreground truncate">
-                  Fiş<span className="text-primary">Tarayıcı</span>
+                  Fiş<span className="text-accent">Tarayıcı</span>
                 </span>
-                <span className="text-[10.5px] font-medium text-muted-foreground mt-0.5 truncate">
+                <span className="text-[10.5px] font-medium text-muted mt-0.5 truncate">
                   Mali İşletme Portalı
                 </span>
               </div>
@@ -196,9 +183,9 @@ export function AppSidebar() {
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-sm"
-                onClick={() => setOpenMobile(false)}
-                className="text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+                size="sm" isIconOnly
+                onPress={() => setOpenMobile(false)}
+                className="text-muted hover:text-foreground cursor-pointer shrink-0"
                 aria-label="Menüyü kapat"
               >
                 <X className="size-4" />
@@ -206,53 +193,53 @@ export function AppSidebar() {
             )}
           </div>
         )}
-      </SidebarHeader>
+      </div>
 
       {/* ── Yeni Fiş Ekle Hızlı Aksiyon Butonu ── */}
       <div
         className={cn(
           "pt-3 pb-1 flex-shrink-0 transition-all",
-          isCollapsed ? "px-1.5 flex justify-center" : "px-3 group-data-[collapsible=icon]:px-1.5"
+          isCollapsed ? "px-1.5 flex justify-center" : "px-3"
         )}
       >
         {!isCollapsed ? (
           <Link
             href="/fisler/yeni/"
             onClick={handleLinkClick}
-            className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-lg bg-primary text-primary-foreground font-semibold text-xs shadow-xs hover:bg-primary/90 transition-all cursor-pointer"
+            className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-lg bg-accent text-accent-foreground font-semibold text-xs shadow-xs hover:bg-accent/90 transition-all cursor-pointer"
           >
             <Plus className="size-4 shrink-0" />
             <span>Yeni Fiş Tara</span>
           </Link>
         ) : (
           <div className="flex justify-center">
-            <Tooltip>
-              <TooltipTrigger asChild>
+            <Tooltip delay={300}>
+              <Tooltip.Trigger>
                 <Link
                   href="/fisler/yeni/"
                   onClick={handleLinkClick}
-                  className="flex items-center justify-center size-9 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer shadow-xs"
+                  className="flex items-center justify-center size-9 rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 transition-all cursor-pointer shadow-xs"
                 >
                   <Plus className="size-4 shrink-0" />
                 </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Yeni Fiş Tara</TooltipContent>
+              </Tooltip.Trigger>
+              <Tooltip.Content placement="right">Yeni Fiş Tara</Tooltip.Content>
             </Tooltip>
           </div>
         )}
       </div>
 
       {/* ── Gruplanmış Navigasyon ── */}
-      <SidebarContent
+      <div
         className={cn(
-          "py-2 space-y-3 overflow-y-auto transition-all",
-          isCollapsed ? "px-1.5" : "px-2.5 group-data-[collapsible=icon]:px-1.5"
+          "flex-1 min-h-0 py-2 space-y-3 overflow-y-auto transition-all",
+          isCollapsed ? "px-1.5" : "px-2.5"
         )}
       >
         {NAV_GROUPS.map((group) => (
           <div key={group.label} className="flex flex-col gap-0.5">
             {!isCollapsed && (
-              <div className="px-2.5 pt-2.5 pb-1 text-[9.5px] font-bold uppercase tracking-[0.13em] text-muted-foreground/80">
+              <div className="px-2.5 pt-2.5 pb-1 text-[9.5px] font-bold uppercase tracking-[0.13em] text-muted/80">
                 {group.label}
               </div>
             )}
@@ -264,22 +251,22 @@ export function AppSidebar() {
               if (isCollapsed) {
                 return (
                   <div key={item.href} className="flex justify-center py-0.5">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
+                    <Tooltip delay={300}>
+                      <Tooltip.Trigger>
                         <Link
                           href={`${item.href}/`}
                           onClick={handleLinkClick}
                           className={cn(
                             "flex size-9 items-center justify-center rounded-lg transition-all duration-150 active:scale-95 cursor-pointer",
                             isActive
-                              ? "bg-primary/10 text-primary font-semibold shadow-2xs"
-                              : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+                              ? "bg-accent/10 text-accent font-semibold shadow-2xs"
+                              : "text-muted hover:bg-sidebar-accent hover:text-foreground"
                           )}
                         >
-                          <Icon className={cn("size-4.5 shrink-0", isActive && "text-primary")} />
+                          <Icon className={cn("size-4.5 shrink-0", isActive && "text-accent")} />
                         </Link>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">{item.title}</TooltipContent>
+                      </Tooltip.Trigger>
+                      <Tooltip.Content placement="right">{item.title}</Tooltip.Content>
                     </Tooltip>
                   </div>
                 );
@@ -293,14 +280,14 @@ export function AppSidebar() {
                   className={cn(
                     "flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[10px] text-[13px] font-medium transition-all duration-150 active:scale-[0.98] cursor-pointer select-none",
                     isActive
-                      ? "bg-primary/10 text-foreground font-semibold shadow-2xs"
-                      : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/70"
+                      ? "bg-accent/10 text-foreground font-semibold shadow-2xs"
+                      : "text-muted hover:text-foreground hover:bg-sidebar-accent/70"
                   )}
                 >
                   <Icon
                     className={cn(
                       "size-4.5 shrink-0 transition-colors",
-                      isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                      isActive ? "text-accent" : "text-muted group-hover:text-foreground"
                     )}
                   />
                   <span className="flex-1 truncate">{item.title}</span>
@@ -309,13 +296,13 @@ export function AppSidebar() {
             })}
           </div>
         ))}
-      </SidebarContent>
+      </div>
 
       {/* ── Footer: Durum Kartı + Profil + Ayarlar + Çıkış ── */}
-      <SidebarFooter
+      <div
         className={cn(
           "border-t border-sidebar-border/60 flex flex-col gap-1.5 flex-shrink-0 transition-all duration-200",
-          isCollapsed ? "p-1.5" : "p-2.5 group-data-[collapsible=icon]:p-1.5"
+          isCollapsed ? "p-1.5" : "p-2.5"
         )}
       >
         {/* Canlı Aylık Özet Kartı */}
@@ -326,7 +313,7 @@ export function AppSidebar() {
             {/* Kullanıcı Bilgisi */}
             {email && (
               <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg bg-sidebar-accent/40 text-xs">
-                <div className="size-6 rounded-full bg-primary/20 text-primary font-bold flex items-center justify-center shrink-0 text-[11px]">
+                <div className="size-6 rounded-full bg-accent/20 text-accent font-bold flex items-center justify-center shrink-0 text-[11px]">
                   {initial}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -343,14 +330,14 @@ export function AppSidebar() {
                 className={cn(
                   "flex items-center gap-2 flex-1 px-2.5 py-2 rounded-[10px] text-[13px] font-medium transition-all duration-150 active:scale-[0.98] cursor-pointer select-none",
                   isSettingsActive
-                    ? "bg-primary/10 text-foreground font-semibold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/70"
+                    ? "bg-accent/10 text-foreground font-semibold shadow-2xs"
+                    : "text-muted hover:text-foreground hover:bg-sidebar-accent/70"
                 )}
               >
                 <Settings
                   className={cn(
                     "size-4.5 shrink-0 transition-colors",
-                    isSettingsActive ? "text-primary" : "text-muted-foreground"
+                    isSettingsActive ? "text-accent" : "text-muted"
                   )}
                 />
                 <span>Ayarlar</span>
@@ -362,7 +349,7 @@ export function AppSidebar() {
             <button
               type="button"
               onClick={handleSignOut}
-              className="flex items-center gap-2.5 w-full px-2.5 py-1.5 rounded-[10px] text-xs font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-150 active:scale-[0.98] text-left cursor-pointer"
+              className="flex items-center gap-2.5 w-full px-2.5 py-1.5 rounded-[10px] text-xs font-medium text-muted hover:text-danger hover:bg-danger/10 transition-all duration-150 active:scale-[0.98] text-left cursor-pointer"
             >
               <LogOut className="size-4 shrink-0" />
               <span>Çıkış Yap</span>
@@ -370,22 +357,22 @@ export function AppSidebar() {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 py-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
+            <Tooltip delay={300}>
+              <Tooltip.Trigger>
                 <Link
                   href="/ayarlar/"
                   onClick={handleLinkClick}
                   className={cn(
                     "flex size-9 items-center justify-center rounded-lg transition-colors cursor-pointer",
                     isSettingsActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+                      ? "bg-accent/10 text-accent"
+                      : "text-muted hover:bg-sidebar-accent hover:text-foreground"
                   )}
                 >
                   <Settings className="size-4.5" />
                 </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Ayarlar</TooltipContent>
+              </Tooltip.Trigger>
+              <Tooltip.Content placement="right">Ayarlar</Tooltip.Content>
             </Tooltip>
             <ThemeToggle />
           </div>
@@ -397,12 +384,12 @@ export function AppSidebar() {
             type="button"
             variant="ghost"
             size="sm"
-            onClick={toggleSidebar}
+            onPress={toggleSidebar}
             className={cn(
-              "w-full text-xs text-muted-foreground hover:text-foreground hover:bg-sidebar-accent cursor-pointer",
+              "w-full text-xs text-muted hover:text-foreground hover:bg-sidebar-accent cursor-pointer",
               isCollapsed ? "justify-center px-0 h-9" : "justify-start gap-2 h-8"
             )}
-            title={isCollapsed ? "Genişlet" : "Daralt"}
+            aria-label={isCollapsed ? "Kenar çubuğunu genişlet" : "Kenar çubuğunu daralt"}
           >
             {isCollapsed ? (
               <ChevronRight className="size-4" />
@@ -414,9 +401,8 @@ export function AppSidebar() {
             )}
           </Button>
         )}
-      </SidebarFooter>
+      </div>
 
-      <SidebarRail />
     </Sidebar>
   );
 }

@@ -11,21 +11,8 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { Button, Card, Chip, Input, ListBox, Select, Skeleton, Table, toast } from "@heroui/react";
 import { PageHeader } from "@/components/layout/page-header";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getFirmMergeSuggestions, loadFirmList, type FirmGroup, type FirmListItem } from "@/lib/firms";
 import { FirmMergeDialog } from "./firm-merge-dialog";
 
@@ -49,7 +36,7 @@ export function FirmsView() {
         setAllReceipts(res.allReceipts);
       })
       .catch((err) => {
-        toast.error(err instanceof Error ? err.message : "Firmalar yüklenemedi.");
+        toast.danger(err instanceof Error ? err.message : "Firmalar yüklenemedi.");
       })
       .finally(() => {
         setLoading(false);
@@ -104,46 +91,46 @@ export function FirmsView() {
           description="Alışveriş yaptığınız tüm işletmeler, toplam harcamalarınız ve fiş adetleri."
         />
 
-        <Button
+        <Button size="sm"
           type="button"
           variant="outline"
-          onClick={() => setMergeDialogOpen(true)}
+          onPress={() => setMergeDialogOpen(true)}
           className="gap-2"
         >
-          <GitMerge className="size-4 text-primary" />
+          <GitMerge className="size-4 text-accent" />
           Firma Adlarını Birleştir
           {mergeGroups.length > 0 && (
-            <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[11px]">
+            <Chip size="sm" variant="soft" className="ml-1 px-1.5 py-0 text-[11px]">
               {mergeGroups.length}
-            </Badge>
+            </Chip>
           )}
         </Button>
       </div>
 
       {/* İstatistik Kartları */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card size="sm">
-          <CardHeader className="pb-2">
-            <CardDescription>Kayıtlı Firma Sayısı</CardDescription>
-            <CardTitle className="text-2xl tabular-nums">
+        <Card>
+          <Card.Header className="pb-2">
+            <Card.Description>Kayıtlı Firma Sayısı</Card.Description>
+            <Card.Title className="text-2xl tabular-nums">
               {loading ? <Skeleton className="h-7 w-20" /> : `${firms.length} firma`}
-            </CardTitle>
-          </CardHeader>
+            </Card.Title>
+          </Card.Header>
         </Card>
 
-        <Card size="sm">
-          <CardHeader className="pb-2">
-            <CardDescription>Firmalara Yapılan Toplam Harcama</CardDescription>
-            <CardTitle className="text-2xl tabular-nums">
+        <Card>
+          <Card.Header className="pb-2">
+            <Card.Description>Firmalara Yapılan Toplam Harcama</Card.Description>
+            <Card.Title className="text-2xl tabular-nums">
               {loading ? <Skeleton className="h-7 w-32" /> : `${formatTL(totalSpent)}`}
-            </CardTitle>
-          </CardHeader>
+            </Card.Title>
+          </Card.Header>
         </Card>
 
-        <Card size="sm">
-          <CardHeader className="pb-2">
-            <CardDescription>Ortalama Firma Başına Harcama</CardDescription>
-            <CardTitle className="text-2xl tabular-nums">
+        <Card>
+          <Card.Header className="pb-2">
+            <Card.Description>Ortalama Firma Başına Harcama</Card.Description>
+            <Card.Title className="text-2xl tabular-nums">
               {loading ? (
                 <Skeleton className="h-7 w-28" />
               ) : firms.length > 0 ? (
@@ -151,15 +138,15 @@ export function FirmsView() {
               ) : (
                 "—"
               )}
-            </CardTitle>
-          </CardHeader>
+            </Card.Title>
+          </Card.Header>
         </Card>
       </div>
 
       {/* Arama ve Sıralama Çubuğu */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative min-w-64 max-w-sm flex-1">
-          <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-2.5 size-4 text-muted" />
           <Input
             placeholder="Firma adına göre filtrele…"
             value={search}
@@ -173,8 +160,8 @@ export function FirmsView() {
             <Button
               type="button"
               variant="ghost"
-              size="icon-sm"
-              onClick={() => setSearch("")}
+              size="sm" isIconOnly
+              onPress={() => setSearch("")}
               className="absolute right-1 top-1 size-7"
             >
               <X className="size-3.5" />
@@ -182,106 +169,124 @@ export function FirmsView() {
           )}
         </div>
 
-        <Select
+        <Select className="w-52" placeholder="Sıralama" aria-label="Sıralama"
           value={sortOption}
-          onValueChange={(val) => {
+          onChange={(key) => {
+            const val = String(key);
             setSortOption(val as SortOption);
             setPage(0);
           }}
         >
-          <SelectTrigger className="w-52">
-            <SelectValue placeholder="Sıralama" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="total">En Yüksek Harcama</SelectItem>
-            <SelectItem value="count">En Çok Fiş Sayısı</SelectItem>
-            <SelectItem value="name">Firma Adı (A–Z)</SelectItem>
-            <SelectItem value="date">En Son Alışveriş Tarihi</SelectItem>
-          </SelectContent>
+          <Select.Trigger>
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              <ListBox.Item id="total">
+                En Yüksek Harcama
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+              <ListBox.Item id="count">
+                En Çok Fiş Sayısı
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+              <ListBox.Item id="name">
+                Firma Adı (A–Z)
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+              <ListBox.Item id="date">
+                En Son Alışveriş Tarihi
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+            </ListBox>
+        </Select.Popover>
         </Select>
       </div>
 
       {/* Firma Tablosu */}
       <Card>
-        <CardContent className="p-0">
-          <Table className="min-w-[640px]">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12 pl-4">#</TableHead>
-                <TableHead>Firma Adı</TableHead>
-                <TableHead className="w-32 text-right">Fiş Sayısı</TableHead>
-                <TableHead className="w-40 text-right">KDV Toplamı</TableHead>
-                <TableHead className="w-44 text-right">Toplam Harcama</TableHead>
-                <TableHead className="w-36 pr-4 text-right">Son Fiş Tarihi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading &&
-                Array.from({ length: 6 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="pl-4">
-                      <Skeleton className="h-4 w-4" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-48" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="ml-auto h-4 w-12" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="ml-auto h-4 w-20" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="ml-auto h-4 w-24" />
-                    </TableCell>
-                    <TableCell className="pr-4 text-right">
-                      <Skeleton className="ml-auto h-4 w-20" />
-                    </TableCell>
-                  </TableRow>
-                ))}
+        <Card.Content className="p-0">
+          <Table variant="secondary">
+            <Table.ScrollContainer>
+              <Table.Content aria-label="Firmalar" className="min-w-[640px]">
+                <Table.Header>
+                  <Table.Column isRowHeader className="w-12 pl-4">#</Table.Column>
+                  <Table.Column>Firma Adı</Table.Column>
+                  <Table.Column className="w-32 text-right">Fiş Sayısı</Table.Column>
+                  <Table.Column className="w-40 text-right">KDV Toplamı</Table.Column>
+                  <Table.Column className="w-44 text-right">Toplam Harcama</Table.Column>
+                  <Table.Column className="w-36 pr-4 text-right">Son Fiş Tarihi</Table.Column>
+                </Table.Header>
+                <Table.Body>
+                  {loading &&
+                    Array.from({ length: 6 }).map((_, i) => (
+                      <Table.Row key={i} id={i}>
+                        <Table.Cell className="pl-4">
+                          <Skeleton className="h-4 w-4" />
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Skeleton className="h-4 w-48" />
+                        </Table.Cell>
+                        <Table.Cell className="text-right">
+                          <Skeleton className="ml-auto h-4 w-12" />
+                        </Table.Cell>
+                        <Table.Cell className="text-right">
+                          <Skeleton className="ml-auto h-4 w-20" />
+                        </Table.Cell>
+                        <Table.Cell className="text-right">
+                          <Skeleton className="ml-auto h-4 w-24" />
+                        </Table.Cell>
+                        <Table.Cell className="pr-4 text-right">
+                          <Skeleton className="ml-auto h-4 w-20" />
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
 
-              {!loading &&
-                pagedRows.map((firm, idx) => (
-                  <TableRow key={firm.key}>
-                    <TableCell className="pl-4 text-xs tabular-nums text-muted-foreground">
-                      {currentPage * PAGE_SIZE + idx + 1}
-                    </TableCell>
-                    <TableCell className="font-semibold text-foreground">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="size-4 text-muted-foreground/60 shrink-0" />
-                        <span className="truncate">{firm.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums text-muted-foreground">
-                      {firm.count} fiş
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums text-muted-foreground">
-                      {formatTL(firm.kdv)}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold tabular-nums text-foreground">
-                      {formatTL(firm.total)}
-                    </TableCell>
-                    <TableCell className="pr-4 text-right tabular-nums text-xs text-muted-foreground">
-                      {firm.last ? isoToTrDate(firm.last) : "—"}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                  {!loading &&
+                    pagedRows.map((firm, idx) => (
+                      <Table.Row key={firm.key} id={firm.key}>
+                        <Table.Cell className="pl-4 text-xs tabular-nums text-muted">
+                          {currentPage * PAGE_SIZE + idx + 1}
+                        </Table.Cell>
+                        <Table.Cell className="font-semibold text-foreground">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="size-4 text-muted/60 shrink-0" />
+                            <span className="truncate">{firm.name}</span>
+                          </div>
+                        </Table.Cell>
+                        <Table.Cell className="text-right tabular-nums text-muted">
+                          {firm.count} fiş
+                        </Table.Cell>
+                        <Table.Cell className="text-right tabular-nums text-muted">
+                          {formatTL(firm.kdv)}
+                        </Table.Cell>
+                        <Table.Cell className="text-right font-semibold tabular-nums text-foreground">
+                          {formatTL(firm.total)}
+                        </Table.Cell>
+                        <Table.Cell className="pr-4 text-right tabular-nums text-xs text-muted">
+                          {firm.last ? isoToTrDate(firm.last) : "—"}
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
 
-              {!loading && filteredFirms.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-16 text-center text-sm text-muted-foreground">
-                    {search ? "Aramanıza uyan firma bulunamadı." : "Henüz kayıtlı firma bulunmuyor."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
+                  {!loading && filteredFirms.length === 0 && (
+                    <Table.Row>
+                      <Table.Cell colSpan={6} className="py-16 text-center text-sm text-muted">
+                        {search ? "Aramanıza uyan firma bulunamadı." : "Henüz kayıtlı firma bulunmuyor."}
+                      </Table.Cell>
+                    </Table.Row>
+                  )}
+                </Table.Body>
+              </Table.Content>
+            </Table.ScrollContainer>
           </Table>
-        </CardContent>
+        </Card.Content>
       </Card>
 
       {/* Sayfalama */}
       {!loading && filteredFirms.length > PAGE_SIZE && (
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex items-center justify-between text-xs text-muted">
           <span>
             Toplam {filteredFirms.length} firmadan {currentPage * PAGE_SIZE + 1}–
             {Math.min(filteredFirms.length, (currentPage + 1) * PAGE_SIZE)} arası gösteriliyor
@@ -291,9 +296,9 @@ export function FirmsView() {
             <Button
               type="button"
               variant="outline"
-              size="icon-sm"
-              disabled={currentPage === 0}
-              onClick={() => setPage((p) => p - 1)}
+              size="sm" isIconOnly
+              isDisabled={currentPage === 0}
+              onPress={() => setPage((p) => p - 1)}
             >
               <ChevronLeft className="size-3.5" />
             </Button>
@@ -303,9 +308,9 @@ export function FirmsView() {
             <Button
               type="button"
               variant="outline"
-              size="icon-sm"
-              disabled={currentPage >= pageCount - 1}
-              onClick={() => setPage((p) => p + 1)}
+              size="sm" isIconOnly
+              isDisabled={currentPage >= pageCount - 1}
+              onPress={() => setPage((p) => p + 1)}
             >
               <ChevronRight className="size-3.5" />
             </Button>

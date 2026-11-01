@@ -16,6 +16,13 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.1.0 — `953a831`
+- **Web panelinin tüm tasarım bileşenleri HeroUI v3'e geçti:** shadcn/ui, Radix ve sonner kaldırıldı.
+  - Butonlar, kartlar, rozetler (Chip), diyaloglar (Modal / AlertDialog), açılır listeler (Select), menüler (Dropdown), sekmeler, tablolar, onay kutuları, ipuçları ve bildirimler artık HeroUI.
+  - Tema korunuyor: turkuaz aksan, Geist yazı tipi, açık/koyu mod ve buzlu cam kartlar.
+  - Fiş ve e-Fatura tablolarında seçim ve sıralama HeroUI tablosunun kendi özellikleriyle çalışıyor (davranış aynı).
+  - Mobilde kenar menüsü HeroUI çekmecesiyle (Drawer) açılıyor.
+
 ## 1.53.2 · Web 1.0.27 — `c008823`
 - **KDV sayfaları artık hemen açılıyor (mobil + web):** QNB e-Fatura servisi yavaş olduğu için sayfa açılışı uzun sürüyordu.
   - **Kalıcı önbellek:** Her ayın e-Fatura sonucu telefonda (AsyncStorage) / tarayıcıda (localStorage) saklanıyor (`kaliciDonemOku`, `readPersistedDonem`).

@@ -10,18 +10,8 @@ import {
 import type { TutarSatiri } from "@shared/services/efatura/qnbEfatura";
 import { AlertCircle, FileSpreadsheet } from "lucide-react";
 import { useMemo } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { exportExcel, type EFatura, type Yon } from "@/lib/efatura";
+import { Button, Card, Chip, Modal, Table } from "@heroui/react";
 
 interface DonemOzetDialogProps {
   faturalar: EFatura[];
@@ -72,133 +62,138 @@ export function DonemOzetDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] w-full max-w-[calc(100vw-2rem)] sm:max-w-4xl flex-col p-4 sm:p-6 overflow-hidden">
-        <DialogHeader className="border-b pb-4 pr-8">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0 flex-1 space-y-1">
-              <DialogTitle className="break-words text-base sm:text-lg font-semibold">
-                {periodLabel} · Dönem Özeti ({yon === "gelen" ? "Gelen e-Faturalar" : "Giden e-Faturalar"})
-              </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
-                Bu dönemdeki faturaların matrah ve vergi toplamları
-              </DialogDescription>
+    <Modal.Backdrop isOpen={open} onOpenChange={onOpenChange}>
+      <Modal.Container className="sm:w-full">
+        <Modal.Dialog className="flex max-h-[90vh] sm:max-w-4xl flex-col p-4 sm:p-6 overflow-hidden">
+          <Modal.CloseTrigger />
+          <Modal.Header className="border-b pb-4 pr-8">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0 flex-1 space-y-1">
+                <Modal.Heading className="break-words text-base sm:text-lg font-semibold">
+                  {periodLabel} · Dönem Özeti ({yon === "gelen" ? "Gelen e-Faturalar" : "Giden e-Faturalar"})
+                </Modal.Heading>
+                <p className="text-sm text-muted text-xs sm:text-sm text-muted">
+                  Bu dönemdeki faturaların matrah ve vergi toplamları
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onPress={handleExport}
+                className="shrink-0 gap-1.5"
+              >
+                <FileSpreadsheet className="size-4" />
+                Excel İndir
+              </Button>
+            </div>
+          </Modal.Header>
+
+          <div className="flex-1 min-h-0 space-y-6 overflow-y-auto pr-1 pt-2">
+            {/* Özet Kartları */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <SummaryBlock
+                title="KDV Hariç Matrah"
+                tutar={yon === "gelen" ? ozet.gelen.matrah : ozet.satis.matrah + ozet.earsiv.matrah}
+                sub={`${yon === "gelen" ? ozet.gelen.adet : ozet.satis.adet + ozet.earsiv.adet} adet fatura`}
+              />
+              <SummaryBlock
+                title="Toplam KDV"
+                tutar={yon === "gelen" ? ozet.gelen.kdv : ozet.satis.kdv + ozet.earsiv.kdv}
+                sub={yon === "gelen" ? "İndirilecek KDV" : "Hesaplanan KDV"}
+              />
+              <SummaryBlock
+                title="Genel Toplam (Ödenecek)"
+                tutar={yon === "gelen" ? ozet.gelen.tutar : ozet.satis.tutar + ozet.earsiv.tutar}
+                sub="KDV dahil"
+                highlight
+              />
             </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-              className="shrink-0 gap-1.5"
-            >
-              <FileSpreadsheet className="size-4" />
-              Excel İndir
-            </Button>
-          </div>
-        </DialogHeader>
-
-        <div className="flex-1 min-h-0 space-y-6 overflow-y-auto pr-1 pt-2">
-          {/* Özet Kartları */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <SummaryBlock
-              title="KDV Hariç Matrah"
-              tutar={yon === "gelen" ? ozet.gelen.matrah : ozet.satis.matrah + ozet.earsiv.matrah}
-              sub={`${yon === "gelen" ? ozet.gelen.adet : ozet.satis.adet + ozet.earsiv.adet} adet fatura`}
-            />
-            <SummaryBlock
-              title="Toplam KDV"
-              tutar={yon === "gelen" ? ozet.gelen.kdv : ozet.satis.kdv + ozet.earsiv.kdv}
-              sub={yon === "gelen" ? "İndirilecek KDV" : "Hesaplanan KDV"}
-            />
-            <SummaryBlock
-              title="Genel Toplam (Ödenecek)"
-              tutar={yon === "gelen" ? ozet.gelen.tutar : ozet.satis.tutar + ozet.earsiv.tutar}
-              sub="KDV dahil"
-              highlight
-            />
-          </div>
-
-          {/* Giden Fatura Tipleri Ayrımı */}
-          {yon === "giden" && (
-            <div className="space-y-2">
-              <h4 className="text-xs font-semibold uppercase text-muted-foreground">Fatura Dağılımı</h4>
-              <div className="w-full overflow-x-auto rounded-lg border">
-                <Table className="min-w-[520px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Fatura Türü</TableHead>
-                      <TableHead className="text-right">Adet</TableHead>
-                      <TableHead className="text-right">Matrah</TableHead>
-                      <TableHead className="text-right">KDV</TableHead>
-                      <TableHead className="text-right">Toplam Tutar</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="font-medium">e-Fatura Satış</TableCell>
-                      <TableCell className="text-right whitespace-nowrap tabular-nums">{ozet.satis.adet}</TableCell>
-                      <TableCell className="text-right whitespace-nowrap tabular-nums">{formatTL(ozet.satis.matrah)}</TableCell>
-                      <TableCell className="text-right whitespace-nowrap tabular-nums">{formatTL(ozet.satis.kdv)}</TableCell>
-                      <TableCell className="text-right font-medium whitespace-nowrap tabular-nums">{formatTL(ozet.satis.tutar)}</TableCell>
-                    </TableRow>
-                    {ozet.iade.adet > 0 && (
-                      <TableRow className="text-destructive">
-                        <TableCell className="font-medium">İadeler</TableCell>
-                        <TableCell className="text-right whitespace-nowrap tabular-nums">{ozet.iade.adet}</TableCell>
-                        <TableCell className="text-right whitespace-nowrap tabular-nums">-{formatTL(ozet.iade.matrah)}</TableCell>
-                        <TableCell className="text-right whitespace-nowrap tabular-nums">-{formatTL(ozet.iade.kdv)}</TableCell>
-                        <TableCell className="text-right font-medium whitespace-nowrap tabular-nums">-{formatTL(ozet.iade.tutar)}</TableCell>
-                      </TableRow>
-                    )}
-                    {ozet.earsiv.adet > 0 && (
-                      <TableRow>
-                        <TableCell className="font-medium">e-Arşiv Fatura</TableCell>
-                        <TableCell className="text-right whitespace-nowrap tabular-nums">{ozet.earsiv.adet}</TableCell>
-                        <TableCell className="text-right whitespace-nowrap tabular-nums">{formatTL(ozet.earsiv.matrah)}</TableCell>
-                        <TableCell className="text-right whitespace-nowrap tabular-nums">{formatTL(ozet.earsiv.kdv)}</TableCell>
-                        <TableCell className="text-right font-medium whitespace-nowrap tabular-nums">{formatTL(ozet.earsiv.tutar)}</TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+            {/* Giden Fatura Tipleri Ayrımı */}
+            {yon === "giden" && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-semibold uppercase text-muted">Fatura Dağılımı</h4>
+                <div className="w-full overflow-x-auto rounded-lg border">
+                  <Table variant="secondary">
+                    <Table.ScrollContainer>
+                      <Table.Content aria-label="Dönem özeti" className="min-w-[520px]">
+                        <Table.Header>
+                          <Table.Column isRowHeader>Fatura Türü</Table.Column>
+                          <Table.Column className="text-right">Adet</Table.Column>
+                          <Table.Column className="text-right">Matrah</Table.Column>
+                          <Table.Column className="text-right">KDV</Table.Column>
+                          <Table.Column className="text-right">Toplam Tutar</Table.Column>
+                        </Table.Header>
+                        <Table.Body>
+                          <Table.Row>
+                            <Table.Cell className="font-medium">e-Fatura Satış</Table.Cell>
+                            <Table.Cell className="text-right whitespace-nowrap tabular-nums">{ozet.satis.adet}</Table.Cell>
+                            <Table.Cell className="text-right whitespace-nowrap tabular-nums">{formatTL(ozet.satis.matrah)}</Table.Cell>
+                            <Table.Cell className="text-right whitespace-nowrap tabular-nums">{formatTL(ozet.satis.kdv)}</Table.Cell>
+                            <Table.Cell className="text-right font-medium whitespace-nowrap tabular-nums">{formatTL(ozet.satis.tutar)}</Table.Cell>
+                          </Table.Row>
+                          {ozet.iade.adet > 0 && (
+                            <Table.Row className="text-danger">
+                              <Table.Cell className="font-medium">İadeler</Table.Cell>
+                              <Table.Cell className="text-right whitespace-nowrap tabular-nums">{ozet.iade.adet}</Table.Cell>
+                              <Table.Cell className="text-right whitespace-nowrap tabular-nums">-{formatTL(ozet.iade.matrah)}</Table.Cell>
+                              <Table.Cell className="text-right whitespace-nowrap tabular-nums">-{formatTL(ozet.iade.kdv)}</Table.Cell>
+                              <Table.Cell className="text-right font-medium whitespace-nowrap tabular-nums">-{formatTL(ozet.iade.tutar)}</Table.Cell>
+                            </Table.Row>
+                          )}
+                          {ozet.earsiv.adet > 0 && (
+                            <Table.Row>
+                              <Table.Cell className="font-medium">e-Arşiv Fatura</Table.Cell>
+                              <Table.Cell className="text-right whitespace-nowrap tabular-nums">{ozet.earsiv.adet}</Table.Cell>
+                              <Table.Cell className="text-right whitespace-nowrap tabular-nums">{formatTL(ozet.earsiv.matrah)}</Table.Cell>
+                              <Table.Cell className="text-right whitespace-nowrap tabular-nums">{formatTL(ozet.earsiv.kdv)}</Table.Cell>
+                              <Table.Cell className="text-right font-medium whitespace-nowrap tabular-nums">{formatTL(ozet.earsiv.tutar)}</Table.Cell>
+                            </Table.Row>
+                          )}
+                        </Table.Body>
+                      </Table.Content>
+                    </Table.ScrollContainer>
+                  </Table>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Olağan Dışı Yüksek Tutarlı Faturalar */}
-          {olaganDisiList.length > 0 && (
-            <div className="space-y-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-amber-900 dark:text-amber-200">
-                <AlertCircle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                Olağan Dışı Yüksek Tutarlı Faturalar
-              </div>
-              <p className="text-xs text-amber-800 dark:text-amber-300">
-                Aşağıdaki faturaların matrahı bu dönemdeki faturaların ortanca matrahının 5 katından yüksektir:
-              </p>
-              <div className="space-y-1.5">
-                {olaganDisiList.map((od) => (
-                  <div
-                    key={od.ettn}
-                    className="flex flex-wrap items-center justify-between rounded border bg-card p-2 text-xs"
-                  >
-                    <div>
-                      <span className="font-medium">{od.belgeNo || od.ettn}</span> · {od.tarih}
+            {/* Olağan Dışı Yüksek Tutarlı Faturalar */}
+            {olaganDisiList.length > 0 && (
+              <div className="space-y-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-amber-900 dark:text-amber-200">
+                  <AlertCircle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                  Olağan Dışı Yüksek Tutarlı Faturalar
+                </div>
+                <p className="text-xs text-amber-800 dark:text-amber-300">
+                  Aşağıdaki faturaların matrahı bu dönemdeki faturaların ortanca matrahının 5 katından yüksektir:
+                </p>
+                <div className="space-y-1.5">
+                  {olaganDisiList.map((od) => (
+                    <div
+                      key={od.ettn}
+                      className="flex flex-wrap items-center justify-between rounded border bg-surface p-2 text-xs"
+                    >
+                      <div>
+                        <span className="font-medium">{od.belgeNo || od.ettn}</span> · {od.tarih}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold tabular-nums">{formatTL(od.matrah)}</span>
+                        <Chip size="sm" variant="secondary" className="text-[10px]">
+                          {od.kat}× ortalama
+                        </Chip>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold tabular-nums">{formatTL(od.matrah)}</span>
-                      <Badge variant="outline" className="text-[10px]">
-                        {od.kat}× ortalama
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+            )}
+          </div>
+        </Modal.Dialog>
+      </Modal.Container>
+    </Modal.Backdrop>
   );
 }
 
@@ -214,12 +209,12 @@ function SummaryBlock({
   highlight?: boolean;
 }) {
   return (
-    <Card size="sm" className={highlight ? "border-primary/40 dark:border-primary/40 bg-primary/5" : ""}>
-      <CardHeader className="pb-2">
-        <p className="text-xs text-muted-foreground">{title}</p>
-        <CardTitle className="text-xl tabular-nums">{formatTL(tutar)}</CardTitle>
-        <p className="text-xs text-muted-foreground">{sub}</p>
-      </CardHeader>
+    <Card className={highlight ? "border-accent/40 dark:border-accent/40 bg-accent/5" : ""}>
+      <Card.Header className="pb-2">
+        <p className="text-xs text-muted">{title}</p>
+        <Card.Title className="text-xl tabular-nums">{formatTL(tutar)}</Card.Title>
+        <p className="text-xs text-muted">{sub}</p>
+      </Card.Header>
     </Card>
   );
 }

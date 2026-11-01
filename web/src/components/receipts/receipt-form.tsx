@@ -1,6 +1,6 @@
 "use client";
 
-import { getCategoryVisuals } from "@/components/ui/category-badge";
+import { getCategoryVisuals } from "@/components/category-badge";
 import { cn } from "@/lib/utils";
 import { allCategories, categoryLabel } from "@shared/lib/categories";
 import { formatTL, parseAmount, round2 } from "@shared/lib/format";
@@ -28,32 +28,9 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { AlertDialog, Button, Card, Chip, Input, Label, ListBox, Select, Skeleton, TextArea, toast } from "@heroui/react";
+import { buttonVariants } from "@heroui/styles";
 import { PageHeader } from "@/components/layout/page-header";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import { createReceipt, deleteReceipt, getImageUrl, loadCustomCategories, updateReceipt } from "@/lib/receipts";
 import { analyzeReceiptFile } from "@/lib/vision";
 
@@ -116,7 +93,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
         );
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Yapay zeka fişi okuyamadı.");
+      toast.danger(err instanceof Error ? err.message : "Yapay zeka fişi okuyamadı.");
     } finally {
       setAnalyzing(false);
     }
@@ -126,7 +103,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
-        toast.error("Lütfen geçerli bir görsel dosyası seçin (JPEG, PNG vb.).");
+        toast.danger("Lütfen geçerli bir görsel dosyası seçin (JPEG, PNG vb.).");
         return;
       }
       setPhotoFile(file);
@@ -183,7 +160,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
     e.preventDefault();
     const errors = validateForm(form);
     if (errors.length > 0) {
-      toast.error(errors[0]);
+      toast.danger(errors[0]);
       return;
     }
 
@@ -199,7 +176,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
       }
       router.push("/fisler/");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Fiş kaydedilemedi.");
+      toast.danger(err instanceof Error ? err.message : "Fiş kaydedilemedi.");
     } finally {
       setSubmitting(false);
     }
@@ -217,7 +194,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
       }
       router.push("/fisler/");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Silme işlemi başarısız.");
+      toast.danger(err instanceof Error ? err.message : "Silme işlemi başarısız.");
       setDeleting(false);
       setConfirmDelete(false);
     }
@@ -228,11 +205,11 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
       <div className="space-y-6">
         <PageHeader title="Fiş Yükleniyor…" />
         <Card>
-          <CardContent className="space-y-4 pt-6">
+          <Card.Content className="space-y-4 pt-6">
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
-          </CardContent>
+          </Card.Content>
         </Card>
       </div>
     );
@@ -244,11 +221,9 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon-sm" asChild>
-            <Link href="/fisler/" aria-label="Geri">
-              <ArrowLeft className="size-4" />
-            </Link>
-          </Button>
+          <Link href="/fisler/" aria-label="Geri" className={buttonVariants({ variant: "outline", size: "sm", isIconOnly: true })}>
+            <ArrowLeft className="size-4" />
+          </Link>
           <PageHeader
             title={isEditing ? "Fişi Düzenle" : "Yeni Fiş Ekle"}
             description={
@@ -263,23 +238,23 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
           {isEditing && (
             <Button
               type="button"
-              variant="destructive"
+              variant="danger-soft"
               size="sm"
-              onClick={() => setConfirmDelete(true)}
-              disabled={submitting}
+              onPress={() => setConfirmDelete(true)}
+              isDisabled={submitting}
             >
               <Trash2 className="size-4" />
               Sil
             </Button>
           )}
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/fisler/">Vazgeç</Link>
-          </Button>
+          <Link href="/fisler/" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            Vazgeç
+          </Link>
           <Button
             type="submit"
             form="receipt-form"
             size="sm"
-            disabled={submitting}
+            isDisabled={submitting}
             className="gap-1.5"
           >
             {submitting ? (
@@ -302,14 +277,14 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
         <div className="space-y-6 lg:col-span-2">
           {/* Ana Bilgiler */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-semibold">Temel Bilgiler</CardTitle>
-              <CardDescription>Firma, tarih ve kategori alanları zorunludur.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            <Card.Header>
+              <Card.Title className="text-base font-semibold">Temel Bilgiler</Card.Title>
+              <Card.Description>Firma, tarih ve kategori alanları zorunludur.</Card.Description>
+            </Card.Header>
+            <Card.Content className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="firmaAdi">
-                  Firma Adı <span className="text-destructive">*</span>
+                  Firma Adı <span className="text-danger">*</span>
                 </Label>
                 <Input
                   id="firmaAdi"
@@ -323,7 +298,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="tarih">
-                    Tarih <span className="text-destructive">*</span>
+                    Tarih <span className="text-danger">*</span>
                   </Label>
                   <Input
                     id="tarih"
@@ -335,37 +310,43 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="kategori">
-                    Kategori <span className="text-destructive">*</span>
-                  </Label>
                   <Select
+                    className="w-full gap-2"
+                    placeholder="Kategori seçin"
                     value={form.kategori}
-                    onValueChange={(val) => updateField("kategori", val as Kategori)}
+                    onChange={(key) => updateField("kategori", String(key) as Kategori)}
                   >
-                    <SelectTrigger id="kategori" className="w-full">
-                      <SelectValue placeholder="Kategori seçin" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      {activeCategories.map((kat) => {
-                        const v = getCategoryVisuals(kat);
-                        return (
-                          <SelectItem key={kat} value={kat}>
-                            <span className="flex items-center gap-2">
-                              <span className={cn("size-2 rounded-full shrink-0", v.dotColor)} />
-                              <span className="text-[10px] font-bold text-muted-foreground w-4">{v.initial}</span>
-                              <span>{categoryLabel(kat)}</span>
-                            </span>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
+                    <Label>
+                      Kategori <span className="text-danger">*</span>
+                    </Label>
+                    <Select.Trigger>
+                      <Select.Value />
+                      <Select.Indicator />
+                    </Select.Trigger>
+                    <Select.Popover className="max-h-60">
+                      <ListBox>
+                        {activeCategories.map((kat) => {
+                          const v = getCategoryVisuals(kat);
+                          return (
+                            <ListBox.Item key={kat} id={kat} textValue={categoryLabel(kat)}>
+                              <span className="flex items-center gap-2">
+                                <span className={cn("size-2 rounded-full shrink-0", v.dotColor)} />
+                                <span className="text-[10px] font-bold text-muted w-4">{v.initial}</span>
+                                <span>{categoryLabel(kat)}</span>
+                              </span>
+                              <ListBox.ItemIndicator />
+                            </ListBox.Item>
+                          );
+                        })}
+                      </ListBox>
+                  </Select.Popover>
                   </Select>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="toplamTutar">
-                  Toplam Tutar (TL) <span className="text-destructive">*</span>
+                  Toplam Tutar (TL) <span className="text-danger">*</span>
                 </Label>
                 <Input
                   id="toplamTutar"
@@ -376,15 +357,15 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                   required
                 />
               </div>
-            </CardContent>
+            </Card.Content>
           </Card>
 
           {/* KDV Dağılımı */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <Card.Header className="flex flex-row items-center justify-between space-y-0 pb-4">
               <div>
-                <CardTitle className="text-base font-semibold">KDV Dağılımı</CardTitle>
-                <CardDescription>Fişteki vergi dilimlerini belirtin.</CardDescription>
+                <Card.Title className="text-base font-semibold">KDV Dağılımı</Card.Title>
+                <Card.Description>Fişteki vergi dilimlerini belirtin.</Card.Description>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
                 <Button
@@ -392,7 +373,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs"
-                  onClick={() => applyQuickKdv(20)}
+                  onPress={() => applyQuickKdv(20)}
                 >
                   %20 KDV
                 </Button>
@@ -401,7 +382,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs"
-                  onClick={() => applyQuickKdv(10)}
+                  onPress={() => applyQuickKdv(10)}
                 >
                   %10 KDV
                 </Button>
@@ -410,7 +391,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs"
-                  onClick={() => applyQuickKdv(1)}
+                  onPress={() => applyQuickKdv(1)}
                 >
                   %1 KDV
                 </Button>
@@ -418,14 +399,14 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-xs text-muted-foreground"
-                  onClick={() => applyQuickKdv(0)}
+                  className="h-7 text-xs text-muted"
+                  onPress={() => applyQuickKdv(0)}
                 >
                   Sıfırla
                 </Button>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            </Card.Header>
+            <Card.Content className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="kdvYuzde1">%1 KDV (TL)</Label>
@@ -460,30 +441,30 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
               </div>
 
               {/* Özet Matrah / KDV çubuğu */}
-              <div className="flex flex-wrap items-center justify-between rounded-lg border bg-muted/40 p-3 text-xs">
+              <div className="flex flex-wrap items-center justify-between rounded-lg border bg-default/40 p-3 text-xs">
                 <div className="space-y-0.5">
-                  <span className="text-muted-foreground">KDV Hariç Matrah:</span>
+                  <span className="text-muted">KDV Hariç Matrah:</span>
                   <div className="font-semibold tabular-nums text-foreground">{formatTL(matrah)}</div>
                 </div>
                 <div className="space-y-0.5 text-right">
-                  <span className="text-muted-foreground">Toplam KDV:</span>
+                  <span className="text-muted">Toplam KDV:</span>
                   <div className="font-semibold tabular-nums text-foreground">{formatTL(totalKdv)}</div>
                 </div>
                 <div className="space-y-0.5 text-right">
-                  <span className="text-muted-foreground">Genel Toplam:</span>
+                  <span className="text-muted">Genel Toplam:</span>
                   <div className="font-semibold tabular-nums text-foreground">{formatTL(totalAmount)}</div>
                 </div>
               </div>
-            </CardContent>
+            </Card.Content>
           </Card>
 
           {/* Ek Bilgiler */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-semibold">Ek Bilgiler</CardTitle>
-              <CardDescription>Fiş no, vergi kimlik numarası, etiket ve notlar.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            <Card.Header>
+              <Card.Title className="text-base font-semibold">Ek Bilgiler</Card.Title>
+              <Card.Description>Fiş no, vergi kimlik numarası, etiket ve notlar.</Card.Description>
+            </Card.Header>
+            <Card.Content className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="fisNo">Fiş / Belge No</Label>
@@ -518,7 +499,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
 
               <div className="space-y-2">
                 <Label htmlFor="notlar">Notlar</Label>
-                <Textarea
+                <TextArea
                   id="notlar"
                   placeholder="Fişle ilgili ek açıklamalar..."
                   rows={3}
@@ -526,7 +507,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                   onChange={(e) => updateField("notlar", e.target.value)}
                 />
               </div>
-            </CardContent>
+            </Card.Content>
           </Card>
 
           {/* Uyarılar */}
@@ -548,15 +529,15 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
         {/* Sağ 1 kolon: Görsel / Fotoğraf Yükleme ve Önizleme */}
         <div className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-semibold">Fiş Fotoğrafı</CardTitle>
-              <CardDescription>
+            <Card.Header>
+              <Card.Title className="text-base font-semibold">Fiş Fotoğrafı</Card.Title>
+              <Card.Description>
                 {previewUrl || existingImageUrl
                   ? "Fişin taranmış görüntüsü."
                   : "İsteğe bağlı fiş fotoğrafı yükleyebilirsiniz."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </Card.Description>
+            </Card.Header>
+            <Card.Content className="space-y-4">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -568,7 +549,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
               {/* Görsel Önizleme Alanı */}
               {previewUrl || existingImageUrl ? (
                 <div className="space-y-3">
-                  <div className="relative flex aspect-3/4 w-full items-center justify-center overflow-hidden rounded-lg border bg-muted/30">
+                  <div className="relative flex aspect-3/4 w-full items-center justify-center overflow-hidden rounded-lg border bg-default/30">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={previewUrl ?? existingImageUrl ?? ""}
@@ -577,9 +558,9 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                     />
                     {analyzing && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-xs p-4 text-center">
-                        <Loader2 className="size-8 animate-spin text-primary mb-2" />
+                        <Loader2 className="size-8 animate-spin text-accent mb-2" />
                         <p className="text-xs font-semibold text-foreground">Yapay Zeka Okuyor…</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                        <p className="text-[10px] text-muted mt-0.5">
                           Firma, tarih, tutar ve KDV dilimleri taranıyor
                         </p>
                       </div>
@@ -591,10 +572,10 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                       type="button"
                       variant="secondary"
                       size="sm"
-                      onClick={() => void scanFile(photoFile)}
+                      onPress={() => void scanFile(photoFile)}
                       className="w-full gap-1.5 text-xs"
                     >
-                      <Sparkles className="size-3.5 text-primary" />
+                      <Sparkles className="size-3.5 text-accent" />
                       Yapay Zeka ile Tekrar Tara
                     </Button>
                   )}
@@ -605,8 +586,8 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                       variant="outline"
                       size="sm"
                       className="w-full"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={analyzing}
+                      onPress={() => fileInputRef.current?.click()}
+                      isDisabled={analyzing}
                     >
                       <Camera className="size-4" />
                       Değiştir
@@ -615,10 +596,10 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                       <Button
                         type="button"
                         variant="ghost"
-                        size="icon-sm"
-                        onClick={handleClearPhoto}
-                        disabled={analyzing}
-                        title="Yeni seçimi kaldır"
+                        size="sm" isIconOnly
+                        onPress={handleClearPhoto}
+                        isDisabled={analyzing}
+                        aria-label="Yeni seçimi kaldır"
                       >
                         <X className="size-4" />
                       </Button>
@@ -628,51 +609,52 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
               ) : (
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex aspect-3/4 w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-center transition-colors hover:border-primary/50 hover:bg-muted/30"
+                  className="flex aspect-3/4 w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-muted/30 p-6 text-center transition-colors hover:border-accent/50 hover:bg-default/30"
                 >
-                  <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
-                    <Sparkles className="size-6 text-primary" />
+                  <div className="flex size-12 items-center justify-center rounded-full bg-accent/10">
+                    <Sparkles className="size-6 text-accent" />
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm font-semibold">Fotoğraf Yükle & AI ile Tara</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted">
                       Tıklayın veya fotoğraf dosyasını seçin; bilgiler otomatik dolsun
                     </p>
                   </div>
-                  <Badge variant="secondary" className="text-[10px]">
+                  <Chip size="sm" variant="soft" className="text-[10px]">
                     JPG, PNG, PDF
-                  </Badge>
+                  </Chip>
                 </div>
               )}
-            </CardContent>
+            </Card.Content>
           </Card>
         </div>
       </form>
 
       {/* Silme Onay Penceresi */}
-      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Fiş silinsin mi?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bu fiş Son Silinenler&apos;e taşınacaktır. 30 gün içinde çöp kutusundan geri alabilirsiniz.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Vazgeç</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={deleting}
-              onClick={(e) => {
-                e.preventDefault();
-                void handleDelete();
-              }}
-            >
-              {deleting ? "Siliniyor…" : "Sil"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <AlertDialog.Backdrop isOpen={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialog.Container>
+          <AlertDialog.Dialog>
+            <AlertDialog.Header>
+              <AlertDialog.Heading>Fiş silinsin mi?</AlertDialog.Heading>
+              <p className="text-sm text-muted">
+                Bu fiş Son Silinenler&apos;e taşınacaktır. 30 gün içinde çöp kutusundan geri alabilirsiniz.
+              </p>
+            </AlertDialog.Header>
+            <AlertDialog.Footer>
+              <Button slot="close" variant="tertiary" size="sm" isDisabled={deleting}>Vazgeç</Button>
+              <Button size="sm"
+                variant="danger"
+                isDisabled={deleting}
+                onPress={() => {
+                  void handleDelete();
+                }}
+              >
+                {deleting ? "Siliniyor…" : "Sil"}
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
     </div>
   );
 }

@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { AuthProvider } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
 import { VersionGuard } from "@/components/version-guard";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { AppToastProvider } from "@/components/toast-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,12 +19,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="tr" suppressHydrationWarning className={geistSans.variable}>
-      <body className="antialiased font-sans">
+      <body className="antialiased font-sans bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>
-            <TooltipProvider>{children}</TooltipProvider>
+            {children}
           </AuthProvider>
-          <Toaster />
+          <AppToastProvider />
           <VersionGuard />
         </ThemeProvider>
       </body>

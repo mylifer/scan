@@ -13,15 +13,9 @@ import {
   Wallet,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { Button, Card, Chip, Input, Skeleton, Table, toast } from "@heroui/react";
 import { PageHeader } from "@/components/layout/page-header";
-import { CategoryBadge } from "@/components/ui/category-badge";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CategoryBadge } from "@/components/category-badge";
 import { setMonthlyBudget, useMonthlyBudget } from "@/lib/budget";
 import { listReceipts } from "@/lib/receipts";
 
@@ -46,7 +40,7 @@ export function BudgetView() {
       })
       .catch((err) => {
         if (!cancelled) {
-          toast.error(err instanceof Error ? err.message : "Fişler yüklenemedi.");
+          toast.danger(err instanceof Error ? err.message : "Fişler yüklenemedi.");
         }
       })
       .finally(() => {
@@ -113,12 +107,12 @@ export function BudgetView() {
           description="Aylık harcama hedefinizi belirleyin ve harcamalarınızı kategori bazında takip edin."
         />
 
-        <div className="flex items-center gap-1.5 rounded-lg border bg-card px-2 py-1 shadow-xs">
+        <div className="flex items-center gap-1.5 rounded-lg border bg-surface px-2 py-1 shadow-xs">
           <Button
             type="button"
             variant="ghost"
-            size="icon-sm"
-            onClick={() => {
+            size="sm" isIconOnly
+            onPress={() => {
               setLoading(true);
               setOffset((o) => o - 1);
             }}
@@ -130,9 +124,9 @@ export function BudgetView() {
           <Button
             type="button"
             variant="ghost"
-            size="icon-sm"
-            disabled={offset >= 0}
-            onClick={() => {
+            size="sm" isIconOnly
+            isDisabled={offset >= 0}
+            onPress={() => {
               setLoading(true);
               setOffset((o) => o + 1);
             }}
@@ -145,32 +139,24 @@ export function BudgetView() {
 
       {/* Ana Bütçe İlerleme Kartı */}
       <Card>
-        <CardHeader className="flex flex-row items-start justify-between pb-4">
+        <Card.Header className="flex flex-row items-start justify-between pb-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Wallet className="size-4 text-primary" />
-              <CardTitle className="text-base font-semibold">Aylık Bütçe Durumu</CardTitle>
+              <Wallet className="size-4 text-accent" />
+              <Card.Title className="text-base font-semibold">Aylık Bütçe Durumu</Card.Title>
               {monthlyBudget ? (
-                <Badge
-                  variant={
-                    status.level === "over"
-                      ? "destructive"
-                      : status.level === "warning"
-                        ? "destructive"
-                        : "secondary"
-                  }
-                >
+                <Chip size="sm" color={status.level === "ok" ? "default" : "danger"} variant="soft">
                   {status.level === "over"
                     ? "Bütçe Aşıldı!"
                     : status.level === "warning"
                       ? "%80 Sınırı Aşıldı"
                       : "Bütçe Dahilinde"}
-                </Badge>
+                </Chip>
               ) : (
-                <Badge variant="outline">Bütçe Belirlenmedi</Badge>
+                <Chip size="sm" variant="secondary">Bütçe Belirlenmedi</Chip>
               )}
             </div>
-            <CardDescription>{monthInfo.label} dönemi toplam harcama ve bütçe analizi</CardDescription>
+            <Card.Description>{monthInfo.label} dönemi toplam harcama ve bütçe analizi</Card.Description>
           </div>
 
           {!editingBudget ? (
@@ -178,7 +164,7 @@ export function BudgetView() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => {
+              onPress={() => {
                 setBudgetValue(monthlyBudget ? String(monthlyBudget) : "");
                 setEditingBudget(true);
               }}
@@ -204,15 +190,15 @@ export function BudgetView() {
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setEditingBudget(false)}
+                onPress={() => setEditingBudget(false)}
               >
                 Vazgeç
               </Button>
             </form>
           )}
-        </CardHeader>
+        </Card.Header>
 
-        <CardContent className="space-y-6">
+        <Card.Content className="space-y-6">
           {/* İlerleme Çubuğu */}
           {monthlyBudget ? (
             <div className="space-y-2">
@@ -220,32 +206,32 @@ export function BudgetView() {
                 <span className="font-medium text-foreground">
                   Harcanan: {loading ? "…" : `${formatTL(totalSpent)}`}
                 </span>
-                <span className="text-muted-foreground">
+                <span className="text-muted">
                   Hedef: {formatTL(monthlyBudget)} (%{Math.round(status.ratio * 100)})
                 </span>
               </div>
 
               {/* Progress Bar */}
-              <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-3 w-full overflow-hidden rounded-full bg-default">
                 <div
                   className={`h-full transition-all duration-500 ${
                     status.level === "over"
-                      ? "bg-destructive"
+                      ? "bg-danger"
                       : status.level === "warning"
                         ? "bg-amber-500"
-                        : "bg-primary"
+                        : "bg-accent"
                   }`}
                   style={{ width: `${percentUsed}%` }}
                 />
               </div>
 
-              <div className="flex justify-between text-xs text-muted-foreground">
+              <div className="flex justify-between text-xs text-muted">
                 {status.remaining > 0 ? (
                   <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                     Kalan Bütçe: {formatTL(status.remaining)}
                   </span>
                 ) : (
-                  <span className="text-destructive font-medium">
+                  <span className="text-danger font-medium">
                     Aşılan Tutar: {formatTL(status.over)}
                   </span>
                 )}
@@ -253,27 +239,27 @@ export function BudgetView() {
               </div>
             </div>
           ) : (
-            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted">
               Henüz bir aylık bütçe belirlemediniz. &quot;Bütçe Belirle&quot; butonuna tıklayarak aylık gider hedefinizi girebilirsiniz.
             </div>
           )}
 
           {/* İstatistik Kutucukları */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-lg border bg-card p-4">
-              <p className="text-xs text-muted-foreground">Toplam Harcama</p>
+            <div className="rounded-lg border bg-surface p-4">
+              <p className="text-xs text-muted">Toplam Harcama</p>
               <p className="text-2xl font-bold tabular-nums text-foreground">
                 {loading ? <Skeleton className="h-7 w-28" /> : `${formatTL(totalSpent)}`}
               </p>
             </div>
-            <div className="rounded-lg border bg-card p-4">
-              <p className="text-xs text-muted-foreground">Fiş Sayısı</p>
+            <div className="rounded-lg border bg-surface p-4">
+              <p className="text-xs text-muted">Fiş Sayısı</p>
               <p className="text-2xl font-bold tabular-nums text-foreground">
                 {loading ? <Skeleton className="h-7 w-16" /> : `${receipts.length} adet`}
               </p>
             </div>
-            <div className="rounded-lg border bg-card p-4">
-              <p className="text-xs text-muted-foreground">Ortalama Fiş Tutarı</p>
+            <div className="rounded-lg border bg-surface p-4">
+              <p className="text-xs text-muted">Ortalama Fiş Tutarı</p>
               <p className="text-2xl font-bold tabular-nums text-foreground">
                 {loading ? (
                   <Skeleton className="h-7 w-24" />
@@ -285,66 +271,68 @@ export function BudgetView() {
               </p>
             </div>
           </div>
-        </CardContent>
+        </Card.Content>
       </Card>
 
       {/* Kategori Dağılımı Tablosu */}
       <Card>
-        <CardHeader>
+        <Card.Header>
           <div className="flex items-center gap-2">
-            <PieChart className="size-4 text-primary" />
-            <CardTitle className="text-base font-semibold">Kategori Bazında Harcamalar</CardTitle>
+            <PieChart className="size-4 text-accent" />
+            <Card.Title className="text-base font-semibold">Kategori Bazında Harcamalar</Card.Title>
           </div>
-          <CardDescription>Bu dönemdeki harcamalarınızın kategorilere göre dökümü</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table className="min-w-[500px]">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Kategori</TableHead>
-                <TableHead className="w-28 text-right">Fiş Sayısı</TableHead>
-                <TableHead className="w-40 text-right">Toplam Harcama</TableHead>
-                <TableHead className="w-48">Harcama Payı</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {categoryBreakdown.map((item) => (
-                <TableRow key={item.kategori}>
-                  <TableCell>
-                    <CategoryBadge category={item.kategori} />
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums text-muted-foreground">
-                    {item.count} adet
-                  </TableCell>
-                  <TableCell className="text-right font-semibold tabular-nums text-foreground">
-                    {formatTL(item.total)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full bg-primary"
-                          style={{ width: `${Math.round(item.percent)}%` }}
-                        />
-                      </div>
-                      <span className="w-10 text-right text-xs tabular-nums text-muted-foreground">
-                        %{Math.round(item.percent)}
-                      </span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+          <Card.Description>Bu dönemdeki harcamalarınızın kategorilere göre dökümü</Card.Description>
+        </Card.Header>
+        <Card.Content className="p-0">
+          <Table variant="secondary">
+            <Table.ScrollContainer>
+              <Table.Content aria-label="Kategori harcama dağılımı" className="min-w-[500px]">
+                <Table.Header>
+                  <Table.Column isRowHeader>Kategori</Table.Column>
+                  <Table.Column className="w-28 text-right">Fiş Sayısı</Table.Column>
+                  <Table.Column className="w-40 text-right">Toplam Harcama</Table.Column>
+                  <Table.Column className="w-48">Harcama Payı</Table.Column>
+                </Table.Header>
+                <Table.Body>
+                  {categoryBreakdown.map((item) => (
+                    <Table.Row key={item.kategori} id={item.kategori}>
+                      <Table.Cell>
+                        <CategoryBadge category={item.kategori} />
+                      </Table.Cell>
+                      <Table.Cell className="text-right tabular-nums text-muted">
+                        {item.count} adet
+                      </Table.Cell>
+                      <Table.Cell className="text-right font-semibold tabular-nums text-foreground">
+                        {formatTL(item.total)}
+                      </Table.Cell>
+                      <Table.Cell>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 flex-1 overflow-hidden rounded-full bg-default">
+                            <div
+                              className="h-full bg-accent"
+                              style={{ width: `${Math.round(item.percent)}%` }}
+                            />
+                          </div>
+                          <span className="w-10 text-right text-xs tabular-nums text-muted">
+                            %{Math.round(item.percent)}
+                          </span>
+                        </div>
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
 
-              {!loading && categoryBreakdown.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-12 text-center text-sm text-muted-foreground">
-                    Bu ay henüz kayıtlı fiş bulunmuyor.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
+                  {!loading && categoryBreakdown.length === 0 && (
+                    <Table.Row>
+                      <Table.Cell colSpan={4} className="py-12 text-center text-sm text-muted">
+                        Bu ay henüz kayıtlı fiş bulunmuyor.
+                      </Table.Cell>
+                    </Table.Row>
+                  )}
+                </Table.Body>
+              </Table.Content>
+            </Table.ScrollContainer>
           </Table>
-        </CardContent>
+        </Card.Content>
       </Card>
     </div>
   );
