@@ -286,7 +286,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                 <Label htmlFor="firmaAdi">
                   Firma Adı <span className="text-danger">*</span>
                 </Label>
-                <Input fullWidth
+                <Input fullWidth variant="secondary"
                   id="firmaAdi"
                   placeholder="Örn: Migros, Shell, Metro Grossmarket"
                   value={form.firmaAdi}
@@ -300,7 +300,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                   <Label htmlFor="tarih">
                     Tarih <span className="text-danger">*</span>
                   </Label>
-                  <Input fullWidth
+                  <Input fullWidth variant="secondary"
                     id="tarih"
                     placeholder="GG.AA.YYYY (Örn: 24.10.2026)"
                     value={form.tarih}
@@ -311,6 +311,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
 
                 <div className="space-y-2">
                   <Select
+                    variant="secondary"
                     className="w-full gap-2"
                     placeholder="Kategori seçin"
                     value={form.kategori}
@@ -348,7 +349,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                 <Label htmlFor="toplamTutar">
                   Toplam Tutar (TL) <span className="text-danger">*</span>
                 </Label>
-                <Input fullWidth
+                <Input fullWidth variant="secondary"
                   id="toplamTutar"
                   placeholder="0,00"
                   className="tabular-nums"
@@ -406,7 +407,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="kdvYuzde1">%1 KDV (TL)</Label>
-                  <Input fullWidth
+                  <Input fullWidth variant="secondary"
                     id="kdvYuzde1"
                     placeholder="0,00"
                     className="tabular-nums"
@@ -416,7 +417,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="kdvYuzde10">%10 KDV (TL)</Label>
-                  <Input fullWidth
+                  <Input fullWidth variant="secondary"
                     id="kdvYuzde10"
                     placeholder="0,00"
                     className="tabular-nums"
@@ -426,7 +427,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="kdvYuzde20">%20 KDV (TL)</Label>
-                  <Input fullWidth
+                  <Input fullWidth variant="secondary"
                     id="kdvYuzde20"
                     placeholder="0,00"
                     className="tabular-nums"
@@ -464,7 +465,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="fisNo">Fiş / Belge No</Label>
-                  <Input fullWidth
+                  <Input fullWidth variant="secondary"
                     id="fisNo"
                     placeholder="Örn: 0042 veya ABC2026..."
                     value={form.fisNo}
@@ -473,7 +474,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="vkn">VKN / TCKN</Label>
-                  <Input fullWidth
+                  <Input fullWidth variant="secondary"
                     id="vkn"
                     placeholder="10 veya 11 haneli numara"
                     value={form.vkn}
@@ -485,7 +486,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
 
               <div className="space-y-2">
                 <Label htmlFor="etiketler">Etiketler</Label>
-                <Input fullWidth
+                <Input fullWidth variant="secondary"
                   id="etiketler"
                   placeholder="Virgülle ayırın: yemek, temsil, yazılım"
                   value={form.etiketler}
@@ -495,7 +496,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
 
               <div className="space-y-2">
                 <Label htmlFor="notlar">Notlar</Label>
-                <TextArea fullWidth
+                <TextArea fullWidth variant="secondary"
                   id="notlar"
                   placeholder="Fişle ilgili ek açıklamalar..."
                   rows={3}
@@ -616,7 +617,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                       Tıklayın veya fotoğraf dosyasını seçin; bilgiler otomatik dolsun
                     </p>
                   </div>
-                  <Chip size="sm" variant="soft">
+                  <Chip size="sm" variant="secondary">
                     JPG, PNG, PDF
                   </Chip>
                 </div>

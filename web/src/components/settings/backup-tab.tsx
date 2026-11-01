@@ -254,7 +254,7 @@ export function BackupTab() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted">Zaten Mevcut (Atlanacak):</span>
-                    <Chip size="sm" variant="soft">{preview.skipped} Fiş</Chip>
+                    <Chip size="sm" variant="secondary">{preview.skipped} Fiş</Chip>
                   </div>
                 </div>
 

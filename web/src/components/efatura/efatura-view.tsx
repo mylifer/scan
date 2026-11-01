@@ -10,16 +10,14 @@ import {
   Eye,
   FileSpreadsheet,
   FileText,
-  Info,
   Loader2,
   Package,
   Receipt,
   ReceiptText,
   RefreshCw,
-  TriangleAlert,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Card, Checkbox, Chip, ListBox, SearchField, Select, type Selection, Skeleton, Table, Tabs, toast } from "@heroui/react";
+import { Alert, Button, Card, Checkbox, Chip, ListBox, SearchField, Select, type Selection, Skeleton, Table, Tabs, toast } from "@heroui/react";
 import { PageHeader } from "@/components/layout/page-header";
 import {
   exportExcel,
@@ -438,20 +436,24 @@ export function EFaturaView() {
 
       {/* Apple Native Glass Metrik Kartları (Tahoe Glass) */}
       {!loading && (tumuUyari || tumuBilgi) ? (
-        <Card className="space-y-1.5 text-xs">
+        <div className="flex flex-col gap-2">
           {tumuUyari ? (
-            <div className="flex items-start gap-2 text-amber-700 dark:text-amber-400">
-              <TriangleAlert className="size-3.5 mt-px shrink-0" />
-              <span>{tumuUyari}</span>
-            </div>
+            <Alert status="warning">
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Description>{tumuUyari}</Alert.Description>
+              </Alert.Content>
+            </Alert>
           ) : null}
           {tumuBilgi ? (
-            <div className="flex items-start gap-2 text-muted">
-              <Info className="size-3.5 mt-px shrink-0" />
-              <span>{tumuBilgi}</span>
-            </div>
+            <Alert>
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Description>{tumuBilgi}</Alert.Description>
+              </Alert.Content>
+            </Alert>
           ) : null}
-        </Card>
+        </div>
       ) : null}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -859,7 +861,7 @@ export function EFaturaView() {
                               e-Arşiv
                             </Chip>
                           ) : (
-                            <Chip size="sm" variant="soft">
+                            <Chip size="sm" variant="secondary">
                               e-Fatura
                             </Chip>
                           )}

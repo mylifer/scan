@@ -87,7 +87,7 @@ function FaturaDetayContent({
                   <Modal.Heading className="truncate sm:text-lg" title={fatura.belgeNo || fatura.ettn}>
                     Fatura Detayı · {fatura.belgeNo || fatura.ettn}
                   </Modal.Heading>
-                  {state.detay?.tip && <Chip size="sm" variant="soft">{state.detay.tip}</Chip>}
+                  {state.detay?.tip && <Chip size="sm" variant="secondary">{state.detay.tip}</Chip>}
                 </div>
                 <p className="text-sm text-muted break-all text-xs sm:text-sm text-muted">
                   Tarih: {state.detay?.tarih || fatura.tarih} · ETTN: <span className="tabular-nums text-xs">{fatura.ettn}</span>

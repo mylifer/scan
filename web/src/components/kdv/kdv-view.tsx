@@ -12,15 +12,13 @@ import {
   Clock,
   FileSpreadsheet,
   Info,
-  Loader2,
   Receipt,
   RefreshCw,
   TrendingDown,
   TrendingUp,
-  TriangleAlert,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Card, Chip, Skeleton, toast } from "@heroui/react";
+import { Alert, Button, Card, Chip, Skeleton, Spinner, toast } from "@heroui/react";
 import { PageHeader } from "@/components/layout/page-header";
 import { fetchDonemFaturalar, getMonthBounds, readPersistedDonem, type EFatura } from "@/lib/efatura";
 import { listReceiptsForKdv } from "@/lib/receipts";
@@ -175,30 +173,35 @@ export function KdvView() {
       </div>
 
       {!loading && state.key === activeKey && state.qnb ? (
-        <Card className="text-xs">
-          {state.qnb.durum === "yukleniyor" ? (
-            <div className="flex items-start gap-2 text-muted">
-              <Loader2 className="size-3.5 mt-px shrink-0 animate-spin" />
-              <span>
-                e-Faturalar QNB&apos;den güncelleniyor…{" "}
+        state.qnb.durum === "yukleniyor" ? (
+          <Alert status="accent">
+            <Alert.Indicator>
+              <Spinner size="sm" />
+            </Alert.Indicator>
+            <Alert.Content>
+              <Alert.Title>e-Faturalar QNB&apos;den güncelleniyor…</Alert.Title>
+              <Alert.Description>
                 {state.qnb.at
                   ? `Tutarlar ${saatEtiketi(state.qnb.at)} tarihli kayıtlı e-Fatura bilgileriyle gösteriliyor.`
                   : "İlk yükleme: tutarlar şimdilik yalnızca fişlerden; e-Faturalar gelince eklenir."}
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-start gap-2 text-amber-600 dark:text-amber-400">
-              <TriangleAlert className="size-3.5 mt-px shrink-0" />
-              <span>
-                e-Faturalar güncellenemedi ({state.qnb.mesaj}).{" "}
+              </Alert.Description>
+            </Alert.Content>
+          </Alert>
+        ) : (
+          <Alert status="warning">
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Title>e-Faturalar güncellenemedi</Alert.Title>
+              <Alert.Description>
+                {(state.qnb.mesaj ?? "Bilinmeyen hata").replace(/\.+$/, "")}.{" "}
                 {state.qnb.at
                   ? `${saatEtiketi(state.qnb.at)} tarihli kayıtlı e-Fatura bilgileri gösteriliyor.`
                   : "KDV şimdilik yalnızca fişlerle hesaplandı; e-Fatura tutarları eksik."}{" "}
                 &quot;Yenile&quot; ile tekrar deneyin.
-              </span>
-            </div>
-          )}
-        </Card>
+              </Alert.Description>
+            </Alert.Content>
+          </Alert>
+        )
       ) : null}
 
       {/* Ana Net KDV Sonuç Kartı */}
