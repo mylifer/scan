@@ -16,6 +16,13 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.53.2 · Web 1.0.27 — `COMMIT`
+- **KDV sayfaları artık hemen açılıyor (mobil + web):** QNB e-Fatura servisi yavaş olduğu için sayfa açılışı uzun sürüyordu.
+  - **Kalıcı önbellek:** Her ayın e-Fatura sonucu telefonda (AsyncStorage) / tarayıcıda (localStorage) saklanıyor (`kaliciDonemOku`, `readPersistedDonem`).
+  - **Aşamalı gösterim:** Sayfa önce fişleri ve kayıtlı e-Fatura sonucunu gösteriyor (testte ~0,4 sn), güncel liste QNB'den arka planda geliyor. Üstte "e-Faturalar QNB'den güncelleniyor… (bugün 14:32 tarihli kayıtlı bilgiler gösteriliyor)" satırı.
+  - QNB güncellenemezse boş liste yerine son kayıtlı sonuç kalıyor ve tarihiyle belirtiliyor.
+  - QNB süre sınırı ekranı artık engellemediği için 120 sn'ye çıkarıldı; web'de aynı dönem için süren istek paylaşılıyor (KDV ve e-Faturalar aynı anda isterse çift istek gitmiyor).
+
 ## 1.53.1 · Web 1.0.26 — `651b64c`
 - **KDV ekranı sonsuza dek yükleniyordu (mobil + web):** Ekran, fişlerle birlikte QNB'den gelen ve giden e-Faturaları da bekliyordu. QNB yanıt vermezse hiçbir şey göstermeden dönmeye devam ediyordu.
   - QNB çağrılarına 40 sn, fiş sorgusuna 30 sn süre sınırı kondu (`withTimeout`).

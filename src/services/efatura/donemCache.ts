@@ -1,3 +1,5 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { supabase } from '../supabase/client';
 import { type EFatura, EFaturaError, type Kontrol, listEFaturalar, type Yon } from './qnbEfatura';
 
@@ -28,6 +30,7 @@ export function donemGetir(yon: Yon, from: string, to: string, force = false): P
     .then((d) => {
       qnbDurum.loginFailed = false;
       donemCache.set(key, d);
+      void kaliciYaz(key, d);
       return d;
     })
     .catch((e: unknown) => {
@@ -37,4 +40,39 @@ export function donemGetir(yon: Yon, from: string, to: string, force = false): P
     .finally(() => inflight.delete(key));
   inflight.set(key, p);
   return p;
+}
+
+/*
+ * Kalıcı önbellek: QNB yavaş olduğu için her ayın son sonucu telefonda saklanır. Ekranlar açılışta önce
+ * bunu gösterir (anında), güncel veri arka planda donemGetir ile gelir.
+ */
+const KALICI_ONEK = 'efatura-donem:v1:';
+
+export interface KaliciDonem {
+  donem: Donem;
+  /** Kaydedildiği an (ms) */
+  at: number;
+}
+
+async function kaliciYaz(key: string, donem: Donem) {
+  try {
+    await AsyncStorage.setItem(KALICI_ONEK + key, JSON.stringify({ donem, at: Date.now() } satisfies KaliciDonem));
+  } catch {
+    // depolama doluysa önbelleksiz devam
+  }
+}
+
+/** Dönemin telefonda saklanan son sonucu (yoksa null). Bellek önbelleği varsa onu döner. */
+export async function kaliciDonemOku(yon: Yon, from: string): Promise<KaliciDonem | null> {
+  const key = donemKey(yon, from);
+  const mem = donemCache.get(key);
+  if (mem) return { donem: mem, at: Date.now() };
+  try {
+    const raw = await AsyncStorage.getItem(KALICI_ONEK + key);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as KaliciDonem;
+    return Array.isArray(v?.donem?.faturalar) ? v : null;
+  } catch {
+    return null;
+  }
 }

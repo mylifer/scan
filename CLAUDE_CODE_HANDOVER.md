@@ -63,7 +63,8 @@ Claude Code'un bıraktığı **v1.48.0** sürümünden itibaren projede iki para
 - **Web 1.0.23 (`0a47bae`):** Standart temizliği. Temel `Card` bileşeni cama geçirildi, böylece tüm sayfalar aynı kartları kullanıyor. Çift para birimi ("₺… TL") 32 yerde düzeltildi. Çöp Kutusu'nda `CategoryBadge` kullanılıyor. Emoji kalıntıları ve Geist Mono kaldırıldı.
 - **Web 1.0.24 (`729b557`):** Yedek geri yüklemede PNG/PDF fotoğraflar doğru içerik türüyle yükleniyor, yedek manifestinde gerçek sürüm kodu var, kök lint uyarısız.
 - **1.53.0 · Web 1.0.25 (`3538f2d`):** Devreden KDV kuralı "gönderim ayı − 1" olarak değişti (mobil + web). Toplu fiş eklemede yüklenemeyen fotoğraflar artık kaybolmuyor; "Tümünü Onayla" eklendi.
-- **1.53.1 · Web 1.0.26 (`651b64c` — EN GÜNCEL SÜRÜM):** KDV ekranları QNB yanıt vermeyince sonsuza dek yükleniyordu; QNB çağrıları süre sınırlı, gelmezse KDV fişlerle hesaplanıp uyarı gösteriliyor (`src/lib/kdvYukle.ts`).
+- **1.53.1 · Web 1.0.26 (`651b64c`):** KDV ekranları QNB yanıt vermeyince sonsuza dek yükleniyordu; QNB çağrıları süre sınırlı, gelmezse KDV fişlerle hesaplanıp uyarı gösteriliyor (`src/lib/kdvYukle.ts`).
+- **1.53.2 · Web 1.0.27 (EN GÜNCEL SÜRÜM):** KDV sayfaları kalıcı e-Fatura önbelleğiyle aşamalı açılıyor: önce fişler + kayıtlı sonuç (anında), güncel QNB arka planda.
 
 ---
 
@@ -120,7 +121,7 @@ Claude Code olarak projede çalışırken aşağıdaki kurallara **mutlaka** uyu
    - Gönderilmiş fiş: **gönderim ayı − 1** (Kasım'da gönderilen → Ekim).
    - Gönderilmemiş fiş: **bulunulan ay − 1** (Kasım'dayken → Ekim). Son gönderimin ne zaman yapıldığına bakılmaz.
    - Fiş tarihinden önceki bir aya düşülemez: fiş tarihi daha yeniyse kendi ayında kalır (Kasım'da eklenen Kasım fişi → Kasım).
-   - KDV ekranları verileri `kdvVerileriniGetir` (`src/lib/kdvYukle.ts`) ile yükler: QNB süre sınırlıdır ve gelmezse KDV fişlerle hesaplanıp uyarı gösterilir; ekran asla QNB'yi sonsuza dek beklememeli.
+   - KDV ekranları aşamalı yüklenir: önce fişler + kalıcı önbellekteki son e-Fatura sonucu (mobil `kaliciDonemOku`, web `readPersistedDonem`), ardından `kdvVerileriniGetir` (`src/lib/kdvYukle.ts`) ile güncel QNB. QNB süre sınırlıdır (120 sn); alınamazsa kayıtlı sonuç kalır ve uyarı gösterilir. Ekran asla QNB'yi beklerken boş kalmamalı.
    - Veritabanı sorgusu `kdvFisFiltresi` ile mobil (`getKdvReceipts`) ve web (`listReceiptsForKdv`) arasında ortaktır; kesin eleme `fisAyaAitMi` ile yapılır.
 4. **Toplu Fiş Ekleme (mobil):** Yüklenemeyen fotoğraflar **asla otomatik silinmez** (`pendingStore.markFailed` yalnızca sayar). Aynı oturumda 2 kez daha denenir (`withRetry`), uygulama öne gelince ve "Tekrar Dene" ile yeniden yüklenir; yalnızca kullanıcı "Vazgeç ve Sil" derse silinir. "Tümünü Onayla" (`lib/bulkApprove.ts`) hatalı, olası mükerrer ve yapay zekânın emin olamadığı (`belirsiz`) fişleri kaydetmez, incelemeye bırakır.
 

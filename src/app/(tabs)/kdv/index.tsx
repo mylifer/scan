@@ -16,10 +16,11 @@ import { Badge } from '../../../components/web/Badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/web/Card';
 import { WebButton } from '../../../components/web/Button';
 import { WebPageHeader } from '../../../components/web/PageHeader';
-import { donemGetir, qnbDurum } from '../../../services/efatura/donemCache';
+import { donemGetir, kaliciDonemOku, qnbDurum } from '../../../services/efatura/donemCache';
 import { EFaturaError } from '../../../services/efatura/qnbEfatura';
 import { getKdvReceipts } from '../../../services/supabase/receiptsRepository';
-import { kdvVerileriniGetir } from '../../../lib/kdvYukle';
+import { FIS_TIMEOUT_MS, kdvVerileriniGetir } from '../../../lib/kdvYukle';
+import { withTimeout } from '../../../lib/retry';
 
 /** Ayın ilk ve son günü (QNB'de bitiş dahil) ve fiş sorgusu için bir sonraki ayın ilk günü */
 function ayAraligi(offset: number) {
@@ -41,8 +42,11 @@ export default function KdvScreen() {
   const [sonuclar, setSonuclar] = useState<Record<string, KdvAy>>({});
   const [hatalar, setHatalar] = useState<Record<string, { message: string; login: boolean }>>({});
   const [yukleniyor, setYukleniyor] = useState<string | null>(null);
-  /** e-Fatura bilgileri alınamadığı için KDV'nin yalnızca fişlerle hesaplandığı aylar */
-  const [qnbUyari, setQnbUyari] = useState<Record<string, string>>({});
+  /**
+   * Aya göre e-Fatura durumu: QNB'den güncelleniyor ya da alınamadı. `at`: gösterilen kayıtlı sonucun
+   * zamanı (yoksa e-Fatura tutarları henüz eksiktir).
+   */
+  const [qnbNot, setQnbNot] = useState<Record<string, { durum: 'yukleniyor' | 'hata'; at: number | null; mesaj?: string }>>({});
   const [haric, setHaric] = useState<ReadonlySet<string>>(new Set());
 
   const ay = ayAraligi(offset);
@@ -65,20 +69,36 @@ export default function KdvScreen() {
         return;
       }
       setYukleniyor(a.from);
+      const ayKodu = a.from.slice(0, 7);
       try {
-        // QNB yanıt vermezse ekran sonsuza dek dönmesin: süre sınırlı, gelmezse yalnızca fişlerle hesaplanır
+        // 1) Hızlı: fişler + telefonda saklı son e-Fatura sonucu → ekran saniyeler içinde dolar
+        const [fisler, kGelen, kGiden] = await Promise.all([
+          withTimeout(getKdvReceipts({ from: a.from, to: a.sonraki }), FIS_TIMEOUT_MS, 'Fiş sorgusu'),
+          kaliciDonemOku('gelen', a.from),
+          kaliciDonemOku('giden', a.from),
+        ]);
+        const kayitliAt = kGelen && kGiden ? Math.min(kGelen.at, kGiden.at) : null;
+        setSonuclar((s) => ({
+          ...s,
+          [a.from]: kdvAyHesapla(kGelen?.donem.faturalar ?? [], kGiden?.donem.faturalar ?? [], fisler, haric, ayKodu),
+        }));
+        setHatalar(({ [a.from]: _, ...rest }) => rest);
+        setQnbNot((n) => ({ ...n, [a.from]: { durum: 'yukleniyor', at: kayitliAt } }));
+
+        // 2) Güncel e-Faturalar QNB'den (yavaş olabilir; süre sınırlı). Alınamayan taraf için kayıtlı sonuç kalır
         const v = await kdvVerileriniGetir({
           gelen: () => donemGetir('gelen', a.from, a.to, yenile),
           giden: () => donemGetir('giden', a.from, a.to, yenile),
-          fisler: () => getKdvReceipts({ from: a.from, to: a.sonraki }),
+          fisler: async () => fisler,
         });
-        setSonuclar((s) => ({ ...s, [a.from]: kdvAyHesapla(v.gelen, v.giden, v.fisler, haric, a.from.slice(0, 7)) }));
-        setHatalar(({ [a.from]: _, ...rest }) => rest);
+        const gelen = v.gelenOk ? v.gelen : (kGelen?.donem.faturalar ?? []);
+        const giden = v.gidenOk ? v.giden : (kGiden?.donem.faturalar ?? []);
+        setSonuclar((s) => ({ ...s, [a.from]: kdvAyHesapla(gelen, giden, fisler, haric, ayKodu) }));
         if (v.qnbHatasi) {
           if (v.qnbHatasi instanceof EFaturaError && v.qnbHatasi.loginFailed) qnbDurum.loginFailed = true;
-          setQnbUyari((u) => ({ ...u, [a.from]: errorMessage(v.qnbHatasi) }));
+          setQnbNot((n) => ({ ...n, [a.from]: { durum: 'hata', at: kayitliAt, mesaj: errorMessage(v.qnbHatasi) } }));
         } else {
-          setQnbUyari(({ [a.from]: _, ...rest }) => rest);
+          setQnbNot(({ [a.from]: _, ...rest }) => rest);
         }
       } catch (e) {
         setHatalar((h) => ({ ...h, [a.from]: { message: errorMessage(e), login: e instanceof EFaturaError && e.loginFailed } }));
@@ -133,17 +153,7 @@ export default function KdvScreen() {
 
       {!kdv && !hata ? <ActivityIndicator style={{ marginTop: 40 }} /> : null}
 
-      {kdv && qnbUyari[ay.from] ? (
-        <ListSection footer={`${qnbUyari[ay.from]}\n\nKDV şimdilik yalnızca fişlerle hesaplandı; e-Fatura tutarları eksik.`}>
-          <ListRow
-            title="e-Fatura bilgileri alınamadı"
-            subtitle="Tekrar denemek için dokunun"
-            icon={{ sf: 'exclamationmark.triangle.fill', ion: 'warning', color: theme.orange }}
-            tone="action"
-            onPress={() => yukle(true)}
-          />
-        </ListSection>
-      ) : null}
+      {kdv && qnbNot[ay.from] ? <QnbDurumu not={qnbNot[ay.from]!} onRetry={() => yukle(true)} /> : null}
 
       {kdv ? (
         <View style={[styles.cards, wide && styles.cardsWide]}>
@@ -217,7 +227,7 @@ export default function KdvScreen() {
           </View>
         </View>
       ) : null}
-      {kdv && yukleniyor === ay.from ? <ActivityIndicator style={{ marginBottom: 20 }} /> : null}
+      {kdv && yukleniyor === ay.from && !qnbNot[ay.from] ? <ActivityIndicator style={{ marginBottom: 20 }} /> : null}
 
       {wide ? (
         <Card style={{ marginHorizontal: 16, marginTop: 20, maxWidth: 1200, width: '100%', alignSelf: 'center' }}>
@@ -369,3 +379,46 @@ const styles = StyleSheet.create({
   satir: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
   sonuc: { borderRadius: 14, padding: 16, gap: 4 },
 });
+
+function saatEtiketi(at: number): string {
+  const d = new Date(at);
+  const bugun = new Date().toDateString() === d.toDateString();
+  const saat = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  return bugun ? `bugün ${saat}` : `${d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })} ${saat}`;
+}
+
+/** e-Faturalar QNB'den güncellenirken ya da alınamadığında KDV kartlarının üstünde gösterilir */
+function QnbDurumu({ not, onRetry }: { not: { durum: 'yukleniyor' | 'hata'; at: number | null; mesaj?: string }; onRetry: () => void }) {
+  const theme = useTheme();
+  if (not.durum === 'yukleniyor') {
+    return (
+      <ListSection
+        footer={
+          not.at
+            ? `Tutarlar ${saatEtiketi(not.at)} tarihli kayıtlı e-Fatura bilgileriyle gösteriliyor; güncel liste gelince yenilenir.`
+            : 'İlk yükleme: tutarlar şimdilik yalnızca fişlerden. e-Faturalar gelince eklenir.'
+        }>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, minHeight: 44 }}>
+          <ActivityIndicator />
+          <Text style={[t.body, { color: theme.label }]}>{"e-Faturalar QNB'den güncelleniyor…"}</Text>
+        </View>
+      </ListSection>
+    );
+  }
+  return (
+    <ListSection
+      footer={`${not.mesaj ?? ''}\n\n${
+        not.at
+          ? `${saatEtiketi(not.at)} tarihli kayıtlı e-Fatura bilgileri gösteriliyor.`
+          : 'KDV şimdilik yalnızca fişlerle hesaplandı; e-Fatura tutarları eksik.'
+      }`}>
+      <ListRow
+        title="e-Faturalar güncellenemedi"
+        subtitle="Tekrar denemek için dokunun"
+        icon={{ sf: 'exclamationmark.triangle.fill', ion: 'warning', color: theme.orange }}
+        tone="action"
+        onPress={onRetry}
+      />
+    </ListSection>
+  );
+}
