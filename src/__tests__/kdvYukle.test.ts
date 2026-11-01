@@ -13,6 +13,7 @@ describe('KDV verilerini getir', () => {
       fisler: async () => [1, 2],
     });
     assert.deepEqual([r.gelen, r.giden, r.fisler, r.qnbHatasi], [['g'], ['s'], [1, 2], null]);
+    assert.deepEqual([r.gelenOk, r.gidenOk], [true, true]);
   });
 
   it('QNB askıda kalırsa fişlerle devam eder ve nedeni bildirir', async () => {
@@ -20,6 +21,7 @@ describe('KDV verilerini getir', () => {
     assert.deepEqual(r.gelen, []);
     assert.deepEqual(r.giden, ['s']);
     assert.deepEqual(r.fisler, [1]);
+    assert.deepEqual([r.gelenOk, r.gidenOk], [false, true]);
     assert.match(String(r.qnbHatasi), /QNB \(gelen e-Faturalar\)/);
   });
 

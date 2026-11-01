@@ -77,10 +77,56 @@ export async function fetchDonemFaturalar(
   if (!force && donemCache.has(key)) {
     return donemCache.get(key)!;
   }
+  // Aynı dönem için süren istek paylaşılır (KDV ve e-Faturalar aynı anda isteyebilir)
+  const running = donemInflight.get(key);
+  if (running) return running;
 
-  const result = await listEFaturalar(webInvoker, yon, baslangic, bitis);
-  donemCache.set(key, result);
-  return result;
+  const p = listEFaturalar(webInvoker, yon, baslangic, bitis)
+    .then((result) => {
+      donemCache.set(key, result);
+      persistDonem(key, result);
+      return result;
+    })
+    .finally(() => donemInflight.delete(key));
+  donemInflight.set(key, p);
+  return p;
+}
+
+const donemInflight = new Map<string, Promise<EFaturaDonemData>>();
+
+/*
+ * Kalıcı önbellek (tarayıcı): QNB yavaş olduğu için her ayın son sonucu saklanır; sayfalar açılışta
+ * önce bunu gösterir, güncel veri arka planda fetchDonemFaturalar ile gelir.
+ */
+const PERSIST_PREFIX = "efatura-donem:v1:";
+
+export interface PersistedDonem {
+  data: EFaturaDonemData;
+  /** Kaydedildiği an (ms) */
+  at: number;
+}
+
+function persistDonem(key: string, data: EFaturaDonemData) {
+  try {
+    localStorage.setItem(PERSIST_PREFIX + key, JSON.stringify({ data, at: Date.now() } satisfies PersistedDonem));
+  } catch {
+    // depolama kapalı ya da dolu: önbelleksiz devam
+  }
+}
+
+/** Dönemin tarayıcıda saklanan son sonucu (bellekte varsa o). Yoksa null. */
+export function readPersistedDonem(yon: Yon, offset: number): PersistedDonem | null {
+  const key = donemCacheKey(yon, getMonthBounds(offset).baslangic);
+  const mem = donemCache.get(key);
+  if (mem) return { data: mem, at: Date.now() };
+  try {
+    const raw = localStorage.getItem(PERSIST_PREFIX + key);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as PersistedDonem;
+    return Array.isArray(v?.data?.faturalar) ? v : null;
+  } catch {
+    return null;
+  }
 }
 
 async function mapConcurrent<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {

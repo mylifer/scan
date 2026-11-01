@@ -1,8 +1,9 @@
 "use client";
 
 import { formatTL } from "@shared/lib/format";
-import { kdvAyHesapla, type KdvAy } from "@shared/lib/kdvAy";
-import { kdvVerileriniGetir } from "@shared/lib/kdvYukle";
+import { ayEkle, kdvAyHesapla, type KdvAy } from "@shared/lib/kdvAy";
+import { FIS_TIMEOUT_MS, kdvVerileriniGetir } from "@shared/lib/kdvYukle";
+import { withTimeout } from "@shared/lib/retry";
 import type { ReceiptRecord } from "@shared/types/receipt";
 import {
   Calculator,
@@ -11,20 +12,21 @@ import {
   Clock,
   FileSpreadsheet,
   Info,
+  Loader2,
   Receipt,
   RefreshCw,
   TrendingDown,
   TrendingUp,
   TriangleAlert,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fetchDonemFaturalar, getMonthBounds, type EFatura } from "@/lib/efatura";
+import { fetchDonemFaturalar, getMonthBounds, readPersistedDonem, type EFatura } from "@/lib/efatura";
 import { listReceiptsForKdv } from "@/lib/receipts";
 
 export function KdvView() {
@@ -38,8 +40,8 @@ export function KdvView() {
     giden: EFatura[];
     fisler: ReceiptRecord[];
     error: string | null;
-    /** e-Fatura bilgileri alınamadıysa nedeni (KDV yalnızca fişlerle hesaplandı) */
-    qnbHatasi: string | null;
+    /** e-Faturalar QNB'den güncelleniyor ya da alınamadı; `at`: gösterilen kayıtlı sonucun zamanı */
+    qnb: { durum: "yukleniyor" | "hata"; at: number | null; mesaj?: string } | null;
   }>({
     key: "initial",
     loading: true,
@@ -47,7 +49,7 @@ export function KdvView() {
     giden: [],
     fisler: [],
     error: null,
-    qnbHatasi: null,
+    qnb: null,
   });
 
   const monthInfo = useMemo(() => getMonthBounds(offset), [offset]);
@@ -55,82 +57,66 @@ export function KdvView() {
   const loading = state.key !== activeKey || state.loading;
 
   // Dönem verilerini çek
+  const yukleKdv = useCallback(async (force: boolean, iptal: () => boolean = () => false) => {
+    const key = activeKey;
+    const to = `${ayEkle(monthInfo.baslangic.slice(0, 7), 1)}-01`;
+    const kGelen = readPersistedDonem("gelen", offset);
+    const kGiden = readPersistedDonem("giden", offset);
+    const kayitliAt = kGelen && kGiden ? Math.min(kGelen.at, kGiden.at) : null;
+    try {
+      const fisler = await withTimeout(listReceiptsForKdv({ from: monthInfo.baslangic, to }), FIS_TIMEOUT_MS, "Fiş sorgusu");
+      if (iptal()) return;
+      setState({
+        key,
+        loading: false,
+        gelen: kGelen?.data.faturalar ?? [],
+        giden: kGiden?.data.faturalar ?? [],
+        fisler,
+        error: null,
+        qnb: { durum: "yukleniyor", at: kayitliAt },
+      });
+      const v = await kdvVerileriniGetir({
+        gelen: () => fetchDonemFaturalar("gelen", offset, force),
+        giden: () => fetchDonemFaturalar("giden", offset, force),
+        fisler: async () => fisler,
+      });
+      if (iptal()) return;
+      const mesaj = v.qnbHatasi ? (v.qnbHatasi instanceof Error ? v.qnbHatasi.message : String(v.qnbHatasi)) : null;
+      setState({
+        key,
+        loading: false,
+        gelen: v.gelenOk ? v.gelen : (kGelen?.data.faturalar ?? []),
+        giden: v.gidenOk ? v.giden : (kGiden?.data.faturalar ?? []),
+        fisler,
+        error: null,
+        qnb: mesaj ? { durum: "hata", at: kayitliAt, mesaj } : null,
+      });
+      if (force) {
+        if (mesaj) toast.warning("e-Faturalar güncellenemedi.");
+        else toast.success("KDV verileri güncellendi.");
+      }
+    } catch (err) {
+      if (iptal()) return;
+      const msg = err instanceof Error ? err.message : "KDV verileri yüklenemedi.";
+      toast.error(msg);
+      setState({ key, loading: false, gelen: [], giden: [], fisler: [], error: msg, qnb: null });
+    }
+  }, [activeKey, monthInfo.baslangic, offset]);
+
+  // Dönem verilerini çek: önce fişler + tarayıcıda saklı e-Fatura sonucu (anında), sonra güncel QNB
   useEffect(() => {
     let cancelled = false;
-
-    // Fişler için bir sonraki ayın ilk günü
-    const [y, m] = monthInfo.baslangic.split("-").map(Number);
-    const nextY = m === 12 ? y! + 1 : y!;
-    const nextM = m === 12 ? 1 : m! + 1;
-    const to = `${nextY}-${String(nextM).padStart(2, "0")}-01`;
-
-    // QNB yanıt vermezse sayfa sonsuza dek beklemesin: süre sınırlı, gelmezse yalnızca fişlerle hesaplanır
-    void kdvVerileriniGetir({
-      gelen: () => fetchDonemFaturalar("gelen", offset),
-      giden: () => fetchDonemFaturalar("giden", offset),
-      fisler: () => listReceiptsForKdv({ from: monthInfo.baslangic, to }),
-    })
-      .then((v) => {
-        if (!cancelled) {
-          setState({
-            key: activeKey,
-            loading: false,
-            gelen: v.gelen,
-            giden: v.giden,
-            fisler: v.fisler,
-            error: null,
-            qnbHatasi: v.qnbHatasi ? (v.qnbHatasi instanceof Error ? v.qnbHatasi.message : String(v.qnbHatasi)) : null,
-          });
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          const msg = err instanceof Error ? err.message : "KDV verileri yüklenemedi.";
-          toast.error(msg);
-          setState({
-            key: activeKey,
-            loading: false,
-            gelen: [],
-            giden: [],
-            fisler: [],
-            error: msg,
-            qnbHatasi: null,
-          });
-        }
-      });
-
+    // Yükleme her zaman eşzamansız başlar (ilk setState bir await'ten sonra gelir)
+    void Promise.resolve().then(() => yukleKdv(false, () => cancelled));
     return () => {
       cancelled = true;
     };
-  }, [offset, monthInfo.baslangic, activeKey]);
+  }, [yukleKdv]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    const [y, m] = monthInfo.baslangic.split("-").map(Number);
-    const nextY = m === 12 ? y! + 1 : y!;
-    const nextM = m === 12 ? 1 : m! + 1;
-    const to = `${nextY}-${String(nextM).padStart(2, "0")}-01`;
-
     try {
-      const v = await kdvVerileriniGetir({
-        gelen: () => fetchDonemFaturalar("gelen", offset, true),
-        giden: () => fetchDonemFaturalar("giden", offset, true),
-        fisler: () => listReceiptsForKdv({ from: monthInfo.baslangic, to }),
-      });
-      const qnbHatasi = v.qnbHatasi ? (v.qnbHatasi instanceof Error ? v.qnbHatasi.message : String(v.qnbHatasi)) : null;
-      setState({
-        key: activeKey,
-        loading: false,
-        gelen: v.gelen,
-        giden: v.giden,
-        fisler: v.fisler,
-        error: null,
-        qnbHatasi,
-      });
-      if (qnbHatasi) toast.warning("e-Fatura bilgileri alınamadı; KDV yalnızca fişlerle hesaplandı.");
-      else toast.success("KDV verileri güncellendi.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Güncellenemedi.");
+      await yukleKdv(true);
     } finally {
       setRefreshing(false);
     }
@@ -192,15 +178,30 @@ export function KdvView() {
         </div>
       </div>
 
-      {!loading && state.key === activeKey && state.qnbHatasi ? (
+      {!loading && state.key === activeKey && state.qnb ? (
         <div className="rounded-2xl border border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl px-4 py-3 shadow-[0_2px_16px_rgba(0,0,0,0.03)] text-xs">
-          <div className="flex items-start gap-2 text-amber-600 dark:text-amber-400">
-            <TriangleAlert className="size-3.5 mt-px shrink-0" />
-            <span>
-              e-Fatura bilgileri alınamadı ({state.qnbHatasi}). KDV şimdilik yalnızca fişlerle hesaplandı; e-Fatura tutarları
-              eksik. &quot;Yenile&quot; ile tekrar deneyin.
-            </span>
-          </div>
+          {state.qnb.durum === "yukleniyor" ? (
+            <div className="flex items-start gap-2 text-muted-foreground">
+              <Loader2 className="size-3.5 mt-px shrink-0 animate-spin" />
+              <span>
+                e-Faturalar QNB&apos;den güncelleniyor…{" "}
+                {state.qnb.at
+                  ? `Tutarlar ${saatEtiketi(state.qnb.at)} tarihli kayıtlı e-Fatura bilgileriyle gösteriliyor.`
+                  : "İlk yükleme: tutarlar şimdilik yalnızca fişlerden; e-Faturalar gelince eklenir."}
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-start gap-2 text-amber-600 dark:text-amber-400">
+              <TriangleAlert className="size-3.5 mt-px shrink-0" />
+              <span>
+                e-Faturalar güncellenemedi ({state.qnb.mesaj}).{" "}
+                {state.qnb.at
+                  ? `${saatEtiketi(state.qnb.at)} tarihli kayıtlı e-Fatura bilgileri gösteriliyor.`
+                  : "KDV şimdilik yalnızca fişlerle hesaplandı; e-Fatura tutarları eksik."}{" "}
+                &quot;Yenile&quot; ile tekrar deneyin.
+              </span>
+            </div>
+          )}
         </div>
       ) : null}
 
@@ -380,4 +381,12 @@ export function KdvView() {
       </Card>
     </div>
   );
+}
+
+function saatEtiketi(at: number): string {
+  const d = new Date(at);
+  const saat = d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+  return new Date().toDateString() === d.toDateString()
+    ? `bugün ${saat}`
+    : `${d.toLocaleDateString("tr-TR", { day: "numeric", month: "long" })} ${saat}`;
 }

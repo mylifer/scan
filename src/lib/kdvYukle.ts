@@ -1,7 +1,10 @@
 import { withTimeout } from './retry';
 
-/** QNB (e-Fatura) çağrısı için süre sınırı; yanıt gelmezse KDV fişlerle hesaplanır */
-export const QNB_TIMEOUT_MS = 40_000;
+/**
+ * QNB (e-Fatura) çağrısı için süre sınırı. Ekran bu sırada fişleri ve kayıtlı e-Fatura sonucunu gösterdiği
+ * için bekleme kullanıcıyı engellemez; sunucu fonksiyonunun kendi sınırına (150 sn) yakın tutulur.
+ */
+export const QNB_TIMEOUT_MS = 120_000;
 /** Fiş sorgusu için süre sınırı */
 export const FIS_TIMEOUT_MS = 30_000;
 
@@ -9,6 +12,9 @@ export interface KdvVerileri<F, R> {
   gelen: F[];
   giden: F[];
   fisler: R[];
+  /** Gelen / giden listeleri QNB'den alınabildi mi (alınamadıysa liste boştur) */
+  gelenOk: boolean;
+  gidenOk: boolean;
   /** e-Fatura bilgileri alınamadıysa nedeni (KDV yalnızca fişlerle hesaplanmıştır) */
   qnbHatasi: unknown | null;
 }
@@ -37,6 +43,8 @@ export async function kdvVerileriniGetir<F, R>(kaynak: {
     gelen: gelen.status === 'fulfilled' ? gelen.value.faturalar : [],
     giden: giden.status === 'fulfilled' ? giden.value.faturalar : [],
     fisler: fisler.value,
+    gelenOk: gelen.status === 'fulfilled',
+    gidenOk: giden.status === 'fulfilled',
     qnbHatasi,
   };
 }
