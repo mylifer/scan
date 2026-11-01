@@ -63,7 +63,7 @@ Claude Code'un bıraktığı **v1.48.0** sürümünden itibaren projede iki para
 - **Web 1.0.23 (`0a47bae`):** Standart temizliği. Temel `Card` bileşeni cama geçirildi, böylece tüm sayfalar aynı kartları kullanıyor. Çift para birimi ("₺… TL") 32 yerde düzeltildi. Çöp Kutusu'nda `CategoryBadge` kullanılıyor. Emoji kalıntıları ve Geist Mono kaldırıldı.
 - **Web 1.0.24 (`729b557`):** Yedek geri yüklemede PNG/PDF fotoğraflar doğru içerik türüyle yükleniyor, yedek manifestinde gerçek sürüm kodu var, kök lint uyarısız.
 - **1.53.0 · Web 1.0.25 (`3538f2d`):** Devreden KDV kuralı "gönderim ayı − 1" olarak değişti (mobil + web). Toplu fiş eklemede yüklenemeyen fotoğraflar artık kaybolmuyor; "Tümünü Onayla" eklendi.
-- **1.53.1 · Web 1.0.26 (EN GÜNCEL SÜRÜM):** KDV ekranları QNB yanıt vermeyince sonsuza dek yükleniyordu; QNB çağrıları süre sınırlı, gelmezse KDV fişlerle hesaplanıp uyarı gösteriliyor (`src/lib/kdvYukle.ts`).
+- **1.53.1 · Web 1.0.26 (`651b64c` — EN GÜNCEL SÜRÜM):** KDV ekranları QNB yanıt vermeyince sonsuza dek yükleniyordu; QNB çağrıları süre sınırlı, gelmezse KDV fişlerle hesaplanıp uyarı gösteriliyor (`src/lib/kdvYukle.ts`).
 
 ---
 

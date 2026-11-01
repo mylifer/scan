@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.53.1 · Web 1.0.26 — `COMMIT`
+## 1.53.1 · Web 1.0.26 — `651b64c`
 - **KDV ekranı sonsuza dek yükleniyordu (mobil + web):** Ekran, fişlerle birlikte QNB'den gelen ve giden e-Faturaları da bekliyordu. QNB yanıt vermezse hiçbir şey göstermeden dönmeye devam ediyordu.
   - QNB çağrılarına 40 sn, fiş sorgusuna 30 sn süre sınırı kondu (`withTimeout`).
   - QNB gelmezse KDV fişlerle hesaplanıyor ve "e-Fatura bilgileri alınamadı" uyarısı nedeniyle birlikte gösteriliyor (dokununca / "Yenile" ile tekrar denenir).
