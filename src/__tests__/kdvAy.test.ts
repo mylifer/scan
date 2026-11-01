@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import type { EFatura } from '../../supabase/functions/qnb-efatura/soap';
-import { devredenEtiketi, fisAyaAitMi, kdvAyHesapla } from '../lib/kdvAy';
+import { devredenEtiketi, kdvAyHesapla } from '../lib/kdvAy';
 import type { ReceiptRecord } from '../types/receipt';
 
 const fatura = (ettn: string, tutar: number, kdv: number | undefined, extra: Partial<EFatura> = {}): EFatura => ({

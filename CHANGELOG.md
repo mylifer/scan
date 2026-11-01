@@ -16,6 +16,31 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.24 — `729b557`
+- **Yedek geri yükleme:** Fotoğrafların içerik türü dosyanın ilk baytlarından anlaşılıyor (PNG, PDF, WebP, JPEG). Önceden hepsi `image/jpeg` olarak yükleniyordu; PNG ve PDF fişler geri yüklendikten sonra açılmayabiliyordu (`sniffImageContentType`, 1 yeni test).
+- **Yedek manifesti:** Sabit "Web 0.5.0" etiketi yerine derlemedeki commit kodu yazılıyor.
+- **Kök lint:** Kullanılmayan 2 import kaldırıldı; `npx expo lint` artık uyarısız.
+
+## Web 1.0.23 — `0a47bae`
+- **Apple Native Glass tasarımı tüm sayfalara yayıldı (`web/src/components/ui/card.tsx`):** Temel `Card` bileşeni cam standardına geçirildi (`rounded-2xl border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl shadow-[0_2px_16px_rgba(0,0,0,0.03)]`). KDV, Bütçe, Firmalar, Kategoriler, Vergi Takvimi, Ayarlar, Fiş formu/detayı ve Giriş ekranı artık Fişler ve e-Faturalar ile aynı kartları kullanıyor. Vurgulu kartlar (Vergi Takvimi, Dönem Analizi) koyu modda da birincil kenarlığını koruyor.
+- **Çift para birimi düzeltildi:** `formatTL` zaten "₺" ile döndürdüğü halde 32 yerde sonuna " TL" ekleniyordu ("₺1.234,56 TL"). Ek kaldırıldı.
+- **Çöp Kutusu:** Kategori ham metin `Badge` yerine `CategoryBadge` ile gösteriliyor.
+- **Emoji kalıntısı silindi:** `category-badge.tsx` içindeki kullanılmayan 25 emoji `icon` alanı kaldırıldı.
+- **Yalnızca Geist Sans:** Hata Günlüğü'ndeki `font-mono` kaldırıldı, Geist Mono fontu artık yüklenmiyor; `--font-mono` Geist Sans'a yönlendirildi.
+
+## Web 1.0.22 — `38e17fa`
+- **e-Faturalar "Tümünü Göster" artık eksik veriyi sessizce göstermiyor (`web/src/lib/efatura.ts`, `efatura-view.tsx`):**
+  - Yüklenemeyen aylar ("2 ay yüklenemedi (Eylül 2026, Ekim 2026)…") ve QNB'den gelen uyarılar kalıcı bir uyarı şeridinde gösteriliyor; hiçbir ay yüklenemezse (ör. QNB bilgileri eksik) hata bildirimi çıkıyor.
+  - Eksik sonuç önbelleğe alınmıyor; "Yenile" yalnızca eksik ayları tekrar çekiyor. İlk fatura ayı alınamazsa bu hata da önbelleğe alınmıyor.
+  - Kapsam sınırı (en fazla 36 ay; ilk ay bilinmiyorsa son 12 ay) bilgi notu olarak yazılıyor.
+  - Saf yardımcılar `tumuAyAraligi` ve `aySonuclariniBirlestir` ayrıldı, 5 yeni test eklendi.
+- **Yeni sürüm sonrası "Loading chunk failed" koruması Next.js web'e taşındı:**
+  - `deploy-web.yml`: Önceki yayınların `_next/static` parçaları 30 gün saklanıp pakete ekleniyor; `NEXT_PUBLIC_APP_VERSION` derlemeye veriliyor.
+  - `VersionGuard`: Açık sekmeler `version.json` dosyasını odak/görünürlük değişiminde ve 5 dakikada bir okuyor; yeni sürümde "Yenile" bildirimi gösteriyor. Parça yükleme hatasında sayfa bir kez otomatik yenileniyor.
+  - `(app)/error.tsx`: Panel sayfaları için cam kartlı hata ekranı (Tekrar Dene / Sayfayı Yenile).
+  - 4 yeni test (`appVersion.test.ts`). Web testleri: 10 dosya, 34 test.
+- **Dokümanlar:** `CLAUDE_CODE_HANDOVER.md` ve `AGENTS.md`'deki var olmayan `ublFallback.ts` referansı düzeltildi (mantık `supabase/functions/qnb-efatura/index.ts` → `tutarlariTamamla`); yeni kurallar eklendi.
+
 ## Web 1.0.21 — `b009dbb`
 - **e-Faturalar sayfasına "Tümünü Göster (O Tarihe Kadar)" dönemi ve Apple Segmented Switch eklendi (`web/`):**
   - **Tümünü Göster / Aylık Segmented Denetimi (`efatura-view.tsx`):** Fişler sayfasındaki dönem anahtarıyla birebir aynı Apple Native segmented tasarımı (`[Tümünü Göster] [Aylık]`) e-Faturalar üst araç çubuğuna eklendi.

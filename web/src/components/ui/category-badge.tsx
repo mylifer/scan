@@ -4,7 +4,6 @@ import { categoryLabel } from "@shared/lib/categories";
 export interface CategoryVisual {
   dotColor: string;
   initial: string;
-  icon: string;
   squircle: string;
 }
 
@@ -19,7 +18,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "AK",
       dotColor: "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.5)]",
-      icon: "⛽️",
       squircle: "bg-gradient-to-tr from-amber-500 to-orange-400 text-white shadow-amber-500/20",
     };
   }
@@ -27,7 +25,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "RE",
       dotColor: "bg-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.5)]",
-      icon: "🍽️",
       squircle: "bg-gradient-to-tr from-rose-500 to-pink-400 text-white shadow-rose-500/20",
     };
   }
@@ -35,7 +32,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "MA",
       dotColor: "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]",
-      icon: "🛒",
       squircle: "bg-gradient-to-tr from-emerald-500 to-teal-400 text-white shadow-emerald-500/20",
     };
   }
@@ -43,7 +39,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "TE",
       dotColor: "bg-indigo-400 shadow-[0_0_6px_rgba(129,140,248,0.5)]",
-      icon: "💻",
       squircle: "bg-gradient-to-tr from-indigo-500 to-violet-500 text-white shadow-indigo-500/20",
     };
   }
@@ -51,7 +46,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "OF",
       dotColor: "bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.5)]",
-      icon: "📎",
       squircle: "bg-gradient-to-tr from-sky-500 to-cyan-400 text-white shadow-sky-500/20",
     };
   }
@@ -59,7 +53,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "UL",
       dotColor: "bg-blue-400 shadow-[0_0_6px_rgba(96,165,250,0.5)]",
-      icon: "🚗",
       squircle: "bg-gradient-to-tr from-blue-500 to-indigo-400 text-white shadow-blue-500/20",
     };
   }
@@ -67,7 +60,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "BA",
       dotColor: "bg-orange-400 shadow-[0_0_6px_rgba(251,146,60,0.5)]",
-      icon: "🔧",
       squircle: "bg-gradient-to-tr from-orange-600 to-amber-500 text-white shadow-orange-500/20",
     };
   }
@@ -75,7 +67,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "KO",
       dotColor: "bg-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.5)]",
-      icon: "🏨",
       squircle: "bg-gradient-to-tr from-purple-500 to-pink-500 text-white shadow-purple-500/20",
     };
   }
@@ -83,7 +74,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "İL",
       dotColor: "bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.5)]",
-      icon: "📱",
       squircle: "bg-gradient-to-tr from-cyan-500 to-blue-400 text-white shadow-cyan-500/20",
     };
   }
@@ -91,7 +81,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "FA",
       dotColor: "bg-teal-400 shadow-[0_0_6px_rgba(45,212,191,0.5)]",
-      icon: "🧾",
       squircle: "bg-gradient-to-tr from-teal-500 to-emerald-400 text-white shadow-teal-500/20",
     };
   }
@@ -99,7 +88,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "KA",
       dotColor: "bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.5)]",
-      icon: "📦",
       squircle: "bg-gradient-to-tr from-yellow-500 to-amber-400 text-white shadow-yellow-500/20",
     };
   }
@@ -107,7 +95,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "Gİ",
       dotColor: "bg-pink-400 shadow-[0_0_6px_rgba(244,114,182,0.5)]",
-      icon: "👕",
       squircle: "bg-gradient-to-tr from-pink-500 to-rose-400 text-white shadow-pink-500/20",
     };
   }
@@ -115,7 +102,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "SA",
       dotColor: "bg-red-400 shadow-[0_0_6px_rgba(248,113,182,0.5)]",
-      icon: "💊",
       squircle: "bg-gradient-to-tr from-red-500 to-rose-400 text-white shadow-red-500/20",
     };
   }
@@ -123,7 +109,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "EĞ",
       dotColor: "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.5)]",
-      icon: "📚",
       squircle: "bg-gradient-to-tr from-amber-600 to-orange-400 text-white shadow-amber-600/20",
     };
   }
@@ -131,7 +116,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "Kİ",
       dotColor: "bg-lime-400 shadow-[0_0_6px_rgba(163,230,53,0.5)]",
-      icon: "🔑",
       squircle: "bg-gradient-to-tr from-lime-600 to-emerald-400 text-white shadow-lime-600/20",
     };
   }
@@ -139,7 +123,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "Sİ",
       dotColor: "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]",
-      icon: "🛡️",
       squircle: "bg-gradient-to-tr from-emerald-600 to-teal-400 text-white shadow-emerald-600/20",
     };
   }
@@ -147,7 +130,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "AB",
       dotColor: "bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.5)]",
-      icon: "🔄",
       squircle: "bg-gradient-to-tr from-violet-600 to-indigo-500 text-white shadow-violet-600/20",
     };
   }
@@ -155,7 +137,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "RE",
       dotColor: "bg-fuchsia-400 shadow-[0_0_6px_rgba(232,121,249,0.5)]",
-      icon: "📢",
       squircle: "bg-gradient-to-tr from-fuchsia-600 to-pink-500 text-white shadow-fuchsia-600/20",
     };
   }
@@ -163,7 +144,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "VE",
       dotColor: "bg-slate-400 shadow-[0_0_6px_rgba(148,163,184,0.5)]",
-      icon: "🏛️",
       squircle: "bg-gradient-to-tr from-slate-700 to-zinc-600 text-white shadow-slate-700/20",
     };
   }
@@ -171,7 +151,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "BA",
       dotColor: "bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.5)]",
-      icon: "🏦",
       squircle: "bg-gradient-to-tr from-sky-700 to-blue-600 text-white shadow-sky-700/20",
     };
   }
@@ -179,7 +158,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "YA",
       dotColor: "bg-orange-400 shadow-[0_0_6px_rgba(251,146,60,0.5)]",
-      icon: "🔨",
       squircle: "bg-gradient-to-tr from-orange-700 to-amber-600 text-white shadow-orange-700/20",
     };
   }
@@ -187,7 +165,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "KB",
       dotColor: "bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.5)]",
-      icon: "✨",
       squircle: "bg-gradient-to-tr from-rose-600 to-pink-500 text-white shadow-rose-600/20",
     };
   }
@@ -195,7 +172,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "HE",
       dotColor: "bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.5)]",
-      icon: "🎁",
       squircle: "bg-gradient-to-tr from-red-500 to-pink-400 text-white shadow-red-500/20",
     };
   }
@@ -203,7 +179,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
     return {
       initial: "EĞ",
       dotColor: "bg-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.5)]",
-      icon: "🍿",
       squircle: "bg-gradient-to-tr from-purple-600 to-violet-500 text-white shadow-purple-600/20",
     };
   }
@@ -211,7 +186,6 @@ export function getCategoryVisuals(cat: string): CategoryVisual {
   return {
     initial: (cat.slice(0, 2) || "Dİ").toLocaleUpperCase("tr-TR"),
     dotColor: "bg-zinc-400 shadow-[0_0_6px_rgba(161,161,170,0.5)]",
-    icon: "📄",
     squircle: "bg-gradient-to-tr from-slate-600 to-zinc-500 text-white shadow-slate-500/20",
   };
 }

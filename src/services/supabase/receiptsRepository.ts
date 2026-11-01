@@ -7,7 +7,7 @@ import { isLikelyDuplicate } from '../../lib/receiptExtras';
 import { type PeriodSummary, summarizeReceipts } from '../../lib/summary';
 import { learnedCategoryFor } from '../../lib/search';
 import { buildMonthlySeries, type MonthPoint } from '../../lib/trend';
-import { fisAyaAitMi, fisKdvAyi, simdikiIstanbulAyi } from '../../lib/kdvAy';
+import { fisAyaAitMi, simdikiIstanbulAyi } from '../../lib/kdvAy';
 import type { Kategori, ReceiptData, ReceiptRecord } from '../../types/receipt';
 import { trashCutoff } from '../../lib/trash';
 import { supabase } from './client';

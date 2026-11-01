@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  aySonuclariniBirlestir,
   donemCacheKey,
   getMonthBounds,
   sortEFaturaList,
+  TUMU_MAX_AY,
+  TUMU_VARSAYILAN_AY,
+  tumuAyAraligi,
   type EFatura,
 } from "./efatura";
 
@@ -111,5 +115,52 @@ describe("efatura web helpers", () => {
   it("fetchAllFaturalar fonksiyonu dışa aktarılmıştır", async () => {
     const { fetchAllFaturalar } = await import("./efatura");
     expect(typeof fetchAllFaturalar).toBe("function");
+  });
+});
+
+describe("Tümünü Göster (fetchAllFaturalar yardımcıları)", () => {
+  const now = new Date(2026, 10, 15); // Kasım 2026
+
+  it("tumuAyAraligi: ilk fatura ayından seçilen aya kadar", () => {
+    const r = tumuAyAraligi("2026-08", 0, now);
+    expect(r.offsets).toEqual([-3, -2, -1, 0]);
+    expect(r.kirpildi).toBe(false);
+    expect(r.ilkAyBilinmiyor).toBe(false);
+  });
+
+  it("tumuAyAraligi: çok eski ilk ay TUMU_MAX_AY ile kırpılır ve bildirilir", () => {
+    const r = tumuAyAraligi("2015-01", -2, now);
+    expect(r.offsets).toHaveLength(TUMU_MAX_AY);
+    expect(r.offsets.at(-1)).toBe(-2);
+    expect(r.kirpildi).toBe(true);
+  });
+
+  it("tumuAyAraligi: ilk ay bilinmiyorsa varsayılan ay sayısı", () => {
+    const r = tumuAyAraligi(null, 0, now);
+    expect(r.offsets).toHaveLength(TUMU_VARSAYILAN_AY);
+    expect(r.ilkAyBilinmiyor).toBe(true);
+  });
+
+  it("aySonuclariniBirlestir: tekilleştirir, uyarıları korur, eksik ayı bildirir", () => {
+    const { data, eksikAy } = aySonuclariniBirlestir([
+      { label: "Eylül 2026", ok: true, data: { faturalar: [sampleList[0]!], uyari: "QNB sayısı uyuşmuyor.", kontrol: { liste: 1, qnb: 1 } } },
+      { label: "Ekim 2026", ok: false, error: new Error("Oturum hatası") },
+      { label: "Kasım 2026", ok: true, data: { faturalar: [sampleList[0]!, sampleList[1]!], uyari: "QNB sayısı uyuşmuyor.", kontrol: { liste: 2, qnb: 2 } } },
+    ]);
+    expect(eksikAy).toBe(1);
+    expect(data.faturalar.map((f) => f.ettn)).toEqual(["e2", "e1"]);
+    expect(data.kontrol).toEqual({ liste: 3, qnb: 3 });
+    expect(data.uyari).toContain("QNB sayısı uyuşmuyor.");
+    expect(data.uyari?.match(/QNB sayısı uyuşmuyor/g)).toHaveLength(1);
+    expect(data.uyari).toContain("1 ay yüklenemedi (Ekim 2026)");
+  });
+
+  it("aySonuclariniBirlestir: hiçbir ay yüklenemezse hatayı fırlatır", () => {
+    expect(() =>
+      aySonuclariniBirlestir([
+        { label: "Ekim 2026", ok: false, error: new Error("QNB bilgileri eksik") },
+        { label: "Kasım 2026", ok: false, error: new Error("QNB bilgileri eksik") },
+      ]),
+    ).toThrow("QNB bilgileri eksik");
   });
 });

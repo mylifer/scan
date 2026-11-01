@@ -135,7 +135,7 @@ export function FirmsView() {
           <CardHeader className="pb-2">
             <CardDescription>Firmalara Yapılan Toplam Harcama</CardDescription>
             <CardTitle className="text-2xl tabular-nums">
-              {loading ? <Skeleton className="h-7 w-32" /> : `${formatTL(totalSpent)} TL`}
+              {loading ? <Skeleton className="h-7 w-32" /> : `${formatTL(totalSpent)}`}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -147,7 +147,7 @@ export function FirmsView() {
               {loading ? (
                 <Skeleton className="h-7 w-28" />
               ) : firms.length > 0 ? (
-                `${formatTL(totalSpent / firms.length)} TL`
+                `${formatTL(totalSpent / firms.length)}`
               ) : (
                 "—"
               )}
@@ -256,10 +256,10 @@ export function FirmsView() {
                       {firm.count} fiş
                     </TableCell>
                     <TableCell className="text-right tabular-nums text-muted-foreground">
-                      {formatTL(firm.kdv)} TL
+                      {formatTL(firm.kdv)}
                     </TableCell>
                     <TableCell className="text-right font-semibold tabular-nums text-foreground">
-                      {formatTL(firm.total)} TL
+                      {formatTL(firm.total)}
                     </TableCell>
                     <TableCell className="pr-4 text-right tabular-nums text-xs text-muted-foreground">
                       {firm.last ? isoToTrDate(firm.last) : "—"}
