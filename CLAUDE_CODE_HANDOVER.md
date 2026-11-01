@@ -62,7 +62,7 @@ Claude Code'un bıraktığı **v1.48.0** sürümünden itibaren projede iki para
   - *Yeni sürüm koruması:* Önceki yayınların `_next/static` parçaları 30 gün saklanır. Açık sekmeler `version.json` dosyasını okuyup "Yenile" bildirimi gösterir. Eski parça hatasında sayfa bir kez otomatik yenilenir (`VersionGuard`, `(app)/error.tsx`).
 - **Web 1.0.23 (`0a47bae`):** Standart temizliği. Temel `Card` bileşeni cama geçirildi, böylece tüm sayfalar aynı kartları kullanıyor. Çift para birimi ("₺… TL") 32 yerde düzeltildi. Çöp Kutusu'nda `CategoryBadge` kullanılıyor. Emoji kalıntıları ve Geist Mono kaldırıldı.
 - **Web 1.0.24 (`729b557`):** Yedek geri yüklemede PNG/PDF fotoğraflar doğru içerik türüyle yükleniyor, yedek manifestinde gerçek sürüm kodu var, kök lint uyarısız.
-- **1.53.0 · Web 1.0.25 (EN GÜNCEL SÜRÜM):** Devreden KDV kuralı "gönderim ayı − 1" olarak değişti (mobil + web). Toplu fiş eklemede yüklenemeyen fotoğraflar artık kaybolmuyor; "Tümünü Onayla" eklendi.
+- **1.53.0 · Web 1.0.25 (`3538f2d` — EN GÜNCEL SÜRÜM):** Devreden KDV kuralı "gönderim ayı − 1" olarak değişti (mobil + web). Toplu fiş eklemede yüklenemeyen fotoğraflar artık kaybolmuyor; "Tümünü Onayla" eklendi.
 
 ---
 

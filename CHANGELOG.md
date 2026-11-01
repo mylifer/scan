@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.53.0 · Web 1.0.25 — `COMMIT`
+## 1.53.0 · Web 1.0.25 — `3538f2d`
 - **Devreden KDV kuralı değişti (mobil + web, `src/lib/kdvAy.ts`):** Muhasebeciye bir ay içinde gönderilen fişler artık bir önceki ayın KDV'sinden düşüyor (Kasım'da gönderilen → Ekim). Gönderilmemiş fişler bulunulan aydan bir önceki ayda gösteriliyor (Kasım'dayken → Ekim); yalnızca bu ay tarihli fişler kendi ayında kalıyor. Fiş, kendi tarihinden önceki bir aya düşülmüyor. Veritabanı sorgusu mobil ve web için ortak (`kdvFisFiltresi`). 7 yeni test.
 - **Toplu fiş eklemede fotoğraf kaybı giderildi (iPhone):**
   - Yükleme bağlantı kopukluğunda aynı oturumda 2 kez daha deneniyor (2 sn, 5 sn).
