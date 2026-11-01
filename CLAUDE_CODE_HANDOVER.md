@@ -57,9 +57,10 @@ Claude Code'un bıraktığı **v1.48.0** sürümünden itibaren projede iki para
 - **Web 1.0.17 – 1.0.19 (`4059c80`, `08629ae`):** Koyu modda tablolardaki parlak beyaz ızgara hissinin tamamen yok edilmesi; satır çizgisi opaklığının `%14` -> `%5` -> **ultra-soft %2 (`rgba(255, 255, 255, 0.02) !important`)** seviyesine indirilmesi.
 - **Web 1.0.20 (`f1bdd62`):** e-Faturalar sayfasındaki üst metrik kartlarının da Apple Native Glass tasarımına geçirilmesi (4 kart: Toplam Belge, Toplam Tutar, Net KDV, Dönem Analizi).
 - **Web 1.0.21 (`b009dbb`):** e-Faturalar sayfasına Apple Segmented Switch ile **"Tümünü Göster (O Tarihe Kadar)"** dönemi eklenmesi. QNB portalındaki ilk faturadan seçilen aya kadar 3'erli paralel sorguyla tüm faturaları çeken ve tekilleştiren `fetchAllFaturalar` motoru.
-- **Web 1.0.22 (`38e17fa` — EN GÜNCEL SÜRÜM):** İnceleme düzeltmeleri.
+- **Web 1.0.22 (`38e17fa`):** İnceleme düzeltmeleri.
   - *"Tümünü Göster" artık eksik veriyi sessizce göstermiyor:* Yüklenemeyen aylar ve QNB'den gelen uyarılar kalıcı bir uyarı şeridinde gösterilir. Hiçbir ay yüklenemezse hata verilir. Eksik sonuç önbelleğe alınmaz. Kapsam sınırı (36 ay, ilk ay bilinmiyorsa 12 ay) bilgi notu olarak yazılır.
   - *Yeni sürüm koruması:* Önceki yayınların `_next/static` parçaları 30 gün saklanır. Açık sekmeler `version.json` dosyasını okuyup "Yenile" bildirimi gösterir. Eski parça hatasında sayfa bir kez otomatik yenilenir (`VersionGuard`, `(app)/error.tsx`).
+- **Web 1.0.23 (`0a47bae` — EN GÜNCEL SÜRÜM):** Standart temizliği. Temel `Card` bileşeni cama geçirildi, böylece tüm sayfalar aynı kartları kullanıyor. Çift para birimi ("₺… TL") 32 yerde düzeltildi. Çöp Kutusu'nda `CategoryBadge` kullanılıyor. Emoji kalıntıları ve Geist Mono kaldırıldı.
 
 ---
 
@@ -106,7 +107,8 @@ Claude Code olarak projede çalışırken aşağıdaki kurallara **mutlaka** uyu
 1. **Yalnızca Geist Fontu:** Sistemde `font-mono`, `Inter` veya sistem fontu kullanılmaz. Parasal değerler, tarihler ve kodlarda `font-mono` yerine `Geist Sans` ile birlikte `tabular-nums` sınıfı kullanılır (`latin-ext` destekli).
 2. **Kategori Rozetleri:** Emojiler kesinlikle kullanılmaz. `CategoryBadge` bileşeni kullanılır (`dotColor` parıltılı neon nokta + 2 harfli büyük harf monogram).
 3. **Koyu Mod Tablo Çizgileri:** Tablolarda yüksek kontrastlı border kullanılmaz. `.dark table tbody tr` satırları `rgba(255, 255, 255, 0.02)` ultra-soft sınır seviyesindedir.
-4. **Cam Efekti (Apple Native Glass):** Özet metrik kartları ve paneller `rounded-2xl border border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)]` standardındadır.
+4. **Cam Efekti (Apple Native Glass):** Özet metrik kartları ve paneller `rounded-2xl border border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)]` standardındadır. Temel `Card` bileşeni (`components/ui/card.tsx`) bu stili varsayılan olarak uygular; yeni kartlarda sınıfları elle tekrarlamak yerine `Card` kullanın. Kenarlığı değiştiren vurgulu kartlarda koyu mod için `dark:border-...` da verin (aksi halde `dark:border-white/[0.05]` ezer).
+5. **Para Birimi:** `formatTL` sonucu "₺1.234,56" biçimindedir; sonuna " TL" eklenmez.
 
 ### B. e-Fatura ve Finansal Hesaplamalar
 1. **UBL KDV Fallback:** Yeni kesilen giden faturalarda QNB servisinden KDV boş gelebilir. Mantık `supabase/functions/qnb-efatura/index.ts` → `tutarlariTamamla` içindedir (ayrı `ublFallback.ts` dosyası **yoktur**). Bilinen sınırlar: yalnızca KDV *boş* (`typeof kdv !== 'number'`) ise tamamlanır, `0` gelen KDV tamamlanmaz; istek başına en fazla 25 fatura UBL'den (5'erli paralel) tamamlanır. Fonksiyon değişikliği `supabase-functions.yml` ile yayınlanır. Bozulmamalıdır.
