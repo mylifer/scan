@@ -3,7 +3,7 @@
 import { RefreshCw, TriangleAlert } from "lucide-react";
 import { useEffect } from "react";
 import { isChunkLoadError, reloadForChunkError } from "@/lib/appVersion";
-import { Button } from "@heroui/react";
+import { Button, Card } from "@heroui/react";
 
 /** Panel sayfalarının hata sınırı: eski sürüm parçası hatasında sayfayı yeniler, diğerlerinde tekrar dener. */
 export default function AppError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
@@ -15,7 +15,7 @@ export default function AppError({ error, retry }: { error: Error & { digest?: s
   }, [error, chunkError]);
 
   return (
-    <div className="mx-auto mt-10 max-w-md rounded-2xl border border-border/80 dark:border-white/[0.05] bg-surface/75 backdrop-blur-xl p-6 shadow-[0_2px_16px_rgba(0,0,0,0.03)] text-center">
+    <Card className="mx-auto mt-10 max-w-md text-center">
       <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
         <TriangleAlert className="size-5" />
       </div>
@@ -43,6 +43,6 @@ export default function AppError({ error, retry }: { error: Error & { digest?: s
           </>
         )}
       </div>
-    </div>
+    </Card>
   );
 }

@@ -50,22 +50,22 @@ export function SettingsView() {
       <Tabs defaultSelectedKey="genel" className="space-y-6">
         <Tabs.ListContainer className="w-full md:w-auto">
           <Tabs.List aria-label="Ayarlar" className="w-full md:w-auto">
-            <Tabs.Tab id="genel" className="gap-2">
+            <Tabs.Tab id="genel" className="gap-2 whitespace-nowrap">
               <User className="size-4" />
               Genel
               <Tabs.Indicator />
             </Tabs.Tab>
-            <Tabs.Tab id="cop-kutusu" className="gap-2">
+            <Tabs.Tab id="cop-kutusu" className="gap-2 whitespace-nowrap">
               <Trash2 className="size-4" />
               Çöp Kutusu
               <Tabs.Indicator />
             </Tabs.Tab>
-            <Tabs.Tab id="yedekleme" className="gap-2">
+            <Tabs.Tab id="yedekleme" className="gap-2 whitespace-nowrap">
               <Archive className="size-4" />
               Yedekleme
               <Tabs.Indicator />
             </Tabs.Tab>
-            <Tabs.Tab id="hatalar" className="gap-2">
+            <Tabs.Tab id="hatalar" className="gap-2 whitespace-nowrap">
               <FileCode className="size-4" />
               Hata Günlüğü
               <Tabs.Indicator />
@@ -81,7 +81,7 @@ export function SettingsView() {
               <Card.Header>
                 <div className="flex items-center gap-2">
                   <User className="size-5 text-accent" />
-                  <Card.Title className="text-base font-semibold">Hesap & Profil</Card.Title>
+                  <Card.Title>Hesap & Profil</Card.Title>
                 </div>
                 <Card.Description>Oturum açmış kullanıcı ve hesap bilgileri.</Card.Description>
               </Card.Header>
@@ -95,7 +95,7 @@ export function SettingsView() {
 
                 <div className="flex items-center justify-between text-xs text-muted">
                   <span>Hesap Durumu:</span>
-                  <Chip size="sm" variant="secondary" className="gap-1 border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
+                  <Chip size="sm" variant="secondary" className="gap-1">
                     <ShieldCheck className="size-3" />
                     Aktif Oturum
                   </Chip>
@@ -106,7 +106,7 @@ export function SettingsView() {
                   variant="outline"
                   isDisabled={loggingOut}
                   onPress={handleSignOut}
-                  className="w-full gap-2 text-danger hover:bg-danger/10"
+                  className="w-full gap-2"
                 >
                   <LogOut className="size-4" />
                   Oturumu Kapat
@@ -119,7 +119,7 @@ export function SettingsView() {
               <Card.Header>
                 <div className="flex items-center gap-2">
                   <Sun className="size-5 text-accent" />
-                  <Card.Title className="text-base font-semibold">Görünüm ve Tema</Card.Title>
+                  <Card.Title>Görünüm ve Tema</Card.Title>
                 </div>
                 <Card.Description>
                   Web panelinizin temasını açık, koyu ya da sistem tercihinize göre ayarlayın.
@@ -133,10 +133,9 @@ export function SettingsView() {
                     size="sm"
                     onPress={() => setTheme("light")}
                     fullWidth
-                    className="flex flex-col h-auto rounded-2xl py-3 gap-1.5"
                   >
                     <Sun className="size-4" />
-                    <span className="text-xs">Açık</span>
+                    Açık
                   </Button>
                   <Button
                     type="button"
@@ -144,10 +143,9 @@ export function SettingsView() {
                     size="sm"
                     onPress={() => setTheme("dark")}
                     fullWidth
-                    className="flex flex-col h-auto rounded-2xl py-3 gap-1.5"
                   >
                     <Moon className="size-4" />
-                    <span className="text-xs">Koyu</span>
+                    Koyu
                   </Button>
                   <Button
                     type="button"
@@ -155,10 +153,9 @@ export function SettingsView() {
                     size="sm"
                     onPress={() => setTheme("system")}
                     fullWidth
-                    className="flex flex-col h-auto rounded-2xl py-3 gap-1.5"
                   >
                     <Laptop className="size-4" />
-                    <span className="text-xs">Sistem</span>
+                    Sistem
                   </Button>
                 </div>
 

@@ -97,7 +97,7 @@ export function BackupTab() {
         <Card.Header>
           <div className="flex items-center gap-2">
             <Archive className="size-5 text-accent" />
-            <Card.Title className="text-base font-semibold">Tam Yedek Al (.zip)</Card.Title>
+            <Card.Title>Tam Yedek Al (.zip)</Card.Title>
           </div>
           <Card.Description>
             Tüm fiş kayıtlarınız, KDV verileri, etiketler ve fiş fotoğrafları tek bir ZIP arşivinde
@@ -162,7 +162,7 @@ export function BackupTab() {
         <Card.Header>
           <div className="flex items-center gap-2">
             <UploadCloud className="size-5 text-accent" />
-            <Card.Title className="text-base font-semibold">Yedekten Geri Yükle</Card.Title>
+            <Card.Title>Yedekten Geri Yükle</Card.Title>
           </div>
           <Card.Description>
             Daha önce aldığınız bir `.zip` yedeğini yükleyerek fişlerinizi ve fotoğraflarınızı

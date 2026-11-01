@@ -49,9 +49,9 @@ export function ErrorLogTab() {
   return (
     <div className="space-y-6">
       <Card>
-        <Card.Header className="flex flex-row items-center justify-between gap-4 pb-4">
+        <Card.Header className="flex flex-row items-center justify-between gap-4">
           <div className="space-y-1">
-            <Card.Title className="text-base font-semibold">Uygulama Hata Kayıtları</Card.Title>
+            <Card.Title>Uygulama Hata Kayıtları</Card.Title>
             <Card.Description>
               Uygulama çalışırken karşılaşılan beklenmedik durumlar ve sistem kayıtları burada listelenir.
             </Card.Description>
@@ -102,7 +102,7 @@ export function ErrorLogTab() {
             </div>
           ) : (
             <div className="overflow-x-auto rounded-md border">
-              <Table variant="secondary">
+              <Table>
                 <Table.ScrollContainer>
                   <Table.Content aria-label="Hata kayıtları" className="min-w-[600px]">
                     <Table.Header>
@@ -119,7 +119,7 @@ export function ErrorLogTab() {
                             {err.created_at ? new Date(err.created_at).toLocaleString("tr-TR") : "—"}
                           </Table.Cell>
                           <Table.Cell>
-                            <Chip size="sm" variant="secondary" className="text-xs">
+                            <Chip size="sm" variant="secondary">
                               {err.context || "genel"}
                             </Chip>
                           </Table.Cell>
@@ -135,7 +135,7 @@ export function ErrorLogTab() {
                               variant="ghost"
                               size="sm"
                               onPress={() => setSelectedError(err)}
-                              className="h-7 px-2 text-xs gap-1"
+                              className="gap-1"
                             >
                               <FileCode className="size-3" />
                               İncele
@@ -158,7 +158,7 @@ export function ErrorLogTab() {
           <Modal.Dialog className="sm:max-w-2xl">
             <Modal.CloseTrigger />
             <Modal.Header>
-              <Modal.Heading className="flex items-center gap-2 text-base">
+              <Modal.Heading className="flex items-center gap-2">
                 <AlertTriangle className="size-4 text-amber-500" />
                 Hata Detayı
               </Modal.Heading>
@@ -206,7 +206,6 @@ export function ErrorLogTab() {
               <Button size="sm"
                 onPress={handleClearAll}
                 isDisabled={clearing}
-                className="bg-danger text-destructive-foreground hover:bg-danger/90"
               >
                 {clearing ? (
                   <>

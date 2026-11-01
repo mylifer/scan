@@ -37,12 +37,12 @@ export function FirmMergeDialog({
   return (
     <Modal.Backdrop isOpen={open} onOpenChange={onOpenChange}>
       <Modal.Container className="sm:w-full">
-        <Modal.Dialog className="flex max-h-[85vh] sm:max-w-2xl flex-col p-4 sm:p-6 overflow-hidden">
+        <Modal.Dialog className="flex max-h-[85vh] sm:max-w-2xl flex-col overflow-hidden">
           <Modal.CloseTrigger />
-          <Modal.Header className="border-b pb-4 pr-8">
+          <Modal.Header>
             <div className="flex items-center gap-2">
               <GitMerge className="size-5 text-accent" />
-              <Modal.Heading className="text-base sm:text-lg">Firma Adlarını Birleştir</Modal.Heading>
+              <Modal.Heading className="sm:text-lg">Firma Adlarını Birleştir</Modal.Heading>
             </div>
             <p className="text-sm text-muted text-xs sm:text-sm">
               Benzer yazılan firma adları tespit edildi. Tek tıkla ortak bir ad altında toplayabilirsiniz.
@@ -58,7 +58,7 @@ export function FirmMergeDialog({
               groups.map((group, idx) => {
                 const isMerging = mergingIdx === idx;
                 return (
-                  <Card key={idx} className="space-y-3 p-4">
+                  <Card key={idx} className="space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
                       <div className="min-w-0 flex-1">
                         <span className="text-xs text-muted">Önerilen Ortak Ad:</span>
@@ -91,7 +91,7 @@ export function FirmMergeDialog({
                       <span className="text-xs text-muted">Farklı Yazımlar:</span>
                       <div className="flex flex-wrap gap-1.5">
                         {group.variants.map((v, i) => (
-                          <Chip size="sm" key={i} color={v.name === group.suggested ? "accent" : "default"} variant={v.name === group.suggested ? "primary" : "secondary"} className="text-xs">
+                          <Chip size="sm" key={i} color={v.name === group.suggested ? "accent" : "default"} variant={v.name === group.suggested ? "primary" : "secondary"}>
                             {v.name} ({v.count})
                           </Chip>
                         ))}

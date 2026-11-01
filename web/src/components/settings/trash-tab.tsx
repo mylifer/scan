@@ -85,9 +85,9 @@ export function TrashTab() {
   return (
     <div className="space-y-6">
       <Card>
-        <Card.Header className="flex flex-row items-center justify-between gap-4 pb-4">
+        <Card.Header className="flex flex-row items-center justify-between gap-4">
           <div className="space-y-1">
-            <Card.Title className="text-base font-semibold">Son Silinen Fişler</Card.Title>
+            <Card.Title>Son Silinen Fişler</Card.Title>
             <Card.Description>
               Silinen fişler 30 gün boyunca burada saklanır ve dilediğiniz zaman geri alabilirsiniz.
             </Card.Description>
@@ -138,7 +138,7 @@ export function TrashTab() {
             </div>
           ) : (
             <div className="overflow-x-auto rounded-md border">
-              <Table variant="secondary">
+              <Table>
                 <Table.ScrollContainer>
                   <Table.Content aria-label="Son silinen fişler" className="min-w-[620px]">
                     <Table.Header>
@@ -175,7 +175,7 @@ export function TrashTab() {
                               <Chip size="sm"
                                 color={days <= 1 ? "danger" : "default"}
                                 variant={days <= 1 ? "soft" : "secondary"}
-                                className="gap-1 text-xs"
+                                className="gap-1"
                               >
                                 <Clock className="size-3" />
                                 {trashLeftLabel(days)}
@@ -189,7 +189,7 @@ export function TrashTab() {
                                   size="sm"
                                   isDisabled={isActing}
                                   onPress={() => handleRestore(item)}
-                                  className="gap-1 text-xs h-7 px-2"
+                                  className="gap-1"
                                 >
                                   {isActing ? (
                                     <Loader2 className="size-3 animate-spin" />
@@ -204,7 +204,7 @@ export function TrashTab() {
                                   size="sm"
                                   isDisabled={isActing}
                                   onPress={() => handlePurgeSingle(item)}
-                                  className="gap-1 text-xs h-7 px-2 text-danger hover:bg-danger/10"
+                                  className="gap-1"
                                 >
                                   Kalıcı Sil
                                 </Button>
@@ -238,7 +238,6 @@ export function TrashTab() {
               <Button size="sm"
                 onPress={handleEmptyAll}
                 isDisabled={emptying}
-                className="bg-danger text-destructive-foreground hover:bg-danger/90"
               >
                 {emptying ? "Siliniyor…" : "Tümünü Kalıcı Olarak Sil"}
               </Button>

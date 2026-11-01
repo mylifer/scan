@@ -46,7 +46,7 @@ function ReceiptDetailLoader() {
       <div className="space-y-6">
         <PageHeader title="Fiş Bulunamadı" description={state.error} />
         <Card>
-          <Card.Content className="py-12 text-center text-sm text-muted">
+          <Card.Content className="text-center text-sm text-muted">
             {state.error}
           </Card.Content>
         </Card>
@@ -70,7 +70,7 @@ export default function Page() {
         <div className="space-y-6">
           <PageHeader title="Fiş Yükleniyor…" />
           <Card>
-            <Card.Content className="space-y-4 pt-6">
+            <Card.Content className="space-y-4">
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />

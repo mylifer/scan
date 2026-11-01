@@ -64,12 +64,12 @@ export function DonemOzetDialog({
   return (
     <Modal.Backdrop isOpen={open} onOpenChange={onOpenChange}>
       <Modal.Container className="sm:w-full">
-        <Modal.Dialog className="flex max-h-[90vh] sm:max-w-4xl flex-col p-4 sm:p-6 overflow-hidden">
+        <Modal.Dialog className="flex max-h-[90vh] sm:max-w-4xl flex-col overflow-hidden">
           <Modal.CloseTrigger />
-          <Modal.Header className="border-b pb-4 pr-8">
+          <Modal.Header>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0 flex-1 space-y-1">
-                <Modal.Heading className="break-words text-base sm:text-lg font-semibold">
+                <Modal.Heading className="break-words sm:text-lg">
                   {periodLabel} · Dönem Özeti ({yon === "gelen" ? "Gelen e-Faturalar" : "Giden e-Faturalar"})
                 </Modal.Heading>
                 <p className="text-sm text-muted text-xs sm:text-sm text-muted">
@@ -116,7 +116,7 @@ export function DonemOzetDialog({
               <div className="space-y-2">
                 <h4 className="text-xs font-semibold uppercase text-muted">Fatura Dağılımı</h4>
                 <div className="w-full overflow-x-auto rounded-lg border">
-                  <Table variant="secondary">
+                  <Table>
                     <Table.ScrollContainer>
                       <Table.Content aria-label="Dönem özeti" className="min-w-[520px]">
                         <Table.Header>
@@ -135,7 +135,7 @@ export function DonemOzetDialog({
                             <Table.Cell className="text-right font-medium whitespace-nowrap tabular-nums">{formatTL(ozet.satis.tutar)}</Table.Cell>
                           </Table.Row>
                           {ozet.iade.adet > 0 && (
-                            <Table.Row className="text-danger">
+                            <Table.Row>
                               <Table.Cell className="font-medium">İadeler</Table.Cell>
                               <Table.Cell className="text-right whitespace-nowrap tabular-nums">{ozet.iade.adet}</Table.Cell>
                               <Table.Cell className="text-right whitespace-nowrap tabular-nums">-{formatTL(ozet.iade.matrah)}</Table.Cell>
@@ -181,7 +181,7 @@ export function DonemOzetDialog({
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-semibold tabular-nums">{formatTL(od.matrah)}</span>
-                        <Chip size="sm" variant="secondary" className="text-[10px]">
+                        <Chip size="sm" variant="secondary">
                           {od.kat}× ortalama
                         </Chip>
                       </div>
@@ -210,7 +210,7 @@ function SummaryBlock({
 }) {
   return (
     <Card className={highlight ? "border-accent/40 dark:border-accent/40 bg-accent/5" : ""}>
-      <Card.Header className="pb-2">
+      <Card.Header>
         <p className="text-xs text-muted">{title}</p>
         <Card.Title className="text-xl tabular-nums">{formatTL(tutar)}</Card.Title>
         <p className="text-xs text-muted">{sub}</p>

@@ -111,7 +111,7 @@ Claude Code olarak projede çalışırken aşağıdaki kurallara **mutlaka** uyu
 1. **Yalnızca Geist Fontu:** Sistemde `font-mono`, `Inter` veya sistem fontu kullanılmaz. Parasal değerler, tarihler ve kodlarda `font-mono` yerine `Geist Sans` ile birlikte `tabular-nums` sınıfı kullanılır (`latin-ext` destekli).
 2. **Kategori Rozetleri:** Emojiler kesinlikle kullanılmaz. `CategoryBadge` bileşeni kullanılır (`dotColor` parıltılı neon nokta + 2 harfli büyük harf monogram).
 3. **Koyu Mod Tablo Çizgileri:** Tablolarda yüksek kontrastlı border kullanılmaz. `.dark table tbody tr` satırları `rgba(255, 255, 255, 0.02)` ultra-soft sınır seviyesindedir.
-4. **Cam Efekti (Apple Native Glass):** Özet metrik kartları ve paneller `rounded-2xl border border-border/80 dark:border-white/[0.05] bg-surface/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)]` standardındadır. HeroUI `Card` bileşeni bu stili `globals.css` içindeki `.card` özelleştirmesiyle varsayılan olarak uygular; yeni kartlarda sınıfları elle tekrarlamak yerine `Card` kullanın. Kenarlığı değiştiren vurgulu kartlarda koyu mod için `dark:border-...` da verin (aksi halde `dark:border-white/[0.05]` ezer).
+4. **Native HeroUI görünümü:** Web 1.1.1'den itibaren cam efekti ve tüm bileşen stil ezmeleri kaldırıldı; bileşenler heroui.com'daki görünüm ve animasyonlarıyla kullanılır. HeroUI bileşenlerine yalnız yerleşim sınıfları verilir (ayrıntı: AGENTS.md).
 5. **Para Birimi:** `formatTL` sonucu "₺1.234,56" biçimindedir; sonuna " TL" eklenmez.
 
 ### B. e-Fatura ve Finansal Hesaplamalar

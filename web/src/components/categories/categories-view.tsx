@@ -122,16 +122,16 @@ export function CategoriesView() {
         <div className="space-y-6 lg:col-span-2">
           {/* Yeni Kategori Ekleme Kartı */}
           <Card>
-            <Card.Header className="pb-3">
+            <Card.Header>
               <div className="flex items-center gap-2">
                 <FolderPlus className="size-4 text-accent" />
-                <Card.Title className="text-base font-semibold">Yeni Kategori Ekle</Card.Title>
+                <Card.Title>Yeni Kategori Ekle</Card.Title>
               </div>
               <Card.Description>İşletmenizin gider kalemlerine uygun özel bir kategori tanımlayın.</Card.Description>
             </Card.Header>
             <Card.Content>
               <form onSubmit={handleAddCategory} className="flex gap-2">
-                <Input
+                <Input fullWidth
                   placeholder="Kategori adı (Örn: Dijital Reklam, Ofis İkramı, Danışmanlık)"
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
@@ -149,7 +149,7 @@ export function CategoriesView() {
           {/* Tanımlı Özel Kategoriler Listesi */}
           <Card>
             <Card.Header>
-              <Card.Title className="text-base font-semibold">Özel Kategorileriniz</Card.Title>
+              <Card.Title>Özel Kategorileriniz</Card.Title>
               <Card.Description>
                 Sizin eklediğiniz kategoriler. Düzenleyebilir veya silebilirsiniz (silinen kategorideki fişler &quot;diğer&quot;e aktarılır).
               </Card.Description>
@@ -176,7 +176,7 @@ export function CategoriesView() {
                         <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
                           <Tag className="size-4 text-accent shrink-0" />
                           <span className="font-semibold text-foreground text-sm truncate">{categoryLabel(cat)}</span>
-                          <Chip size="sm" variant="soft" className="text-xs shrink-0">
+                          <Chip size="sm" variant="soft" className="shrink-0">
                             {count} fiş
                           </Chip>
                         </div>
@@ -217,7 +217,7 @@ export function CategoriesView() {
         <div className="space-y-6">
           <Card>
             <Card.Header>
-              <Card.Title className="text-base font-semibold">Hazır Sistem Kategorileri</Card.Title>
+              <Card.Title>Hazır Sistem Kategorileri</Card.Title>
               <Card.Description>Fiş Tarayıcı ile birlikte gelen 25 adet standart muhasebe kategorisi.</Card.Description>
             </Card.Header>
             <Card.Content>
@@ -255,7 +255,7 @@ export function CategoriesView() {
             <form onSubmit={handleSaveEdit} className="space-y-4 pt-2">
               <div className="space-y-2">
                 <Label htmlFor="edit-name">Yeni Kategori Adı</Label>
-                <Input
+                <Input fullWidth
                   id="edit-name"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}

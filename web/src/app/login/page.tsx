@@ -42,11 +42,11 @@ export default function LoginPage() {
           <form onSubmit={onSubmit} className="flex flex-col gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">E-posta</Label>
-              <Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input fullWidth id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Şifre</Label>
-              <Input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input fullWidth id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
             {!supabaseConfigured && <p className="text-sm text-danger">Supabase ayarları eksik (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY).</p>}
             {error && <p role="alert" className="text-sm text-danger">{error}</p>}

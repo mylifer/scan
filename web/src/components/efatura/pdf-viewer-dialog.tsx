@@ -77,12 +77,12 @@ function PdfViewerContent({
   return (
     <Modal.Backdrop isOpen={open} onOpenChange={onOpenChange}>
       <Modal.Container className="sm:w-full">
-        <Modal.Dialog className="flex h-[88vh] sm:max-w-5xl flex-col p-4 sm:p-6 overflow-hidden">
+        <Modal.Dialog className="flex sm:max-w-5xl flex-col overflow-hidden">
           <Modal.CloseTrigger />
-          <Modal.Header className="border-b pb-4 pr-8">
+          <Modal.Header>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0 flex-1 space-y-1">
-                <Modal.Heading className="truncate text-base sm:text-lg font-semibold" title={fatura.unvan || "e-Fatura Önizleme"}>
+                <Modal.Heading className="truncate sm:text-lg" title={fatura.unvan || "e-Fatura Önizleme"}>
                   {fatura.unvan || "e-Fatura Önizleme"}
                 </Modal.Heading>
                 <p className="text-sm text-muted break-all text-xs sm:text-sm text-muted">
