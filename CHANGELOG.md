@@ -16,6 +16,12 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.21 — `b009dbb`
+- **e-Faturalar sayfasına "Tümünü Göster (O Tarihe Kadar)" dönemi ve Apple Segmented Switch eklendi (`web/`):**
+  - **Tümünü Göster / Aylık Segmented Denetimi (`efatura-view.tsx`):** Fişler sayfasındaki dönem anahtarıyla birebir aynı Apple Native segmented tasarımı (`[Tümünü Göster] [Aylık]`) e-Faturalar üst araç çubuğuna eklendi.
+  - **O Tarihe Kadarki Tüm Faturaları Çekme (`fetchAllFaturalar` & `efatura.ts`):** İlk fatura kesilen aydan (QNB portalındaki en eski fatura ayı veya son 1-3 yıl) seçilen aya kadarki tüm aylar 3'erli paralel sorgularla güvenli bir şekilde çekilip tekilleştirilerek (`ettn` & `belgeNo` bazında) ve tarihe göre azalan sırada listelendi.
+  - **Dinamik Dönem Etiketi:** Aktif ayda "Tüm Zamanlar", geçmiş bir ay seçildiğinde ise "Eylül 2026'ya Kadar (Tümü)" şeklinde gösterilen dinamik dönem etiketi; KPI kartları, Excel aktarımı, ZIP PDF indirme ve Dönem Analizi dialoguna yansıtıldı.
+
 ## Web 1.0.20 — `f1bdd62`
 - **e-Faturalar sayfasındaki üst metrik widget'ları Apple Native Glass tasarımına uyarlandı (`web/`):**
   - **macOS Tahoe & Frosted Glass Kart Yapısı (`efatura-view.tsx`):** Düz ve şablon görünümlü eski `StatCard` bileşeni yerine Fişler sayfasıyla birebir uyumlu `rounded-2xl border border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)]` buzlu cam kartları getirildi.
