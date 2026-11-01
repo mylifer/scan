@@ -16,6 +16,13 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.2.0 — `2e51bac`
+- **Yeni kenar çubuğu ("Yüzen Panel"):** Kenar çubuğu artık sayfanın üstünde süzülen yuvarlak bir kart.
+  - Üstte arama kutusu: menüyü filtreler, **⌘K / Ctrl+K** ile odaklanır, Enter ilk sonuca gider.
+  - Logoya tıklayınca açılan menü: Yeni fiş, Ayarlar, Çıkış.
+  - Altta "Yeni Fiş Tara" butonu ve kullanıcı satırı (Ayarlar / Çıkış).
+  - Daraltınca (⌘B) ikon şeridine dönüyor, ikonların üzerine gelince adı görünüyor; mobilde soldan açılan çekmece.
+
 ## Web 1.1.1 — `b07f633`
 - **HeroUI bileşenleri artık heroui.com'daki gibi görünüyor:** Bileşenlere verilen özel stiller (cam efekti, tablo başlık arka planı, sekme yükseklikleri, buton yuvarlatma/gradyanları vb.) kaldırıldı.
   - Tablolar HeroUI'nin kendi görünümünde (gri başlık, kart gövde); sekmelerdeki kayan gösterge, buton basma ve pencere açılış animasyonları HeroUI'deki gibi.
