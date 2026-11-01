@@ -76,16 +76,17 @@ function PdfViewerContent({
 
   return (
     <Modal.Backdrop isOpen={open} onOpenChange={onOpenChange}>
-      <Modal.Container className="sm:w-full">
-        <Modal.Dialog className="flex sm:max-w-5xl flex-col overflow-hidden">
+      {/* PDF okunaklı olsun diye pencere ekranı kaplar (HeroUI "cover" boyutu) */}
+      <Modal.Container size="cover" className="sm:w-full">
+        <Modal.Dialog className="flex flex-col overflow-hidden sm:mx-auto sm:max-w-6xl">
           <Modal.CloseTrigger />
           <Modal.Header>
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 pe-10">
               <div className="min-w-0 flex-1 space-y-1">
-                <Modal.Heading className="truncate sm:text-lg" title={fatura.unvan || "e-Fatura Önizleme"}>
+                <Modal.Heading className="truncate" title={fatura.unvan || "e-Fatura Önizleme"}>
                   {fatura.unvan || "e-Fatura Önizleme"}
                 </Modal.Heading>
-                <p className="text-sm text-muted break-all text-xs sm:text-sm text-muted">
+                <p className="break-all text-sm text-muted">
                   {fatura.belgeNo || fatura.ettn} · {fatura.tarih} ·{" "}
                   <span className="font-semibold text-foreground whitespace-nowrap">
                     {`${formatTL(fatura.tutar)} ${fatura.paraBirimi}`}
@@ -134,7 +135,7 @@ function PdfViewerContent({
             {state.cached && !state.loading && state.cached.blobUrl && (
               <iframe
                 src={state.cached.blobUrl}
-                className="h-full w-full rounded-md border bg-default/20"
+                className="h-full w-full rounded-xl border bg-default"
                 title="e-Fatura Önizleme"
               />
             )}
