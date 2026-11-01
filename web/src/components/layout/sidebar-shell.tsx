@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Drawer } from "@heroui/react";
+import { Button, Card, Drawer } from "@heroui/react";
 import { PanelLeftIcon } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -74,15 +74,15 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Masaüstünde sabit kenar çubuğu, mobilde soldan açılan HeroUI Drawer. */
-export function Sidebar({ className, children }: { className?: string; children: React.ReactNode }) {
+/** "Yüzen panel": masaüstünde kenarlardan boşluklu HeroUI Card, mobilde soldan açılan HeroUI Drawer. */
+export function Sidebar({ children }: { children: React.ReactNode }) {
   const { state, isMobile, openMobile, setOpenMobile } = useSidebar();
 
   if (isMobile) {
     return (
       <Drawer.Backdrop isOpen={openMobile} onOpenChange={setOpenMobile}>
         <Drawer.Content placement="left" className="w-72 max-w-[85vw]">
-          <Drawer.Dialog aria-label="Gezinme menüsü" className={cn("flex h-full flex-col p-0", className)}>
+          <Drawer.Dialog aria-label="Gezinme menüsü" className="flex h-full flex-col gap-3">
             {children}
           </Drawer.Dialog>
         </Drawer.Content>
@@ -90,20 +90,16 @@ export function Sidebar({ className, children }: { className?: string; children:
     );
   }
 
-  const width = state === "collapsed" ? "w-14" : "w-64";
+  const width = state === "collapsed" ? "w-[88px]" : "w-[272px]";
   return (
     <>
       {/* Akıştaki yer tutucu: içerik alanı kenar çubuğu genişliği kadar kayar */}
       <div aria-hidden className={cn("hidden shrink-0 transition-[width] duration-200 md:block", width)} />
       <aside
         data-state={state}
-        className={cn(
-          "fixed inset-y-0 left-0 z-20 hidden h-svh flex-col transition-[width] duration-200 md:flex",
-          width,
-          className,
-        )}
+        className={cn("fixed inset-y-0 left-0 z-20 hidden h-svh p-3 pe-1 transition-[width] duration-200 md:flex", width)}
       >
-        {children}
+        <Card className="h-full w-full min-w-0">{children}</Card>
       </aside>
     </>
   );
