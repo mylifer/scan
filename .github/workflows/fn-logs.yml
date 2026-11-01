@@ -30,7 +30,7 @@ jobs:
           end = datetime.now(timezone.utc)
           start = end - timedelta(hours=6)
           def logs(sql):
-              q = urllib.parse.urlencode({"sql": sql, "iso_timestamp_start": start.isoformat(), "iso_timestamp_end": end.isoformat()})
+              q = urllib.parse.urlencode({"sql": sql, "iso_timestamp_start": start.strftime("%Y-%m-%dT%H:%M:%S.000Z"), "iso_timestamp_end": end.strftime("%Y-%m-%dT%H:%M:%S.000Z")})
               req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/analytics/endpoints/logs?{q}",
                   headers={"Authorization": f"Bearer {tok}", "User-Agent": "fn-logs"})
               try:
