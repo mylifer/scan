@@ -21,8 +21,19 @@ import { formatRunAt, nextRunAt, RECOMMENDED_HOUR, SCHEDULE_HOURS } from '../lib
 import { DRAFTS_SETUP_SQL } from '../lib/setupSql';
 import { type Theme, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
+import { bulkSummary } from '../lib/bulkApprove';
+import { toFormValues } from '../lib/receiptForm';
+import { approveDrafts } from '../services/drafts/bulkSave';
 import { isScannable } from '../services/drafts/draftProcessor';
-import { clearUploadFailures, enqueueDraftUpload, getUploadState, subscribeUploads } from '../services/drafts/uploadQueue';
+import {
+  clearUploadFailures,
+  countStuckUploads,
+  discardStuckUploads,
+  enqueueDraftUpload,
+  getUploadState,
+  retryStuckUploads,
+  subscribeUploads,
+} from '../services/drafts/uploadQueue';
 import { deleteDraft, deleteDrafts, draftImageUrls, scheduleDrafts } from '../services/supabase/draftsRepository';
 import type { ReceiptDraft } from '../types/receipt';
 
@@ -35,6 +46,10 @@ export default function BatchScreen() {
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [uploads, setUploads] = useState(getUploadState());
   const [viewer, setViewer] = useState<string | null>(null);
+  /** Yüklenemeyip telefonda bekleyen fotoğraflar (silinmez; tekrar denenebilir) */
+  const [stuck, setStuck] = useState(0);
+  /** Toplu onay ilerlemesi */
+  const [bulk, setBulk] = useState<{ done: number; total: number } | null>(null);
 
   // isScannable, kuyruğun çalışıp çalışmadığına da bakar; her render'da hesaplanır (ucuz)
   const scannable = drafts.filter(isScannable);
@@ -56,23 +71,83 @@ export default function BatchScreen() {
       .catch(() => missing.forEach((p) => requestedAt.current.delete(p))); // sonraki yenilemede tekrar dene
   }, [drafts]);
 
-  // Yükleme kuyruğunu izle: her tamamlanan yüklemede listeyi yenile, hataları bir kez bildir
+  // Yükleme kuyruğunu izle: her tamamlanan yüklemede listeyi yenile; yüklenemeyenler kalıcı satırda görünür
   const lastCompleted = useRef(getUploadState().completed);
-  useEffect(
-    () =>
-      subscribeUploads((st) => {
-        setUploads(st);
-        if (st.completed !== lastCompleted.current) {
-          lastCompleted.current = st.completed;
-          refresh();
-        }
-        if (st.failed) {
-          showToast(`${st.failed} fotoğraf eklenemedi`, 'error');
-          clearUploadFailures();
-        }
-      }),
-    [refresh],
-  );
+  useEffect(() => {
+    const refreshStuck = () => {
+      countStuckUploads()
+        .then(setStuck)
+        .catch(() => {});
+    };
+    refreshStuck();
+    return subscribeUploads((st) => {
+      setUploads(st);
+      if (st.completed !== lastCompleted.current) {
+        lastCompleted.current = st.completed;
+        refresh();
+      }
+      if (st.lost) {
+        // Kalıcı kopyası alınamayan fotoğraf tekrar denenemez: kullanıcı yeniden eklemeli
+        showAlert('Fotoğraf eklenemedi', `${st.lost} fotoğraf yüklenemedi ve telefonda saklanamadı. Lütfen bu fişleri yeniden ekleyin.`);
+        clearUploadFailures();
+      }
+      if (st.pending === 0) refreshStuck();
+    });
+  }, [refresh]);
+
+  async function retryStuck() {
+    haptics.tap();
+    try {
+      const n = await retryStuckUploads();
+      if (n) showToast(`${n} fotoğraf yeniden yükleniyor`, 'info');
+      setStuck(0);
+    } catch (e) {
+      showAlert('Tekrar denenemedi', errorMessage(e));
+    }
+  }
+
+  function confirmApproveAll() {
+    const list = ready.filter((d) => d.result);
+    if (!list.length) return;
+    showActionSheet({
+      title: `${list.length} fişin tümü onaylansın mı?`,
+      message: 'Fişler okunduğu gibi kaydedilir. Hatalı, olası mükerrer ya da yapay zekânın emin olamadığı fişler kaydedilmez; "İncele ve Kaydet" ile kontrol edebilirsiniz.',
+      options: [
+        {
+          label: `${list.length} Fişi Kaydet`,
+          onPress: async () => {
+            setBulk({ done: 0, total: list.length });
+            try {
+              const r = await approveDrafts(
+                list.map((d) => ({ draft: d, values: toFormValues(d.result!) })),
+                (done, total) => setBulk({ done, total }),
+              );
+              if (r.saved.length) haptics.success();
+              if (r.skipped.length) showAlert('Toplu onay', bulkSummary(r));
+              else showToast(bulkSummary(r));
+            } catch (e) {
+              showAlert('Toplu onay yarıda kaldı', errorMessage(e));
+            } finally {
+              setBulk(null);
+              refresh();
+            }
+          },
+        },
+      ],
+    });
+  }
+
+  function discardStuck() {
+    confirmDestructive(
+      'Yüklenemeyen Fotoğraflar',
+      `${stuck} fotoğraf telefondan silinecek ve fiş olarak eklenmeyecek.`,
+      'Fotoğrafları Sil',
+      async () => {
+        await discardStuckUploads();
+        setStuck(0);
+      },
+    );
+  }
 
   if (notSetUp)
     return (
@@ -167,6 +242,22 @@ export default function BatchScreen() {
             </View>
           </ListSection>
         )}
+        {stuck > 0 && !uploading && (
+          <ListSection footer="Fotoğraflar telefonda saklanıyor; uygulama her açıldığında da kendiliğinden yeniden denenir.">
+            <ListRow
+              title={`${stuck} fotoğraf yüklenemedi`}
+              subtitle="Bağlantı kopmuş olabilir"
+              icon={{ sf: 'exclamationmark.icloud.fill', ion: 'cloud-offline', color: theme.orange }}
+            />
+            <ListRow title="Tekrar Dene" tone="action" onPress={retryStuck} />
+            <ListRow title="Vazgeç ve Sil" tone="destructive" onPress={discardStuck} />
+          </ListSection>
+        )}
+        {bulk && (
+          <ListSection>
+            <ProgressRow theme={theme} label={`Kaydediliyor ${bulk.done}/${bulk.total}`} value={bulk.done / Math.max(bulk.total, 1)} />
+          </ListSection>
+        )}
         {processor.running && (
           <ListSection>
             <ProgressRow theme={theme} label={`Taranıyor ${processor.done}/${processor.total}`} value={processor.done / Math.max(processor.total, 1)} />
@@ -258,12 +349,26 @@ export default function BatchScreen() {
       {toolbarRows > 0 && (
         <Toolbar>
           {ready.length > 0 && (
-            <Button
-              title={`İncele ve Kaydet (${ready.length})`}
-              icon={{ sf: 'checkmark.circle.fill', ion: 'checkmark-circle' }}
-              // Okuma sürerken de açılabilir: okunanlar hazır oldukça incelemeye eklenir
-              onPress={() => router.push('/batch-review')}
-            />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button
+                title={`İncele ve Kaydet (${ready.length})`}
+                icon={{ sf: 'checkmark.circle.fill', ion: 'checkmark-circle' }}
+                // Okuma sürerken de açılabilir: okunanlar hazır oldukça incelemeye eklenir
+                onPress={() => router.push('/batch-review')}
+                disabled={!!bulk}
+                style={{ flex: 1 }}
+              />
+              {ready.length > 1 && (
+                <Button
+                  title="Tümünü Onayla"
+                  icon={{ sf: 'checkmark.circle', ion: 'checkmark-done' }}
+                  variant="tinted"
+                  onPress={confirmApproveAll}
+                  loading={!!bulk}
+                  disabled={!!bulk}
+                />
+              )}
+            </View>
           )}
           {scannable.length > 0 && (
             <View style={{ flexDirection: 'row', gap: 10 }}>

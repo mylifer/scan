@@ -349,8 +349,9 @@ export function KdvView() {
           </div>
           <p>
             Hesaplanan KDV (Beyan) ile İndirilecek KDV (Gelen faturalar + Fişler − İadeler) arasındaki fark alınır.
-            Muhasebeciye gönderilmemiş fişler mevcut ayda düşürülür; gönderilmeyenler sonraki aya devreder ve devreden KDV kalemi olarak listelenir.
-            Muhasebeciye gönderilmiş fişler ise yalnızca işaretlendikleri ayın KDV indirimine dahil edilir.
+            Muhasebeciye bir ay içinde gönderilen fişler bir önceki ayın KDV&apos;sinden düşer (Kasım&apos;da gönderilen → Ekim).
+            Henüz gönderilmemiş fişler de bu ay gönderilecekleri varsayılarak bir önceki ayda gösterilir; bu ay tarihli fişler ise kendi ayında kalır.
+            Daha eski tarihli fişler devreden KDV kalemi olarak ayrıca listelenir.
           </p>
         </CardContent>
       </Card>

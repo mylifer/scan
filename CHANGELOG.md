@@ -16,6 +16,16 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.53.0 · Web 1.0.25 — `COMMIT`
+- **Devreden KDV kuralı değişti (mobil + web, `src/lib/kdvAy.ts`):** Muhasebeciye bir ay içinde gönderilen fişler artık bir önceki ayın KDV'sinden düşüyor (Kasım'da gönderilen → Ekim). Gönderilmemiş fişler bulunulan aydan bir önceki ayda gösteriliyor (Kasım'dayken → Ekim); yalnızca bu ay tarihli fişler kendi ayında kalıyor. Fiş, kendi tarihinden önceki bir aya düşülmüyor. Veritabanı sorgusu mobil ve web için ortak (`kdvFisFiltresi`). 7 yeni test.
+- **Toplu fiş eklemede fotoğraf kaybı giderildi (iPhone):**
+  - Yükleme bağlantı kopukluğunda aynı oturumda 2 kez daha deneniyor (2 sn, 5 sn).
+  - Yüklenemeyen fotoğraf artık 3 denemeden sonra sessizce silinmiyor; telefonda saklanıp uygulama öne geldiğinde yeniden deneniyor.
+  - Toplu Tarama ekranında kalıcı "N fotoğraf yüklenemedi · Tekrar Dene / Vazgeç ve Sil" satırı.
+  - Telefonda saklanamayan bir fotoğraf yüklenemezse kısa bildirim yerine uyarı penceresiyle yeniden eklemesi isteniyor.
+- **"Tümünü Onayla" eklendi (iPhone):** Toplu Tarama ekranında ve inceleme ekranında okunan tüm fişler tek dokunuşla kaydedilebiliyor. Hatalı, olası mükerrer ya da yapay zekânın emin olamadığı alan içeren fişler kaydedilmiyor, incelemeye bırakılıyor; sonunda özet gösteriliyor.
+- Kök testleri: 221 (yeni: `retry.test.ts`, `bulkApprove.test.ts`, KDV dönem testleri).
+
 ## Web 1.0.24 — `729b557`
 - **Yedek geri yükleme:** Fotoğrafların içerik türü dosyanın ilk baytlarından anlaşılıyor (PNG, PDF, WebP, JPEG). Önceden hepsi `image/jpeg` olarak yükleniyordu; PNG ve PDF fişler geri yüklendikten sonra açılmayabiliyordu (`sniffImageContentType`, 1 yeni test).
 - **Yedek manifesti:** Sabit "Web 0.5.0" etiketi yerine derlemedeki commit kodu yazılıyor.

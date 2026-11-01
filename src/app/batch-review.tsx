@@ -9,7 +9,7 @@ import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { HeaderTextButton } from '../components/ui/HeaderButton';
 import { ListRow, ListSection } from '../components/ui/List';
-import { confirmDestructive } from '../lib/actionSheet';
+import { confirmDestructive, showActionSheet } from '../lib/actionSheet';
 import { showAlert } from '../lib/alert';
 import { confirmIfDuplicate } from '../lib/confirmDuplicate';
 import { haptics } from '../lib/haptics';
@@ -17,10 +17,9 @@ import { type as t, useTheme } from '../lib/theme';
 import { getProcessorState, isAutoScanBusy, subscribeDraftStatus, subscribeProcessor } from '../services/drafts/draftProcessor';
 import { getUploadState, subscribeUploads } from '../services/drafts/uploadQueue';
 import { showToast } from '../lib/toast';
-import { DRAFT_WIDTH, prepareArchiveImage } from '../services/image/prepareReceiptImages';
-import { deleteDraft, downloadDraftImage, draftImageUrls, listDrafts } from '../services/supabase/draftsRepository';
-import { releaseLocal } from '../services/supabase/storageFiles';
-import { saveReceipt } from '../services/supabase/receiptsRepository';
+import { approveDrafts, saveDraftAsReceipt } from '../services/drafts/bulkSave';
+import { bulkSummary } from '../lib/bulkApprove';
+import { deleteDraft, draftImageUrls, listDrafts } from '../services/supabase/draftsRepository';
 import type { ReceiptDraft } from '../types/receipt';
 import { useSingleFlight } from '../hooks/useSingleFlight';
 
@@ -37,6 +36,8 @@ export default function BatchReviewScreen() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(0);
+  /** Toplu onay ilerlemesi (sürerken ekranda gösterilir) */
+  const [bulk, setBulk] = useState<{ done: number; total: number } | null>(null);
 
   const current = queue?.[0];
   // Bu ekranda kaydedilen / atlanan / silinen taslaklar (yeniden listelenince tekrar gelmesin)
@@ -131,13 +132,8 @@ export default function BatchReviewScreen() {
       try {
         const data = fromFormValues(values);
         if (!(await confirmIfDuplicate(data))) return;
-        const local = await downloadDraftImage(current.image_path);
-        const archiveUri = await prepareArchiveImage(local, DRAFT_WIDTH).finally(() => releaseLocal(local));
-        await saveReceipt(data, archiveUri);
         // Fiş kaydedildi; taslak silinemese bile "Kaydedilemedi" denmemeli (tekrar kaydedip çift kayıt oluşmasın)
-        try {
-          await deleteDraft(current);
-        } catch {
+        if (!(await saveDraftAsReceipt(current, data))) {
           showToast('Fiş kaydedildi, taslak silinemedi. Toplu Tarama ekranından silebilirsiniz.', 'info', 4500);
         }
         haptics.success();
@@ -149,6 +145,55 @@ export default function BatchReviewScreen() {
         showAlert('Kaydedilemedi', errorMessage(e));
       } finally {
         setSaving(false);
+      }
+    });
+  }
+
+  /** Sıradaki tüm fişleri kaydeder; riskli olanlar (hata, mükerrer, belirsiz alan) incelemeye kalır */
+  function confirmApproveAll() {
+    const list = queueRef.current ?? [];
+    if (!list.length || !values) return;
+    showActionSheet({
+      title: `${list.length} fişin tümü onaylansın mı?`,
+      message: 'Fişler okunduğu gibi kaydedilir. Hatalı, olası mükerrer ya da yapay zekânın emin olamadığı fişler kaydedilmez, incelemeniz için burada kalır.',
+      options: [{ label: `${list.length} Fişi Kaydet`, onPress: () => void approveAllNow() }],
+    });
+  }
+
+  async function approveAllNow() {
+    await runOnce(async () => {
+      const list = queueRef.current ?? [];
+      if (!list.length) return;
+      // Ekrandaki fiş düzenlenmiş olabilir: onun için formdaki değerler kullanılır
+      const items = list
+        .filter((d) => d.result)
+        .map((d) => ({ draft: d, values: d.id === current?.id && values ? values : toFormValues(d.result!) }));
+      setBulk({ done: 0, total: items.length });
+      try {
+        const r = await approveDrafts(items, (done, total) => setBulk({ done, total }));
+        r.saved.forEach((id) => handled.current.add(id));
+        const savedIds = new Set(r.saved);
+        // Bu sırada okunup eklenen fişler de sırada kalır
+        const rest = (queueRef.current ?? []).filter((d) => !savedIds.has(d.id));
+        setQ(rest);
+        const count = saved + r.saved.length;
+        setSaved(count);
+        if (r.saved.length) haptics.success();
+        if (r.undeleted) showToast(`${r.undeleted} taslak silinemedi; Toplu Tarama ekranından silebilirsiniz.`, 'info', 4500);
+        if (rest.length) {
+          show(rest[0]);
+          showAlert('Toplu onay', bulkSummary(r));
+        } else if (scanBusy()) {
+          setValues(null);
+        } else {
+          router.back();
+          showToast(bulkSummary(r));
+        }
+      } catch (e) {
+        haptics.error();
+        showAlert('Toplu onay yarıda kaldı', errorMessage(e));
+      } finally {
+        setBulk(null);
       }
     });
   }
@@ -166,6 +211,18 @@ export default function BatchReviewScreen() {
   }
 
   if (!queue) return <ActivityIndicator style={{ marginTop: 120 }} />;
+
+  if (bulk) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, padding: 24, backgroundColor: theme.background }}>
+        <ActivityIndicator size="large" />
+        <Text style={[t.title3, { color: theme.label, textAlign: 'center' }]}>
+          Kaydediliyor {bulk.done}/{bulk.total}
+        </Text>
+        <Text style={[t.subhead, { color: theme.secondaryLabel, textAlign: 'center' }]}>Lütfen bu ekrandan çıkmayın.</Text>
+      </View>
+    );
+  }
 
   if (!current && busy) {
     return (
@@ -221,6 +278,17 @@ export default function BatchReviewScreen() {
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingTop: 16, paddingBottom: 40 }}>
+        {queue.length > 1 && (
+          <ListSection footer="Riskli fişler (hatalı, olası mükerrer, emin olunamayan alan) kaydedilmez, incelemeniz için kalır.">
+            <ListRow
+              title={`Tümünü Onayla ve Kaydet (${queue.length})`}
+              tone="action"
+              icon={{ sf: 'checkmark.circle.fill', ion: 'checkmark-done-circle', color: theme.green }}
+              onPress={confirmApproveAll}
+              disabled={saving}
+            />
+          </ListSection>
+        )}
         <ReceiptPhoto uri={imageUrl} />
         <ReceiptForm values={values} onChange={setValues} />
         <ListSection>

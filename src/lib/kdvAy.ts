@@ -98,53 +98,77 @@ function ayniAlisveris(fis: ReceiptRecord, f: EFatura): boolean {
   return !v1 || !v2 || v1 === v2;
 }
 
-/**
- * Bir fişin muhasebeciye gönderildiği ay (YYYY-MM) veya gönderilmediyse kendi fiş tarihi (YYYY-MM).
- */
-export function fisKdvAyi(fis: Pick<ReceiptRecord, 'tarih' | 'muhasebe_gonderildi_at'>): string {
-  if (fis.muhasebe_gonderildi_at) {
-    try {
-      const d = new Date(fis.muhasebe_gonderildi_at);
-      if (!Number.isNaN(d.getTime())) {
-        return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit' }).format(d);
-      }
-    } catch {}
-    return String(fis.muhasebe_gonderildi_at).slice(0, 7);
-  }
-  return fis.tarih ? String(fis.tarih).slice(0, 7) : '';
+/** YYYY-MM ayına n ay ekler (negatif: geri gider). */
+export function ayEkle(ay: string, n: number): string {
+  const y = Number(ay.slice(0, 4));
+  const m = Number(ay.slice(5, 7)) - 1 + n;
+  const yy = y + Math.floor(m / 12);
+  const mm = ((m % 12) + 12) % 12;
+  return `${yy}-${String(mm + 1).padStart(2, '0')}`;
+}
+
+/** Fişin muhasebeciye gönderildiği ay (YYYY-MM, Türkiye saatiyle); gönderilmediyse null. */
+export function gonderimAyi(fis: Pick<ReceiptRecord, 'muhasebe_gonderildi_at'>): string | null {
+  if (!fis.muhasebe_gonderildi_at) return null;
+  try {
+    const d = new Date(fis.muhasebe_gonderildi_at);
+    if (!Number.isNaN(d.getTime())) {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit' }).format(d);
+    }
+  } catch {}
+  return String(fis.muhasebe_gonderildi_at).slice(0, 7);
 }
 
 /**
- * Bir fişin hedef ayın (hedefAy: YYYY-MM) KDV indirimine dahil edilip edilmeyeceği.
+ * Fişin KDV'sinin düşüleceği dönem (YYYY-MM).
  *
- * Kurallar:
- * 1) Fiş muhasebeciye gönderildiyse: Yalnızca işaretlendiği ayın (muhasebe_gonderildi_at)
- *    KDV hesabına katılır.
- * 2) Fiş muhasebeciye henüz gönderilmediyse:
- *    - Hedef ay mevcut aysa (hedefAy === simdikiAy): Bu ayın ve geçmiş ayların gönderilmemiş
- *      tüm fişleri mevcut aya devreder ve burada düşürülür (tarih <= simdikiAy).
- *    - Hedef ay geçmiş bir aysa (hedefAy < simdikiAy): Gönderilmeyen fişler mevcut aya devretmiş
- *      olduğundan geçmiş ayda düşülebilir olarak görünmez.
- *    - Hedef ay gelecek bir aysa (hedefAy > simdikiAy): Fişin kendi tarihi hedef aya eşitse dahil edilir.
+ * Muhasebeciye bir ay içinde gönderilen fişler bir önceki ayın beyannamesine girer
+ * (Kasım'da gönderilen → Ekim). Bu yüzden:
+ * 1) Gönderilmiş fiş: gönderim ayı − 1.
+ * 2) Gönderilmemiş fiş: içinde bulunulan ay − 1 (bu ay gönderileceği varsayılır).
+ * Her iki durumda da fiş, kendi tarihinden önceki bir aya düşülemez: fiş tarihi daha yeniyse
+ * kendi ayında kalır (Kasım'dayken eklenen Kasım fişi Kasım'dan düşer).
  */
+export function fisKdvAyi(
+  fis: Pick<ReceiptRecord, 'tarih' | 'muhasebe_gonderildi_at'>,
+  simdikiAy: string = simdikiIstanbulAyi(),
+): string {
+  const gonderim = gonderimAyi(fis);
+  const donem = ayEkle(gonderim ?? simdikiAy, -1);
+  const fisAy = (fis.tarih || '').slice(0, 7);
+  return fisAy && fisAy > donem ? fisAy : donem;
+}
+
+/** Fiş, hedef ayın (YYYY-MM) KDV indirimine dahil mi (bkz. fisKdvAyi). */
 export function fisAyaAitMi(
   fis: Pick<ReceiptRecord, 'tarih' | 'muhasebe_gonderildi_at'>,
   hedefAy: string,
-  simdikiAy: string = simdikiIstanbulAyi()
+  simdikiAy: string = simdikiIstanbulAyi(),
 ): boolean {
-  if (fis.muhasebe_gonderildi_at) {
-    return fisKdvAyi(fis) === hedefAy;
-  }
-  const fisAy = (fis.tarih || '').slice(0, 7);
-  if (!fisAy) return false;
+  if (!fis.tarih) return false;
+  return fisKdvAyi(fis, simdikiAy) === hedefAy;
+}
 
-  if (hedefAy === simdikiAy) {
-    return fisAy <= simdikiAy;
-  } else if (hedefAy < simdikiAy) {
-    return false;
-  } else {
-    return fisAy === hedefAy;
+/**
+ * Hedef ayın KDV fişlerini veritabanından çekmek için PostgREST `or` filtresi. Aday fişler
+ * (kesin eleme sonradan fisAyaAitMi ile yapılır):
+ * - tarihi hedef ayda olanlar,
+ * - hedef aydan bir sonraki ay muhasebeciye gönderilenler,
+ * - hedef ay "bulunulan ay − 1" ise: hedef ayın sonuna kadar tarihli, gönderilmemiş tüm fişler.
+ * Türkiye'de yaz saati olmadığından saat dilimi sabit +03:00 alınır.
+ */
+export function kdvFisFiltresi(hedefAy: string, simdikiAy: string = simdikiIstanbulAyi()): string {
+  const bas = `${hedefAy}-01`;
+  const sonraki = `${ayEkle(hedefAy, 1)}-01`;
+  const ikiSonraki = `${ayEkle(hedefAy, 2)}-01`;
+  const kosullar = [
+    `and(tarih.gte.${bas},tarih.lt.${sonraki})`,
+    `and(muhasebe_gonderildi_at.gte.${sonraki}T00:00:00+03:00,muhasebe_gonderildi_at.lt.${ikiSonraki}T00:00:00+03:00)`,
+  ];
+  if (hedefAy === ayEkle(simdikiAy, -1)) {
+    kosullar.push(`and(muhasebe_gonderildi_at.is.null,tarih.lt.${sonraki})`);
   }
+  return kosullar.join(',');
 }
 
 /**
@@ -152,9 +176,9 @@ export function fisAyaAitMi(
  * Düşülebilir: gelen e-Fatura KDV'si + e-Faturayla eşleşmeyen fişlerin KDV'si − kestiğim iade faturalarının KDV'si
  * (alışı iade edince o alışın KDV'si artık indirilemez). Yalnızca TRY.
  *
- * Muhasebeciye gönderilmiş fişler yalnızca gönderildikleri ayın (muhasebe_gonderildi_at) KDV hesabına katılır.
- * Muhasebeciye henüz gönderilmemiş fişler ise mevcut bulunulan ayda (simdikiAy) düşürülür;
- * önceki aylardan devreden fişler `fis.devredenler` altında aya göre ayrı kalemler halinde listelenir.
+ * Fişler fisKdvAyi'ye göre döneme atanır: gönderilenler gönderim ayı − 1, gönderilmeyenler bulunulan ay − 1
+ * (fiş tarihi daha yeniyse kendi ayı). Daha eski tarihli fişler `fis.devredenler` altında aya göre ayrı kalemler
+ * halinde listelenir.
  */
 export function kdvAyHesapla(
   gelen: EFatura[],

@@ -156,7 +156,7 @@ export default function KdvScreen() {
               kdv.fis.eslesen ? `${kdv.fis.eslesen} fiş bir e-Faturayla aynı alışveriş olduğu için iki kez sayılmadı.` : '',
               kdv.gelenEfatura.eksik ? `${kdv.gelenEfatura.eksik} e-Faturanın KDV bilgisi QNB'den gelmedi.` : '',
               kdv.iade.adet ? 'Kestiğim iade faturalarının KDV\'si, o alışları daha önce indirdiğim için buradan düşüldü.' : '',
-              kdv.fis.adet ? 'Muhasebeciye gönderilmemiş fişler mevcut ayda düşürülür; gönderilmeyenler sonraki aya devreder.' : '',
+              kdv.fis.adet ? 'Muhasebeciye gönderilen fişler gönderim ayından bir önceki aydan düşer; gönderilmeyenler bu ay gönderilecek varsayılır. Bu ay tarihli fişler kendi ayında kalır.' : '',
             ]
               .filter(Boolean)
               .join(' ')}

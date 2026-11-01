@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Platform, RefreshControl, ScrollView, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, Platform, RefreshControl, ScrollView, Switch, Text, View } from 'react-native';
 
 import { CategorySection } from '../../../components/dashboard/CategorySection';
 import { ExportSection } from '../../../components/dashboard/ExportSection';
@@ -71,6 +71,11 @@ export default function DashboardScreen() {
         if (n) showToast(`Önceki çekimden kalan ${n} fotoğraf yükleniyor`, 'info', 3500);
       })
       .catch(() => {});
+    // Bağlantı kopukluğu yüzünden yüklenemeyenler uygulama öne gelince yeniden denensin
+    const sub = AppState.addEventListener('change', (st) => {
+      if (st === 'active') resumePendingUploads().catch(() => {});
+    });
+    return () => sub.remove();
   }, []);
   // Yeni kategoriler için veritabanı kurulumu (003) yapılmadıysa üstte hatırlat
   const [needsCategorySetup, setNeedsCategorySetup] = useState(false);

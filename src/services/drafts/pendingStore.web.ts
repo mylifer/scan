@@ -17,8 +17,8 @@ export async function persistPhoto(): Promise<PendingPhoto | null> {
 
 export async function removePending(): Promise<void> {}
 
-export async function markFailed(): Promise<boolean> {
-  return false;
+export async function markFailed(): Promise<number> {
+  return 0;
 }
 
 export async function loadPending(): Promise<PendingPhoto[]> {

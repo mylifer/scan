@@ -1,27 +1,33 @@
 import { prepareDraftImage } from '../image/prepareReceiptImages';
 import { revokeBlobUrl } from '../../lib/pendingPhoto';
+import { withRetry } from '../../lib/retry';
 import { supabase } from '../supabase/client';
 import { addDraft } from '../supabase/draftsRepository';
 import type { ReceiptDraft } from '../../types/receipt';
 import { autoScan } from './draftProcessor';
-import { loadPending, markFailed, type PendingPhoto, persistPhoto, removePending } from './pendingStore';
+import { loadPending, markFailed, MAX_ATTEMPTS, type PendingPhoto, persistPhoto, removePending } from './pendingStore';
 
 /**
  * Toplu çekimde fotoğrafları arka planda, sırayla taslağa yükler.
  * Kamera ekranı kapansa da kuyruk devam eder; Toplu Tarama ekranı ilerlemeyi izler.
- * iPhone'da her fotoğraf önce kalıcı klasöre kopyalanır: uygulama yükleme bitmeden kapanırsa
- * bir sonraki açılışta resumePendingUploads ile kaldığı yerden yüklenir.
+ * iPhone'da her fotoğraf önce kalıcı klasöre kopyalanır: yükleme başarısız olursa ya da uygulama
+ * yükleme bitmeden kapanırsa fotoğraf silinmez; resumePendingUploads ile (açılışta, uygulama öne
+ * geldiğinde ya da kullanıcı "Tekrar Dene" deyince) yeniden yüklenir.
  */
 export interface UploadState {
   /** Sırada ya da yüklenmekte olan fotoğraf sayısı */
   pending: number;
   /** Bu oturumda yüklenemeyen fotoğraf sayısı */
   failed: number;
+  /** Kalıcı kopyası da alınamadığı için tekrar denenemeyen (kaybolan) fotoğraf sayısı */
+  lost: number;
   /** Tamamlanan yükleme sayısı (her yüklemede artar; ekranlar yenilemek için izler) */
   completed: number;
 }
 
-let state: UploadState = { pending: 0, failed: 0, completed: 0 };
+let state: UploadState = { pending: 0, failed: 0, lost: 0, completed: 0 };
+/** Kuyrukta bekleyen ya da yüklenmekte olan kalıcı fotoğraflar (aynı fotoğraf iki kez sıraya girmesin) */
+const inFlight = new Set<string>();
 const listeners = new Set<(s: UploadState) => void>();
 let chain: Promise<void> = Promise.resolve();
 
@@ -49,18 +55,20 @@ function schedule(source: Promise<{ uri: string; width: number; pending: Pending
   const job = chain.then(async () => {
     const { uri, width, pending } = await source;
     try {
-      const draft = await addDraft(await prepareDraftImage(uri, width));
+      // Geçici bağlantı kopukluklarında aynı oturumda 2 kez daha denenir (2 sn, 5 sn sonra)
+      const draft = await withRetry(async () => addDraft(await prepareDraftImage(uri, width)));
       if (pending) await removePending(pending.key);
       set({ pending: state.pending - 1, completed: state.completed + 1 });
       // Hızlı çekim: yüklenir yüklenmez okumaya al (kullanıcı bu sırada sonrakini çeker)
       if (scan) autoScan(draft);
       return draft;
     } catch {
-      // Kalıcı kopya bir sonraki açılışta tekrar denenir (en fazla MAX_ATTEMPTS kez)
+      // Kalıcı kopya silinmez: uygulama öne gelince ya da "Tekrar Dene" ile yeniden yüklenir
       if (pending) await markFailed(pending.key);
-      set({ pending: state.pending - 1, failed: state.failed + 1 });
+      set({ pending: state.pending - 1, failed: state.failed + 1, lost: state.lost + (pending ? 0 : 1) });
       return null;
     } finally {
+      if (pending) inFlight.delete(pending.key);
       // Web'de seçilen fotoğrafın tam çözünürlüklü kopyası yüklendikten sonra bellekte kalmasın
       revokeBlobUrl(uri);
     }
@@ -78,30 +86,61 @@ export function enqueueDraftUpload(uri: string, width: number, options: { scan?:
   const source = currentOwner()
     .then((owner) => persistPhoto(uri, width, owner))
     .catch(() => null)
-    .then((pending) => ({ uri: pending?.uri ?? uri, width, pending }));
+    .then((pending) => {
+      if (pending) inFlight.add(pending.key);
+      return { uri: pending?.uri ?? uri, width, pending };
+    });
   return schedule(source, options.scan);
 }
 
-let resumed = false;
+let resuming: Promise<number> | null = null;
 
 /**
- * Önceki oturumda yüklenemeden kalan fotoğrafları kuyruğa alır (açılışta bir kez, giriş yapıldıktan sonra).
+ * Yüklenemeden kalan kalıcı fotoğrafları kuyruğa alır (açılışta, uygulama öne geldiğinde, "Tekrar Dene").
+ * @param all false ise MAX_ATTEMPTS kez başarısız olanlar atlanır (otomatik denemede); true ise hepsi denenir
  * @returns kuyruğa alınan fotoğraf sayısı
  */
-export async function resumePendingUploads(): Promise<number> {
-  if (resumed) return 0;
-  resumed = true;
+export function resumePendingUploads(all = false): Promise<number> {
+  if (resuming) return resuming;
+  resuming = (async () => {
+    const owner = await currentOwner();
+    if (!owner) return 0;
+    const items = (await loadPending(owner)).filter((p) => !inFlight.has(p.key) && (all || p.attempts < MAX_ATTEMPTS));
+    items.forEach((p) => {
+      inFlight.add(p.key);
+      schedule(Promise.resolve({ uri: p.uri, width: p.width, pending: p }));
+    });
+    return items.length;
+  })().finally(() => {
+    resuming = null;
+  });
+  return resuming;
+}
+
+/** Yüklenemeyip bekleyen (kuyrukta olmayan) kalıcı fotoğraf sayısı */
+export async function countStuckUploads(): Promise<number> {
   const owner = await currentOwner();
-  if (!owner) {
-    resumed = false;
-    return 0;
-  }
-  const items = await loadPending(owner);
-  items.forEach((p) => schedule(Promise.resolve({ uri: p.uri, width: p.width, pending: p })));
+  if (!owner) return 0;
+  return (await loadPending(owner)).filter((p) => !inFlight.has(p.key)).length;
+}
+
+/** Bekleyen tüm fotoğrafları yeniden dener (kullanıcı "Tekrar Dene" dediğinde) */
+export function retryStuckUploads(): Promise<number> {
+  set({ failed: 0, lost: 0 });
+  return resumePendingUploads(true);
+}
+
+/** Yüklenemeyen fotoğraflardan vazgeçer: kalıcı kopyaları siler (yalnızca kullanıcı onayıyla) */
+export async function discardStuckUploads(): Promise<number> {
+  const owner = await currentOwner();
+  if (!owner) return 0;
+  const items = (await loadPending(owner)).filter((p) => !inFlight.has(p.key));
+  for (const p of items) await removePending(p.key);
+  set({ failed: 0, lost: 0 });
   return items.length;
 }
 
 /** Hata sayacını sıfırlar (kullanıcı uyarıyı gördükten sonra). */
 export function clearUploadFailures() {
-  set({ failed: 0 });
+  set({ failed: 0, lost: 0 });
 }

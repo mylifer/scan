@@ -59,6 +59,7 @@ npm run build      # Static export build (out/)
 - **Badges:** Emojis are deprecated; use `CategoryBadge` (dotColor status dot + 2-letter uppercase monogram).
 - **Tables:** Dark mode row dividers use ultra-soft 2% opacity (`rgba(255, 255, 255, 0.02)`).
 - **Cards:** Apple Native Glass / macOS Tahoe frosted glass design (`bg-card/75 backdrop-blur-xl border-border/80`). The base `Card` (`components/ui/card.tsx`) applies it by default — use `Card` instead of repeating the classes.
+- **KDV period:** Receipts sent to the accountant in month M are deducted in M−1; unsent receipts in (current month − 1); never earlier than the receipt's own month. Single source: `fisKdvAyi` / `kdvFisFiltresi` in `src/lib/kdvAy.ts` (shared by mobile and web).
 - **Currency:** `formatTL` already returns "₺1.234,56"; never append " TL".
 - **e-Fatura:** The UBL KDV fallback lives in `supabase/functions/qnb-efatura/index.ts` (`tutarlariTamamla`); there is no `ublFallback.ts`. "Tümünü Göster" (`fetchAllFaturalar` in `web/src/lib/efatura.ts`) must keep 3-way concurrency, surface failed months/warnings, and never cache incomplete results.
 - **Version skew:** Keep `VersionGuard`, `(app)/error.tsx` and the `_next/static` cache step in `deploy-web.yml`; GitHub Pages can't use Next's `deploymentId` protection. In Next 16, `error.tsx` receives `retry` (not `reset`).

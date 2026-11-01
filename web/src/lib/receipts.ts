@@ -1,5 +1,5 @@
 import { receiptImageName, round2, trDateToIso } from "@shared/lib/format";
-import { fisAyaAitMi, simdikiIstanbulAyi } from "@shared/lib/kdvAy";
+import { ayEkle, fisAyaAitMi, kdvFisFiltresi, simdikiIstanbulAyi } from "@shared/lib/kdvAy";
 import { setCustomCategories } from "@shared/lib/categories";
 import { chunks, extraColumns, toRecord } from "@shared/services/supabase/receiptRows";
 import type { ReceiptData, ReceiptRecord } from "@shared/types/receipt";
@@ -37,40 +37,29 @@ export async function listReceipts(range?: DateRange): Promise<ReceiptRecord[]> 
 }
 
 /**
- * KDV hesabı için döneme ait fişler:
- * 1) Bu ay muhasebeciye gönderilmiş fişler (fiş tarihi eski/farklı olsa bile bu ay indirilir).
- * 2) Henüz gönderilmemiş fişler mevcut ayda indirilir (önceki aylardan devredenler dahil).
- * Başka bir ay muhasebeciye gönderilmiş fişler (fiş tarihi bu ay olsa bile) hariç tutulur.
+ * KDV hesabı için döneme ait fişler (kural: @shared/lib/kdvAy → fisKdvAyi).
+ * Gönderilen fişler gönderim ayı − 1, gönderilmeyenler bulunulan ay − 1 dönemine düşer;
+ * fiş tarihi daha yeniyse kendi ayında kalır.
  */
 export async function listReceiptsForKdv(range: DateRange): Promise<ReceiptRecord[]> {
   const month = range.from.slice(0, 7);
   const currentMonth = simdikiIstanbulAyi();
-  // Türkiye saat dilimi UTC+3 olduğu için timestamptz aralığı:
-  const tzFrom = `${range.from}T00:00:00+03:00`;
-  const tzTo = `${range.to}T00:00:00+03:00`;
+  const filtre = kdvFisFiltresi(month, currentMonth);
 
   const rows: ReceiptRecord[] = [];
   for (let offset = 0; ; offset += PAGE_SIZE) {
-    let query = supabase.from(TABLE).select("*");
-    if (month === currentMonth) {
-      // Mevcut ay: bu ay gönderilenler VEYA henüz gönderilmemiş olup tarihi bu ay veya öncesi olanlar
-      query = query.or(
-        `and(muhasebe_gonderildi_at.gte.${tzFrom},muhasebe_gonderildi_at.lt.${tzTo}),and(muhasebe_gonderildi_at.is.null,tarih.lt.${range.to})`
-      );
-    } else {
-      // Geçmiş veya gelecek ay: fiş tarihi bu ay olanlar VEYA muhasebe_gonderildi_at bu ay olanlar
-      query = query.or(
-        `and(tarih.gte.${range.from},tarih.lt.${range.to}),and(muhasebe_gonderildi_at.gte.${tzFrom},muhasebe_gonderildi_at.lt.${tzTo})`
-      );
-    }
-    const { data, error } = await query
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select("*")
+      .or(filtre)
       .order("tarih", { ascending: false })
       .order("created_at", { ascending: false })
       .order("id")
       .range(offset, offset + PAGE_SIZE - 1);
     if (error) {
       console.warn("KDV fiş sorgusu hatası, fallback yapılıyor:", error.message);
-      const fallbackRows = await listReceipts(month === currentMonth ? { from: "2000-01-01", to: range.to } : range);
+      // Bu döneme düşen her fişin tarihi dönemin sonuna kadardır
+      const fallbackRows = await listReceipts({ from: "2000-01-01", to: `${ayEkle(month, 1)}-01` });
       return fallbackRows.filter((r) => fisAyaAitMi(r, month, currentMonth));
     }
     rows.push(...(data ?? []).map(toRecord));
