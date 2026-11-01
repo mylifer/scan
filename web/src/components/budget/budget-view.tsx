@@ -97,7 +97,7 @@ export function BudgetView() {
       toast.success("Aylık bütçe kaldırıldı.");
     } else {
       setMonthlyBudget(parsed);
-      toast.success(`Aylık bütçe ${formatTL(parsed)} TL olarak güncellendi.`);
+      toast.success(`Aylık bütçe ${formatTL(parsed)} olarak güncellendi.`);
     }
     setEditingBudget(false);
   };
@@ -218,10 +218,10 @@ export function BudgetView() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="font-medium text-foreground">
-                  Harcanan: {loading ? "…" : `${formatTL(totalSpent)} TL`}
+                  Harcanan: {loading ? "…" : `${formatTL(totalSpent)}`}
                 </span>
                 <span className="text-muted-foreground">
-                  Hedef: {formatTL(monthlyBudget)} TL (%{Math.round(status.ratio * 100)})
+                  Hedef: {formatTL(monthlyBudget)} (%{Math.round(status.ratio * 100)})
                 </span>
               </div>
 
@@ -242,11 +242,11 @@ export function BudgetView() {
               <div className="flex justify-between text-xs text-muted-foreground">
                 {status.remaining > 0 ? (
                   <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                    Kalan Bütçe: {formatTL(status.remaining)} TL
+                    Kalan Bütçe: {formatTL(status.remaining)}
                   </span>
                 ) : (
                   <span className="text-destructive font-medium">
-                    Aşılan Tutar: {formatTL(status.over)} TL
+                    Aşılan Tutar: {formatTL(status.over)}
                   </span>
                 )}
                 <span>{receipts.length} adet fiş</span>
@@ -263,7 +263,7 @@ export function BudgetView() {
             <div className="rounded-lg border bg-card p-4">
               <p className="text-xs text-muted-foreground">Toplam Harcama</p>
               <p className="text-2xl font-bold tabular-nums text-foreground">
-                {loading ? <Skeleton className="h-7 w-28" /> : `${formatTL(totalSpent)} TL`}
+                {loading ? <Skeleton className="h-7 w-28" /> : `${formatTL(totalSpent)}`}
               </p>
             </div>
             <div className="rounded-lg border bg-card p-4">
@@ -278,7 +278,7 @@ export function BudgetView() {
                 {loading ? (
                   <Skeleton className="h-7 w-24" />
                 ) : receipts.length > 0 ? (
-                  `${formatTL(totalSpent / receipts.length)} TL`
+                  `${formatTL(totalSpent / receipts.length)}`
                 ) : (
                   "—"
                 )}
@@ -317,7 +317,7 @@ export function BudgetView() {
                     {item.count} adet
                   </TableCell>
                   <TableCell className="text-right font-semibold tabular-nums text-foreground">
-                    {formatTL(item.total)} TL
+                    {formatTL(item.total)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">

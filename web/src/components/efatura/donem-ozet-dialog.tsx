@@ -186,7 +186,7 @@ export function DonemOzetDialog({
                       <span className="font-medium">{od.belgeNo || od.ettn}</span> · {od.tarih}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold tabular-nums">{formatTL(od.matrah)} TL</span>
+                      <span className="font-semibold tabular-nums">{formatTL(od.matrah)}</span>
                       <Badge variant="outline" className="text-[10px]">
                         {od.kat}× ortalama
                       </Badge>
@@ -214,10 +214,10 @@ function SummaryBlock({
   highlight?: boolean;
 }) {
   return (
-    <Card size="sm" className={highlight ? "border-primary/40 bg-primary/5" : ""}>
+    <Card size="sm" className={highlight ? "border-primary/40 dark:border-primary/40 bg-primary/5" : ""}>
       <CardHeader className="pb-2">
         <p className="text-xs text-muted-foreground">{title}</p>
-        <CardTitle className="text-xl tabular-nums">{formatTL(tutar)} TL</CardTitle>
+        <CardTitle className="text-xl tabular-nums">{formatTL(tutar)}</CardTitle>
         <p className="text-xs text-muted-foreground">{sub}</p>
       </CardHeader>
     </Card>

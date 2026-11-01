@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CategoryBadge } from "@/components/ui/category-badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -180,9 +181,7 @@ export function TrashTab() {
                           {formatTL(item.receipt.toplam_tutar)}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className="capitalize text-xs">
-                            {item.receipt.kategori}
-                          </Badge>
+                          <CategoryBadge category={item.receipt.kategori} size="sm" />
                         </TableCell>
                         <TableCell className="tabular-nums text-xs text-muted-foreground">
                           {isoToTrDate(item.deleted_at.slice(0, 10))}

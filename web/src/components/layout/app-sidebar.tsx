@@ -108,7 +108,7 @@ function SidebarMonthlyCard() {
         <span className="text-primary font-semibold">{currentMonth.label}</span>
       </div>
       <div className="text-[17px] font-bold tabular-nums text-foreground">
-        {formatTL(stats.total)} TL
+        {formatTL(stats.total)}
       </div>
       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
         <span>{stats.count} adet fiş</span>

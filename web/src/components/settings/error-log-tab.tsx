@@ -196,7 +196,7 @@ export function ErrorLogTab() {
               {selectedError.detail ? (
                 <div className="space-y-1.5">
                   <span className="text-xs font-semibold text-muted-foreground">Teknik Detay (Stack Trace):</span>
-                  <pre className="max-h-60 overflow-x-auto rounded-lg border bg-muted/60 p-3 font-mono text-xs text-foreground/90 whitespace-pre-wrap break-all">
+                  <pre className="max-h-60 overflow-x-auto rounded-lg border bg-muted/60 p-3 text-xs tabular-nums text-foreground/90 whitespace-pre-wrap break-all">
                     {selectedError.detail}
                   </pre>
                 </div>

@@ -209,7 +209,7 @@ export function KdvView() {
             {loading ? (
               <Skeleton className="h-9 w-48" />
             ) : kdv ? (
-              `${formatTL(Math.abs(kdv.sonuc))} TL`
+              `${formatTL(Math.abs(kdv.sonuc))}`
             ) : (
               "—"
             )}
@@ -244,21 +244,21 @@ export function KdvView() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Faturada Yazan KDV:</span>
                 <span className="font-medium tabular-nums">
-                  {loading ? <Skeleton className="h-4 w-20" /> : `${formatTL(kdv?.kestigim.faturada ?? 0)} TL`}
+                  {loading ? <Skeleton className="h-4 w-20" /> : `${formatTL(kdv?.kestigim.faturada ?? 0)}`}
                 </span>
               </div>
               {(kdv?.kestigim.tevkifat ?? 0) > 0 && (
                 <div className="flex justify-between text-muted-foreground">
                   <span>Tevkifat Kesintisi (Alıcı öder):</span>
                   <span className="tabular-nums">
-                    -{formatTL(kdv?.kestigim.tevkifat ?? 0)} TL
+                    -{formatTL(kdv?.kestigim.tevkifat ?? 0)}
                   </span>
                 </div>
               )}
               <div className="border-t pt-2 flex justify-between font-semibold">
                 <span>Beyan Edilecek KDV:</span>
                 <span className="tabular-nums text-foreground">
-                  {loading ? <Skeleton className="h-4 w-24" /> : `${formatTL(kdv?.kestigim.beyan ?? 0)} TL`}
+                  {loading ? <Skeleton className="h-4 w-24" /> : `${formatTL(kdv?.kestigim.beyan ?? 0)}`}
                 </span>
               </div>
             </div>
@@ -285,7 +285,7 @@ export function KdvView() {
                   <FileSpreadsheet className="size-3.5" /> Gelen e-Faturalar ({kdv?.gelenEfatura.adet ?? 0}):
                 </span>
                 <span className="font-medium tabular-nums">
-                  {loading ? <Skeleton className="h-4 w-20" /> : `${formatTL(kdv?.gelenEfatura.kdv ?? 0)} TL`}
+                  {loading ? <Skeleton className="h-4 w-20" /> : `${formatTL(kdv?.gelenEfatura.kdv ?? 0)}`}
                 </span>
               </div>
 
@@ -295,7 +295,7 @@ export function KdvView() {
                   <Receipt className="size-3.5" /> {(kdv?.fis.devredenler?.length ?? 0) > 0 ? `${monthInfo.label.split(" ")[0]} Fişleri` : "Taranan POS Fişleri"} ({kdv?.fis.buAyAdet ?? kdv?.fis.adet ?? 0}):
                 </span>
                 <span className="font-medium tabular-nums">
-                  {loading ? <Skeleton className="h-4 w-20" /> : `${formatTL(kdv?.fis.buAyKdv ?? kdv?.fis.kdv ?? 0)} TL`}
+                  {loading ? <Skeleton className="h-4 w-20" /> : `${formatTL(kdv?.fis.buAyKdv ?? kdv?.fis.kdv ?? 0)}`}
                 </span>
               </div>
 
@@ -306,7 +306,7 @@ export function KdvView() {
                     <Clock className="size-3.5 text-amber-500" /> {d.etiket} ({d.adet}):
                   </span>
                   <span className="font-medium tabular-nums text-foreground">
-                    {formatTL(d.kdv)} TL
+                    {formatTL(d.kdv)}
                   </span>
                 </div>
               ))}
@@ -315,7 +315,7 @@ export function KdvView() {
                 <div className="flex justify-between text-destructive">
                   <span>Kestiğim İadeler ({kdv?.iade.adet} adet):</span>
                   <span className="tabular-nums">
-                    -{formatTL(kdv?.iade.kdv ?? 0)} TL
+                    -{formatTL(kdv?.iade.kdv ?? 0)}
                   </span>
                 </div>
               )}
@@ -323,7 +323,7 @@ export function KdvView() {
               <div className="border-t pt-2 flex justify-between font-semibold">
                 <span>Toplam Düşülebilir KDV:</span>
                 <span className="tabular-nums text-foreground">
-                  {loading ? <Skeleton className="h-4 w-24" /> : `${formatTL(kdv?.dusulebilir ?? 0)} TL`}
+                  {loading ? <Skeleton className="h-4 w-24" /> : `${formatTL(kdv?.dusulebilir ?? 0)}`}
                 </span>
               </div>
             </div>

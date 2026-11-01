@@ -16,6 +16,13 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.23 — `COMMIT`
+- **Apple Native Glass tasarımı tüm sayfalara yayıldı (`web/src/components/ui/card.tsx`):** Temel `Card` bileşeni cam standardına geçirildi (`rounded-2xl border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl shadow-[0_2px_16px_rgba(0,0,0,0.03)]`). KDV, Bütçe, Firmalar, Kategoriler, Vergi Takvimi, Ayarlar, Fiş formu/detayı ve Giriş ekranı artık Fişler ve e-Faturalar ile aynı kartları kullanıyor. Vurgulu kartlar (Vergi Takvimi, Dönem Analizi) koyu modda da birincil kenarlığını koruyor.
+- **Çift para birimi düzeltildi:** `formatTL` zaten "₺" ile döndürdüğü halde 32 yerde sonuna " TL" ekleniyordu ("₺1.234,56 TL"). Ek kaldırıldı.
+- **Çöp Kutusu:** Kategori ham metin `Badge` yerine `CategoryBadge` ile gösteriliyor.
+- **Emoji kalıntısı silindi:** `category-badge.tsx` içindeki kullanılmayan 25 emoji `icon` alanı kaldırıldı.
+- **Yalnızca Geist Sans:** Hata Günlüğü'ndeki `font-mono` kaldırıldı, Geist Mono fontu artık yüklenmiyor; `--font-mono` Geist Sans'a yönlendirildi.
+
 ## Web 1.0.22 — `38e17fa`
 - **e-Faturalar "Tümünü Göster" artık eksik veriyi sessizce göstermiyor (`web/src/lib/efatura.ts`, `efatura-view.tsx`):**
   - Yüklenemeyen aylar ("2 ay yüklenemedi (Eylül 2026, Ekim 2026)…") ve QNB'den gelen uyarılar kalıcı bir uyarı şeridinde gösteriliyor; hiçbir ay yüklenemezse (ör. QNB bilgileri eksik) hata bildirimi çıkıyor.

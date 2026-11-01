@@ -125,7 +125,7 @@ export function TaxCalendarView() {
 
       {/* Yaklaşan İlk Beyanname Kartı */}
       {nextDeadline && (
-        <Card className="border-primary/40 bg-primary/5">
+        <Card className="border-primary/40 dark:border-primary/40 bg-primary/5">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase text-primary">
               <Clock className="size-4" />

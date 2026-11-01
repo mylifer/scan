@@ -529,7 +529,7 @@ export function EFaturaView() {
             {yon === "gelen" ? "Toplam Gider Tutarı" : "Toplam Satış Tutarı"}
           </div>
           <div className="text-2xl font-bold tracking-tight text-foreground tabular-nums mt-0.5">
-            {loading ? <Skeleton className="h-7 w-32 my-0.5" /> : `${formatTL(stats.tryTotal)} TL`}
+            {loading ? <Skeleton className="h-7 w-32 my-0.5" /> : `${formatTL(stats.tryTotal)}`}
           </div>
           <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5 truncate">
             {stats.currencies.length > 0 ? (
@@ -559,7 +559,7 @@ export function EFaturaView() {
             {yon === "gelen" ? "Düşülebilir Toplam KDV" : "Tahakkuk Eden KDV"}
           </div>
           <div className="text-2xl font-bold tracking-tight text-indigo-600 dark:text-indigo-400 tabular-nums mt-0.5">
-            {loading ? <Skeleton className="h-7 w-28 my-0.5" /> : `${formatTL(stats.netKdv)} TL`}
+            {loading ? <Skeleton className="h-7 w-28 my-0.5" /> : `${formatTL(stats.netKdv)}`}
           </div>
           <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5 truncate">
             <span className="size-1.5 rounded-full bg-indigo-500 shrink-0" />
@@ -713,7 +713,7 @@ export function EFaturaView() {
             </span>
             <span className="text-muted-foreground">
               (Toplam:{" "}
-              {formatTL(selectedFaturalar.reduce((acc, f) => acc + f.tutar, 0))} TL)
+              {formatTL(selectedFaturalar.reduce((acc, f) => acc + f.tutar, 0))})
             </span>
           </div>
 

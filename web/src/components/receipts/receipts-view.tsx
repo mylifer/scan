@@ -231,7 +231,7 @@ export function ReceiptsView() {
           </div>
           <div className="text-xs font-medium text-muted-foreground">Toplam Harcama</div>
           <div className="text-2xl font-bold tracking-tight text-foreground tabular-nums mt-0.5">
-            {loading ? <Skeleton className="h-7 w-28 my-0.5" /> : `${formatTL(summary.toplamGider)} TL`}
+            {loading ? <Skeleton className="h-7 w-28 my-0.5" /> : `${formatTL(summary.toplamGider)}`}
           </div>
           <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-sky-500"></span>
@@ -251,7 +251,7 @@ export function ReceiptsView() {
           </div>
           <div className="text-xs font-medium text-muted-foreground">Düşülebilir Toplam KDV</div>
           <div className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums mt-0.5">
-            {loading ? <Skeleton className="h-7 w-28 my-0.5" /> : `${formatTL(summary.toplamKdv)} TL`}
+            {loading ? <Skeleton className="h-7 w-28 my-0.5" /> : `${formatTL(summary.toplamKdv)}`}
           </div>
           <div className="text-[11px] text-muted-foreground mt-1 tabular-nums truncate">
             %1: {formatTL(summary.kdv1)} · %10: {formatTL(summary.kdv10)} · %20: {formatTL(summary.kdv20)}
@@ -534,7 +534,7 @@ export function ReceiptsView() {
       {selectedRows.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-sky-500/20 bg-sky-500/5 backdrop-blur-md px-4 py-2.5 text-sm shadow-xs animate-in fade-in-50 duration-150">
           <span className="font-semibold text-foreground">{selectedRows.length} fiş seçildi</span>
-          <span className="text-muted-foreground tabular-nums">· {formatTL(summarizeReceipts(selectedRows).toplamGider)} TL</span>
+          <span className="text-muted-foreground tabular-nums">· {formatTL(summarizeReceipts(selectedRows).toplamGider)}</span>
           <div className="ml-auto flex flex-wrap items-center gap-2">
             <Button size="sm" variant="outline" className="h-8 rounded-xl text-xs gap-1.5" onClick={() => onMarkSent(true)} disabled={!!busy}>
               <Send className="size-3.5" /> Gönderildi işaretle
@@ -650,12 +650,12 @@ export function ReceiptsView() {
 
                       {/* KDV Tutarı */}
                       <TableCell className="text-right text-xs text-muted-foreground tabular-nums">
-                        {formatTL(r.toplam_kdv)} TL
+                        {formatTL(r.toplam_kdv)}
                       </TableCell>
 
                       {/* Toplam Tutar */}
                       <TableCell className="text-right text-sm font-bold tabular-nums text-foreground">
-                        {formatTL(r.toplam_tutar)} TL
+                        {formatTL(r.toplam_tutar)}
                       </TableCell>
 
                       {/* Muhasebe Durumu */}
