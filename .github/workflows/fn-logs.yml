@@ -31,7 +31,7 @@ jobs:
           start = end - timedelta(hours=6)
           def logs(sql):
               q = urllib.parse.urlencode({"sql": sql, "iso_timestamp_start": start.isoformat(), "iso_timestamp_end": end.isoformat()})
-              req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/analytics/endpoints/logs.all?{q}",
+              req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/analytics/endpoints/logs?{q}",
                   headers={"Authorization": f"Bearer {tok}", "User-Agent": "fn-logs"})
               try:
                   with urllib.request.urlopen(req, timeout=60) as r: return json.loads(r.read() or b"null")
