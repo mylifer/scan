@@ -44,7 +44,10 @@ jobs:
         run: git checkout --detach "$REF"
       - name: Sürüm etiketini ayarla
         # Uygulamanın altında görünen commit kodu (geri dönüşte eski commit'in kodu)
-        run: echo "EXPO_PUBLIC_APP_VERSION=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+        run: |
+          echo "EXPO_PUBLIC_APP_VERSION=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          # Next.js web: açık sekmeler version.json ile karşılaştırıp yeni sürümü fark eder
+          echo "NEXT_PUBLIC_APP_VERSION=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -72,6 +75,32 @@ jobs:
           rm -rf dist
           mkdir -p dist
           cp -r web/out/* dist/
+
+      # Yayın sonrası açık kalan sekmeler eski JS parçalarını isteyebilir (404 → "Loading chunk failed").
+      # Önceki yayınların _next/static dosyaları pakete eklenir; 30 günden eski olanlar budanır.
+      - name: Önceki Next.js parçalarını geri yükle
+        if: hashFiles('web/package.json') != ''
+        uses: actions/cache/restore@v4
+        with:
+          path: .previous-next-static
+          key: next-static-${{ github.sha }}
+          restore-keys: |
+            next-static-
+      - name: Önceki Next.js parçalarını pakete ekle
+        if: hashFiles('web/package.json') != ''
+        run: |
+          mkdir -p .previous-next-static dist/_next/static
+          find .previous-next-static -type f -mtime +30 -delete
+          # Yeni derlemenin dosyaları ezilmez (-n); yalnızca eksik eski parçalar eklenir
+          cp -rn .previous-next-static/. dist/_next/static/ 2>/dev/null || true
+          # Yalnızca bu derlemenin parçaları önbelleğe yazılır (üzerine yazmak tarihlerini tazeler)
+          cp -r web/out/_next/static/. .previous-next-static/
+      - name: Next.js parçalarını önbelleğe kaydet
+        if: hashFiles('web/package.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: .previous-next-static
+          key: next-static-${{ github.sha }}
 
       # Eski Expo Web sürümü için fallback (yalnızca web/ yoksa - eski commit'e geri dönüldüğünde)
       - name: Eski Expo Web parçalarını geri yükle

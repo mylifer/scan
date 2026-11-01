@@ -93,24 +93,117 @@ async function mapConcurrent<T, R>(items: T[], limit: number, fn: (item: T) => P
   return results;
 }
 
+/** İlk fatura ayı; yalnızca başarılı yanıt önbelleğe alınır (hata olursa sonraki çağrıda tekrar denenir). */
 let cachedIlkAy: string | null | undefined = undefined;
 
-export async function fetchIlkAy(): Promise<string | null> {
-  if (cachedIlkAy !== undefined) return cachedIlkAy;
+export async function fetchIlkAy(): Promise<{ ilkAy: string | null; hata: boolean }> {
+  if (cachedIlkAy !== undefined) return { ilkAy: cachedIlkAy, hata: false };
   try {
-    const res = await getIlkAy(webInvoker);
-    cachedIlkAy = res ?? null;
-    return cachedIlkAy;
+    cachedIlkAy = (await getIlkAy(webInvoker)) ?? null;
+    return { ilkAy: cachedIlkAy, hata: false };
   } catch {
-    cachedIlkAy = null;
-    return null;
+    return { ilkAy: null, hata: true };
   }
+}
+
+/** "Tümünü Göster" en fazla bu kadar ay geriye gider (QNB kotası) */
+export const TUMU_MAX_AY = 36;
+/** İlk fatura ayı bilinmiyorsa geriye dönük çekilen ay sayısı */
+export const TUMU_VARSAYILAN_AY = 12;
+
+/**
+ * "Tümünü Göster" için çekilecek ay aralığı (offset: 0 = bu ay, -1 = geçen ay).
+ * İlk fatura ayı biliniyorsa oradan başlar, en fazla TUMU_MAX_AY ay; bilinmiyorsa TUMU_VARSAYILAN_AY ay.
+ */
+export function tumuAyAraligi(
+  ilkAy: string | null,
+  maxOffset: number,
+  now: Date = new Date(),
+): { offsets: number[]; kirpildi: boolean; ilkAyBilinmiyor: boolean } {
+  let earliest = maxOffset - (TUMU_VARSAYILAN_AY - 1);
+  let kirpildi = false;
+  let ilkAyBilinmiyor = true;
+  const [y, m] = (ilkAy ?? "").split("-").map(Number);
+  if (y && m) {
+    ilkAyBilinmiyor = false;
+    const ilkOffset = (y - now.getFullYear()) * 12 + (m - (now.getMonth() + 1));
+    const sinir = maxOffset - (TUMU_MAX_AY - 1);
+    kirpildi = ilkOffset < sinir;
+    earliest = Math.max(ilkOffset, sinir);
+  }
+  if (earliest > maxOffset) earliest = maxOffset;
+  const offsets: number[] = [];
+  for (let o = earliest; o <= maxOffset; o++) offsets.push(o);
+  return { offsets, kirpildi, ilkAyBilinmiyor };
+}
+
+export type AySonucu =
+  | { label: string; ok: true; data: EFaturaDonemData }
+  | { label: string; ok: false; error: unknown };
+
+/**
+ * Aylık sonuçları birleştirir: ETTN'ye göre tekilleştirir, QNB sayılarını toplar, aylardan gelen uyarıları
+ * korur ve yüklenemeyen ayları uyarı olarak bildirir. Hiçbir ay yüklenemediyse ilk hatayı fırlatır.
+ */
+export function aySonuclariniBirlestir(sonuclar: AySonucu[]): { data: EFaturaDonemData; eksikAy: number } {
+  const basarisiz = sonuclar.filter((s): s is Extract<AySonucu, { ok: false }> => !s.ok);
+  if (sonuclar.length > 0 && basarisiz.length === sonuclar.length) {
+    const ilk = basarisiz[0]!.error;
+    throw ilk instanceof Error ? ilk : new Error("Faturalar yüklenemedi.");
+  }
+
+  const seen = new Set<string>();
+  const faturalar: EFatura[] = [];
+  const uyarilar = new Set<string>();
+  const bilgiler = new Set<string>();
+  let totalListe = 0;
+  let totalQnb = 0;
+  let hasQnbCount = false;
+
+  for (const s of sonuclar) {
+    if (!s.ok) continue;
+    const res = s.data;
+    if (res.uyari) uyarilar.add(res.uyari);
+    if (res.bilgi) bilgiler.add(res.bilgi);
+    if (res.kontrol?.qnb !== null && res.kontrol?.qnb !== undefined) {
+      totalQnb += res.kontrol.qnb;
+      hasQnbCount = true;
+    }
+    totalListe += res.kontrol?.liste ?? res.faturalar.length;
+    for (const f of res.faturalar) {
+      const key = (f.ettn || `${f.belgeNo}:${f.tarih}`).toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        faturalar.push(f);
+      }
+    }
+  }
+
+  if (basarisiz.length > 0) {
+    const aylar = basarisiz.map((s) => s.label).join(", ");
+    uyarilar.add(
+      `${basarisiz.length} ay yüklenemedi (${aylar}). Toplamlar eksik olabilir; "Yenile" ile tekrar deneyin.`,
+    );
+  }
+
+  faturalar.sort((a, b) => (b.tarih || "").localeCompare(a.tarih || ""));
+
+  return {
+    data: {
+      faturalar,
+      kontrol: { liste: totalListe, qnb: hasQnbCount ? totalQnb : null },
+      ...(uyarilar.size ? { uyari: [...uyarilar].join(" ") } : {}),
+      ...(bilgiler.size ? { bilgi: [...bilgiler].join(" ") } : {}),
+    },
+    eksikAy: basarisiz.length,
+  };
 }
 
 const allFaturalarCache = new Map<string, EFaturaDonemData>();
 
 /**
- * Belirli bir offset'e (veya tüm geçmişe) kadarki tüm faturaları aylar bazında çeker ve birleştirir.
+ * Belirli bir offset'e kadarki tüm faturaları aylar bazında (3'erli paralel) çeker ve birleştirir.
+ * Eksik sonuç (yüklenemeyen ay ya da bilinmeyen ilk fatura ayı) önbelleğe alınmaz.
  */
 export async function fetchAllFaturalar(
   yon: Yon,
@@ -122,70 +215,37 @@ export async function fetchAllFaturalar(
     return allFaturalarCache.get(cacheKey)!;
   }
 
-  // İlk fatura ayını tespit etmeye çalış
-  let earliestOffset = maxOffset - 11; // varsayılan: geriye dönük 12 ay
-  const ilkAy = await fetchIlkAy();
-  if (ilkAy) {
-    const [y, m] = ilkAy.split("-").map(Number);
-    if (y && m) {
-      const now = new Date();
-      const diff = (y - now.getFullYear()) * 12 + (m - (now.getMonth() + 1));
-      earliestOffset = Math.max(diff, maxOffset - 36);
-    }
-  }
+  const ilk = await fetchIlkAy();
+  const { offsets, kirpildi, ilkAyBilinmiyor } = tumuAyAraligi(ilk.ilkAy, maxOffset);
 
-  if (earliestOffset > maxOffset) {
-    earliestOffset = maxOffset;
-  }
-
-  const offsets: number[] = [];
-  for (let o = earliestOffset; o <= maxOffset; o++) {
-    offsets.push(o);
-  }
-
-  // Paralel (3'erli gruplar) çek
-  const monthResults = await mapConcurrent(offsets, 3, async (off) => {
+  // Paralel (3'erli gruplar) çek; QNB kotasını korumak için limit 3
+  const sonuclar = await mapConcurrent(offsets, 3, async (off): Promise<AySonucu> => {
+    const label = getMonthBounds(off).label;
     try {
-      return await fetchDonemFaturalar(yon, off, force);
-    } catch {
-      return { faturalar: [] };
+      return { label, ok: true, data: await fetchDonemFaturalar(yon, off, force) };
+    } catch (error) {
+      return { label, ok: false, error };
     }
   });
 
-  // Faturaları birleştir ve tekilleştir
-  const seen = new Set<string>();
-  const mergedFaturalar: EFatura[] = [];
-  let totalListe = 0;
-  let totalQnb = 0;
-  let hasQnbCount = false;
+  const { data, eksikAy } = aySonuclariniBirlestir(sonuclar);
 
-  for (const res of monthResults) {
-    if (res.kontrol?.qnb !== null && res.kontrol?.qnb !== undefined) {
-      totalQnb += res.kontrol.qnb;
-      hasQnbCount = true;
-    }
-    totalListe += res.kontrol?.liste ?? res.faturalar.length;
-    for (const f of res.faturalar) {
-      const key = (f.ettn || `${f.belgeNo}:${f.tarih}`).toLowerCase();
-      if (!seen.has(key)) {
-        seen.add(key);
-        mergedFaturalar.push(f);
-      }
-    }
+  const notlar: string[] = [];
+  if (ilk.hata) {
+    notlar.push(`İlk fatura ayı alınamadı; yalnızca son ${TUMU_VARSAYILAN_AY} ay gösteriliyor.`);
+  } else if (ilkAyBilinmiyor) {
+    notlar.push(`İlk fatura ayı bilinmiyor; son ${TUMU_VARSAYILAN_AY} ay gösteriliyor.`);
+  } else if (kirpildi) {
+    notlar.push(`Yalnızca son ${TUMU_MAX_AY} ay gösteriliyor; daha eski faturalar için aylık görünümü kullanın.`);
+  }
+  if (notlar.length) {
+    data.bilgi = [...notlar, data.bilgi].filter(Boolean).join(" ");
   }
 
-  mergedFaturalar.sort((a, b) => (b.tarih || "").localeCompare(a.tarih || ""));
-
-  const result: EFaturaDonemData = {
-    faturalar: mergedFaturalar,
-    kontrol: {
-      liste: totalListe,
-      qnb: hasQnbCount ? totalQnb : null,
-    },
-  };
-
-  allFaturalarCache.set(cacheKey, result);
-  return result;
+  if (eksikAy === 0 && !ilk.hata) {
+    allFaturalarCache.set(cacheKey, data);
+  }
+  return data;
 }
 
 export async function fetchPdf(yon: Yon, ettn: string, tur: Tur = "efatura"): Promise<CachedPdf> {

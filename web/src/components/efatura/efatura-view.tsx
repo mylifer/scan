@@ -13,12 +13,14 @@ import {
   Eye,
   FileSpreadsheet,
   FileText,
+  Info,
   Loader2,
   Package,
   Receipt,
   ReceiptText,
   RefreshCw,
   Search,
+  TriangleAlert,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -161,6 +163,9 @@ export function EFaturaView() {
     return dataState.key === activeKey ? dataState.data.faturalar : [];
   }, [dataState.key, activeKey, dataState.data.faturalar]);
   const kontrol = dataState.key === activeKey ? dataState.data.kontrol : undefined;
+  // "Tümünü Göster" modunda eksik ay / kapsam notları kalıcı olarak gösterilir
+  const tumuUyari = periodMode === "all" && dataState.key === activeKey ? dataState.data.uyari : undefined;
+  const tumuBilgi = periodMode === "all" && dataState.key === activeKey ? dataState.data.bilgi : undefined;
 
   // Dönem veya tüm verileri çek
   useEffect(() => {
@@ -198,7 +203,8 @@ export function EFaturaView() {
           ? await fetchAllFaturalar(yon, offset, true)
           : await fetchDonemFaturalar(yon, offset, true);
       setDataState({ key: activeKey, loading: false, data: res });
-      toast.success("e-Faturalar güncellendi.");
+      if (res.uyari) toast.warning(res.uyari);
+      else toast.success("e-Faturalar güncellendi.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Güncellenemedi.");
     } finally {
@@ -460,6 +466,23 @@ export function EFaturaView() {
       </div>
 
       {/* Apple Native Glass Metrik Kartları (Tahoe Glass) */}
+      {!loading && (tumuUyari || tumuBilgi) ? (
+        <div className="rounded-2xl border border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl px-4 py-3 shadow-[0_2px_16px_rgba(0,0,0,0.03)] space-y-1.5 text-xs">
+          {tumuUyari ? (
+            <div className="flex items-start gap-2 text-amber-700 dark:text-amber-400">
+              <TriangleAlert className="size-3.5 mt-px shrink-0" />
+              <span>{tumuUyari}</span>
+            </div>
+          ) : null}
+          {tumuBilgi ? (
+            <div className="flex items-start gap-2 text-muted-foreground">
+              <Info className="size-3.5 mt-px shrink-0" />
+              <span>{tumuBilgi}</span>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* Kart 1: Toplam Belge */}
         <div className="relative overflow-hidden rounded-2xl border border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)] hover:shadow-md transition-all group">

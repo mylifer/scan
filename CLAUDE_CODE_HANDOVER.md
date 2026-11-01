@@ -43,7 +43,7 @@ Claude Code'un bıraktığı **v1.48.0** sürümünden itibaren projede iki para
 - **Web 1.0.2 (`e47bbec`):** Modal genişlik sınırlamalarının (`sm:max-w-sm`) kaldırılarak `max-w-7xl` seviyesine çıkarılması, UBL 7 sütunlu fatura kalem tablosundaki yatay kaydırma ve taşma sorunlarının giderilmesi.
 - **Web 1.0.3 (`07bd0c5`):** Kenar çubuğunun modern SaaS ve FinTrack mimarisine göre baştan tasarlanması, "+ Yeni Fiş Tara" birincil CTA butonu, daraltılmış simge modu (`collapsed`), kenar çubuğuna entegre canlı aylık harcama kartı (`SidebarMonthlyCard`).
 - **Web 1.0.4 (`f662a30`):** Radix UI ve Tailwind v4 uyumsuzluğu yaratan sahte state seçicilerinin resmi shadcn `data-[state=active/checked/open]` standardına dönüştürülmesi, koyu mod kart kenarlıkları ve overlay kontrast optimizasyonları.
-- **Web 1.0.5 (`8602e2d`):** QNB eSolutions servisinin yeni kesilen giden faturalarda KDV'yi gecikmeli bildirmesi sorununu çözen **UBL XML Fallback** motoru. Eksik KDV'li faturaların XML'i arka planda çözümlenerek KDV tutarı ve matrahı anında listeye ve dönem toplamına yansıtılır (`ublFallback.ts`).
+- **Web 1.0.5 (`8602e2d`):** QNB eSolutions servisinin yeni kesilen giden faturalarda KDV'yi gecikmeli bildirmesi sorununu çözen **UBL XML Fallback** motoru. Eksik KDV'li faturaların XML'i arka planda çözümlenerek KDV tutarı ve matrahı anında listeye ve dönem toplamına yansıtılır. **Ayrı bir `ublFallback.ts` dosyası yoktur:** mantık `supabase/functions/qnb-efatura/index.ts` içindeki `tutarlariTamamla` fonksiyonunda (sunucu) ve `efatura-view.tsx` içindeki `handleDetayLoaded` geri çağrısındadır (detay açılınca istemcide tamamlama).
 - **Web 1.0.6 (`6d76edb`):** e-Faturalar tablosunda sütun başlıklarına tıklanarak çift yönlü sıralama (Tarih, Firma Türkçe alfabe sıralaması `Intl.Collator("tr-TR")`, Tür, KDV ve Toplam Tutar).
 - **Web 1.0.7 (`e681030`):** Daraltılmış kenar çubuğunda logo ve menü butonlarının 48px sınırında taşmasını önleyen `size-9` ve Tooltip mimarisi.
 - **Web 1.0.8 – 1.0.9 (`2067979`, `6973d5e`):** Sistem genelinde Geist font ailesine geçilmesi, modal tutar özetlerindeki `font-mono` sınıflarının temizlenerek standart Geist Sans `tabular-nums` tipografisine kavuşturulması.
@@ -56,7 +56,10 @@ Claude Code'un bıraktığı **v1.48.0** sürümünden itibaren projede iki para
 - **Web 1.0.16 – 1.0.18 (`fe080cb`, `11ad07b`):** Emojiler yerine **Seçenek 02: Minimalist Monogram & Status Dot** (Linear & Swiss B2B Enterprise) stiline geçilmesi: 25 kategori için neon dairesel durum noktası (`dotColor`), 2 harfli büyük monogram (`AK`, `RE`, `MA`, `TE` vb.) ve yarı saydam Geist rozetleri.
 - **Web 1.0.17 – 1.0.19 (`4059c80`, `08629ae`):** Koyu modda tablolardaki parlak beyaz ızgara hissinin tamamen yok edilmesi; satır çizgisi opaklığının `%14` -> `%5` -> **ultra-soft %2 (`rgba(255, 255, 255, 0.02) !important`)** seviyesine indirilmesi.
 - **Web 1.0.20 (`f1bdd62`):** e-Faturalar sayfasındaki üst metrik kartlarının da Apple Native Glass tasarımına geçirilmesi (4 kart: Toplam Belge, Toplam Tutar, Net KDV, Dönem Analizi).
-- **Web 1.0.21 (`b009dbb` — EN GÜNCEL SÜRÜM):** e-Faturalar sayfasına Apple Segmented Switch ile **"Tümünü Göster (O Tarihe Kadar)"** dönemi eklenmesi. QNB portalındaki ilk faturadan seçilen aya kadar 3'erli paralel sorguyla tüm faturaları çeken ve tekilleştiren `fetchAllFaturalar` motoru.
+- **Web 1.0.21 (`b009dbb`):** e-Faturalar sayfasına Apple Segmented Switch ile **"Tümünü Göster (O Tarihe Kadar)"** dönemi eklenmesi. QNB portalındaki ilk faturadan seçilen aya kadar 3'erli paralel sorguyla tüm faturaları çeken ve tekilleştiren `fetchAllFaturalar` motoru.
+- **Web 1.0.22 (EN GÜNCEL SÜRÜM):** İnceleme düzeltmeleri.
+  - *"Tümünü Göster" artık eksik veriyi sessizce göstermiyor:* Yüklenemeyen aylar ve QNB'den gelen uyarılar kalıcı bir uyarı şeridinde gösterilir. Hiçbir ay yüklenemezse hata verilir. Eksik sonuç önbelleğe alınmaz. Kapsam sınırı (36 ay, ilk ay bilinmiyorsa 12 ay) bilgi notu olarak yazılır.
+  - *Yeni sürüm koruması:* Önceki yayınların `_next/static` parçaları 30 gün saklanır. Açık sekmeler `version.json` dosyasını okuyup "Yenile" bildirimi gösterir. Eski parça hatasında sayfa bir kez otomatik yenilenir (`VersionGuard`, `(app)/error.tsx`).
 
 ---
 
@@ -86,7 +89,7 @@ scan/
 │   │   │   ├── globals.css      # Tailwind v4 tema değişkenleri ve ultra-soft satır çizgileri
 │   │   │   └── layout.tsx       # Root layout, Geist font tanımları (latin-ext)
 │   │   ├── components/          # shadcn/ui & sayfa bileşenleri
-│   │   └── lib/                 # Web veri katmanı ve algoritmaları (25 Vitest testi)
+│   │   └── lib/                 # Web veri katmanı ve algoritmaları (10 dosya, 34 Vitest testi)
 ├── .github/workflows/
 │   ├── deploy-web.yml           # Web uygulamasını GitHub Pages'e derleyip yayınlayan iş akışı
 │   └── ios.yml                  # iOS TestFlight ve App Store derleme iş akışı
@@ -106,11 +109,17 @@ Claude Code olarak projede çalışırken aşağıdaki kurallara **mutlaka** uyu
 4. **Cam Efekti (Apple Native Glass):** Özet metrik kartları ve paneller `rounded-2xl border border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl p-4.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)]` standardındadır.
 
 ### B. e-Fatura ve Finansal Hesaplamalar
-1. **UBL KDV Fallback:** Yeni kesilen giden faturalarda QNB servisinden KDV `0` veya boş gelebilir. `tutarlariTamamla` ve UBL XML indirme fallback mekanizması bozulmamalıdır.
-2. **Tümünü Göster Modu:** e-Faturalarda "Tümünü Göster" açıkken tarihe göre kümülatif sorgu (`fetchAllFaturalar`) çalışır. QNB API kotasını korumak için sorgular `limit: 3` eşzamanlı parçalarla gönderilir.
+1. **UBL KDV Fallback:** Yeni kesilen giden faturalarda QNB servisinden KDV boş gelebilir. Mantık `supabase/functions/qnb-efatura/index.ts` → `tutarlariTamamla` içindedir (ayrı `ublFallback.ts` dosyası **yoktur**). Bilinen sınırlar: yalnızca KDV *boş* (`typeof kdv !== 'number'`) ise tamamlanır, `0` gelen KDV tamamlanmaz; istek başına en fazla 25 fatura UBL'den (5'erli paralel) tamamlanır. Fonksiyon değişikliği `supabase-functions.yml` ile yayınlanır. Bozulmamalıdır.
+2. **Tümünü Göster Modu:** e-Faturalarda "Tümünü Göster" açıkken tarihe göre kümülatif sorgu (`fetchAllFaturalar`, `web/src/lib/efatura.ts`) çalışır. QNB API kotasını korumak için sorgular `limit: 3` eşzamanlı parçalarla gönderilir. Saf yardımcılar test edilir: `tumuAyAraligi` (ay aralığı, `TUMU_MAX_AY = 36`, `TUMU_VARSAYILAN_AY = 12`) ve `aySonuclariniBirlestir` (tekilleştirme, uyarıları koruma, eksik ay bildirimi). Kurallar: eksik sonuç (yüklenemeyen ay veya alınamayan ilk ay) **önbelleğe alınmaz**, hiçbir ay yüklenemezse hata fırlatılır, uyarılar kullanıcıya gösterilir.
 3. **Devreden KDV Mantığı:** Muhasebeciye teslim edilmiş fişler geçmiş aylar hesabında kalır; teslim edilmemiş fişler ise bulunulan aya devreden KDV olarak yansıtılır.
 
-### C. Derleme, Test ve Kalite Kapıları
+### C. Yeni Sürüm Koruması (Chunk 404)
+GitHub Pages özel header göndermediği için Next.js'in `deploymentId` sürüm uyumsuzluğu koruması çalışmaz. Yerine şunlar kullanılır, kaldırılmamalıdır:
+1. `deploy-web.yml` önceki yayınların `_next/static` parçalarını `actions/cache` ile saklar (30 günden eskiler budanır) ve yeni pakete ekler.
+2. `deploy-web.yml` `NEXT_PUBLIC_APP_VERSION` (commit) değerini derlemeye verir ve `dist/version.json` yazar. `web/src/components/version-guard.tsx` bu dosyayı odak/görünürlük değişiminde ve 5 dakikada bir okur; sürüm değiştiyse kalıcı "Yenile" bildirimi gösterir.
+3. Parça yükleme hatasında (`isChunkLoadError`, `web/src/lib/appVersion.ts`) sayfa 30 sn korumalı olarak bir kez yenilenir. Panel hata sınırı: `web/src/app/(app)/error.tsx` (Next 16'da prop adı `reset` değil `retry`).
+
+### D. Derleme, Test ve Kalite Kapıları
 Herhangi bir görevi tamamlamadan önce kök ve web dizinlerinde kalite kapılarını çalıştırınız:
 
 ```bash
@@ -119,7 +128,7 @@ npm test -- --run
 npx expo lint
 npx tsc --noEmit
 
-# 2. Web uygulaması kontrolleri (25 test):
+# 2. Web uygulaması kontrolleri (34 test):
 cd web
 npm run typecheck
 npm run lint
@@ -128,7 +137,7 @@ npm run build
 cd ..
 ```
 
-### D. Yayınlama ve Sürüm Takibi
+### E. Yayınlama ve Sürüm Takibi
 1. Yapılan her geliştirmeyi `CHANGELOG.md` dosyasına yeni bir `## Web X.X.X — <commit>` başlığıyla ekleyiniz.
-2. `claude/pos-receipt-scanner-app-tk3b0z` dalına push yapıldığında GitHub Actions (`deploy-web.yml`) otomatik olarak Next.js web uygulamasını derleyip GitHub Pages'e yayınlar.
+2. `claude/pos-receipt-scanner-app-tk3b0z` dalına push yapıldığında GitHub Actions (`deploy-web.yml`) otomatik olarak Next.js web uygulamasını derleyip GitHub Pages'e yayınlar. Başka bir dalda (ör. Claude Code oturum dalı) yapılan değişiklikler, bu dala birleştirilene kadar yayına çıkmaz.
 3. API anahtarlarının istemci tarafı kodlara gömülmediğinden emin olunuz (CI kontrolü `AIza` anahtarlarını denetler).

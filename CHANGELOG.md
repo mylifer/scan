@@ -16,6 +16,19 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.22 — `COMMIT`
+- **e-Faturalar "Tümünü Göster" artık eksik veriyi sessizce göstermiyor (`web/src/lib/efatura.ts`, `efatura-view.tsx`):**
+  - Yüklenemeyen aylar ("2 ay yüklenemedi (Eylül 2026, Ekim 2026)…") ve QNB'den gelen uyarılar kalıcı bir uyarı şeridinde gösteriliyor; hiçbir ay yüklenemezse (ör. QNB bilgileri eksik) hata bildirimi çıkıyor.
+  - Eksik sonuç önbelleğe alınmıyor; "Yenile" yalnızca eksik ayları tekrar çekiyor. İlk fatura ayı alınamazsa bu hata da önbelleğe alınmıyor.
+  - Kapsam sınırı (en fazla 36 ay; ilk ay bilinmiyorsa son 12 ay) bilgi notu olarak yazılıyor.
+  - Saf yardımcılar `tumuAyAraligi` ve `aySonuclariniBirlestir` ayrıldı, 5 yeni test eklendi.
+- **Yeni sürüm sonrası "Loading chunk failed" koruması Next.js web'e taşındı:**
+  - `deploy-web.yml`: Önceki yayınların `_next/static` parçaları 30 gün saklanıp pakete ekleniyor; `NEXT_PUBLIC_APP_VERSION` derlemeye veriliyor.
+  - `VersionGuard`: Açık sekmeler `version.json` dosyasını odak/görünürlük değişiminde ve 5 dakikada bir okuyor; yeni sürümde "Yenile" bildirimi gösteriyor. Parça yükleme hatasında sayfa bir kez otomatik yenileniyor.
+  - `(app)/error.tsx`: Panel sayfaları için cam kartlı hata ekranı (Tekrar Dene / Sayfayı Yenile).
+  - 4 yeni test (`appVersion.test.ts`). Web testleri: 10 dosya, 34 test.
+- **Dokümanlar:** `CLAUDE_CODE_HANDOVER.md` ve `AGENTS.md`'deki var olmayan `ublFallback.ts` referansı düzeltildi (mantık `supabase/functions/qnb-efatura/index.ts` → `tutarlariTamamla`); yeni kurallar eklendi.
+
 ## Web 1.0.21 — `b009dbb`
 - **e-Faturalar sayfasına "Tümünü Göster (O Tarihe Kadar)" dönemi ve Apple Segmented Switch eklendi (`web/`):**
   - **Tümünü Göster / Aylık Segmented Denetimi (`efatura-view.tsx`):** Fişler sayfasındaki dönem anahtarıyla birebir aynı Apple Native segmented tasarımı (`[Tümünü Göster] [Aylık]`) e-Faturalar üst araç çubuğuna eklendi.

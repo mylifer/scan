@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { VersionGuard } from "@/components/version-guard";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <TooltipProvider>{children}</TooltipProvider>
           </AuthProvider>
           <Toaster />
+          <VersionGuard />
         </ThemeProvider>
       </body>
     </html>
