@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { withRetry } from '../lib/retry';
+import { withRetry, withTimeout } from '../lib/retry';
 
 describe('withRetry', () => {
   const noWait = async () => {};
@@ -41,5 +41,15 @@ describe('withRetry', () => {
       ),
       /hata 3/,
     );
+  });
+});
+
+describe('withTimeout', () => {
+  it('zamanında biten işlemin sonucunu döner', async () => {
+    assert.equal(await withTimeout(Promise.resolve(5), 1000, 'İş'), 5);
+  });
+
+  it('askıda kalan işlemi açıklayıcı hatayla bitirir', async () => {
+    await assert.rejects(withTimeout(new Promise(() => {}), 20, 'QNB e-Fatura'), /QNB e-Fatura 0 saniye içinde yanıt vermedi/);
   });
 });
