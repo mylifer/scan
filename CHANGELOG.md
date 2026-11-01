@@ -16,6 +16,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.2.2 — `4f41a90`
+- **Fatura görüntüleme penceresi büyüdü:** PDF önizlemesi artık ekranı kaplıyor (masaüstünde kenar boşluklarıyla, mobilde tam ekran); fatura okunaklı.
+
 ## Web 1.2.1 — `474d760`
 - **Form alanları ve rozetler artık kaybolmuyor:** Kart ve pencere içindeki giriş alanları gri dolgulu; soluk rozetler belirgin hâle geldi.
 - **Vergi takvimi yeniden düzenlendi:** Filtreler ayrı satırda, "Geçmişi göster" anahtarı; sıradaki yükümlülük kartı net başlıklı ve renkli "kalan gün" rozetli; tabloda tarih ve gün ayrı satırlarda, başlıklar iki satıra düşmüyor; kalan süre 5 ve 15 günde renk değiştiriyor.
