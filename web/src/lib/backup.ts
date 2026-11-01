@@ -9,12 +9,25 @@ import {
   planRestore,
 } from "@shared/lib/backupFormat";
 import { receiptImageName, round2 } from "@shared/lib/format";
+import { APP_VERSION } from "./appVersion";
 import { downloadFile } from "./download";
 import { listReceipts } from "./receipts";
 import { supabase } from "./supabase";
 
 const BUCKET = "receipt-images";
 const RECEIPTS_TABLE = "receipts";
+
+/**
+ * Yedekteki fotoğraflar hep ".jpg" adıyla saklanır ama PNG ya da PDF olabilir (web'den yüklenen dosyalar).
+ * Geri yüklemede doğru içerik türü dosyanın ilk baytlarından anlaşılır.
+ */
+export function sniffImageContentType(bytes: Uint8Array): string {
+  const b = bytes;
+  if (b.length >= 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return "image/png";
+  if (b.length >= 4 && b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) return "application/pdf";
+  if (b.length >= 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return "image/webp";
+  return "image/jpeg";
+}
 
 export interface BackupExportProgress {
   done: number;
@@ -76,7 +89,7 @@ export async function exportFullBackup(
 
   onProgress?.({ done: totalPhotos, total: totalPhotos, status: "Yedek manifesti oluşturuluyor…" });
 
-  const manifest = buildManifest(receipts, saved, new Date().toISOString(), "Web 0.5.0");
+  const manifest = buildManifest(receipts, saved, new Date().toISOString(), `Web${APP_VERSION ? ` ${APP_VERSION.slice(0, 7)}` : ""}`);
   add(MANIFEST_NAME, strToU8(JSON.stringify(manifest, null, 2)), true);
 
   zip.end();
@@ -163,7 +176,7 @@ export async function executeRestore(
         if (photoBytes) {
           const path = `${userId}/${receiptImageName(r.tarih, r.firma_adi)}.jpg`;
           const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, photoBytes, {
-            contentType: "image/jpeg",
+            contentType: sniffImageContentType(photoBytes),
             upsert: false,
           });
           if (!upErr) {

@@ -16,6 +16,11 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## Web 1.0.24 — `COMMIT`
+- **Yedek geri yükleme:** Fotoğrafların içerik türü dosyanın ilk baytlarından anlaşılıyor (PNG, PDF, WebP, JPEG). Önceden hepsi `image/jpeg` olarak yükleniyordu; PNG ve PDF fişler geri yüklendikten sonra açılmayabiliyordu (`sniffImageContentType`, 1 yeni test).
+- **Yedek manifesti:** Sabit "Web 0.5.0" etiketi yerine derlemedeki commit kodu yazılıyor.
+- **Kök lint:** Kullanılmayan 2 import kaldırıldı; `npx expo lint` artık uyarısız.
+
 ## Web 1.0.23 — `0a47bae`
 - **Apple Native Glass tasarımı tüm sayfalara yayıldı (`web/src/components/ui/card.tsx`):** Temel `Card` bileşeni cam standardına geçirildi (`rounded-2xl border-border/80 dark:border-white/[0.05] bg-card/75 backdrop-blur-xl shadow-[0_2px_16px_rgba(0,0,0,0.03)]`). KDV, Bütçe, Firmalar, Kategoriler, Vergi Takvimi, Ayarlar, Fiş formu/detayı ve Giriş ekranı artık Fişler ve e-Faturalar ile aynı kartları kullanıyor. Vurgulu kartlar (Vergi Takvimi, Dönem Analizi) koyu modda da birincil kenarlığını koruyor.
 - **Çift para birimi düzeltildi:** `formatTL` zaten "₺" ile döndürdüğü halde 32 yerde sonuna " TL" ekleniyordu ("₺1.234,56 TL"). Ek kaldırıldı.

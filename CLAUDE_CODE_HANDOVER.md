@@ -60,7 +60,8 @@ Claude Code'un bıraktığı **v1.48.0** sürümünden itibaren projede iki para
 - **Web 1.0.22 (`38e17fa`):** İnceleme düzeltmeleri.
   - *"Tümünü Göster" artık eksik veriyi sessizce göstermiyor:* Yüklenemeyen aylar ve QNB'den gelen uyarılar kalıcı bir uyarı şeridinde gösterilir. Hiçbir ay yüklenemezse hata verilir. Eksik sonuç önbelleğe alınmaz. Kapsam sınırı (36 ay, ilk ay bilinmiyorsa 12 ay) bilgi notu olarak yazılır.
   - *Yeni sürüm koruması:* Önceki yayınların `_next/static` parçaları 30 gün saklanır. Açık sekmeler `version.json` dosyasını okuyup "Yenile" bildirimi gösterir. Eski parça hatasında sayfa bir kez otomatik yenilenir (`VersionGuard`, `(app)/error.tsx`).
-- **Web 1.0.23 (`0a47bae` — EN GÜNCEL SÜRÜM):** Standart temizliği. Temel `Card` bileşeni cama geçirildi, böylece tüm sayfalar aynı kartları kullanıyor. Çift para birimi ("₺… TL") 32 yerde düzeltildi. Çöp Kutusu'nda `CategoryBadge` kullanılıyor. Emoji kalıntıları ve Geist Mono kaldırıldı.
+- **Web 1.0.23 (`0a47bae`):** Standart temizliği. Temel `Card` bileşeni cama geçirildi, böylece tüm sayfalar aynı kartları kullanıyor. Çift para birimi ("₺… TL") 32 yerde düzeltildi. Çöp Kutusu'nda `CategoryBadge` kullanılıyor. Emoji kalıntıları ve Geist Mono kaldırıldı.
+- **Web 1.0.24 (EN GÜNCEL SÜRÜM):** Yedek geri yüklemede PNG/PDF fotoğraflar doğru içerik türüyle yükleniyor, yedek manifestinde gerçek sürüm kodu var, kök lint uyarısız.
 
 ---
 
@@ -90,7 +91,7 @@ scan/
 │   │   │   ├── globals.css      # Tailwind v4 tema değişkenleri ve ultra-soft satır çizgileri
 │   │   │   └── layout.tsx       # Root layout, Geist font tanımları (latin-ext)
 │   │   ├── components/          # shadcn/ui & sayfa bileşenleri
-│   │   └── lib/                 # Web veri katmanı ve algoritmaları (10 dosya, 34 Vitest testi)
+│   │   └── lib/                 # Web veri katmanı ve algoritmaları (10 dosya, 35 Vitest testi)
 ├── .github/workflows/
 │   ├── deploy-web.yml           # Web uygulamasını GitHub Pages'e derleyip yayınlayan iş akışı
 │   └── ios.yml                  # iOS TestFlight ve App Store derleme iş akışı
@@ -130,7 +131,7 @@ npm test -- --run
 npx expo lint
 npx tsc --noEmit
 
-# 2. Web uygulaması kontrolleri (34 test):
+# 2. Web uygulaması kontrolleri (35 test):
 cd web
 npm run typecheck
 npm run lint
