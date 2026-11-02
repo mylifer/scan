@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { amountToInput, formatBytes, isoToTrDate, monthRange, normalizeTrDate, parseAmount, receiptImageName, round2, slugify, trDateToIso } from '../lib/format';
+import { amountToInput, formatBytes, isoToKisaTarih, isoToTrDate, monthRange, normalizeTrDate, parseAmount, receiptImageName, round2, slugify, trDateToIso } from '../lib/format';
 
 describe('round2', () => {
   it('kayan nokta hatasında kuruşu doğru yuvarlar', () => {
@@ -73,5 +73,13 @@ describe('formatBytes', () => {
     assert.equal(formatBytes(12.34 * 1024 * 1024), '12,3 MB');
     assert.equal(formatBytes(1.5 * 1024 ** 3), '1,50 GB');
     assert.equal(formatBytes(0), '1 KB');
+  });
+});
+
+describe('isoToKisaTarih', () => {
+  it('"15 Ağu 26" biçiminde yazar', () => {
+    assert.equal(isoToKisaTarih('2026-08-15'), '15 Ağu 26');
+    assert.equal(isoToKisaTarih('2026-07-05T10:00:00Z'), '05 Tem 26');
+    assert.equal(isoToKisaTarih(''), '');
   });
 });

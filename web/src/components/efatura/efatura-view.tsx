@@ -1,6 +1,6 @@
 "use client";
 
-import { formatTL } from "@shared/lib/format";
+import { formatTL, isoToKisaTarih } from "@shared/lib/format";
 import { totalsByCurrency, type Kontrol } from "@shared/services/efatura/qnbEfatura";
 import {
   BarChart3,
@@ -842,7 +842,7 @@ export function EFaturaView() {
                           </Checkbox.Content>
                         </Checkbox>
                       </Table.Cell>
-                      <Table.Cell className="tabular-nums text-xs">{f.tarih}</Table.Cell>
+                      <Table.Cell className="tabular-nums text-xs whitespace-nowrap">{isoToKisaTarih(f.tarih)}</Table.Cell>
                       <Table.Cell className="tabular-nums text-xs font-medium">
                         {f.belgeNo || "—"}
                       </Table.Cell>

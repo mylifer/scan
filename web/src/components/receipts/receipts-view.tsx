@@ -1,7 +1,7 @@
 "use client";
 
 import { allCategories, categoryLabel } from "@shared/lib/categories";
-import { formatTL, isoToTrDate } from "@shared/lib/format";
+import { formatTL, isoToKisaTarih } from "@shared/lib/format";
 import { periodRange, stepPeriod, switchMode, type Period } from "@shared/lib/period";
 import { receiptMatcher } from "@shared/lib/search";
 import { isSent, summarizeReceipts } from "@shared/lib/summary";
@@ -572,7 +572,7 @@ export function ReceiptsView() {
 
                       {/* Tarih */}
                       <Table.Cell className="tabular-nums text-xs text-muted whitespace-nowrap">
-                        {isoToTrDate(r.tarih)}
+                        {isoToKisaTarih(r.tarih)}
                       </Table.Cell>
 
                       {/* Firma, Squircle Monogram & Fiş No */}

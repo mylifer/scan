@@ -70,6 +70,15 @@ export function isoToTrDate(iso: string): string {
   return `${d}.${m}.${y}`;
 }
 
+const KISA_AY = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+
+/** "2026-08-15" → "15 Ağu 26"; tanınmazsa girdiyi aynen döner. */
+export function isoToKisaTarih(iso: string): string {
+  const m = (iso ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const ay = m ? KISA_AY[Number(m[2]) - 1] : undefined;
+  return m && ay ? `${m[3]} ${ay} ${m[1].slice(2)}` : iso;
+}
+
 export function todayTr(): string {
   const now = new Date();
   return `${pad(now.getDate())}.${pad(now.getMonth() + 1)}.${now.getFullYear()}`;
