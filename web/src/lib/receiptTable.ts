@@ -1,7 +1,8 @@
 import { periodRange, type Period } from "@shared/lib/period";
 import type { ReceiptRecord } from "@shared/types/receipt";
 
-export type SortColumn = "tarih" | "firma_adi" | "kategori" | "toplam_tutar" | "toplam_kdv";
+/** "gonderim": muhasebeciye gönderim zamanı; gönderilmemişler her iki yönde de sonda */
+export type SortColumn = "tarih" | "firma_adi" | "kategori" | "toplam_tutar" | "toplam_kdv" | "gonderim";
 export type SortState = { column: SortColumn; dir: "asc" | "desc" };
 
 const collator = new Intl.Collator("tr-TR", { sensitivity: "base" });
@@ -11,6 +12,12 @@ export function sortRows(rows: ReceiptRecord[], { column, dir }: SortState): Rec
   const sign = dir === "asc" ? 1 : -1;
   const tie = (a: ReceiptRecord, b: ReceiptRecord) => b.tarih.localeCompare(a.tarih) || b.created_at.localeCompare(a.created_at);
   return [...rows].sort((a, b) => {
+    if (column === "gonderim") {
+      const x = a.muhasebe_gonderildi_at;
+      const y = b.muhasebe_gonderildi_at;
+      if (!x || !y) return x ? -1 : y ? 1 : tie(a, b);
+      return x.localeCompare(y) * sign || tie(a, b);
+    }
     let c: number;
     if (column === "toplam_tutar" || column === "toplam_kdv") c = a[column] - b[column];
     else if (column === "tarih") c = a.tarih.localeCompare(b.tarih) || a.created_at.localeCompare(b.created_at);

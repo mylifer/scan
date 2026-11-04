@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 import { formatTL, shortTrDate } from '../../lib/format';
+import { sentDateShort } from '../../lib/sentFilter';
 import { categoryMeta, useTheme } from '../../lib/theme';
 import type { ReceiptRecord } from '../../types/receipt';
 import { Icon } from '../ui/Icon';
@@ -24,7 +25,7 @@ export function ReceiptRow({ receipt: r, onPress, isLast, selected }: RowProps) 
     <ListRow
       icon={{ sf: meta.sf, ion: meta.ion, color: theme[meta.color] as string }}
       title={r.firma_adi}
-      subtitle={`${shortTrDate(r.tarih)} · KDV ${formatTL(r.toplam_kdv)}${r.etiketler?.length ? ` · ${r.etiketler.map((t) => `#${t}`).join(' ')}` : ''}`}
+      subtitle={`${shortTrDate(r.tarih)} · KDV ${formatTL(r.toplam_kdv)}${r.muhasebe_gonderildi_at ? ` · Gönderim ${sentDateShort(r.muhasebe_gonderildi_at)}` : ''}${r.etiketler?.length ? ` · ${r.etiketler.map((t) => `#${t}`).join(' ')}` : ''}`}
       value={formatTL(r.toplam_tutar)}
       valueColor={theme.label}
       chevron={!selecting}
