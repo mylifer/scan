@@ -13,6 +13,11 @@ describe("sortRows", () => {
   it("tarihe göre", () => expect(sortRows(rows, { column: "tarih", dir: "desc" }).map((x) => x.id)).toEqual(["2", "3", "1"]));
   it("tutara göre artan", () => expect(sortRows(rows, { column: "toplam_tutar", dir: "asc" }).map((x) => x.id)).toEqual(["2", "1", "3"]));
   it("firma Türkçe sıralama", () => expect(sortRows(rows, { column: "firma_adi", dir: "asc" }).map((x) => x.firma_adi)).toEqual(["Çağrı", "Migros", "Şok"]));
+  it("gönderim zamanına göre, gönderilmemişler sonda", () => {
+    const sent = [{ ...rows[0], muhasebe_gonderildi_at: "2026-10-05T09:00:00Z" }, rows[1], { ...rows[2], muhasebe_gonderildi_at: "2026-11-02T09:00:00Z" }];
+    expect(sortRows(sent, { column: "gonderim", dir: "desc" }).map((x) => x.id)).toEqual(["3", "1", "2"]);
+    expect(sortRows(sent, { column: "gonderim", dir: "asc" }).map((x) => x.id)).toEqual(["1", "3", "2"]);
+  });
 });
 
 describe("dönem", () => {

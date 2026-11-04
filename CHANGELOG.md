@@ -16,6 +16,12 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.54.0 · Web 1.3.0 — `7fe8205`
+- **Gönderilen fişler ay ay süzülebiliyor (mobil + web):** "Kasım'da gönderilenler", "Ekim'de gönderilenler" gibi gönderim ayına göre filtre.
+  - **Web Fişler:** Araç çubuğunda yeni **Gönderim** menüsü: Tümü / Bekleyenler / Tüm gönderilenler ve altında gönderim ayları (adetleriyle). Durum sütununda gönderim tarihi görünüyor; sütun başlığına tıklayınca gönderim zamanına göre sıralanıyor.
+  - **Mobil Tüm Fişler:** "Yalnızca Gönderilmemişler" anahtarının yerine **Muhasebe Gönderimi** satırı; dokununca aynı seçenekler açılıyor. Fiş satırında gönderim tarihi yazıyor.
+  - Gönderim ayı Türkiye saatine göre hesaplanıyor (KDV dönemi hesabıyla aynı kaynak: `gonderimAyi`).
+
 ## Web 1.2.2 — `4f41a90`
 - **Fatura görüntüleme penceresi büyüdü:** PDF önizlemesi artık ekranı kaplıyor (masaüstünde kenar boşluklarıyla, mobilde tam ekran); fatura okunaklı.
 

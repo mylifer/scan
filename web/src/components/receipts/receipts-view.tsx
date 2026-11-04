@@ -4,6 +4,7 @@ import { allCategories, categoryLabel } from "@shared/lib/categories";
 import { formatTL, isoToTrDate } from "@shared/lib/format";
 import { periodRange, stepPeriod, switchMode, type Period } from "@shared/lib/period";
 import { receiptMatcher } from "@shared/lib/search";
+import { matchesSentFilter, sentDateShort, sentFilterLabel, sentMonthGroups, sentMonthLabel, type SentFilter } from "@shared/lib/sentFilter";
 import { isSent, summarizeReceipts } from "@shared/lib/summary";
 import type { ReceiptRecord } from "@shared/types/receipt";
 import {
@@ -47,6 +48,7 @@ export function ReceiptsView() {
   const [categories, setCategories] = useState<readonly string[]>(() => allCategories());
   const [query, setQuery] = useState("");
   const [catFilter, setCatFilter] = useState<Set<string>>(new Set());
+  const [sentFilter, setSentFilter] = useState<SentFilter>("all");
   const [sort, setSort] = useState<SortState>({ column: "tarih", dir: "desc" });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
@@ -77,10 +79,17 @@ export function ReceiptsView() {
   const filtered = useMemo(() => {
     const match = receiptMatcher(query);
     return sortRows(
-      rows.filter((r) => match(r) && (catFilter.size === 0 || catFilter.has(r.kategori))),
+      rows.filter((r) => match(r) && (catFilter.size === 0 || catFilter.has(r.kategori)) && matchesSentFilter(r, sentFilter)),
       sort,
     );
-  }, [rows, query, catFilter, sort]);
+  }, [rows, query, catFilter, sentFilter, sort]);
+  // Gönderim ayları: seçili dönemdeki fişlerin gönderildiği aylar (seçili ay listede yoksa da gösterilir, kaldırılabilsin)
+  const sentMonths = useMemo(() => {
+    const groups = sentMonthGroups(rows);
+    const isMonth = sentFilter !== "all" && sentFilter !== "unsent" && sentFilter !== "sent";
+    return isMonth && !groups.some((g) => g.key === sentFilter) ? [...groups, { key: sentFilter, label: sentMonthLabel(sentFilter), count: 0 }] : groups;
+  }, [rows, sentFilter]);
+  const isSentMonth = sentFilter !== "all" && sentFilter !== "unsent" && sentFilter !== "sent";
   const summary = useMemo(() => summarizeReceipts(filtered), [filtered]);
   const sentCount = useMemo(() => filtered.filter(isSent).length, [filtered]);
   const pendingCount = Math.max(0, summary.fisSayisi - sentCount);
@@ -422,6 +431,60 @@ export function ReceiptsView() {
           </Dropdown.Popover>
         </Dropdown>
 
+        {/* Muhasebe gönderim filtresi: bekleyenler, gönderilenler ya da gönderim ayı */}
+        <Dropdown>
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <Send className="size-3.5" /> {sentFilter === "all" ? "Gönderim" : sentFilterLabel(sentFilter)}
+          </Button>
+          <Dropdown.Popover placement="bottom start" className="max-h-96 w-64 overflow-y-auto">
+            <Dropdown.Menu aria-label="Muhasebe gönderimine göre filtrele">
+              <Dropdown.Section
+                selectionMode="single"
+                selectedKeys={isSentMonth ? [] : [sentFilter]}
+                onSelectionChange={(keys) => {
+                  const k = keys === "all" ? "all" : ([...keys][0] as SentFilter | undefined);
+                  setSentFilter(k ?? "all");
+                  resetView();
+                }}
+              >
+                <Header className="text-xs font-semibold">Muhasebe Durumu</Header>
+                <Dropdown.Item id="all" textValue="Tümü">
+                  <Label className="text-xs">Tümü</Label>
+                  <Dropdown.ItemIndicator className="ms-auto" />
+                </Dropdown.Item>
+                <Dropdown.Item id="unsent" textValue="Bekleyenler">
+                  <Label className="text-xs">Bekleyenler</Label>
+                  <Dropdown.ItemIndicator className="ms-auto" />
+                </Dropdown.Item>
+                <Dropdown.Item id="sent" textValue="Gönderilenler">
+                  <Label className="text-xs">Tüm gönderilenler</Label>
+                  <Dropdown.ItemIndicator className="ms-auto" />
+                </Dropdown.Item>
+              </Dropdown.Section>
+              {sentMonths.length ? (
+                <Dropdown.Section
+                  selectionMode="single"
+                  selectedKeys={isSentMonth ? [sentFilter] : []}
+                  onSelectionChange={(keys) => {
+                    const k = keys === "all" ? undefined : ([...keys][0] as SentFilter | undefined);
+                    setSentFilter(k ?? "all");
+                    resetView();
+                  }}
+                >
+                  <Header className="text-xs font-semibold">Gönderim Ayı</Header>
+                  {sentMonths.map((g) => (
+                    <Dropdown.Item key={g.key} id={g.key} textValue={`${g.label} gönderilenler`}>
+                      <Label className="text-xs">{g.label}</Label>
+                      <span className="text-[11px] text-muted tabular-nums">{g.count}</span>
+                      <Dropdown.ItemIndicator className="ms-auto" />
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Section>
+              ) : null}
+            </Dropdown.Menu>
+          </Dropdown.Popover>
+        </Dropdown>
+
         {/* Dışa Aktarım Düğmeleri */}
         <div className="ml-auto flex items-center gap-1.5">
           <Button
@@ -532,7 +595,7 @@ export function ReceiptsView() {
               <SortHead label="Kategori" column="kategori" />
               <SortHead label="KDV Tutarı" column="toplam_kdv" align="right" />
               <SortHead label="Toplam Tutar" column="toplam_tutar" align="right" />
-              <Table.Column className="w-28 text-right">Durum</Table.Column>
+              <SortHead label="Durum" column="gonderim" align="right" className="w-32" />
             </Table.Header>
             <Table.Body>
               {loading &&
@@ -624,9 +687,12 @@ export function ReceiptsView() {
                       {/* Muhasebe Durumu */}
                       <Table.Cell className="text-right">
                         {isDelivered ? (
-                          <Chip size="sm" variant="soft" color="success">
-                            <Check className="size-3 stroke-[2.5]" /> Gönderildi
-                          </Chip>
+                          <div className="flex flex-col items-end gap-0.5">
+                            <Chip size="sm" variant="soft" color="success">
+                              <Check className="size-3 stroke-[2.5]" /> Gönderildi
+                            </Chip>
+                            <span className="text-[11px] text-muted tabular-nums whitespace-nowrap">{sentDateShort(r.muhasebe_gonderildi_at!)}</span>
+                          </div>
                         ) : (
                           <Chip size="sm" variant="soft" color="warning">
                             <span className="size-1.5 rounded-full bg-amber-500"></span> Bekliyor
@@ -657,7 +723,7 @@ export function ReceiptsView() {
                           {loaded?.error
                             ? loaded.error
                             : rows.length
-                              ? "Farklı bir arama terimi veya kategori filtresi deneyebilirsiniz."
+                              ? "Farklı bir arama terimi, kategori ya da gönderim filtresi deneyebilirsiniz."
                               : "Seçili dönemde kayıtlı bir harcama veya POS fişi bulunmuyor. Yeni bir fiş ekleyerek başlayabilirsiniz."}
                         </p>
                       </div>

@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Switch, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, View } from 'react-native';
 
 import { SummaryCard } from '../components/dashboard/SummaryCard';
 import { ReceiptList } from '../components/ReceiptList';
@@ -18,11 +18,12 @@ import { errorMessage } from '../lib/errors';
 import { round2 } from '../lib/format';
 import { haptics } from '../lib/haptics';
 import { receiptMatcher } from '../lib/search';
+import { matchesSentFilter, sentFilterLabel, sentMonthGroups, type SentFilter } from '../lib/sentFilter';
 import { SORT_OPTIONS, type SortKey, sortReceipts } from '../lib/sort';
 import { useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 
-/** Bugüne kadar girilen tüm fişler: arama, sıralama, aylara göre gruplu liste; seçip toplu "gönderildi" işaretleme. */
+/** Bugüne kadar girilen tüm fişler: arama, sıralama, gönderim durumu/ayı filtresi, aylara göre gruplu liste; seçip toplu "gönderildi" işaretleme. */
 export default function AllReceiptsScreen() {
   const theme = useTheme();
   const toolbarHeight = useToolbarHeight();
@@ -30,16 +31,17 @@ export default function AllReceiptsScreen() {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortKey>('newest');
   const [pulling, setPulling] = useState(false);
-  const [unsentOnly, setUnsentOnly] = useState(false);
+  const [sentFilter, setSentFilter] = useState<SentFilter>('all');
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [busy, setBusy] = useState(false);
 
   const sentCount = useMemo(() => (receipts ?? []).filter((r) => r.muhasebe_gonderildi_at).length, [receipts]);
+  const sentMonths = useMemo(() => sentMonthGroups(receipts ?? []), [receipts]);
   const filtered = useMemo(() => {
     const matches = receiptMatcher(query);
-    return sortReceipts((receipts ?? []).filter((r) => (!unsentOnly || !r.muhasebe_gonderildi_at) && matches(r)), sort);
-  }, [receipts, query, sort, unsentOnly]);
+    return sortReceipts((receipts ?? []).filter((r) => matchesSentFilter(r, sentFilter) && matches(r)), sort);
+  }, [receipts, query, sort, sentFilter]);
   const totals = useMemo(
     () => ({
       total: round2(filtered.reduce((a, r) => a + r.toplam_tutar, 0)),
@@ -59,6 +61,28 @@ export default function AllReceiptsScreen() {
         onPress: () => {
           haptics.select();
           setSort(o.key);
+        },
+      })),
+    });
+  }
+
+  /** Gönderim filtresi: tümü, bekleyenler, gönderilenler ya da "Kasım 2026'da gönderilenler" gibi bir ay */
+  function chooseSentFilter() {
+    const total = receipts?.length ?? 0;
+    const opts: { key: SentFilter; label: string }[] = [
+      { key: 'all', label: `Tümü (${total})` },
+      { key: 'unsent', label: `Bekleyenler (${total - sentCount})` },
+      { key: 'sent', label: `Tüm Gönderilenler (${sentCount})` },
+      ...sentMonths.map((g) => ({ key: g.key as SentFilter, label: `${g.label} gönderilenler (${g.count})` })),
+    ];
+    showActionSheet({
+      title: 'Muhasebe Gönderimi',
+      message: 'Gönderim ayına göre süzün',
+      options: opts.map((o) => ({
+        label: o.key === sentFilter ? `✓ ${o.label}` : o.label,
+        onPress: () => {
+          haptics.select();
+          setSentFilter(o.key);
         },
       })),
     });
@@ -146,13 +170,15 @@ export default function AllReceiptsScreen() {
             <View style={{ marginHorizontal: 16, marginBottom: 16 }}>
               <SearchField value={query} onChangeText={setQuery} placeholder="Firma, tutar, etiket ya da not ara" />
             </View>
-            {sentCount > 0 || unsentOnly ? (
+            {sentCount > 0 || sentFilter !== 'all' ? (
               <ListSection>
                 <ListRow
-                  title="Yalnızca Gönderilmemişler"
-                  subtitle={`${sentCount} fiş muhasebeciye gönderildi`}
+                  title="Muhasebe Gönderimi"
+                  subtitle={`${sentCount} fiş gönderildi · ${sentMonths.length} ay`}
+                  value={sentFilterLabel(sentFilter)}
                   icon={{ sf: 'paperplane', ion: 'paper-plane-outline', color: theme.green }}
-                  accessory={<Switch value={unsentOnly} onValueChange={setUnsentOnly} accessibilityLabel="Yalnızca gönderilmemişler" />}
+                  chevron
+                  onPress={chooseSentFilter}
                 />
               </ListSection>
             ) : null}
@@ -162,7 +188,7 @@ export default function AllReceiptsScreen() {
               </ListSection>
             ) : (
               <ReceiptList
-                key={`${query}|${sort}|${unsentOnly}`}
+                key={`${query}|${sort}|${sentFilter}`}
                 receipts={filtered}
                 sort={sort}
                 header={`Fişler · ${filtered.length}`}
