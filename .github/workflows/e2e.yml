@@ -1,0 +1,37 @@
+# Uçtan uca (tarayıcı) testleri: web sürümü e2e ayarlarıyla derlenir, sahte Supabase/Gemini ile
+# ana akışlar Chromium'da denenir (e2e/run.cjs). Gerçek sunucuya ve gizli anahtarlara dokunmaz.
+# Ana dala açılan her PR'da çalışır; arayüz değişip test güncellenmezse burada kırmızı yanar.
+name: Uçtan uca testler
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [claude/pos-receipt-scanner-app-tk3b0z]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Playwright projenin bağımlılığı değil (yerelde genel kurulum kullanılıyor); burada sabit sürümle kurulur
+      - name: Playwright ve Chromium
+        run: |
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: Birim testleri
+        run: npm test
+      - name: Uçtan uca testler
+        run: npm run test:e2e
