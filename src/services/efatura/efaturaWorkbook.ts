@@ -42,17 +42,25 @@ export function buildEFaturaWorkbook(faturalar: EFatura[], periodLabel: string, 
 
   const startRow = 4; // Excel 1-indexed row for first data item
   const endRow = startRow + faturalar.length - 1;
+  // Toplamlar ₺ biçimindedir: iptal edilen ve döviz faturalar listede kalır ama toplama girmez
+  const toplanan = faturalar.filter((f) => !f.iptal && (f.paraBirimi || 'TRY') === 'TRY');
+  const topla = (k: 'matrah' | 'kdv' | 'tutar') => toplanan.reduce((acc, f) => acc + (f[k] ?? 0), 0);
+  const sumifs = (col: string) =>
+    faturalar.length
+      ? `SUMIFS(${col}${startRow}:${col}${endRow},J${startRow}:J${endRow},"TRY",K${startRow}:K${endRow},"Geçerli")`
+      : undefined;
+  const haric = faturalar.length - toplanan.length;
 
   const summaryRow: Row = [
-    { v: 'Toplam', s: 'totalLabel' },
-    { v: `${faturalar.length} fatura`, s: 'totalLabel' },
+    { v: 'Toplam (₺)', s: 'totalLabel' },
+    { v: `${toplanan.length} fatura`, s: 'totalLabel' },
+    { v: haric ? `${haric} iptal/dövizli fatura hariç` : '', s: 'totalLabel' },
     { v: '', s: 'totalLabel' },
     { v: '', s: 'totalLabel' },
     { v: '', s: 'totalLabel' },
-    { v: '', s: 'totalLabel' },
-    { v: faturalar.reduce((acc, f) => acc + (f.matrah ?? 0), 0), f: faturalar.length ? `SUM(G${startRow}:G${endRow})` : undefined, s: 'totalMoney' },
-    { v: faturalar.reduce((acc, f) => acc + (f.kdv ?? 0), 0), f: faturalar.length ? `SUM(H${startRow}:H${endRow})` : undefined, s: 'totalMoney' },
-    { v: faturalar.reduce((acc, f) => acc + (f.tutar ?? 0), 0), f: faturalar.length ? `SUM(I${startRow}:I${endRow})` : undefined, s: 'totalMoney' },
+    { v: topla('matrah'), f: sumifs('G'), s: 'totalMoney' },
+    { v: topla('kdv'), f: sumifs('H'), s: 'totalMoney' },
+    { v: topla('tutar'), f: sumifs('I'), s: 'totalMoney' },
     { v: '', s: 'totalLabel' },
     { v: '', s: 'totalLabel' },
     { v: '', s: 'totalLabel' },

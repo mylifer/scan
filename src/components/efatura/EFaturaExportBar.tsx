@@ -8,8 +8,8 @@ import { Icon } from '../ui/Icon';
 interface Props {
   selectedCount: number;
   totalCount: number;
-  totalAmount: number;
-  currency: string;
+  /** Seçilen geçerli (iptal olmayan) faturaların para birimine göre toplamları */
+  totals: { paraBirimi: string; toplam: number }[];
   allSelected?: boolean;
   onToggleSelectAll?: () => void;
   onClearSelection: () => void;
@@ -33,8 +33,7 @@ function para(value: number, currency: string): string {
 export function EFaturaExportBar({
   selectedCount,
   totalCount,
-  totalAmount,
-  currency,
+  totals,
   onClearSelection,
   onExportExcel,
   onExportPdf,
@@ -71,7 +70,7 @@ export function EFaturaExportBar({
               {selectedCount === totalCount ? 'Tüm faturalar seçildi' : `${selectedCount} / ${totalCount} fatura`}
             </Text>
             <Text style={[styles.amountText, tabular, { color: t.mutedForeground }]}>
-              {para(totalAmount, currency)}
+              {totals.length ? totals.map((x) => para(x.toplam, x.paraBirimi)).join(' · ') : para(0, 'TRY')}
             </Text>
           </View>
         </View>

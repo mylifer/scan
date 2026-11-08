@@ -2,6 +2,7 @@ import type { Session } from '@supabase/supabase-js';
 import { createContext, type PropsWithChildren, useContext, useEffect, useState } from 'react';
 
 import { clearCache } from '../lib/offlineCache';
+import { efaturaOnbellekleriniTemizle } from '../services/efatura/donemCache';
 import { initialAuthLink, supabase } from '../services/supabase/client';
 
 interface AuthState {
@@ -25,7 +26,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
     supabase.auth.getSession().then(({ data }) => setState({ session: data.session, loading: false }));
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       // Oturum düğmeyle değil süre dolarak kapansa da önbellekteki fişler silinsin
-      if (event === 'SIGNED_OUT') clearCache();
+      if (event === 'SIGNED_OUT') {
+        void clearCache();
+        void efaturaOnbellekleriniTemizle();
+      }
       if (event === 'PASSWORD_RECOVERY') setRecovering(true);
       setState({ session, loading: false });
     });

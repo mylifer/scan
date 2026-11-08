@@ -7,18 +7,23 @@ import { findPossibleDuplicates, saveReceipt } from '../supabase/receiptsReposit
 import { releaseLocal } from '../supabase/storageFiles';
 
 /**
- * Taslağı fiş olarak kaydeder ve taslağı siler.
- * @returns taslak silinemediyse false (fiş yine de kaydedilmiştir; tekrar kaydedilip çift kayıt oluşmasın)
+ * Kaydın sonucu. `silinemedi`: fiş kaydedildi ama taslak silinemedi. `gorselsiz`: fiş kaydedildi ama görseli
+ * yüklenemedi; fotoğrafın tek kopyası taslakta olduğundan taslak silinmez. İki durumda da fiş kayıtlıdır,
+ * tekrar kaydedilip çift kayıt oluşmasın (tekrar onaylanırsa olası mükerrer olarak yakalanır).
  */
-export async function saveDraftAsReceipt(draft: Pick<ReceiptDraft, 'id' | 'image_path'>, data: ReceiptData): Promise<boolean> {
+export type DraftSaveResult = 'tamam' | 'silinemedi' | 'gorselsiz';
+
+/** Taslağı fiş olarak kaydeder ve (görseli de yüklendiyse) taslağı siler. */
+export async function saveDraftAsReceipt(draft: Pick<ReceiptDraft, 'id' | 'image_path'>, data: ReceiptData): Promise<DraftSaveResult> {
   const local = await downloadDraftImage(draft.image_path);
   const archiveUri = await prepareArchiveImage(local, DRAFT_WIDTH).finally(() => releaseLocal(local));
-  await saveReceipt(data, archiveUri);
+  const { imageWarning } = await saveReceipt(data, archiveUri);
+  if (imageWarning) return 'gorselsiz';
   try {
     await deleteDraft(draft);
-    return true;
+    return 'tamam';
   } catch {
-    return false;
+    return 'silinemedi';
   }
 }
 
@@ -26,18 +31,26 @@ export async function saveDraftAsReceipt(draft: Pick<ReceiptDraft, 'id' | 'image
 export async function approveDrafts(
   items: { draft: ReceiptDraft; values: ReceiptFormValues }[],
   onProgress?: (done: number, total: number) => void,
-): Promise<BulkResult & { undeleted: number }> {
+): Promise<BulkResult & { undeleted: number; imageMissing: number }> {
   const byId = new Map(items.map((i) => [i.draft.id, i.draft]));
   let undeleted = 0;
+  let imageMissing = 0;
   const r = await approveAll(
     items.map((i) => ({ id: i.draft.id, values: i.values })),
     {
       isDuplicate: async (data) => (await findPossibleDuplicates(data)).length > 0,
       save: async (id, data) => {
-        if (!(await saveDraftAsReceipt(byId.get(id)!, data))) undeleted++;
+        const sonuc = await saveDraftAsReceipt(byId.get(id)!, data);
+        if (sonuc === 'silinemedi') undeleted++;
+        else if (sonuc === 'gorselsiz') imageMissing++;
       },
     },
     onProgress,
   );
-  return { ...r, undeleted };
+  return { ...r, undeleted, imageMissing };
+}
+
+/** Görseli yüklenemeyen fişler için kullanıcıya gösterilecek uyarı */
+export function imageMissingMessage(n: number): string {
+  return `${n} fiş görselsiz kaydedildi; fotoğraf kaybolmasın diye taslağı silinmedi. Tekrar kaydetmeyin, Toplu Tarama ekranından silebilirsiniz.`;
 }

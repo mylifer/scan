@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
+import { strFromU8, unzipSync } from 'fflate';
+
 import { buildEFaturaWorkbook } from '../services/efatura/efaturaWorkbook';
 import type { EFatura } from '../services/efatura/qnbEfatura';
 
@@ -53,5 +55,17 @@ describe('efaturaWorkbook', () => {
     assert.ok(bytes.length > 0);
     assert.equal(bytes[0], 0x50);
     assert.equal(bytes[1], 0x4b);
+  });
+
+  it('toplam satırı iptal ve dövizli faturaları ₺ toplamına katmaz (satırlar listede kalır)', () => {
+    const liste: EFatura[] = [
+      ...ornekFaturalar,
+      { ...ornekFaturalar[0]!, ettn: 'iptal', tutar: 5000, kdv: 900, matrah: 4100, iptal: true },
+      { ...ornekFaturalar[0]!, ettn: 'usd', tutar: 70, kdv: 10, matrah: 60, paraBirimi: 'USD' },
+    ];
+    const sheet = strFromU8(unzipSync(buildEFaturaWorkbook(liste, 'Ekim 2026', 'gelen'))['xl/worksheets/sheet1.xml']);
+    assert.ok(sheet.includes('iptal') && sheet.includes('usd'), 'tüm satırlar listelenir');
+    assert.match(sheet, /<f>SUMIFS\(I4:I7,J4:J7,&quot;TRY&quot;,K4:K7,&quot;Geçerli&quot;\)<\/f><v>1800<\/v>/);
+    assert.match(sheet, /<f>SUMIFS\(H4:H7,[^<]*<\/f><v>300<\/v>/);
   });
 });

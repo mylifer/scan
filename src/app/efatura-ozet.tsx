@@ -15,6 +15,7 @@ import { aylarArasi, ayAraligi, type DonemOzet, HARIC_KEY, indirilecekKdv, kdvFa
 import { errorMessage } from '../lib/errors';
 import { capitalizeTr } from '../lib/format';
 import { useWide } from '../lib/layout';
+import { todayIso } from '../lib/taxCalendar';
 import { fontFamily, tabular, useShadcnTheme, useTheme } from '../lib/theme';
 import { type EFatura, EFaturaError, getIlkAy, getOzetGelen, getOzetGiden, type TutarSatiri } from '../services/efatura/qnbEfatura';
 import { supabase } from '../services/supabase/client';
@@ -101,7 +102,7 @@ export default function EFaturaOzetScreen() {
       const sabitSinir = aylar[Math.max(0, aylar.length - SABIT_AY)]!;
       setDurum('Giden faturalar alınıyor…');
       const { from } = ayAraligi(ilkAy);
-      const bugun = new Date().toISOString().slice(0, 10);
+      const bugun = todayIso();
       setGiden(await getOzetGiden(invoke, from, bugun));
 
       for (const [i, ay] of aylar.entries()) {
@@ -247,7 +248,7 @@ export default function EFaturaOzetScreen() {
                         {!!g.satis.tevkifat && (
                           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                             <Text style={{ fontFamily, fontSize: 13, color: st.mutedForeground }}>Tevkifat (Alıcının ödediği)</Text>
-                            <Text style={[{ fontFamily, fontSize: 13, color: st.cardForeground }, tabular]}>{money(g.satis.tevkifat)}</Text>
+                            <Text style={[{ fontFamily, fontSize: 13, color: st.cardForeground }, tabular]}>−{money(g.satis.tevkifat)}</Text>
                           </View>
                         )}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -458,7 +459,7 @@ export default function EFaturaOzetScreen() {
             header="KDV"
             footer="Hesaplanan KDV giden satış (ve e-Arşiv) faturalarından, indirilecek KDV gelen e-Faturalardan toplanır. Kestiğim iade faturalarının KDV'si (iade ettiğim alışlar) indirilecek KDV'den düşülür. Bilgi amaçlıdır, beyanname için muhasebecinize danışın.">
             <ListRow title="Hesaplanan KDV" subtitle={`Matrah ${money(g.satis.matrah + g.earsiv.matrah)}`} value={money(g.satis.kdv + g.earsiv.kdv)} valueColor={theme.label} />
-            {g.satis.tevkifat ? <ListRow title="Tevkifat (alıcının ödediği)" value={money(g.satis.tevkifat)} /> : null}
+            {g.satis.tevkifat ? <ListRow title="Tevkifat (alıcının ödediği)" value={`−${money(g.satis.tevkifat)}`} /> : null}
             <ListRow title="Gelen e-Faturalardaki KDV" subtitle={`Matrah ${money(g.gelen.matrah)}`} value={money(g.gelen.kdv)} valueColor={theme.label} />
             {g.iade.adet ? <ListRow title="İade ettiğim alışlar" subtitle={`${g.iade.adet} iade faturası`} value={`−${money(g.iade.kdv)}`} /> : null}
             {g.iade.adet ? <ListRow title="İndirilecek KDV" value={money(indirilecekKdv(g))} valueColor={theme.label} /> : null}

@@ -17,7 +17,7 @@ import { type as t, useTheme } from '../lib/theme';
 import { getProcessorState, isAutoScanBusy, subscribeDraftStatus, subscribeProcessor } from '../services/drafts/draftProcessor';
 import { getUploadState, subscribeUploads } from '../services/drafts/uploadQueue';
 import { showToast } from '../lib/toast';
-import { approveDrafts, saveDraftAsReceipt } from '../services/drafts/bulkSave';
+import { approveDrafts, imageMissingMessage, saveDraftAsReceipt } from '../services/drafts/bulkSave';
 import { bulkSummary } from '../lib/bulkApprove';
 import { deleteDraft, draftImageUrls, listDrafts } from '../services/supabase/draftsRepository';
 import type { ReceiptDraft } from '../types/receipt';
@@ -133,8 +133,11 @@ export default function BatchReviewScreen() {
         const data = fromFormValues(values);
         if (!(await confirmIfDuplicate(data))) return;
         // Fiş kaydedildi; taslak silinemese bile "Kaydedilemedi" denmemeli (tekrar kaydedip çift kayıt oluşmasın)
-        if (!(await saveDraftAsReceipt(current, data))) {
+        const sonuc = await saveDraftAsReceipt(current, data);
+        if (sonuc === 'silinemedi') {
           showToast('Fiş kaydedildi, taslak silinemedi. Toplu Tarama ekranından silebilirsiniz.', 'info', 4500);
+        } else if (sonuc === 'gorselsiz') {
+          showToast(imageMissingMessage(1), 'info', 6000);
         }
         haptics.success();
         const count = saved + 1;
@@ -180,6 +183,7 @@ export default function BatchReviewScreen() {
         setSaved(count);
         if (r.saved.length) haptics.success();
         if (r.undeleted) showToast(`${r.undeleted} taslak silinemedi; Toplu Tarama ekranından silebilirsiniz.`, 'info', 4500);
+        if (r.imageMissing) showToast(imageMissingMessage(r.imageMissing), 'info', 6000);
         if (rest.length) {
           show(rest[0]);
           showAlert('Toplu onay', bulkSummary(r));

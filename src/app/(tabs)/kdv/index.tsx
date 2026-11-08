@@ -64,10 +64,6 @@ export default function KdvScreen() {
   const yukle = useCallback(
     async (yenile: boolean) => {
       const a = ayAraligi(offset);
-      if (qnbDurum.loginFailed && !yenile) {
-        setHatalar((h) => ({ ...h, [a.from]: { message: 'QNB girişi daha önce başarısız oldu. Bilgileri kontrol edip elle tekrar deneyin.', login: true } }));
-        return;
-      }
       setYukleniyor(a.from);
       const ayKodu = a.from.slice(0, 7);
       try {
@@ -83,6 +79,14 @@ export default function KdvScreen() {
           [a.from]: kdvAyHesapla(kGelen?.donem.faturalar ?? [], kGiden?.donem.faturalar ?? [], fisler, haric, ayKodu),
         }));
         setHatalar(({ [a.from]: _, ...rest }) => rest);
+        // QNB girişi daha önce başarısız olduysa (hesap kilitlenmesin) yalnızca canlı QNB sorgusu atlanır
+        if (qnbDurum.loginFailed && !yenile) {
+          setQnbNot((n) => ({
+            ...n,
+            [a.from]: { durum: 'hata', at: kayitliAt, mesaj: 'QNB girişi daha önce başarısız oldu. Bilgileri kontrol edip elle tekrar deneyin.' },
+          }));
+          return;
+        }
         setQnbNot((n) => ({ ...n, [a.from]: { durum: 'yukleniyor', at: kayitliAt } }));
 
         // 2) Güncel e-Faturalar QNB'den (yavaş olabilir; süre sınırlı). Alınamayan taraf için kayıtlı sonuç kalır

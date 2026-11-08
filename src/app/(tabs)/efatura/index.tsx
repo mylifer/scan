@@ -168,9 +168,8 @@ export default function EFaturaScreen() {
     return withEttn.length > 0 && selectedList.length === withEttn.length;
   }, [items, selectedList]);
 
-  const selectedTotalAmount = useMemo(() => {
-    return selectedList.reduce((acc, f) => acc + (f.tutar ?? 0), 0);
-  }, [selectedList]);
+  // İptal edilenler toplama girmez; farklı para birimleri ayrı toplanır
+  const selectedTotals = useMemo(() => totalsByCurrency(selectedList.filter((f) => !f.iptal)), [selectedList]);
 
   const toggleSelectAll = useCallback(() => {
     haptics.select();
@@ -638,8 +637,7 @@ export default function EFaturaScreen() {
     <EFaturaExportBar
       selectedCount={selectedList.length}
       totalCount={(items ?? []).filter((f) => !!f.ettn).length}
-      totalAmount={selectedTotalAmount}
-      currency={selectedList[0]?.paraBirimi ?? 'TRY'}
+      totals={selectedTotals}
       allSelected={allSelected}
       onToggleSelectAll={toggleSelectAll}
       onClearSelection={() => setSelectedEttns(new Set())}
