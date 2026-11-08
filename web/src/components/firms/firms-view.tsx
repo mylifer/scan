@@ -11,7 +11,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Button, Card, Chip, ListBox, SearchField, Select, Skeleton, Table, toast } from "@heroui/react";
 import { PageHeader } from "@/components/layout/page-header";
-import { getFirmMergeSuggestions, loadFirmList, type FirmGroup, type FirmListItem } from "@/lib/firms";
+import { filterFirmsByName, getFirmMergeSuggestions, loadFirmList, type FirmGroup, type FirmListItem } from "@/lib/firms";
 import { FirmMergeDialog } from "./firm-merge-dialog";
 
 const PAGE_SIZE = 50;
@@ -55,10 +55,7 @@ export function FirmsView() {
   const filteredFirms = useMemo(() => {
     let list = firms;
 
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      list = list.filter((f) => f.name.toLowerCase().includes(q));
-    }
+    list = filterFirmsByName(list, search);
 
     return [...list].sort((a, b) => {
       if (sortOption === "total") return b.total - a.total;

@@ -1,5 +1,6 @@
 import { aggregateFirms, type FirmListItem } from "@shared/lib/firms";
 import { findFirmGroups, type FirmGroup } from "@shared/lib/firmMerge";
+import { normalizeForSearch } from "@shared/lib/search";
 import type { ReceiptRecord } from "@shared/types/receipt";
 import { listReceipts } from "@/lib/receipts";
 import { supabase } from "@/lib/supabase";
@@ -10,6 +11,13 @@ export async function loadFirmList(): Promise<{ firms: FirmListItem[]; allReceip
   const receipts = await listReceipts();
   const firms = aggregateFirms(receipts);
   return { firms, allReceipts: receipts };
+}
+
+/** Firma adında Türkçe harf duyarsız arama ("ticaret" → "MİGROS TİCARET A.Ş.") */
+export function filterFirmsByName<T extends { name: string }>(firms: T[], query: string): T[] {
+  const q = normalizeForSearch(query);
+  if (!q) return firms;
+  return firms.filter((f) => normalizeForSearch(f.name).includes(q));
 }
 
 /** Firma adı varyantlarını bulur */

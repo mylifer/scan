@@ -1,15 +1,10 @@
 "use client";
 
 import { formatTL } from "@shared/lib/format";
-import {
-  olaganDisi,
-  ozetle,
-  type DonemOzet,
-  type OlaganDisi,
-} from "@shared/lib/efaturaOzet";
-import type { TutarSatiri } from "@shared/services/efatura/qnbEfatura";
+import { olaganDisi, type DonemOzet, type OlaganDisi } from "@shared/lib/efaturaOzet";
 import { AlertCircle, FileSpreadsheet } from "lucide-react";
 import { useMemo } from "react";
+import { donemOzetiHesapla, gecerliFaturalar, tutarSatiri } from "@/lib/donemOzet";
 import { exportExcel, type EFatura, type Yon } from "@/lib/efatura";
 import { Button, Card, Chip, Modal, Table } from "@heroui/react";
 
@@ -28,34 +23,11 @@ export function DonemOzetDialog({
   open,
   onOpenChange,
 }: DonemOzetDialogProps) {
-  const tutarSatirlari = useMemo<TutarSatiri[]>(() => {
-    return faturalar.map((f) => ({
-      ettn: f.ettn,
-      belgeNo: f.belgeNo,
-      tarih: f.tarih,
-      vkn: f.vkn,
-      matrah: f.matrah ?? Math.max(0, f.tutar - (f.kdv ?? 0)),
-      kdv: f.kdv ?? 0,
-      tevkifat: 0,
-      odenecek: f.tutar,
-      paraBirimi: f.paraBirimi,
-      oranlar: (f.kdv ? { "20": f.kdv } : {}) as Record<string, number>,
-      tip: f.tip,
-    }));
-  }, [faturalar]);
-
-  const ozet = useMemo<DonemOzet>(() => {
-    const gelen = yon === "gelen" ? tutarSatirlari : [];
-    const giden = yon === "giden" ? tutarSatirlari.filter((t) => t.tip !== "earsiv") : [];
-    const earsiv = yon === "giden" ? faturalar.filter((f) => f.tur === "earsiv") : [];
-
-    const res = ozetle(gelen, giden, earsiv);
-    return res.genel;
-  }, [tutarSatirlari, faturalar, yon]);
+  const ozet = useMemo<DonemOzet>(() => donemOzetiHesapla(faturalar, yon), [faturalar, yon]);
 
   const olaganDisiList = useMemo<OlaganDisi[]>(() => {
-    return olaganDisi(tutarSatirlari, 5);
-  }, [tutarSatirlari]);
+    return olaganDisi(gecerliFaturalar(faturalar).map(tutarSatiri), 5);
+  }, [faturalar]);
 
   const handleExport = () => {
     exportExcel(faturalar, periodLabel, yon);

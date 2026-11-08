@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getFirmMergeSuggestions } from "./firms";
+import { filterFirmsByName, getFirmMergeSuggestions } from "./firms";
 import type { ReceiptRecord } from "@shared/types/receipt";
 
 describe("firms helper", () => {
@@ -15,5 +15,14 @@ describe("firms helper", () => {
     const migrosGroup = groups.find((g) => g.variants.some((v) => v.name.includes("Migros")));
     expect(migrosGroup).toBeDefined();
     expect(migrosGroup?.variants.length).toBe(2);
+  });
+});
+
+describe("filterFirmsByName", () => {
+  const firms = [{ name: "MİGROS TİCARET A.Ş." }, { name: "Işık Market" }, { name: "Shell" }];
+  it("Türkçe büyük/küçük harften bağımsız arar", () => {
+    expect(filterFirmsByName(firms, "ticaret").map((f) => f.name)).toEqual(["MİGROS TİCARET A.Ş."]);
+    expect(filterFirmsByName(firms, "IŞIK").map((f) => f.name)).toEqual(["Işık Market"]);
+    expect(filterFirmsByName(firms, " ")).toHaveLength(3);
   });
 });

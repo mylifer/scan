@@ -1,7 +1,7 @@
 import { monthRange } from "@shared/lib/format";
 import { ZipStream } from "@shared/lib/zipStream";
 import { buildEFaturaWorkbook } from "@shared/services/efatura/efaturaWorkbook";
-import { fetchInvoicePdf, type CachedPdf } from "@shared/services/efatura/pdfCache";
+import { clearPdfCache, fetchInvoicePdf, type CachedPdf } from "@shared/services/efatura/pdfCache";
 import {
   getEFaturaDetay,
   getIlkAy,
@@ -14,6 +14,7 @@ import {
   type Tur,
   type Yon,
 } from "@shared/services/efatura/qnbEfatura";
+import { normalizeForSearch } from "@shared/lib/search";
 import { downloadFile, XLSX_MIME } from "@/lib/download";
 import { supabase } from "@/lib/supabase";
 
@@ -49,6 +50,56 @@ export interface EFaturaDonemData {
 
 const donemCache = new Map<string, EFaturaDonemData>();
 
+/*
+ * Önbellekler kullanıcıya bağlıdır: oturum sahibi değişince (çıkış / başka hesapla giriş) bellek ve
+ * tarayıcı önbelleği temizlenir; böylece bir sonraki kullanıcı öncekinin faturalarını görmez.
+ */
+let cacheOwner: string | null = null;
+/** Her temizlikte artar; temizlikten önce başlayan isteklerin sonucu önbelleğe yazılmaz. */
+let cacheGeneration = 0;
+
+/** Önbelleklerin ait olduğu kullanıcıyı ayarlar (AuthProvider çağırır). Kullanıcı değişirse önbellekler silinir. */
+export function setEFaturaCacheOwner(userId: string | null) {
+  if (userId === cacheOwner) return;
+  if (cacheOwner !== null) {
+    clearEFaturaCaches();
+  } else {
+    clearMemoryCaches();
+    // Kullanıcıya bağlı olmayan eski (v1) kayıtlar başka bir hesaba ait olabilir
+    removePersisted((k) => k.startsWith(`${PERSIST_ROOT}v1:`));
+  }
+  cacheOwner = userId;
+}
+
+function clearMemoryCaches() {
+  cacheGeneration++;
+  donemCache.clear();
+  donemInflight.clear();
+  allFaturalarCache.clear();
+  cachedIlkAy = undefined;
+  clearPdfCache();
+}
+
+function removePersisted(match: (key: string) => boolean) {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && match(k)) keys.push(k);
+    }
+    for (const k of keys) localStorage.removeItem(k);
+  } catch {
+    // depolama kapalı: bellek temizliği yeterli
+  }
+}
+
+/** Tüm e-Fatura önbelleklerini (bellek + tarayıcı) siler; çıkışta çağrılır. */
+export function clearEFaturaCaches() {
+  clearMemoryCaches();
+  cacheOwner = null;
+  removePersisted((k) => k.startsWith(PERSIST_ROOT));
+}
+
 export function getMonthBounds(offset: number) {
   const r = monthRange(offset);
   const [y, m] = r.from.split("-").map(Number);
@@ -81,13 +132,18 @@ export async function fetchDonemFaturalar(
   const running = donemInflight.get(key);
   if (running) return running;
 
+  const gen = cacheGeneration;
   const p = listEFaturalar(webInvoker, yon, baslangic, bitis)
     .then((result) => {
-      donemCache.set(key, result);
-      persistDonem(key, result);
+      if (gen === cacheGeneration) {
+        donemCache.set(key, result);
+        persistDonem(key, result);
+      }
       return result;
     })
-    .finally(() => donemInflight.delete(key));
+    .finally(() => {
+      if (donemInflight.get(key) === p) donemInflight.delete(key);
+    });
   donemInflight.set(key, p);
   return p;
 }
@@ -98,7 +154,11 @@ const donemInflight = new Map<string, Promise<EFaturaDonemData>>();
  * Kalıcı önbellek (tarayıcı): QNB yavaş olduğu için her ayın son sonucu saklanır; sayfalar açılışta
  * önce bunu gösterir, güncel veri arka planda fetchDonemFaturalar ile gelir.
  */
-const PERSIST_PREFIX = "efatura-donem:v1:";
+const PERSIST_ROOT = "efatura-donem:";
+/** Kullanıcıya özel anahtar öneki; oturum sahibi bilinmiyorsa null (kalıcı önbellek kullanılmaz). */
+function persistPrefix(): string | null {
+  return cacheOwner ? `${PERSIST_ROOT}v2:${cacheOwner}:` : null;
+}
 
 export interface PersistedDonem {
   data: EFaturaDonemData;
@@ -107,8 +167,10 @@ export interface PersistedDonem {
 }
 
 function persistDonem(key: string, data: EFaturaDonemData) {
+  const prefix = persistPrefix();
+  if (!prefix) return;
   try {
-    localStorage.setItem(PERSIST_PREFIX + key, JSON.stringify({ data, at: Date.now() } satisfies PersistedDonem));
+    localStorage.setItem(prefix + key, JSON.stringify({ data, at: Date.now() } satisfies PersistedDonem));
   } catch {
     // depolama kapalı ya da dolu: önbelleksiz devam
   }
@@ -119,8 +181,10 @@ export function readPersistedDonem(yon: Yon, offset: number): PersistedDonem | n
   const key = donemCacheKey(yon, getMonthBounds(offset).baslangic);
   const mem = donemCache.get(key);
   if (mem) return { data: mem, at: Date.now() };
+  const prefix = persistPrefix();
+  if (!prefix) return null;
   try {
-    const raw = localStorage.getItem(PERSIST_PREFIX + key);
+    const raw = localStorage.getItem(prefix + key);
     if (!raw) return null;
     const v = JSON.parse(raw) as PersistedDonem;
     return Array.isArray(v?.data?.faturalar) ? v : null;
@@ -144,9 +208,11 @@ let cachedIlkAy: string | null | undefined = undefined;
 
 export async function fetchIlkAy(): Promise<{ ilkAy: string | null; hata: boolean }> {
   if (cachedIlkAy !== undefined) return { ilkAy: cachedIlkAy, hata: false };
+  const gen = cacheGeneration;
   try {
-    cachedIlkAy = (await getIlkAy(webInvoker)) ?? null;
-    return { ilkAy: cachedIlkAy, hata: false };
+    const ilkAy = (await getIlkAy(webInvoker)) ?? null;
+    if (gen === cacheGeneration) cachedIlkAy = ilkAy;
+    return { ilkAy, hata: false };
   } catch {
     return { ilkAy: null, hata: true };
   }
@@ -261,6 +327,7 @@ export async function fetchAllFaturalar(
     return allFaturalarCache.get(cacheKey)!;
   }
 
+  const gen = cacheGeneration;
   const ilk = await fetchIlkAy();
   const { offsets, kirpildi, ilkAyBilinmiyor } = tumuAyAraligi(ilk.ilkAy, maxOffset);
 
@@ -288,7 +355,7 @@ export async function fetchAllFaturalar(
     data.bilgi = [...notlar, data.bilgi].filter(Boolean).join(" ");
   }
 
-  if (eksikAy === 0 && !ilk.hata) {
+  if (eksikAy === 0 && !ilk.hata && gen === cacheGeneration) {
     allFaturalarCache.set(cacheKey, data);
   }
   return data;
@@ -441,4 +508,27 @@ export function sortEFaturaList(list: EFatura[], { column, dir }: EFaturaSortSta
     }
     return diff * sign || tie(a, b);
   });
+}
+
+/**
+ * e-Fatura listesinde arama: unvan, belge no, ETTN, VKN ya da tutar. Türkçe büyük/küçük harf duyarsızdır
+ * ("ticaret" → "TİCARET"). Boş sorgu her faturayla eşleşir.
+ */
+export function efaturaMatcher(query: string): (f: EFatura) => boolean {
+  const q = normalizeForSearch(query);
+  if (!q) return () => true;
+  return (f) =>
+    normalizeForSearch(f.unvan || "").includes(q) ||
+    normalizeForSearch(f.belgeNo || "").includes(q) ||
+    (f.vkn || "").includes(q) ||
+    (f.ettn || "").toLowerCase().includes(q) ||
+    String(f.tutar).includes(q);
+}
+
+/** TRY toplamı: iade faturaları düşülür, iptal ve taslaklar katılmaz */
+export function tryNetToplam(faturalar: EFatura[]): number {
+  const toplam = faturalar
+    .filter((f) => !f.iptal && !f.taslak && f.paraBirimi === "TRY")
+    .reduce((acc, f) => acc + (f.tip === "IADE" ? -f.tutar : f.tutar), 0);
+  return Math.round(toplam * 100) / 100;
 }
