@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.54.1 · Web 1.3.1 — `KOD`
+## 1.54.1 · Web 1.3.1 — `f766ffb`
 Tam kod incelemesinde bulunan hatalar düzeltildi.
 - **Fotoğraf kaybı giderildi (mobil):** Toplu taramada fiş görseli yüklenemezse fiş görselsiz kaydedilir ve fotoğraf kaybolmasın diye taslak silinmez; uyarı gösterilir.
 - **Hesap değişince önceki kullanıcının verisi görünmüyor (mobil + web):** Çıkış yapınca e-Fatura önbellekleri ve QNB giriş durumu temizlenir; kayıtlı e-Fatura ayları ve web'deki aylık bütçe kullanıcıya özel saklanır.
