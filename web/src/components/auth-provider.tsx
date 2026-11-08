@@ -2,6 +2,7 @@
 
 import type { Session } from "@supabase/supabase-js";
 import { createContext, useContext, useEffect, useState } from "react";
+import { setBudgetOwner } from "@/lib/budget";
 import { clearEFaturaCaches, setEFaturaCacheOwner } from "@/lib/efatura";
 import { supabase } from "@/lib/supabase";
 
@@ -17,12 +18,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       if (!active) return;
       setEFaturaCacheOwner(data.session?.user.id ?? null);
+      setBudgetOwner(data.session?.user.id ?? null);
       setState({ session: data.session, loading: false });
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       // Önceki kullanıcının e-Fatura önbellekleri bir sonraki girişe taşınmasın
       if (event === "SIGNED_OUT") clearEFaturaCaches();
       else setEFaturaCacheOwner(session?.user.id ?? null);
+      setBudgetOwner(event === "SIGNED_OUT" ? null : (session?.user.id ?? null));
       setState({ session, loading: false });
     });
     return () => {
