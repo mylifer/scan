@@ -84,7 +84,7 @@ export function ReceiptTable({
 
       <TableBody>
         {receipts.map((r, i) => {
-          const isSelected = !!selected?.has(r.id);
+          const isSelected = !!selecting && !!selected?.has(r.id);
           const meta = categoryMeta(r.kategori);
 
           return (

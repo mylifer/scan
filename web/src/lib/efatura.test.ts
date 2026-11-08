@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   aySonuclariniBirlestir,
   donemCacheKey,
+  efaturaMatcher,
   getMonthBounds,
   sortEFaturaList,
   TUMU_MAX_AY,
   TUMU_VARSAYILAN_AY,
   tumuAyAraligi,
+  tryNetToplam,
   type EFatura,
 } from "./efatura";
 
@@ -162,5 +164,40 @@ describe("Tümünü Göster (fetchAllFaturalar yardımcıları)", () => {
         { label: "Kasım 2026", ok: false, error: new Error("QNB bilgileri eksik") },
       ]),
     ).toThrow("QNB bilgileri eksik");
+  });
+});
+
+describe("efaturaMatcher", () => {
+  const list: EFatura[] = [
+    { ...sampleList[0]!, ettn: "x1", unvan: "MİGROS TİCARET A.Ş.", belgeNo: "GIB2026000000001" },
+    { ...sampleList[0]!, ettn: "x2", unvan: "Işık Elektrik", belgeNo: "ABC1", tutar: 337.3 },
+  ];
+  const ara = (q: string) => list.filter(efaturaMatcher(q)).map((f) => f.ettn);
+
+  it("Türkçe büyük/küçük harften bağımsız eşleşir", () => {
+    expect(ara("ticaret")).toEqual(["x1"]);
+    expect(ara("TİCARET")).toEqual(["x1"]);
+    expect(ara("ışık")).toEqual(["x2"]);
+    expect(ara("IŞIK")).toEqual(["x2"]);
+  });
+
+  it("belge no, tutar ve boş sorgu", () => {
+    expect(ara("gib2026")).toEqual(["x1"]);
+    expect(ara("337.3")).toEqual(["x2"]);
+    expect(ara("  ")).toEqual(["x1", "x2"]);
+  });
+});
+
+describe("tryNetToplam", () => {
+  it("iadeleri düşer, iptal/taslak ve döviz faturaları katmaz", () => {
+    const base = sampleList[0]!;
+    const list: EFatura[] = [
+      { ...base, ettn: "1", tutar: 1000, tip: "SATIS" },
+      { ...base, ettn: "2", tutar: 200, tip: "IADE" },
+      { ...base, ettn: "3", tutar: 500, iptal: true },
+      { ...base, ettn: "4", tutar: 300, taslak: true },
+      { ...base, ettn: "5", tutar: 50, paraBirimi: "USD" },
+    ];
+    expect(tryNetToplam(list)).toBe(800);
   });
 });

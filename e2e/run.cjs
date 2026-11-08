@@ -37,6 +37,12 @@ async function open(browser, opts, urlSuffix = '', viewport = { width: 390, heig
   return { page, backend, errors, close: () => context.close() };
 }
 
+// Ana sayfa varsayılan olarak "Tüm Zamanlar" ile açılır; aylık görünümü sınayan testler önce "Aylık"a geçer
+async function monthly(page) {
+  await page.getByText('Aylık', { exact: true }).first().click();
+  await page.waitForTimeout(1200);
+}
+
 const thisMonth = () => [
   receipt('a', 'MİGROS TİCARET A.Ş.', isoDate(0, 1), 337.3, { image_path: 'u/a.jpg' }),
   receipt('b', 'OPET PETROLCÜLÜK A.Ş.', isoDate(0, 1), 1500, { kategori: 'akaryakıt', image_path: 'u/b.jpg' }),
@@ -46,7 +52,10 @@ const thisMonth = () => [
 
 test('ana sayfa bu ayın fişlerini ve toplamını gösterir', async (b) => {
   const { page, errors, close } = await open(b, { receipts: thisMonth() });
-  const text = await page.locator('body').innerText();
+  let text = await page.locator('body').innerText();
+  assert.ok(text.includes('KÖFTECİ YUSUF') && text.includes('ESKİ AY FİRMASI'), 'varsayılan tüm zamanlar: bütün fişler görünmeli');
+  await monthly(page);
+  text = await page.locator('body').innerText();
   assert.ok(text.includes('MİGROS TİCARET A.Ş.') && text.includes('OPET PETROLCÜLÜK A.Ş.'), 'bu ayın fişleri görünmeli');
   assert.ok(!text.includes('KÖFTECİ YUSUF'), 'geçen ayın fişi görünmemeli');
   assert.ok(text.includes('1.837,30'), 'toplam 1.837,30 olmalı');
@@ -56,6 +65,7 @@ test('ana sayfa bu ayın fişlerini ve toplamını gösterir', async (b) => {
 
 test('öne çıkanlar: önceki ayla kategori kıyası', async (b) => {
   const { page, errors, close } = await open(b, { receipts: thisMonth() });
+  await monthly(page);
   const text = await page.locator('body').innerText();
   assert.ok(text.includes('ÖNE ÇIKANLAR'), 'özet bölümü görünmeli');
   assert.ok(text.includes('Akaryakıt harcaması geçen ay yoktu'), 'yeni kategori söylenmeli');
@@ -81,6 +91,7 @@ test('hızlı ay geçişinde geç dönen eski istek listeyi ezmez', async (b) =>
     receipts: thisMonth(),
     delay: (url) => (url.searchParams.getAll('tarih').includes(`gte.${lastMonthFrom}`) ? 2500 : 0),
   });
+  await monthly(page);
   await page.getByLabel('Önceki ay').click();
   await page.waitForTimeout(500);
   await page.getByLabel('Önceki ay').click();
@@ -94,6 +105,7 @@ test('hızlı ay geçişinde geç dönen eski istek listeyi ezmez', async (b) =>
 
 test('arama ve tüm zamanlarda arama kısayolu', async (b) => {
   const { page, close } = await open(b, { receipts: thisMonth() });
+  await monthly(page);
   await page.getByPlaceholder('Firma, tutar, etiket ya da not ara').fill('köfte');
   await page.waitForTimeout(400);
   await page.getByText('Tüm Zamanlarda Ara').click();
@@ -255,10 +267,10 @@ test('masaüstü pano: kenar menüsü, iki sütun, e-Fatura tablosu sütuna gör
   const fatura = (belgeNo, unvan, tutar) => ({ ettn: belgeNo, belgeNo, tarih: isoDate(0, 1), unvan, vkn: '1', tutar, paraBirimi: 'TRY', profil: 'TEMELFATURA', kdv: tutar / 6, matrah: (tutar * 5) / 6 });
   const efatura = () => ({ body: { faturalar: [fatura('A1', 'KÜÇÜK LTD.', 120), fatura('A2', 'BÜYÜK A.Ş.', 9000), fatura('A3', 'ORTA A.Ş.', 600)] } });
   const { page, errors, close } = await open(b, { receipts: thisMonth(), efatura }, '', { width: 1440, height: 900 });
-  // Alt sekme çubuğu yerine soldaki menü; fiş ekleme düğmeleri sağ sütunda (alt araç çubuğu yok)
+  // Alt sekme çubuğu yerine soldaki menü; fiş ekleme düğmeleri sayfa başlığında (alt araç çubuğu yok)
   const menu = page.getByRole('tablist');
   assert.equal(await menu.getByRole('tab').count(), 4, 'menüde dört sekme');
-  assert.ok((await page.getByText('FİŞ EKLE').count()) === 1, 'sağ sütunda Fiş Ekle bölümü');
+  for (const l of ['Fiş Tara', 'Çoklu Fotoğraf', 'Elle Fiş Ekle']) assert.equal(await page.getByText(l, { exact: true }).count(), 1, `başlıkta ${l} düğmesi`);
   assert.ok((await page.getByText('MİGROS TİCARET A.Ş.').count()) >= 1, 'fiş listesi görünmeli');
   await page.getByRole('tab', { name: /e-Faturalar/ }).click();
   await page.waitForTimeout(1500);
@@ -346,6 +358,7 @@ test('çöp kutusu: silinen fiş Son Silinenler’e gider, fotoğrafı korunur, 
 
 test('toplu düzenleme: seçilen fişlerin kategorisi değişir, toplu silinir', async (b) => {
   const { page, backend, errors, close } = await open(b, { receipts: thisMonth(), schema: 5 });
+  await monthly(page);
   await page.getByText('Seç', { exact: true }).click();
   await page.waitForTimeout(300);
   await page.getByText('MİGROS TİCARET A.Ş.').click();
@@ -373,9 +386,51 @@ test('toplu düzenleme: seçilen fişlerin kategorisi değişir, toplu silinir',
   await close();
 });
 
+test('masaüstü fiş tablosu: çöp simgesi onay ister, Seçimi Bitir seçimi temizler', async (b) => {
+  const { page, backend, errors, close } = await open(b, { receipts: thisMonth(), schema: 5 }, '', { width: 1440, height: 900 });
+  // Çöp simgesi onay sorar; vazgeçince fiş silinmez
+  await page.getByLabel('OPET PETROLCÜLÜK A.Ş. fişini sil').click();
+  await page.waitForTimeout(500);
+  assert.equal(await page.getByText(/30 gün içinde Ayarlar’dan geri alabilirsiniz/).count(), 1, 'onayda geri alınabilir denmeli');
+  await page.getByText('Vazgeç', { exact: true }).last().click();
+  await page.waitForTimeout(500);
+  assert.ok(backend.db.receipts.some((r) => r.id === 'b'), 'vazgeçince fiş silinmemeli');
+  await page.getByLabel('OPET PETROLCÜLÜK A.Ş. fişini sil').click();
+  await page.waitForTimeout(500);
+  await page.getByText('Fişi Sil', { exact: true }).last().click();
+  await page.waitForTimeout(1500);
+  assert.ok(!backend.db.receipts.some((r) => r.id === 'b'), 'onaylayınca fiş silinmeli');
+  assert.equal(backend.db.receipt_trash.length, 1, 'çöp kutusuna taşınmalı');
+  // Seçimi Bitir eski seçimi bırakmaz: yeniden Çoklu Seç'e girince hiçbir fiş seçili değil
+  await page.getByText('Çoklu Seç', { exact: true }).click();
+  await page.waitForTimeout(300);
+  await page.getByText('MİGROS TİCARET A.Ş.').first().click();
+  await page.waitForTimeout(300);
+  assert.equal(await page.getByText('1 Fiş Seçildi').count(), 1, 'bir fiş seçilmeli');
+  await page.getByText('Seçimi Bitir', { exact: true }).click();
+  await page.waitForTimeout(300);
+  await page.getByText('Çoklu Seç', { exact: true }).click();
+  await page.waitForTimeout(300);
+  assert.equal(await page.getByText('0 Fiş Seçildi').count(), 1, 'önceki seçim temizlenmeli');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+test('masaüstü fiş tablosu: çöp kutusu kurulu değilse kalıcı silme uyarısı', async (b) => {
+  const { page, backend, close } = await open(b, { receipts: thisMonth(), schema: 0 }, '', { width: 1440, height: 900 });
+  await page.getByLabel('OPET PETROLCÜLÜK A.Ş. fişini sil').click();
+  await page.waitForTimeout(500);
+  assert.equal(await page.getByText('Bu fiş ve fotoğrafı kalıcı olarak silinecek.').count(), 1, 'kalıcı silme uyarısı');
+  await page.getByText('Vazgeç', { exact: true }).last().click();
+  await page.waitForTimeout(500);
+  assert.ok(backend.db.receipts.some((r) => r.id === 'b'), 'vazgeçince fiş silinmemeli');
+  await close();
+});
+
 test('muhasebeciye gönderildi: toplu ve tek tek işaretlenir, dışa aktarımda hariç tutulur', async (b) => {
   const { page, backend, errors, close } = await open(b, { receipts: thisMonth() });
   const monthIds = backend.db.receipts.filter((r) => r.tarih.slice(0, 7) === isoDate(0, 1).slice(0, 7)).map((r) => r.id);
+  await monthly(page);
   await page.getByText('Seç', { exact: true }).click();
   await page.waitForTimeout(300);
   await page.getByText('Tümünü Seç').click();
@@ -418,7 +473,18 @@ test('tüm fişler: hepsi seçilip muhasebeciye gönderildi olarak işaretlenir'
   await page.getByText(`Muhasebeciye Gönderildi (${backend.db.receipts.length})`).click();
   await page.waitForTimeout(1500);
   assert.ok(backend.db.receipts.every((r) => r.muhasebe_gonderildi_at), 'bütün fişler (farklı aylar dahil) işaretlenmeli');
-  assert.ok((await page.getByText('Yalnızca Gönderilmemişler').count()) >= 1, 'filtre görünmeli');
+  assert.ok((await page.getByText('Muhasebe Gönderimi').count()) >= 1, 'filtre görünmeli');
+  // Gönderim filtresi: bekleyen fiş kalmadı, bu ay gönderilenler hepsini gösterir
+  await page.getByText('Muhasebe Gönderimi').click();
+  await page.waitForTimeout(300);
+  await page.getByText('Bekleyenler (0)').click();
+  await page.waitForTimeout(400);
+  assert.ok((await page.getByText('Eşleşen fiş yok').count()) >= 1, 'bekleyen fiş olmamalı');
+  await page.getByText('Muhasebe Gönderimi').click();
+  await page.waitForTimeout(300);
+  await page.getByText(`gönderilenler (${backend.db.receipts.length})`, { exact: false }).last().click();
+  await page.waitForTimeout(400);
+  assert.ok((await page.getByText('ESKİ AY FİRMASI').count()) >= 1, 'gönderim ayına göre süzülünce fişler görünmeli');
   assert.deepEqual(errors, []);
   await close();
 });

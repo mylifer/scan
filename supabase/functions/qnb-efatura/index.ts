@@ -271,7 +271,8 @@ async function tutarlariTamamla(list: EFatura[], yon: Yon, baslangic: string, bi
         const d = parseUbl(new TextDecoder('utf-8').decode(await belge('efatura', yon, f.ettn, 'UBL')));
         const karsi = yon === 'gelen' ? { unvan: d.saticiUnvan, vkn: d.saticiVkn } : { unvan: d.aliciUnvan, vkn: d.aliciVkn };
         if (!f.tutar && d.odenecek) Object.assign(f, { tutar: d.odenecek, paraBirimi: d.paraBirimi });
-        if (kdvsiz(f) && typeof d.kdvToplam === 'number') {
+        // KDV alt toplamı bulunamayan UBL'de KDV uydurulmaz; fatura "eksik" kalır
+        if (kdvsiz(f) && d.kdvler.length) {
           f.kdv = d.kdvToplam;
           f.matrah = d.araToplam;
         }

@@ -16,7 +16,7 @@ import {
   ReceiptText,
   RefreshCw,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Button, Card, Checkbox, Chip, ListBox, SearchField, Select, type Selection, Skeleton, Table, Tabs, toast } from "@heroui/react";
 import { PageHeader } from "@/components/layout/page-header";
 import {
@@ -24,8 +24,10 @@ import {
   exportPdfsZip,
   fetchAllFaturalar,
   fetchDonemFaturalar,
+  efaturaMatcher,
   getMonthBounds,
   sortEFaturaList,
+  tryNetToplam,
   type EFatura,
   type EFaturaSortColumn,
   type EFaturaSortDir,
@@ -128,6 +130,11 @@ export function EFaturaView() {
   }, [periodMode, offset, monthInfo.label]);
 
   const activeKey = `${yon}:${periodMode}:${offset}`;
+  // "Yenile" sürerken dönem değişirse eski sonuç yeni dönemin yerine yazılmasın
+  const activeKeyRef = useRef(activeKey);
+  useEffect(() => {
+    activeKeyRef.current = activeKey;
+  }, [activeKey]);
   const loading = dataState.key !== activeKey || dataState.loading;
   const faturalar = useMemo(() => {
     return dataState.key === activeKey ? dataState.data.faturalar : [];
@@ -166,16 +173,19 @@ export function EFaturaView() {
   }, [yon, periodMode, offset, activeKey]);
 
   const handleRefresh = async () => {
+    const key = activeKey;
     setRefreshing(true);
     try {
       const res =
         periodMode === "all"
           ? await fetchAllFaturalar(yon, offset, true)
           : await fetchDonemFaturalar(yon, offset, true);
-      setDataState({ key: activeKey, loading: false, data: res });
+      if (activeKeyRef.current !== key) return;
+      setDataState({ key, loading: false, data: res });
       if (res.uyari) toast.warning(res.uyari);
       else toast.success("e-Faturalar güncellendi.");
     } catch (err) {
+      if (activeKeyRef.current !== key) return;
       toast.danger(err instanceof Error ? err.message : "Güncellenemedi.");
     } finally {
       setRefreshing(false);
@@ -242,17 +252,7 @@ export function EFaturaView() {
       else if (tipFilter === "iptal_degil") list = list.filter((f) => !f.iptal);
     }
 
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      list = list.filter(
-        (f) =>
-          f.unvan.toLowerCase().includes(q) ||
-          f.belgeNo.toLowerCase().includes(q) ||
-          f.vkn.includes(q) ||
-          f.ettn.toLowerCase().includes(q) ||
-          String(f.tutar).includes(q),
-      );
-    }
+    if (search.trim()) list = list.filter(efaturaMatcher(search));
 
     return sortEFaturaList(list, sort);
   }, [faturalar, tipFilter, search, sort]);
@@ -288,7 +288,7 @@ export function EFaturaView() {
   const stats = useMemo(() => {
     const gecerli = faturalar.filter((f) => !f.iptal && !f.taslak);
     const tryList = gecerli.filter((f) => f.paraBirimi === "TRY");
-    const tryTotal = tryList.reduce((acc, f) => acc + f.tutar, 0);
+    const tryTotal = tryNetToplam(tryList);
 
     // KDV toplamı (Satış KDV - İade KDV)
     const iadelerKdv = tryList

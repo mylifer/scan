@@ -63,6 +63,9 @@ export function EFaturaTable({
   onToggleSelectAll?: () => void;
 }) {
   const t = useShadcnTheme();
+  // Toplu seçim yalnızca ETTN'si olan faturaları kapsar (toggleSelectAll ile aynı küme)
+  const secilebilir = items.filter((f) => !!f.ettn);
+  const seciliSayisi = secilebilir.filter((f) => selected?.has(f.ettn.toLowerCase())).length;
 
   return (
     <View style={[styles.table, { backgroundColor: t.card, borderColor: t.border }]} accessibilityRole="list">
@@ -71,11 +74,8 @@ export function EFaturaTable({
         {onToggleSelectAll && (
           <View style={styles.checkCol}>
             <Checkbox
-              checked={items.length > 0 && items.every((f) => !!f.ettn && selected?.has(f.ettn.toLowerCase()))}
-              indeterminate={
-                items.some((f) => !!f.ettn && selected?.has(f.ettn.toLowerCase())) &&
-                !items.every((f) => !!f.ettn && selected?.has(f.ettn.toLowerCase()))
-              }
+              checked={secilebilir.length > 0 && seciliSayisi === secilebilir.length}
+              indeterminate={seciliSayisi > 0 && seciliSayisi < secilebilir.length}
               onCheckedChange={onToggleSelectAll}
               accessibilityLabel="Tümünü seç"
             />

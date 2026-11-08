@@ -532,7 +532,8 @@ export function parseUbl(xml: string): FaturaDetay {
     kdvler,
     araToplam: num(total, 'LineExtensionAmount'),
     iskonto: num(total, 'AllowanceTotalAmount'),
-    kdvToplam: num(taxTotal, 'TaxAmount'),
+    // Yalnızca KDV (0015) alt toplamları: TaxTotal tutarı ÖİV, ÖTV gibi diğer vergileri de içerir
+    kdvToplam: Math.round(kdvler.reduce((t, k) => t + k.tutar, 0) * 100) / 100,
     odenecek: num(total, 'PayableAmount'),
     notlar: blocks(head, 'Note')
       .map((n) => xmlUnescape(cdata(n).replace(/<[^>]+>/g, '')).trim())

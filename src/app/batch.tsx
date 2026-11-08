@@ -23,7 +23,7 @@ import { type Theme, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
 import { bulkSummary } from '../lib/bulkApprove';
 import { toFormValues } from '../lib/receiptForm';
-import { approveDrafts } from '../services/drafts/bulkSave';
+import { approveDrafts, imageMissingMessage } from '../services/drafts/bulkSave';
 import { isScannable } from '../services/drafts/draftProcessor';
 import {
   clearUploadFailures,
@@ -123,8 +123,9 @@ export default function BatchScreen() {
                 (done, total) => setBulk({ done, total }),
               );
               if (r.saved.length) haptics.success();
-              if (r.skipped.length) showAlert('Toplu onay', bulkSummary(r));
-              else showToast(bulkSummary(r));
+              const ozet = [bulkSummary(r), r.imageMissing ? imageMissingMessage(r.imageMissing) : ''].filter(Boolean).join('\n\n');
+              if (r.skipped.length || r.imageMissing) showAlert('Toplu onay', ozet);
+              else showToast(ozet);
             } catch (e) {
               showAlert('Toplu onay yarıda kaldı', errorMessage(e));
             } finally {

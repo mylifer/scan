@@ -35,3 +35,20 @@ export function countPastDeadlines(
     return daysUntil(d.date, today) < 0;
   }).length;
 }
+
+/**
+ * Takvimin bayram verisi 2026'dan başlar (`@shared/lib/taxCalendar`); daha eski yıllarda dini bayram
+ * kaydırmaları eksik kalacağı için seçenek olarak sunulmaz. Doğrulanmış verinin sonrasındaki yıllarda
+ * takvim yine hesaplanır, satırlara "henüz doğrulanmadı" notu eklenir.
+ */
+export const TAX_CALENDAR_FIRST_YEAR = 2026;
+
+/** Yıl seçenekleri: geçen yıl, bu yıl ve gelecek yıl (bayram verisi olmayan eski yıllar hariç) */
+export function taxYearOptions(today: string): string[] {
+  const y = Number(today.slice(0, 4));
+  const years: string[] = [];
+  for (let yr = y - 1; yr <= y + 1; yr++) {
+    if (yr >= TAX_CALENDAR_FIRST_YEAR) years.push(String(yr));
+  }
+  return years;
+}

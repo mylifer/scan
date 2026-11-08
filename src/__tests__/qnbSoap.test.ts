@@ -168,6 +168,19 @@ describe('fatura detayı (UBL)', () => {
     assert.equal(d.odenecek, 1200);
     assert.deepEqual(d.notlar, ['Yalnız 1.200,00 TL']);
   });
+
+  it('KDV toplamı yalnızca 0015 alt toplamlarıdır (ÖİV/ÖTV hariç); KDV alt toplamı yoksa kdvler boş', () => {
+    const oiv = ubl.replace(
+      '<cac:TaxTotal><cbc:TaxAmount currencyID="TRY">200.00</cbc:TaxAmount>',
+      '<cac:TaxTotal><cbc:TaxAmount currencyID="TRY">275.00</cbc:TaxAmount><cac:TaxSubtotal><cbc:TaxableAmount currencyID="TRY">1000.00</cbc:TaxableAmount><cbc:TaxAmount currencyID="TRY">75.00</cbc:TaxAmount><cbc:Percent>7.5</cbc:Percent><cac:TaxCategory><cac:TaxScheme><cbc:Name>ÖİV</cbc:Name><cbc:TaxTypeCode>4080</cbc:TaxTypeCode></cac:TaxScheme></cac:TaxCategory></cac:TaxSubtotal>',
+    );
+    const d = parseUbl(oiv);
+    assert.equal(d.kdvToplam, 200);
+    assert.deepEqual(d.kdvler, [{ oran: 20, matrah: 1000, tutar: 200 }]);
+    const yalnizOiv = parseUbl(oiv.replace(/<cac:TaxSubtotal><cbc:TaxableAmount currencyID="TRY">1000.00<\/cbc:TaxableAmount><cbc:TaxAmount currencyID="TRY">200.00[\s\S]*?<\/cac:TaxSubtotal>/, ''));
+    assert.equal(yalnizOiv.kdvler.length, 0, 'tutarlariTamamla bu faturaya KDV yazmaz');
+    assert.equal(yalnizOiv.kdvToplam, 0);
+  });
 });
 
 describe('e-Arşiv listesi', () => {

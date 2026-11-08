@@ -11,7 +11,7 @@ import {
 import { Clock, Info } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
-import { countPastDeadlines, filterTaxDeadlines } from "@/lib/taxCalendar";
+import { countPastDeadlines, filterTaxDeadlines, taxYearOptions } from "@/lib/taxCalendar";
 import { Card, Chip, ListBox, Select, Switch, Table } from "@heroui/react";
 
 const TAX_KIND_LABELS: Record<TaxKind, string> = {
@@ -40,11 +40,11 @@ function splitTrDate(iso: string): [string, string] {
 }
 
 export function TaxCalendarView() {
-  const [selectedYear, setSelectedYear] = useState<string>("2026");
+  const today = useMemo(() => todayIso(), []);
+  const yearOptions = useMemo(() => taxYearOptions(today), [today]);
+  const [selectedYear, setSelectedYear] = useState<string>(() => today.slice(0, 4));
   const [kindFilter, setKindFilter] = useState<string>("all");
   const [showPast, setShowPast] = useState<boolean>(false);
-
-  const today = useMemo(() => todayIso(), []);
 
   // Seçilen yıla ait tüm beyanname ve ödeme son günleri
   const deadlines = useMemo<TaxDeadline[]>(() => {
@@ -91,14 +91,12 @@ export function TaxCalendarView() {
           </Select.Trigger>
           <Select.Popover>
             <ListBox>
-              <ListBox.Item id="2026">
-                2026
-                <ListBox.ItemIndicator />
-              </ListBox.Item>
-              <ListBox.Item id="2027">
-                2027
-                <ListBox.ItemIndicator />
-              </ListBox.Item>
+              {yearOptions.map((y) => (
+                <ListBox.Item key={y} id={y}>
+                  {y}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
             </ListBox>
           </Select.Popover>
         </Select>

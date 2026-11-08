@@ -88,9 +88,9 @@ export function indirilecekKdv(d: DonemOzet): number {
   return yuvarla(d.gelen.kdv - d.iade.kdv);
 }
 
-/** Hesaplanan − indirilecek (pozitif: ödenecek yönde) */
+/** Hesaplanan (tevkifat düşülmüş, alıcının ödediği kısım hariç) − indirilecek (pozitif: ödenecek yönde); kdvAyHesapla ile aynı */
 export function kdvFarki(d: DonemOzet): number {
-  return yuvarla(d.satis.kdv + d.earsiv.kdv - indirilecekKdv(d));
+  return yuvarla(d.satis.kdv - d.satis.tevkifat + d.earsiv.kdv - indirilecekKdv(d));
 }
 
 /** Ortancanın `esik` katından büyük matrahlı giden faturalar (yanlış tutarla kesilmiş olabilir) */

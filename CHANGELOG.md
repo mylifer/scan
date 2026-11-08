@@ -16,6 +16,27 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.54.1 · Web 1.3.1 — `f766ffb`
+Tam kod incelemesinde bulunan hatalar düzeltildi.
+- **Fotoğraf kaybı giderildi (mobil):** Toplu taramada fiş görseli yüklenemezse fiş görselsiz kaydedilir ve fotoğraf kaybolmasın diye taslak silinmez; uyarı gösterilir.
+- **Hesap değişince önceki kullanıcının verisi görünmüyor (mobil + web):** Çıkış yapınca e-Fatura önbellekleri ve QNB giriş durumu temizlenir; kayıtlı e-Fatura ayları ve web'deki aylık bütçe kullanıcıya özel saklanır.
+- **e-Fatura ve KDV hesapları:**
+  - Web dönem özetinde e-Arşiv faturaları artık iki kez sayılmıyor; iptal ve taslak faturalar toplamlara katılmıyor.
+  - KDV yalnızca KDV satırlarından hesaplanır; ÖİV/ÖTV gibi diğer vergiler KDV'ye eklenmez.
+  - e-Fatura özetindeki KDV farkı tevkifatı düşer; KDV sekmesiyle aynı sonucu verir.
+  - e-Fatura Excel dökümünde iptal ve dövizli faturalar ₺ toplamına katılmaz (satırlarda yine listelenir).
+  - Web'de e-Faturalar toplam tutarı iade faturalarını düşüyor.
+  - Seçili e-Faturaların toplamı iptalleri içermez, her para birimi ayrı gösterilir.
+  - e-Fatura özeti gece yarısından sonra da bugünün faturalarını içerir.
+  - QNB girişi başarısız olsa da KDV sekmesi fişleri ve kayıtlı e-Fatura verilerini gösterir.
+- **Silme ve seçim (web görünümü):** Masaüstü fiş tablosundaki çöp simgesi artık onay istiyor (çöp kutusu kurulu değilse kalıcı silme uyarısı); "Seçimi Bitir" seçili fişleri temizliyor.
+- **Web arama ve sayfalar:**
+  - e-Fatura ve firma aramaları Türkçe harflerle çalışıyor ("ticaret" → "TİCARET").
+  - Yenile sürerken dönem değiştirilirse sayfa yükleniyor durumunda takılı kalmıyor.
+  - Vergi Takvimi bu yılla açılıyor; yıl seçenekleri otomatik oluşuyor.
+  - e-Fatura tablosunda "Tümünü seç" kutusu doğru görünüyor.
+- **Testler:** Tarayıcı (e2e) testleri son arayüz değişikliklerine göre güncellendi; 30/30 geçiyor.
+
 ## 1.54.0 · Web 1.3.0 — `7fe8205`
 - **Gönderilen fişler ay ay süzülebiliyor (mobil + web):** "Kasım'da gönderilenler", "Ekim'de gönderilenler" gibi gönderim ayına göre filtre.
   - **Web Fişler:** Araç çubuğunda yeni **Gönderim** menüsü: Tümü / Bekleyenler / Tüm gönderilenler ve altında gönderim ayları (adetleriyle). Durum sütununda gönderim tarihi görünüyor; sütun başlığına tıklayınca gönderim zamanına göre sıralanıyor.
