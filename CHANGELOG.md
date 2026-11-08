@@ -16,6 +16,10 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.54.2 — `402b076`
+- **Aylık bütçe hesaba özel (mobil):** Aynı telefonda başka hesapla girilince önceki kullanıcının bütçesi görünmüyor; çıkışta bütçe gizleniyor (web'de 1.3.1'de düzeltilmişti).
+- **Yayın güvenliği:** Supabase fonksiyon yayını sabit CLI sürümüyle çalışıyor; tarayıcı testleri artık her PR'da otomatik çalışıyor.
+
 ## 1.54.1 · Web 1.3.1 — `f766ffb`
 Tam kod incelemesinde bulunan hatalar düzeltildi.
 - **Fotoğraf kaybı giderildi (mobil):** Toplu taramada fiş görseli yüklenemezse fiş görselsiz kaydedilir ve fotoğraf kaybolmasın diye taslak silinmez; uyarı gösterilir.
