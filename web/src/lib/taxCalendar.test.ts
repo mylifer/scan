@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { TaxDeadline } from "@shared/lib/taxCalendar";
-import { countPastDeadlines, filterTaxDeadlines } from "./taxCalendar";
+import { taxDeadlines, type TaxDeadline } from "@shared/lib/taxCalendar";
+import { countPastDeadlines, filterTaxDeadlines, taxYearOptions } from "./taxCalendar";
 
 const mockDeadlines: TaxDeadline[] = [
   {
@@ -96,5 +96,20 @@ describe("taxCalendar filtering", () => {
       today: referenceToday,
     });
     expect(kdvPast).toBe(1); // Yalnızca 09-28
+  });
+});
+
+describe("taxYearOptions", () => {
+  it("geçen yıl, bu yıl ve gelecek yılı verir; bayram verisi olmayan yılları atlar", () => {
+    expect(taxYearOptions("2026-11-08")).toEqual(["2026", "2027"]);
+    expect(taxYearOptions("2028-02-01")).toEqual(["2027", "2028", "2029"]);
+  });
+
+  it("takvim her seçenek yılı için son günleri üretir", () => {
+    for (const y of taxYearOptions("2028-02-01")) {
+      const list = taxDeadlines(`${y}-01-01`, `${y}-12-31`);
+      expect(list.filter((d) => d.kind === "kdv")).toHaveLength(12);
+      expect(list.every((d) => d.date.startsWith(y))).toBe(true);
+    }
   });
 });

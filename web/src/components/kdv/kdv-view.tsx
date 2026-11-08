@@ -17,7 +17,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Button, Card, Chip, Skeleton, Spinner, toast } from "@heroui/react";
 import { PageHeader } from "@/components/layout/page-header";
 import { fetchDonemFaturalar, getMonthBounds, readPersistedDonem, type EFatura } from "@/lib/efatura";
@@ -49,6 +49,11 @@ export function KdvView() {
   const monthInfo = useMemo(() => getMonthBounds(offset), [offset]);
   const activeKey = `${monthInfo.baslangic}`;
   const loading = state.key !== activeKey || state.loading;
+  // "Yenile" sürerken ay değişirse eski ayın sonucu yeni ayın yerine yazılmasın
+  const activeKeyRef = useRef(activeKey);
+  useEffect(() => {
+    activeKeyRef.current = activeKey;
+  }, [activeKey]);
 
   // Dönem verilerini çek
   const yukleKdv = useCallback(async (force: boolean, iptal: () => boolean = () => false) => {
@@ -110,7 +115,8 @@ export function KdvView() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await yukleKdv(true);
+      const key = activeKey;
+      await yukleKdv(true, () => activeKeyRef.current !== key);
     } finally {
       setRefreshing(false);
     }
