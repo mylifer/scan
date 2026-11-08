@@ -46,7 +46,7 @@ import { enqueueDraftUpload, resumePendingUploads } from '../../../services/draf
 import { pickPhotos } from '../../../services/image/pickPhotos';
 import { updateMonthlySummary } from '../../../services/reminders/monthlySummary';
 import { monthOffset } from '../../../lib/monthlySummaryPlan';
-import { categoriesReady } from '../../../services/supabase/schema';
+import { categoriesReady, trashReady } from '../../../services/supabase/schema';
 import { deleteReceipt as deleteReceiptRecord, purgeExpiredTrash, updateReceiptsCategory } from '../../../services/supabase/receiptsRepository';
 import { ESKI_KATEGORILER, type Kategori, type ReceiptRecord } from '../../../types/receipt';
 
@@ -196,6 +196,16 @@ export default function DashboardScreen() {
     } catch (e) {
       showAlert('Silinemedi', errorMessage(e));
     }
+  }
+
+  // Masaüstü tablodaki çöp kutusu simgesi: kaydırma hareketi olmadığından silmeden önce onay iste
+  // (çöp kutusu tablosu kurulu değilse silme kalıcıdır — fiş ayrıntısındaki "Fişi Sil" ile aynı mesaj)
+  async function confirmDeleteReceipt(r: ReceiptRecord) {
+    const trash = (await trashReady()) === true;
+    const message = trash
+      ? 'Fiş Son Silinenler’e taşınacak; 30 gün içinde Ayarlar’dan geri alabilirsiniz.'
+      : 'Bu fiş ve fotoğrafı kalıcı olarak silinecek.';
+    confirmDestructive(r.firma_adi, message, 'Fişi Sil', () => void deleteReceipt(r));
   }
 
   const shown = filtered.slice(0, visible);
@@ -681,7 +691,7 @@ export default function DashboardScreen() {
                             <WebButton
                               variant={selecting ? 'secondary' : 'outline'}
                               size="sm"
-                              onPress={() => setSelecting(!selecting)}>
+                              onPress={() => (selecting ? exitSelection() : setSelecting(true))}>
                               {selecting ? 'Seçimi Bitir' : 'Çoklu Seç'}
                             </WebButton>
                           </View>
@@ -697,7 +707,7 @@ export default function DashboardScreen() {
                               sort={sort}
                               onSort={setSort}
                               onOpen={(r) => router.push({ pathname: '/receipt/[id]', params: { id: r.id } })}
-                              onDelete={(r) => deleteReceipt(r)}
+                              onDelete={(r) => void confirmDeleteReceipt(r)}
                               selected={selected}
                               onToggleSelect={toggle}
                               onToggleSelectAll={() => setSelected(allSelected ? new Set() : new Set(shown.map((r) => r.id)))}
