@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, type PropsWithChildren, useContext, useEffect, useState } from 'react';
 
+import { setBudgetOwner } from '../lib/budget';
 import { clearCache } from '../lib/offlineCache';
 import { efaturaOnbellekleriniTemizle } from '../services/efatura/donemCache';
 import { initialAuthLink, supabase } from '../services/supabase/client';
@@ -23,13 +24,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [linkError] = useState(initialAuthLink.error);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setState({ session: data.session, loading: false }));
+    supabase.auth.getSession().then(({ data }) => {
+      void setBudgetOwner(data.session?.user.id ?? null);
+      setState({ session: data.session, loading: false });
+    });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       // Oturum düğmeyle değil süre dolarak kapansa da önbellekteki fişler silinsin
       if (event === 'SIGNED_OUT') {
         void clearCache();
         void efaturaOnbellekleriniTemizle();
       }
+      // Bütçe kullanıcıya özel: çıkışta gizlenir, başka hesapta o hesabınki okunur
+      void setBudgetOwner(event === 'SIGNED_OUT' ? null : (session?.user.id ?? null));
       if (event === 'PASSWORD_RECOVERY') setRecovering(true);
       setState({ session, loading: false });
     });
