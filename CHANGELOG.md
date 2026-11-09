@@ -16,6 +16,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.54.3 — `KOD`
+- **Çöp kutusu temizliği:** 30 günü dolan fişler artık çöp kutusu ne kadar kalabalık olursa olsun en eskiden başlayarak siliniyor (önceden yalnızca son 1000 kaydın içine bakılıyordu). "Tümünü sil" gibi yüzlerce fişlik silmeler parça parça yapılıyor.
+
 ## 1.54.2 — `402b076`
 - **Aylık bütçe hesaba özel (mobil):** Aynı telefonda başka hesapla girilince önceki kullanıcının bütçesi görünmüyor; çıkışta bütçe gizleniyor (web'de 1.3.1'de düzeltilmişti).
 - **Yayın güvenliği:** Supabase fonksiyon yayını sabit CLI sürümüyle çalışıyor; tarayıcı testleri artık her PR'da otomatik çalışıyor.
