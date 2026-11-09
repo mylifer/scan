@@ -343,7 +343,7 @@ export default function DashboardScreen() {
     selecting ? (
       <ReceiptRow key={r.id} receipt={r} selected={selected.has(r.id)} onPress={() => toggle(r.id)} />
     ) : (
-    <SwipeToDelete key={r.id} onDelete={() => deleteReceipt(r)}>
+    <SwipeToDelete key={r.id} onDelete={() => void confirmDeleteReceipt(r)}>
       <ReceiptRow receipt={r} onPress={() => router.push({ pathname: '/receipt/[id]', params: { id: r.id } })} />
     </SwipeToDelete>
     );

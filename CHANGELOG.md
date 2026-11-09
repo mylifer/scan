@@ -16,6 +16,9 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.54.4 — `63b5831`
+- **Kaydırarak silme onay soruyor (mobil):** Fişi sola kaydırıp "Sil"e dokununca artık onay isteniyor; vazgeçerseniz fiş olduğu gibi kalıyor. Çöp kutusu kurulu değilse kalıcı silme uyarısı gösteriliyor.
+
 ## 1.54.3 — `8a7de48`
 - **Çöp kutusu temizliği:** 30 günü dolan fişler artık çöp kutusu ne kadar kalabalık olursa olsun en eskiden başlayarak siliniyor (önceden yalnızca son 1000 kaydın içine bakılıyordu). "Tümünü sil" gibi yüzlerce fişlik silmeler parça parça yapılıyor.
 

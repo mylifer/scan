@@ -51,7 +51,7 @@ export function ReceiptRow({ receipt: r, onPress, isLast, selected }: RowProps) 
   );
 }
 
-/** Sola kaydırınca kırmızı "Sil" düğmesi (iOS listeleri gibi) */
+/** Sola kaydırınca kırmızı "Sil" düğmesi (iOS listeleri gibi). Basınca satır kapanır, onDelete onay sorar. */
 export function SwipeToDelete({ children, onDelete, isLast }: { children: ReactElement<{ isLast?: boolean }>; onDelete: () => void; isLast?: boolean }) {
   const theme = useTheme();
   return (
@@ -59,8 +59,13 @@ export function SwipeToDelete({ children, onDelete, isLast }: { children: ReactE
       friction={1.5}
       rightThreshold={40}
       overshootRight={false}
-      renderRightActions={() => (
-        <Pressable onPress={onDelete} style={[styles.swipeDelete, { backgroundColor: theme.red }]} accessibilityLabel="Sil">
+      renderRightActions={(_progress, _translation, swipeable) => (
+        <Pressable
+          onPress={() => {
+            swipeable.close();
+            onDelete();
+          }}
+          style={[styles.swipeDelete, { backgroundColor: theme.red }]} accessibilityLabel="Sil">
           <Icon sf="trash.fill" ion="trash" size={20} color="#fff" />
           <Text style={styles.swipeText}>Sil</Text>
         </Pressable>
