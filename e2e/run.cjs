@@ -416,6 +416,48 @@ test('masaüstü fiş tablosu: çöp simgesi onay ister, Seçimi Bitir seçimi t
   await close();
 });
 
+test('mobil: kaydırarak silme onay ister, vazgeçince fiş kalır', async (b) => {
+  const context = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const backend = await installBackend(page, { photo: PHOTO, receipts: thisMonth(), schema: 5 });
+  await page.goto(APP, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(1200);
+  const close = () => context.close();
+  const cdp = await context.newCDPSession(page);
+  const touch = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
+  const swipeOpen = async () => {
+    const row = page.getByText('MİGROS TİCARET A.Ş.').first();
+    await row.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+    const box = await row.boundingBox();
+    const y = box.y + box.height / 2;
+    await touch('touchStart', 330, y);
+    for (let i = 1; i <= 20; i++) {
+      await touch('touchMove', 330 - i * 9, y);
+      await page.waitForTimeout(16);
+    }
+    await touch('touchEnd', 150, y);
+    await page.waitForTimeout(600);
+    if (process.env.E2E_SHOT) await page.screenshot({ path: process.env.E2E_SHOT });
+    await page.getByLabel('Sil', { exact: true }).first().click();
+    await page.waitForTimeout(500);
+  };
+  await swipeOpen();
+  assert.equal(await page.getByText(/30 gün içinde Ayarlar’dan geri alabilirsiniz/).count(), 1, 'kaydırıp Sil deyince onay sorulmalı');
+  await page.getByText('Vazgeç', { exact: true }).last().click();
+  await page.waitForTimeout(500);
+  assert.ok(backend.db.receipts.some((r) => r.id === 'a'), 'vazgeçince fiş silinmemeli');
+  await swipeOpen();
+  await page.getByText('Fişi Sil', { exact: true }).last().click();
+  await page.waitForTimeout(1500);
+  assert.ok(!backend.db.receipts.some((r) => r.id === 'a'), 'onaylayınca fiş silinmeli');
+  assert.equal(backend.db.receipt_trash.length, 1, 'çöp kutusuna taşınmalı');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 test('masaüstü fiş tablosu: çöp kutusu kurulu değilse kalıcı silme uyarısı', async (b) => {
   const { page, backend, close } = await open(b, { receipts: thisMonth(), schema: 0 }, '', { width: 1440, height: 900 });
   await page.getByLabel('OPET PETROLCÜLÜK A.Ş. fişini sil').click();
