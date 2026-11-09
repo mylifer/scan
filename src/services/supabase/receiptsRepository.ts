@@ -564,16 +564,17 @@ export async function restoreFromTrash(item: TrashItem): Promise<void> {
  * Fişleri ve fotoğraflarını kalıcı olarak siler. Fotoğraf yalnızca gerçekten silinen çöp kayıtları için
  * ve hiçbir canlı fiş onu kullanmıyorsa silinir (ör. fiş başka cihazda geri alındıysa fotoğrafı korunur).
  */
-export async function purgeTrash(items: TrashItem[]): Promise<void> {
-  if (!items.length) return;
-  const { data, error } = await supabase
-    .from(TRASH_TABLE)
-    .delete()
-    .in(
-      'id',
-      items.map((i) => i.id),
-    )
-    .select('id, receipt');
+export async function purgeTrash(items: Pick<TrashItem, 'id'>[]): Promise<void> {
+  // Kimlikler istek adresine yazılır; yüzlercesi tek istekte adres sınırını aşabilir → parça parça
+  const ids = items.map((i) => i.id);
+  for (let i = 0; i < ids.length; i += PURGE_CHUNK) await purgeTrashChunk(ids.slice(i, i + PURGE_CHUNK));
+}
+
+const PURGE_CHUNK = 100;
+
+async function purgeTrashChunk(ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  const { data, error } = await supabase.from(TRASH_TABLE).delete().in('id', ids).select('id, receipt');
   if (error) throw new Error(`Silinemedi: ${error.message}`);
   const paths = [
     ...new Set(
@@ -591,17 +592,31 @@ export async function purgeTrash(items: TrashItem[]): Promise<void> {
   if (orphans.length) await supabase.storage.from(RECEIPT_IMAGES_BUCKET).remove(orphans);
 }
 
-/** Süresi (30 gün) dolanları kalıcı olarak siler. Açılışta çağrılır; hata fırlatmaz. */
+/**
+ * Süresi (30 gün) dolanları kalıcı olarak siler, en eskiden başlayarak. Açılışta çağrılır; hata fırlatmaz.
+ * Çöp kutusu listesinin (son 1000) dışında kalan eski kayıtlar da silinir.
+ */
 export async function purgeExpiredTrash(): Promise<number> {
+  let purged = 0;
   try {
     if ((await trashReady()) !== true) return 0;
-    const { data, error } = await supabase.from(TRASH_TABLE).select('id').lt('deleted_at', trashCutoff()).limit(500);
-    if (error || !data?.length) return 0;
-    const expired = (await listTrash()).filter((i) => data.some((d) => String(d.id) === i.id));
-    await purgeTrash(expired);
-    return expired.length;
+    const cutoff = trashCutoff();
+    // Bir açılışta en çok 1000 kayıt; kalan varsa sonraki açılışta devam eder
+    for (let round = 0; round < 2; round++) {
+      const { data, error } = await supabase
+        .from(TRASH_TABLE)
+        .select('id')
+        .lt('deleted_at', cutoff)
+        .order('deleted_at', { ascending: true })
+        .limit(500);
+      if (error || !data?.length) break;
+      await purgeTrash(data.map((d) => ({ id: String(d.id) })));
+      purged += data.length;
+      if (data.length < 500) break;
+    }
+    return purged;
   } catch {
-    return 0;
+    return purged;
   }
 }
 
