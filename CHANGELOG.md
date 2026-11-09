@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.54.4 — `KOD`
+## 1.54.4 — `63b5831`
 - **Kaydırarak silme onay soruyor (mobil):** Fişi sola kaydırıp "Sil"e dokununca artık onay isteniyor; vazgeçerseniz fiş olduğu gibi kalıyor. Çöp kutusu kurulu değilse kalıcı silme uyarısı gösteriliyor.
 
 ## 1.54.3 — `8a7de48`
