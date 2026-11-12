@@ -332,7 +332,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
                             <ListBox.Item key={kat} id={kat} textValue={categoryLabel(kat)}>
                               <span className="flex items-center gap-2">
                                 <span className={cn("size-2 rounded-full shrink-0", v.dotColor)} />
-                                <span className="text-[10px] font-bold text-muted w-4">{v.initial}</span>
+                                <span className="text-[10px] font-bold text-muted w-5 shrink-0 whitespace-nowrap">{v.initial}</span>
                                 <span>{categoryLabel(kat)}</span>
                               </span>
                               <ListBox.ItemIndicator />
@@ -363,7 +363,7 @@ export function ReceiptForm({ initialRecord, loadingRecord }: ReceiptFormProps) 
 
           {/* KDV Dağılımı */}
           <Card>
-            <Card.Header className="flex flex-row items-center justify-between space-y-0">
+            <Card.Header className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0">
               <div>
                 <Card.Title>KDV Dağılımı</Card.Title>
                 <Card.Description>Fişteki vergi dilimlerini belirtin.</Card.Description>

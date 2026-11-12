@@ -140,7 +140,7 @@ export function KdvView() {
           description="Giden faturalarda hesaplanan KDV ile gelen faturalar ve fişlerden düşülebilir KDV karşılaştırması."
         />
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5 rounded-lg border bg-surface px-2 py-1 shadow-xs">
             <Button
               type="button"
@@ -223,11 +223,13 @@ export function KdvView() {
         }
       >
         <Card.Header>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase text-muted">
               <Calculator className="size-4" />
               {monthInfo.label} KDV Özeti
             </div>
+            {/* Yüklenirken çip ve açıklama yeri ayrılır; veri gelince alttaki kartlar kaymaz */}
+            {loading && <Skeleton className="h-5 w-40" />}
             {!loading && kdv && (
               <Chip size="sm" color={isOdenecek ? "danger" : "default"} variant={isOdenecek || isDevreden ? "soft" : "secondary"}>
                 {isOdenecek ? "Tahmini Ödenecek KDV" : isDevreden ? "Sonraki Aya Devreden KDV" : "Sıfır Fark"}
@@ -236,7 +238,7 @@ export function KdvView() {
           </div>
           <Card.Title className="text-3xl tabular-nums">
             {loading ? (
-              <Skeleton className="h-9 w-48" />
+              <Skeleton className="h-6 w-48" />
             ) : kdv ? (
               `${formatTL(Math.abs(kdv.sonuc))}`
             ) : (
@@ -245,7 +247,10 @@ export function KdvView() {
           </Card.Title>
           <Card.Description>
             {loading ? (
-              <Skeleton className="h-4 w-72" />
+              <span className="block space-y-1.5">
+                <Skeleton className="h-4 w-full max-w-md" />
+                <Skeleton className="h-4 w-48 lg:hidden" />
+              </span>
             ) : isOdenecek ? (
               "Kestiğiniz faturalardaki KDV, indirilecek KDV'den fazla olduğu için bu tutarın devlete ödenmesi beklenir."
             ) : isDevreden ? (
@@ -293,7 +298,7 @@ export function KdvView() {
             </div>
 
             <div className="text-xs text-muted">
-              Toplam <span className="font-semibold text-foreground">{kdv?.kestigim.adet ?? 0}</span> adet giden satış faturası dahil edildi.
+              Toplam <span className="font-semibold text-foreground">{loading ? "…" : (kdv?.kestigim.adet ?? 0)}</span> adet giden satış faturası dahil edildi.
             </div>
           </Card.Content>
         </Card>
@@ -311,7 +316,7 @@ export function KdvView() {
             <div className="space-y-2 rounded-lg border bg-default/20 p-4 text-sm font-sans">
               <div className="flex justify-between">
                 <span className="flex items-center gap-1.5 text-muted">
-                  <FileSpreadsheet className="size-3.5" /> Gelen e-Faturalar ({kdv?.gelenEfatura.adet ?? 0}):
+                  <FileSpreadsheet className="size-3.5" /> Gelen e-Faturalar ({loading ? "…" : (kdv?.gelenEfatura.adet ?? 0)}):
                 </span>
                 <span className="font-medium tabular-nums">
                   {loading ? <Skeleton className="h-4 w-20" /> : `${formatTL(kdv?.gelenEfatura.kdv ?? 0)}`}
@@ -321,7 +326,7 @@ export function KdvView() {
               {/* Taranan POS Fişleri (Bu ayın fişleri) */}
               <div className="flex justify-between">
                 <span className="flex items-center gap-1.5 text-muted">
-                  <Receipt className="size-3.5" /> {(kdv?.fis.devredenler?.length ?? 0) > 0 ? `${monthInfo.label.split(" ")[0]} Fişleri` : "Taranan POS Fişleri"} ({kdv?.fis.buAyAdet ?? kdv?.fis.adet ?? 0}):
+                  <Receipt className="size-3.5" /> {(kdv?.fis.devredenler?.length ?? 0) > 0 ? `${monthInfo.label.split(" ")[0]} Fişleri` : "Taranan POS Fişleri"} ({loading ? "…" : (kdv?.fis.buAyAdet ?? kdv?.fis.adet ?? 0)}):
                 </span>
                 <span className="font-medium tabular-nums">
                   {loading ? <Skeleton className="h-4 w-20" /> : `${formatTL(kdv?.fis.buAyKdv ?? kdv?.fis.kdv ?? 0)}`}

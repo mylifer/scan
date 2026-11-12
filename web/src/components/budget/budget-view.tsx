@@ -139,9 +139,9 @@ export function BudgetView() {
 
       {/* Ana Bütçe İlerleme Kartı */}
       <Card>
-        <Card.Header className="flex flex-row items-start justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
+        <Card.Header className="flex flex-row flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
               <Wallet className="size-4 text-accent" />
               <Card.Title>Aylık Bütçe Durumu</Card.Title>
               {monthlyBudget ? (
@@ -174,7 +174,7 @@ export function BudgetView() {
               {monthlyBudget ? "Bütçeyi Düzenle" : "Bütçe Belirle"}
             </Button>
           ) : (
-            <form onSubmit={handleSaveBudget} className="flex items-center gap-2">
+            <form onSubmit={handleSaveBudget} className="flex flex-wrap items-center gap-2">
               <Input fullWidth variant="secondary"
                 placeholder="Örn: 50.000"
                 className="w-36 tabular-nums"

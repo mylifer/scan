@@ -206,7 +206,7 @@ export function ReceiptsView() {
               <CreditCard className="size-4.5 stroke-[2]" />
             </div>
             <Chip size="sm" variant="soft" color="accent" className="tabular-nums">
-              {summary.fisSayisi} Fiş
+              {loading ? "…" : summary.fisSayisi} Fiş
             </Chip>
           </div>
           <div className="text-xs font-medium text-muted">Toplam Harcama</div>
@@ -234,7 +234,7 @@ export function ReceiptsView() {
             {loading ? <Skeleton className="h-7 w-28 my-0.5" /> : `${formatTL(summary.toplamKdv)}`}
           </div>
           <div className="text-[11px] text-muted mt-1 tabular-nums truncate">
-            %1: {formatTL(summary.kdv1)} · %10: {formatTL(summary.kdv10)} · %20: {formatTL(summary.kdv20)}
+            {loading ? "…" : `%1: ${formatTL(summary.kdv1)} · %10: ${formatTL(summary.kdv10)} · %20: ${formatTL(summary.kdv20)}`}
           </div>
         </Card>
 
@@ -245,7 +245,7 @@ export function ReceiptsView() {
               <CheckCircle2 className="size-4.5 stroke-[2]" />
             </div>
             <Chip size="sm" variant="soft" color="accent" className="tabular-nums">
-              %{summary.fisSayisi > 0 ? Math.round((sentCount / summary.fisSayisi) * 100) : 0} Oran
+              %{loading ? "…" : summary.fisSayisi > 0 ? Math.round((sentCount / summary.fisSayisi) * 100) : 0} Oran
             </Chip>
           </div>
           <div className="text-xs font-medium text-muted">Muhasebeye Teslim Edilen</div>
@@ -270,7 +270,10 @@ export function ReceiptsView() {
             <div className="size-9 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-400 text-white flex items-center justify-center shadow-sm shadow-amber-500/25">
               <Clock className="size-4.5 stroke-[2]" />
             </div>
-            {pendingCount > 0 ? (
+            {/* Yüklenirken "Eksik Yok" denmez: veri gelmeden durum iddiası yok */}
+            {loading ? (
+              <Chip size="sm" variant="secondary">…</Chip>
+            ) : pendingCount > 0 ? (
               <Chip size="sm" variant="soft" color="warning">
                 İşlem Bekliyor
               </Chip>
@@ -285,7 +288,7 @@ export function ReceiptsView() {
             {loading ? <Skeleton className="h-7 w-20 my-0.5" /> : `${pendingCount} Fiş`}
           </div>
           <div className="text-[11px] text-muted mt-1">
-            {pendingCount > 0 ? "Gönderilince önceki ayın KDV'sinden düşer" : "Tüm fişler muhasebeleştirildi"}
+            {loading ? "…" : pendingCount > 0 ? "Gönderilince önceki ayın KDV'sinden düşer" : "Tüm fişler muhasebeleştirildi"}
           </div>
         </Card>
       </div>
@@ -412,7 +415,7 @@ export function ReceiptsView() {
                   return (
                     <Dropdown.Item key={k} id={k} textValue={categoryLabel(k)}>
                       <span className={cn("size-2 rounded-full shrink-0", v.dotColor)} />
-                      <span className="text-[10px] font-bold text-muted w-4">{v.initial}</span>
+                      <span className="text-[10px] font-bold text-muted w-5 shrink-0 whitespace-nowrap">{v.initial}</span>
                       <Label className="text-xs">{categoryLabel(k)}</Label>
                       <Dropdown.ItemIndicator className="ms-auto" />
                     </Dropdown.Item>
@@ -662,6 +665,10 @@ export function ReceiptsView() {
                             {r.fis_no && (
                               <div className="text-[11px] text-muted tabular-nums">Fiş: #{r.fis_no}</div>
                             )}
+                            {/* Telefonda Toplam Tutar sütunu ekran dışında kalır; tutar burada da görünür */}
+                            <div className="md:hidden text-xs font-semibold tabular-nums text-foreground">
+                              {formatTL(r.toplam_tutar)}
+                            </div>
                           </div>
                           {r.image_path && (
                             <ImageIcon className="size-3.5 shrink-0 text-muted/70" aria-label="Fotoğraflı" />

@@ -464,7 +464,7 @@ export function EFaturaView() {
               <FileText className="size-4.5 stroke-[2]" />
             </div>
             <Chip size="sm" variant="soft" color="accent" className="tabular-nums">
-              {stats.count} Belge
+              {loading ? "…" : stats.count} Belge
             </Chip>
           </div>
           <div className="text-xs font-medium text-muted">
@@ -853,6 +853,10 @@ export function EFaturaView() {
                             VKN: {f.vkn}
                           </div>
                         )}
+                        {/* Telefonda Toplam Tutar sütunu ekran dışında kalır; tutar burada da görünür */}
+                        <div className="md:hidden text-xs font-semibold tabular-nums">
+                          {isIade ? `-${formatTL(f.tutar)}` : formatTL(f.tutar)}
+                        </div>
                       </Table.Cell>
                       <Table.Cell>
                         <div className="flex flex-wrap gap-1">
