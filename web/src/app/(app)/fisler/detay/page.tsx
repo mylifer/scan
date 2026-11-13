@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, Skeleton, toast } from "@heroui/react";
 import { ReceiptForm } from "@/components/receipts/receipt-form";
+import { ReceiptItemsCard } from "@/components/receipts/receipt-items-card";
 import { PageHeader } from "@/components/layout/page-header";
 import { getReceipt } from "@/lib/receipts";
 import type { ReceiptRecord } from "@shared/types/receipt";
@@ -55,11 +56,14 @@ function ReceiptDetailLoader() {
   }
 
   return (
-    <ReceiptForm
-      key={state.record?.id ?? "loading"}
-      initialRecord={state.record ?? undefined}
-      loadingRecord={state.loading}
-    />
+    <div className="space-y-6">
+      <ReceiptForm
+        key={state.record?.id ?? "loading"}
+        initialRecord={state.record ?? undefined}
+        loadingRecord={state.loading}
+      />
+      {state.record && <ReceiptItemsCard record={state.record} />}
+    </div>
   );
 }
 
