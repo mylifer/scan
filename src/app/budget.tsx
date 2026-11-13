@@ -43,7 +43,7 @@ export default function BudgetScreen() {
           headerRight: () => <HeaderTextButton title="Kaydet" bold onPress={save} />,
         }}
       />
-      <ListSection footer="Ana sayfada, aylık görünümde bütçenin ne kadarının kullanıldığı gösterilir. %80'i geçince turuncu, aşılınca kırmızı olur. Bu ayar yalnızca bu cihazda saklanır.">
+      <ListSection footer="Ana sayfada, aylık görünümde bütçenin ne kadarının kullanıldığı gösterilir. %80'i geçince turuncu, aşılınca kırmızı olur. Bütçe hesabınıza kaydedilir; web paneliyle ortaktır.">
         <FieldRow label="Aylık (₺)">
           <TextInput
             value={value}

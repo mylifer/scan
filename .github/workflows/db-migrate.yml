@@ -1,13 +1,13 @@
 # Veritabanı kurulumlarını (supabase/migrations) Supabase'e uygular. Kurulumlar yalnızca ekleme yapar,
 # mevcut fişlere dokunmaz ve tekrar çalıştırılabilir (if not exists / or replace).
-# Yalnızca bu dosya ya da en son kurulum (007) değişince ya da elle çalışır.
+# Yalnızca bu dosya ya da en son kurulum (008) değişince ya da elle çalışır.
 name: Veritabanı kurulumu
 
 on:
   workflow_dispatch:
   push:
     branches: [claude/pos-receipt-scanner-app-tk3b0z]
-    paths: ['.github/workflows/db-migrate.yml', 'supabase/migrations/007_muhasebe_gonderildi.sql']
+    paths: ['.github/workflows/db-migrate.yml', 'supabase/migrations/008_user_settings.sql']
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ jobs:
       PROJECT_REF: fzhagwcysltvpcgdfrnl
     steps:
       - uses: actions/checkout@v4
-      - name: 007 — muhasebeciye gönderildi işareti (006 yapılmamışsa önce o)
+      - name: 008 — kullanıcı ayarları / ortak bütçe (006 ve 007 yapılmamışsa önce onlar)
         shell: python
         run: |
           import json, os, urllib.request, urllib.error
@@ -39,10 +39,12 @@ jobs:
           if not cur or cur[0].get("v", 0) < 6:
               query(open("supabase/migrations/006_receipt_extras.sql", encoding="utf-8").read())
           query(open("supabase/migrations/007_muhasebe_gonderildi.sql", encoding="utf-8").read())
+          query(open("supabase/migrations/008_user_settings.sql", encoding="utf-8").read())
           v = query("select public.receipt_schema_version() as v, to_regclass('public.receipt_categories') is not null as categories, "
                     "to_regclass('public.app_errors') is not null as errors, "
+                    "to_regclass('public.user_settings') is not null as settings, "
                     "(select count(*) from information_schema.columns where table_schema = 'public' and table_name = 'receipts' "
                     "and column_name in ('fis_no', 'vkn', 'notlar', 'etiketler', 'muhasebe_gonderildi_at')) as new_columns")
-          if not v or v[0].get("v") != 7 or v[0].get("new_columns") != 5:
+          if not v or v[0].get("v") != 8 or v[0].get("new_columns") != 5 or not v[0].get("settings"):
               print(f"::error::Kurulum doğrulanamadı: {json.dumps(v)}"); raise SystemExit(1)
           print(f"::warning title=sonuc::{json.dumps(v)}")
