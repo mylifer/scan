@@ -16,7 +16,7 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
-## 1.56.0 · Web 1.5.0 — `HASH`
+## 1.56.0 · Web 1.5.0 — `069420e`
 - **Fiş kalemleri (mobil + web):** Fişteki ürün ve hizmet satırları (ad, miktar, birim fiyat, KDV oranı, tutar) artık okunuyor ve fiş detayında listeleniyor. Kalem toplamı fiş toplamını tutmuyorsa uyarı çıkıyor.
   - **Yeni fişler:** Kalemler fiş okunurken aynı istekte okunuyor; Gemini kotasından ek bir hak harcanmıyor. Toplu onayda ve formda düzeltme yapılsa da kalemler kaybolmuyor.
   - **Eski fişler:** Gemini günlük kotası yenilenmeden önceki saatte (Türkiye saatiyle kışın 10:00–10:55, yazın 09:00–09:55) o gün kullanılmayan kotayla, telefon kapalıyken bile sunucuda okunuyor. Yalnızca Flash modelleri kullanılıyor; gündüz taramalarınızın hakkına dokunulmuyor. Fişin tutar ve KDV bilgileri değişmiyor.
