@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import type { EFatura } from '../../supabase/functions/qnb-efatura/soap';
-import { ayEkle, devredenEtiketi, fisAyaAitMi, fisKdvAyi, kdvAyHesapla, kdvFisFiltresi } from '../lib/kdvAy';
+import { ayEkle, devredenEtiketi, devredenFisAylari, fisAyaAitMi, fisKdvAyi, kdvAyHesapla, kdvFisFiltresi } from '../lib/kdvAy';
 import type { ReceiptRecord } from '../types/receipt';
 
 const fatura = (ettn: string, tutar: number, kdv: number | undefined, extra: Partial<EFatura> = {}): EFatura => ({
@@ -160,5 +160,36 @@ describe('Fişin KDV dönemi (gönderim ayı − 1)', () => {
     const aralik = kdvFisFiltresi('2026-12', '2027-01');
     assert.ok(aralik.includes('muhasebe_gonderildi_at.lt.2027-02-01T00:00:00+03:00'));
     assert.ok(aralik.includes('is.null,tarih.lt.2027-01-01'));
+  });
+});
+
+describe('Devreden fişin e-Faturasıyla eşleşmesi', () => {
+  // Eylül tarihli fiş Kasım'da gönderildi → Ekim KDV'sine girer; aynı alışverişin e-Faturası Eylül'de sayıldı
+  const gecFis = gonderilmis(fis('gec', '2026-09-15', 1200, 200, '1111111111'), '2026-11-03T10:00:00+03:00');
+  const eylulFaturasi = fatura('eylul', 1200, 200, { tarih: '2026-09-15' });
+
+  it('devredenFisAylari hedef aydan eski fişlerin aylarını verir', () => {
+    const ekimFisi = gonderilmis(fis('e', '2026-10-05', 100, 10), '2026-11-03T10:00:00+03:00');
+    assert.deepEqual(devredenFisAylari([gecFis, ekimFisi], '2026-10', '2026-11'), ['2026-09']);
+    assert.deepEqual(devredenFisAylari([gecFis], '2026-10', '2026-11', 0), []);
+  });
+
+  it('önceki ayın faturası verilmezse fiş sayılır (eski davranış)', () => {
+    const k = kdvAyHesapla([], [], [gecFis], new Set(), '2026-10', '2026-11');
+    assert.equal(k.fis.kdv, 200);
+  });
+
+  it('önceki ayın faturasıyla eşleşen devreden fiş iki kez sayılmaz, o faturanın KDV\'si bu aya eklenmez', () => {
+    const k = kdvAyHesapla([], [], [gecFis], new Set(), '2026-10', '2026-11', [eylulFaturasi]);
+    assert.equal(k.fis.eslesen, 1);
+    assert.equal(k.fis.kdv, 0);
+    assert.equal(k.gelenEfatura.kdv, 0);
+    assert.equal(k.dusulebilir, 0);
+  });
+
+  it('önceki aydaki iptal edilmiş fatura eşleşmeye katılmaz', () => {
+    const iptal = fatura('eylul', 1200, 200, { tarih: '2026-09-15', iptal: true });
+    const k = kdvAyHesapla([], [], [gecFis], new Set(), '2026-10', '2026-11', [iptal]);
+    assert.equal(k.fis.eslesen, 0);
   });
 });

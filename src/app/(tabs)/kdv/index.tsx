@@ -5,12 +5,12 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, T
 
 import { Icon } from '../../../components/ui/Icon';
 import { ListRow, ListSection } from '../../../components/ui/List';
-import { HARIC_KEY } from '../../../lib/efaturaOzet';
+import { HARIC_KEY, ayAraligi as ayGunleri } from '../../../lib/efaturaOzet';
 import { errorMessage } from '../../../lib/errors';
 import { capitalizeTr, formatTL, monthRange } from '../../../lib/format';
 import { haptics } from '../../../lib/haptics';
 import { useWide } from '../../../lib/layout';
-import { type KdvAy, kdvAyHesapla } from '../../../lib/kdvAy';
+import { devredenFisAylari, type KdvAy, kdvAyHesapla } from '../../../lib/kdvAy';
 import { fontFamily, tabular, type as t, useShadcnTheme, useTheme } from '../../../lib/theme';
 import { Badge } from '../../../components/web/Badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/web/Card';
@@ -19,7 +19,7 @@ import { WebPageHeader } from '../../../components/web/PageHeader';
 import { donemGetir, kaliciDonemOku, qnbDurum } from '../../../services/efatura/donemCache';
 import { EFaturaError } from '../../../services/efatura/qnbEfatura';
 import { getKdvReceipts } from '../../../services/supabase/receiptsRepository';
-import { FIS_TIMEOUT_MS, kdvVerileriniGetir } from '../../../lib/kdvYukle';
+import { FIS_TIMEOUT_MS, kdvVerileriniGetir, oncekiGelenleriGetir } from '../../../lib/kdvYukle';
 import { withTimeout } from '../../../lib/retry';
 
 /** Ayın ilk ve son günü (QNB'de bitiş dahil) ve fiş sorgusu için bir sonraki ayın ilk günü */
@@ -74,9 +74,13 @@ export default function KdvScreen() {
           kaliciDonemOku('giden', a.from),
         ]);
         const kayitliAt = kGelen && kGiden ? Math.min(kGelen.at, kGiden.at) : null;
+        // Devreden fişler kendi aylarının e-Faturalarıyla eşleştirilir (aynı KDV iki kez indirilmesin)
+        const oncekiAylar = devredenFisAylari(fisler, ayKodu);
+        const kayitliOnceki = async (m: string) => (await kaliciDonemOku('gelen', `${m}-01`))?.donem.faturalar ?? null;
+        const kOnceki = (await Promise.all(oncekiAylar.map(kayitliOnceki))).flatMap((x) => x ?? []);
         setSonuclar((s) => ({
           ...s,
-          [a.from]: kdvAyHesapla(kGelen?.donem.faturalar ?? [], kGiden?.donem.faturalar ?? [], fisler, haric, ayKodu),
+          [a.from]: kdvAyHesapla(kGelen?.donem.faturalar ?? [], kGiden?.donem.faturalar ?? [], fisler, haric, ayKodu, undefined, kOnceki),
         }));
         setHatalar(({ [a.from]: _, ...rest }) => rest);
         // QNB girişi daha önce başarısız olduysa (hesap kilitlenmesin) yalnızca canlı QNB sorgusu atlanır
@@ -90,14 +94,23 @@ export default function KdvScreen() {
         setQnbNot((n) => ({ ...n, [a.from]: { durum: 'yukleniyor', at: kayitliAt } }));
 
         // 2) Güncel e-Faturalar QNB'den (yavaş olabilir; süre sınırlı). Alınamayan taraf için kayıtlı sonuç kalır
-        const v = await kdvVerileriniGetir({
-          gelen: () => donemGetir('gelen', a.from, a.to, yenile),
-          giden: () => donemGetir('giden', a.from, a.to, yenile),
-          fisler: async () => fisler,
-        });
+        const [v, onceki] = await Promise.all([
+          kdvVerileriniGetir({
+            gelen: () => donemGetir('gelen', a.from, a.to, yenile),
+            giden: () => donemGetir('giden', a.from, a.to, yenile),
+            fisler: async () => fisler,
+          }),
+          oncekiGelenleriGetir(oncekiAylar, {
+            getir: (m) => {
+              const g = ayGunleri(m);
+              return donemGetir('gelen', g.from, g.to);
+            },
+            kayitli: kayitliOnceki,
+          }),
+        ]);
         const gelen = v.gelenOk ? v.gelen : (kGelen?.donem.faturalar ?? []);
         const giden = v.gidenOk ? v.giden : (kGiden?.donem.faturalar ?? []);
-        setSonuclar((s) => ({ ...s, [a.from]: kdvAyHesapla(gelen, giden, fisler, haric, ayKodu) }));
+        setSonuclar((s) => ({ ...s, [a.from]: kdvAyHesapla(gelen, giden, fisler, haric, ayKodu, undefined, onceki.faturalar) }));
         if (v.qnbHatasi) {
           if (v.qnbHatasi instanceof EFaturaError && v.qnbHatasi.loginFailed) qnbDurum.loginFailed = true;
           setQnbNot((n) => ({ ...n, [a.from]: { durum: 'hata', at: kayitliAt, mesaj: errorMessage(v.qnbHatasi) } }));

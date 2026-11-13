@@ -171,6 +171,27 @@ export function kdvFisFiltresi(hedefAy: string, simdikiAy: string = simdikiIstan
   return kosullar.join(',');
 }
 
+/** En fazla bu kadar önceki ayın gelen e-Faturası devreden fişlerle eşleştirmek için getirilir (QNB yükü sınırlı) */
+export const DEVREDEN_ESLESTIRME_MAX_AY = 12;
+
+/**
+ * Hedef ayın KDV'sine giren ama tarihi daha eski olan (devreden) fişlerin ayları, yeniden eskiye.
+ * Bu ayların gelen e-Faturaları kdvAyHesapla'ya `oncekiGelen` olarak verilir.
+ */
+export function devredenFisAylari(
+  fisler: Pick<ReceiptRecord, 'tarih' | 'muhasebe_gonderildi_at'>[],
+  hedefAy: string,
+  simdikiAy: string = simdikiIstanbulAyi(),
+  max = DEVREDEN_ESLESTIRME_MAX_AY,
+): string[] {
+  const aylar = new Set<string>();
+  for (const f of fisler) {
+    const ay = (f.tarih || '').slice(0, 7);
+    if (ay && ay < hedefAy && fisAyaAitMi(f, hedefAy, simdikiAy)) aylar.add(ay);
+  }
+  return [...aylar].sort().reverse().slice(0, max);
+}
+
 /**
  * Ayın KDV'si. Giden: iptal, taslak ve hariç tutulan (olağan dışı) faturalar sayılmaz.
  * Düşülebilir: gelen e-Fatura KDV'si + e-Faturayla eşleşmeyen fişlerin KDV'si − kestiğim iade faturalarının KDV'si
@@ -179,6 +200,10 @@ export function kdvFisFiltresi(hedefAy: string, simdikiAy: string = simdikiIstan
  * Fişler fisKdvAyi'ye göre döneme atanır: gönderilenler gönderim ayı − 1, gönderilmeyenler bulunulan ay − 1
  * (fiş tarihi daha yeniyse kendi ayı). Daha eski tarihli fişler `fis.devredenler` altında aya göre ayrı kalemler
  * halinde listelenir.
+ *
+ * oncekiGelen: devreden fişlerin kendi aylarındaki gelen e-Faturalar (bkz. devredenFisAylari). Bu faturaların KDV'si
+ * kendi aylarında sayıldığı için burada toplanmaz; yalnızca o aydan devreden fişin aynı alışveriş olup olmadığına
+ * bakmak için kullanılır. Verilmezse geç gönderilen bir fişin KDV'si e-Faturasıyla birlikte iki kez indirilir.
  */
 export function kdvAyHesapla(
   gelen: EFatura[],
@@ -186,7 +211,8 @@ export function kdvAyHesapla(
   fisler: ReceiptRecord[],
   haric: ReadonlySet<string> = new Set(),
   hedefAy?: string,
-  simdikiAy?: string
+  simdikiAy?: string,
+  oncekiGelen: EFatura[] = []
 ): KdvAy {
   const gecerli = (f: EFatura) => !f.iptal && !f.taslak && f.paraBirimi === 'TRY' && !haric.has(f.ettn.toLowerCase());
 
@@ -202,6 +228,15 @@ export function kdvAyHesapla(
   const nowMonth = simdikiAy ?? (hedefAy ? simdikiIstanbulAyi() : (ay || simdikiIstanbulAyi()));
   const gecerliFisler = ay ? fisler.filter((f) => fisAyaAitMi(f, ay, nowMonth)) : fisler;
 
+  // Eşleşme aynı gün ister; bu yüzden önceki ayların faturaları bu ayın fişleriyle karışmaz
+  const gorulen = new Set(gelenGecerli.map((f) => f.ettn.toLowerCase()));
+  const adaylar = [...gelenGecerli];
+  for (const f of oncekiGelen) {
+    const k = f.ettn.toLowerCase();
+    if (!gecerli(f) || gorulen.has(k)) continue;
+    gorulen.add(k);
+    adaylar.push(f);
+  }
   const kullanildi = new Set<EFatura>();
   let eslesen = 0;
   let buAyKdv = 0;
@@ -209,7 +244,7 @@ export function kdvAyHesapla(
   const devredenMap = new Map<string, { kdv: number; adet: number }>();
 
   for (const fis of gecerliFisler) {
-    const es = gelenGecerli.find((f) => !kullanildi.has(f) && ayniAlisveris(fis, f));
+    const es = adaylar.find((f) => !kullanildi.has(f) && ayniAlisveris(fis, f));
     if (es) {
       kullanildi.add(es);
       eslesen += 1;
