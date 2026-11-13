@@ -16,6 +16,12 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.55.0 · Web 1.4.0 — `HASH`
+- **KDV'de çift indirim kapatıldı (mobil + web):** Muhasebeciye geç gönderilen bir fiş (ör. Eylül fişi Kasım'da gönderildi → Ekim KDV'si) artık kendi ayının gelen e-Faturalarıyla da karşılaştırılıyor. Aynı alışverişin e-Faturası varsa fişin KDV'si ikinci kez düşülmüyor ve "e-Faturayla aynı alışveriş" notunda sayılıyor.
+- **Aylık bütçe hesabınızda (mobil + web):** Bütçe artık buluta kaydediliyor; telefonda girdiğiniz bütçe web panelinde de görünüyor, telefon değişince kaybolmuyor. İnternetsiz yapılan değişiklik bağlantı gelince kaydediliyor. Kurulum: Actions → "Veritabanı kurulumu" (008). Kurulum yapılana kadar bütçe eskisi gibi cihazda kalır.
+- **Web hataları da kaydediliyor:** Web panelindeki beklenmeyen hatalar Ayarlar → Hata Kayıtları'nda telefon hatalarıyla birlikte görünüyor.
+- **Belgeler:** Devir belgesi (CLAUDE_CODE_HANDOVER.md) ve README güncel duruma getirildi.
+
 ## 1.54.4 — `63b5831`
 - **Kaydırarak silme onay soruyor (mobil):** Fişi sola kaydırıp "Sil"e dokununca artık onay isteniyor; vazgeçerseniz fiş olduğu gibi kalıyor. Çöp kutusu kurulu değilse kalıcı silme uyarısı gösteriliyor.
 
