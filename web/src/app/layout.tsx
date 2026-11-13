@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { AuthProvider } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ErrorReporter } from "@/components/error-reporter";
 import { VersionGuard } from "@/components/version-guard";
 import { AppToastProvider } from "@/components/toast-provider";
 import "./globals.css";
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           </AuthProvider>
           <AppToastProvider />
           <VersionGuard />
+          <ErrorReporter />
         </ThemeProvider>
       </body>
     </html>

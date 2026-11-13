@@ -3,6 +3,7 @@
 import { RefreshCw, TriangleAlert } from "lucide-react";
 import { useEffect } from "react";
 import { isChunkLoadError, reloadForChunkError } from "@/lib/appVersion";
+import { reportError } from "@/lib/errorLog";
 import { Button, Card } from "@heroui/react";
 
 /** Panel sayfalarının hata sınırı: eski sürüm parçası hatasında sayfayı yeniler, diğerlerinde tekrar dener. */
@@ -12,6 +13,7 @@ export default function AppError({ error, retry }: { error: Error & { digest?: s
     console.error(error);
     // Otomatik yenileme süre korumalıdır; engellenirse kullanıcı butonla yeniler
     if (chunkError) reloadForChunkError();
+    else reportError("sayfa hatası", error, error.digest ? `digest: ${error.digest}` : undefined);
   }, [error, chunkError]);
 
   return (
