@@ -1,7 +1,7 @@
 # SCAN PROJESİ — CLAUDE CODE DEVİR VE GELİŞTİRME YÖNERGESİ (HANDOVER)
-**Tarih:** 1 Kasım 2026  
-**Dönem:** v1.48.0'dan Web 1.0.21'e Geçiş & Güncel Mimari Durumu  
-**Mevcut Git Dalı:** `claude/pos-receipt-scanner-app-tk3b0z`  
+**Tarih:** 13 Kasım 2026 (ilk sürüm: 1 Kasım 2026)  
+**Güncel Sürüm:** 1.55.0 · Web 1.4.0  
+**Ana (yayın) dalı:** `claude/pos-receipt-scanner-app-tk3b0z` — Claude Code oturumları kendi dallarında çalışır ve PR ile buraya birleştirir  
 **Canlı Web Yayını:** https://mylifer.github.io/scan/  
 
 ---
@@ -11,7 +11,9 @@
 Claude Code'un bıraktığı **v1.48.0** sürümünden itibaren projede iki paralel ve köklü dönüşüm gerçekleştirilmiştir:
 
 1. **Mobil Uygulama (Expo SDK 58 / React Native):** Kök dizinde (`src/`) korunmuş, test kapsamı 211 teste yükseltilmiş, e-fatura PDF blob hatası çözülmüş ve mobil kararlılığı %100 muhafaza edilmiştir.
-2. **Yeni Web Mimarisi (`web/` — Next.js 16 + HeroUI v3; Web 1.1.0 öncesi shadcn/ui):** Mobil web kısıtlamalarını aşmak ve tam teşekküllü bir masaüstü FinTech SaaS paneli sunmak amacıyla, bağımsız bir **Next.js 16 (App Router), React 19, Tailwind CSS v4 ve resmi shadcn/ui** projesi kurulmuştur. Web 0.1.0'dan Web 1.0.21'e kadar 21+ sürüm geliştirilerek canlıya alınmıştır.
+2. **Yeni Web Mimarisi (`web/` — Next.js 16 + HeroUI v3):** Mobil web kısıtlamalarını aşmak ve tam teşekküllü bir masaüstü paneli sunmak amacıyla bağımsız bir **Next.js 16 (App Router), React 19, Tailwind CSS v4** projesi kurulmuştur. Başlangıçta shadcn/ui kullanılmış, **Web 1.1.0'da tamamen HeroUI v3'e geçilmiştir** (shadcn/Radix/sonner yoktur, geri getirilmez).
+
+> Aşağıdaki Faz 1–3 tarihçesi geçmiş kaydıdır; o dönemin stil kararlarının (cam efekti, shadcn sınıfları, `%2` tablo çizgileri) bir kısmı Web 1.1.x'te kaldırılmıştır. **Güncel kurallar için Bölüm 4'e ve `AGENTS.md`'ye bakın.**
 
 ---
 
@@ -64,7 +66,20 @@ Claude Code'un bıraktığı **v1.48.0** sürümünden itibaren projede iki para
 - **Web 1.0.24 (`729b557`):** Yedek geri yüklemede PNG/PDF fotoğraflar doğru içerik türüyle yükleniyor, yedek manifestinde gerçek sürüm kodu var, kök lint uyarısız.
 - **1.53.0 · Web 1.0.25 (`3538f2d`):** Devreden KDV kuralı "gönderim ayı − 1" olarak değişti (mobil + web). Toplu fiş eklemede yüklenemeyen fotoğraflar artık kaybolmuyor; "Tümünü Onayla" eklendi.
 - **1.53.1 · Web 1.0.26 (`651b64c`):** KDV ekranları QNB yanıt vermeyince sonsuza dek yükleniyordu; QNB çağrıları süre sınırlı, gelmezse KDV fişlerle hesaplanıp uyarı gösteriliyor (`src/lib/kdvYukle.ts`).
-- **1.53.2 · Web 1.0.27 (`c008823` — EN GÜNCEL SÜRÜM):** KDV sayfaları kalıcı e-Fatura önbelleğiyle aşamalı açılıyor: önce fişler + kayıtlı sonuç (anında), güncel QNB arka planda.
+- **1.53.2 · Web 1.0.27 (`c008823`):** KDV sayfaları kalıcı e-Fatura önbelleğiyle aşamalı açılıyor: önce fişler + kayıtlı sonuç (anında), güncel QNB arka planda.
+
+
+### Faz 4: HeroUI v3, Yerel Görünüm ve Doğruluk Düzeltmeleri (Web 1.1.0 – 1.55.0 · Web 1.4.0)
+- **Web 1.1.0 (`953a831`):** Tüm web bileşenleri shadcn/ui'dan HeroUI v3'e taşındı; shadcn, Radix ve sonner kaldırıldı.
+- **Web 1.1.1 (`b07f633`):** HeroUI bileşenlerine verilen özel stiller (cam efekti, tablo başlık arka planı, buton gradyanları, `%2` satır çizgileri) kaldırıldı; bileşenler heroui.com'daki görünümüyle kullanılıyor.
+- **Web 1.2.x (`2e51bac`, `474d760`, `4f41a90`):** Yüzen kenar çubuğu (⌘K arama, ⌘B daraltma), kart/pencere içindeki alanlar `variant="secondary"`, vergi takvimi yeniden düzeni, tam ekran PDF önizleme.
+- **1.54.0 · Web 1.3.0 (`7fe8205`):** Gönderilen fişler gönderim ayına göre süzülebiliyor (`gonderimAyi`).
+- **1.54.1 · Web 1.3.1 (`f766ffb`):** Tam kod incelemesi düzeltmeleri: hesap değişince önbellekler temizlenir, e-Arşiv çift sayımı, ÖİV/ÖTV'nin KDV'ye karışması, iptal/dövizli faturaların toplamlardan çıkarılması.
+- **1.54.2 – 1.54.4:** Mobil bütçe kullanıcıya özel; Supabase CLI sabit; çöp kutusu temizliği sınırsız; kaydırarak silme onay ister. `86c332a`: Next.js 16.4.6 ve haftalık güvenlik taraması (`guvenlik.yml`).
+- **1.55.0 · Web 1.4.0:**
+  - *Devreden fişlerde çift KDV kapatıldı:* Hedef aydan eski tarihli (geç gönderilen) bir fiş, kendi ayının gelen e-Faturalarıyla da eşleştirilir (`devredenFisAylari`, `oncekiGelenleriGetir`, `kdvAyHesapla(..., oncekiGelen)`).
+  - *Bütçe bulutta:* `user_settings` tablosu (008); telefon ve web aynı bütçeyi görür (`src/lib/budgetSync.ts`).
+  - *Web hata kaydı:* Web paneli de yakalanmamış hataları ve sayfa hatalarını `app_errors`'a yazar (`reportError`, `ErrorReporter`).
 
 ---
 
@@ -76,12 +91,12 @@ scan/
 │   ├── app/                     # Expo Router dosya tabanlı rotaları
 │   ├── components/              # Mobil bileşenler
 │   ├── lib/                     # Ortak saf TypeScript yardımcıları ve algoritmaları
-│   └── __tests__/               # Kök testleri (Node native test runner, 227 test)
+│   └── __tests__/               # Kök testleri (Node native test runner, 252 test)
 ├── web/                         # YENİ Next.js 16 Masaüstü Web Uygulaması
 │   ├── src/
 │   │   ├── app/                 # Next.js 16 App Router
 │   │   │   ├── (app)/           # Korumalı SaaS paneli rotaları
-│   │   │   │   ├── fisler/      # Fişler & Giderler (Apple Native Glass)
+│   │   │   │   ├── fisler/      # Fişler & Giderler
 │   │   │   │   ├── efaturalar/  # e-Faturalar & UBL Görüntüleyici & Tümünü Göster
 │   │   │   │   ├── kdv/         # KDV Dengesi ve Raporlama
 │   │   │   │   ├── butce/       # Harcama & Kategori Bütçeleri
@@ -91,13 +106,20 @@ scan/
 │   │   │   │   ├── ayarlar/     # Ayarlar, Çöp Kutusu, Yedekleme, Hata Günlüğü
 │   │   │   │   ├── layout.tsx   # Dashboard Layout (Sidebar + Header)
 │   │   │   │   └── template.tsx # Sayfa geçiş animasyonu (slide & fade)
-│   │   │   ├── globals.css      # Tailwind v4 tema değişkenleri ve ultra-soft satır çizgileri
+│   │   │   ├── globals.css      # Tailwind v4 + `@import "@heroui/styles"`; yalnız turkuaz `--accent` ezilir
 │   │   │   └── layout.tsx       # Root layout, Geist font tanımları (latin-ext)
 │   │   ├── components/          # HeroUI tabanlı sayfa bileşenleri (components/ui yok)
-│   │   └── lib/                 # Web veri katmanı ve algoritmaları (10 dosya, 35 Vitest testi)
+│   │   └── lib/                 # Web veri katmanı (12 test dosyası, 53 Vitest testi)
+├── supabase/
+│   ├── migrations/              # 001–008 SQL kurulumları (yalnız ekleme yapar, tekrar çalıştırılabilir)
+│   └── functions/               # analyze-receipt (Gemini), qnb-efatura (QNB SOAP + UBL KDV tamamlama)
 ├── .github/workflows/
 │   ├── deploy-web.yml           # Web uygulamasını GitHub Pages'e derleyip yayınlayan iş akışı
-│   └── ios.yml                  # iOS TestFlight ve App Store derleme iş akışı
+│   ├── ios.yml                  # iOS: EAS Update / TestFlight derleme
+│   ├── db-migrate.yml           # Veritabanı kurulumlarını (en son 008) Supabase'e uygular
+│   ├── supabase-functions.yml   # Supabase fonksiyonlarını yayınlar
+│   ├── e2e.yml / smoke-test.yml # Tarayıcı testleri (PR'larda)
+│   └── guvenlik.yml             # npm audit (kilit dosyası değişince + haftalık)
 └── CHANGELOG.md                 # Tüm sürümlerin ve commit kodlarının eksiksiz günlüğü
 ```
 
@@ -110,7 +132,7 @@ Claude Code olarak projede çalışırken aşağıdaki kurallara **mutlaka** uyu
 ### A. Tipografi ve Stil Kuralları
 1. **Yalnızca Geist Fontu:** Sistemde `font-mono`, `Inter` veya sistem fontu kullanılmaz. Parasal değerler, tarihler ve kodlarda `font-mono` yerine `Geist Sans` ile birlikte `tabular-nums` sınıfı kullanılır (`latin-ext` destekli).
 2. **Kategori Rozetleri:** Emojiler kesinlikle kullanılmaz. `CategoryBadge` bileşeni kullanılır (`dotColor` parıltılı neon nokta + 2 harfli büyük harf monogram).
-3. **Koyu Mod Tablo Çizgileri:** Tablolarda yüksek kontrastlı border kullanılmaz. `.dark table tbody tr` satırları `rgba(255, 255, 255, 0.02)` ultra-soft sınır seviyesindedir.
+3. **Tablolar:** HeroUI `Table` kendi görünümüyle kullanılır (Web 1.1.1'de `%2` satır çizgisi gibi tüm ezmeler kaldırıldı); `Card` içine sarılmaz. Kurallar: tek `Table.Column isRowHeader`, seçim kutuları `slot="selection"`, tıklanabilir satırlar `onAction`.
 4. **Native HeroUI görünümü:** Web 1.1.1'den itibaren cam efekti ve tüm bileşen stil ezmeleri kaldırıldı; bileşenler heroui.com'daki görünüm ve animasyonlarıyla kullanılır. HeroUI bileşenlerine yalnız yerleşim sınıfları verilir (ayrıntı: AGENTS.md).
 5. **Para Birimi:** `formatTL` sonucu "₺1.234,56" biçimindedir; sonuna " TL" eklenmez.
 
@@ -123,24 +145,29 @@ Claude Code olarak projede çalışırken aşağıdaki kurallara **mutlaka** uyu
    - Fiş tarihinden önceki bir aya düşülemez: fiş tarihi daha yeniyse kendi ayında kalır (Kasım'da eklenen Kasım fişi → Kasım).
    - KDV ekranları aşamalı yüklenir: önce fişler + kalıcı önbellekteki son e-Fatura sonucu (mobil `kaliciDonemOku`, web `readPersistedDonem`), ardından `kdvVerileriniGetir` (`src/lib/kdvYukle.ts`) ile güncel QNB. QNB süre sınırlıdır (120 sn); alınamazsa kayıtlı sonuç kalır ve uyarı gösterilir. Ekran asla QNB'yi beklerken boş kalmamalı.
    - Veritabanı sorgusu `kdvFisFiltresi` ile mobil (`getKdvReceipts`) ve web (`listReceiptsForKdv`) arasında ortaktır; kesin eleme `fisAyaAitMi` ile yapılır.
+   - **Fiş ↔ e-Fatura eşleştirmesi:** Aynı gün, tutar ±5 kuruş ve (ikisinde de varsa) aynı VKN olan fiş sayılmaz, çünkü KDV'si gelen e-Faturada sayılmıştır. Hedef aydan eski tarihli (devreden) fişler için o fişlerin aylarının gelen e-Faturaları da getirilir (`devredenFisAylari` → en fazla 12 ay, `oncekiGelenleriGetir` → 3'erli, süre sınırlı, alınamazsa kalıcı önbellek) ve `kdvAyHesapla`'ya `oncekiGelen` olarak verilir. Bu faturaların KDV'si hedef aya **eklenmez**; yalnızca eşleştirme içindir. Yeni bir KDV ekranı yazarken bu parametreyi atlamayın, yoksa geç gönderilen fişin KDV'si iki kez indirilir.
 4. **Toplu Fiş Ekleme (mobil):** Yüklenemeyen fotoğraflar **asla otomatik silinmez** (`pendingStore.markFailed` yalnızca sayar). Aynı oturumda 2 kez daha denenir (`withRetry`), uygulama öne gelince ve "Tekrar Dene" ile yeniden yüklenir; yalnızca kullanıcı "Vazgeç ve Sil" derse silinir. "Tümünü Onayla" (`lib/bulkApprove.ts`) hatalı, olası mükerrer ve yapay zekânın emin olamadığı (`belirsiz`) fişleri kaydetmez, incelemeye bırakır.
 
-### C. Yeni Sürüm Koruması (Chunk 404)
+### C. Ortak Kullanıcı Verisi ve Hata Kaydı
+1. **Aylık bütçe (`src/lib/budgetSync.ts`, 008 `user_settings`):** Cihazda (mobil AsyncStorage, web localStorage) kullanıcıya özel kopya + bulut. Girişte ve ekran açıldıkça (dakikada en fazla bir) buluttan okunur; bulutta satır yoksa cihaz değeri yazılır. İnternetsiz değişiklik `budget:monthly:<uid>:pending` ile işaretlenir ve sonraki eşitlemede buluttakini ezer. Tablo yoksa (008 kurulmamışsa) eskisi gibi yalnız cihazda çalışır. Bulut erişimi `setBudgetRemote` ile verilir (mobil `useAuth`, web `AuthProvider`); `lib/budget.ts` Supabase'i doğrudan içe aktarmaz (testler için).
+2. **Hata kaydı (`app_errors`, 006):** Mobil `src/services/errorLog.ts`, web `web/src/lib/errorLog.ts` → `reportError`. Web'de `ErrorReporter` (kök layout) yakalanmamış hataları, `(app)/error.tsx` sayfa hatalarını yazar. İnternet hataları, eski sürüm parçası hataları (VersionGuard yeniler), tarayıcı eklentisi hataları, oturumsuz durumlar ve aynı sekmede tekrarlanan hata yazılmaz; sekme başına en fazla 30 kayıt. Kayıtlar Ayarlar → Hata Kayıtları'nda (mobil + web birlikte) görünür. Harici servis (Sentry vb.) yoktur.
+
+### D. Yeni Sürüm Koruması (Chunk 404)
 GitHub Pages özel header göndermediği için Next.js'in `deploymentId` sürüm uyumsuzluğu koruması çalışmaz. Yerine şunlar kullanılır, kaldırılmamalıdır:
 1. `deploy-web.yml` önceki yayınların `_next/static` parçalarını `actions/cache` ile saklar (30 günden eskiler budanır) ve yeni pakete ekler.
 2. `deploy-web.yml` `NEXT_PUBLIC_APP_VERSION` (commit) değerini derlemeye verir ve `dist/version.json` yazar. `web/src/components/version-guard.tsx` bu dosyayı odak/görünürlük değişiminde ve 5 dakikada bir okur; sürüm değiştiyse kalıcı "Yenile" bildirimi gösterir.
 3. Parça yükleme hatasında (`isChunkLoadError`, `web/src/lib/appVersion.ts`) sayfa 30 sn korumalı olarak bir kez yenilenir. Panel hata sınırı: `web/src/app/(app)/error.tsx` (Next 16'da prop adı `reset` değil `retry`).
 
-### D. Derleme, Test ve Kalite Kapıları
+### E. Derleme, Test ve Kalite Kapıları
 Herhangi bir görevi tamamlamadan önce kök ve web dizinlerinde kalite kapılarını çalıştırınız:
 
 ```bash
-# 1. Kök testleri (Mobil & ortak kodlar - 227 test):
+# 1. Kök testleri (Mobil & ortak kodlar - 252 test):
 npm test -- --run
 npx expo lint
 npx tsc --noEmit
 
-# 2. Web uygulaması kontrolleri (35 test):
+# 2. Web uygulaması kontrolleri (53 test):
 cd web
 npm run typecheck
 npm run lint
@@ -149,7 +176,8 @@ npm run build
 cd ..
 ```
 
-### E. Yayınlama ve Sürüm Takibi
-1. Yapılan her geliştirmeyi `CHANGELOG.md` dosyasına yeni bir `## Web X.X.X — <commit>` başlığıyla ekleyiniz.
+### F. Yayınlama ve Sürüm Takibi
+1. Yapılan her geliştirmeyi `CHANGELOG.md` dosyasına `## <mobil> · Web <web> — <commit>` başlığıyla ekleyiniz (yalnız biri değiştiyse yalnız o). Mobil sürüm `app.json` → `expo.version`'dadır.
 2. `claude/pos-receipt-scanner-app-tk3b0z` dalına push yapıldığında GitHub Actions (`deploy-web.yml`) otomatik olarak Next.js web uygulamasını derleyip GitHub Pages'e yayınlar. Başka bir dalda (ör. Claude Code oturum dalı) yapılan değişiklikler, bu dala birleştirilene kadar yayına çıkmaz.
 3. API anahtarlarının istemci tarafı kodlara gömülmediğinden emin olunuz (CI kontrolü `AIza` anahtarlarını denetler).
+4. Veritabanı değişikliği yeni bir `supabase/migrations/00N_*.sql` dosyasıdır (yalnız ekleme, `if not exists`, `receipt_schema_version()` artırılır); `db-migrate.yml` bu dosyayı uygulayacak ve tetikleyecek şekilde güncellenir. Uygulama, kurulum yapılmamışken de çalışmaya devam etmelidir (`PGRST205`/`42P01` → eski davranış).

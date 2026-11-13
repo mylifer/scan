@@ -16,13 +16,15 @@ Türkiye'deki POS fişlerini kamerayla okuyup gider ve KDV takibi yapan Expo (Re
 - **Face ID kilidi**, **ana ekran kısayolları** (simgeye basılı tutunca) ve **iPad** desteği (yeni TestFlight derlemesiyle)
 - **Fiş detayı:** Düzenleme, tam ekran yakınlaştırılabilir fotoğraf, paylaşma, mükerrer fiş ve şüpheli KDV uyarıları
 - **Dışa aktarma:** Excel (.xlsx; her fişin yanında fotoğrafı, tıklayınca kendi sayfasında tam boyutu; çok aylı dönemlerde "Aylar" sayfası) ve Muhasebe Paketi (Excel + tüm fotoğraflar, ZIP; akış olarak üretilir)
-- **Ayarlar:** Hesap, aylık bütçe, KDV hatırlatıcısı (iPhone, her ayın 25'i), depolama kullanımı, kategoriler, yapay zekâ modeli, hata kayıtları, sürüm bilgisi
+- **KDV dengesi:** Ay ay kestiğim / düşebileceğim KDV; e-Faturasıyla aynı alışveriş olan fişler (geç gönderilenler dahil) iki kez sayılmaz
+- **Ayarlar:** Hesap, aylık bütçe (hesaba kaydedilir, web paneliyle ortak; `008_user_settings.sql`), KDV hatırlatıcısı (iPhone, her ayın 25'i), depolama kullanımı, kategoriler, yapay zekâ modeli, hata kayıtları (telefon ve web hataları birlikte), sürüm bilgisi
 
-## iPhone'da kullanım (web sürümü)
+## Web paneli (masaüstü)
 
-Uygulama her güncellemede otomatik olarak **https://mylifer.github.io/scan/** adresinde yayınlanır.
-iPhone'da Safari ile açıp Paylaş → **Ana Ekrana Ekle** diyerek uygulama gibi kullanabilirsiniz.
-Yayın için GitHub repo ayarlarında şunlar gerekir:
+`web/` klasöründeki Next.js 16 + HeroUI v3 paneli her güncellemede **https://mylifer.github.io/scan/** adresinde
+yayınlanır: fişler, e-Faturalar, KDV, bütçe, firmalar, kategoriler, vergi takvimi, ayarlar (çöp kutusu, yedek,
+hata kayıtları). Telefonla aynı hesabı ve veritabanını kullanır. Geliştirme ve kurallar: `AGENTS.md`,
+`CLAUDE_CODE_HANDOVER.md`. Yayın için GitHub repo ayarlarında şunlar gerekir:
 
 - **Settings → Secrets and variables → Actions** altında `SUPABASE_ACCESS_TOKEN` ve `GEMINI_API_KEY` secret'ları
   (Gemini anahtarı yalnızca "Supabase fonksiyonunu yayınla" iş akışında Supabase'e yazılır; uygulamaya gömülmez)
@@ -69,6 +71,8 @@ iş akışını **ref** kutusuna commit kodunu yazarak çalıştırın (ayrınt�
 2. **Authentication > Providers > Email** ayarının açık olduğundan emin olun.
    Kayıt olurken doğrulama e-postası beklemek istemiyorsanız "Confirm email" seçeneğini kapatabilirsiniz.
 3. **Project Settings > API** sayfasından Project URL ve Publishable key (ya da eski adıyla `anon` key) değerlerini alın.
+4. Sonraki kurulumlar (`002`–`008`) Actions → **"Veritabanı kurulumu"** iş akışıyla uygulanır (yalnız ekleme yapar,
+   fişlere dokunmaz, tekrar çalıştırılabilir). Kurulmamış bir özellik varsa uygulama eski davranışla çalışmaya devam eder.
 
 ### 2. Ortam değişkenleri
 
