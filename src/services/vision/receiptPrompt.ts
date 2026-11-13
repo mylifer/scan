@@ -1,4 +1,5 @@
 import { allCategories, isBuiltinCategory } from '../../lib/categories';
+import { KALEM_KURALLARI, KALEM_SEMASI } from '../../../supabase/functions/_shared/kalemler';
 import { type Kategori, RECEIPT_FIELDS } from '../../types/receipt';
 
 const CATEGORY_GUIDE =
@@ -27,7 +28,8 @@ export function receiptSystemPrompt(categories: readonly Kategori[] = allCategor
 - Sayılarda ondalık ayırıcı olarak nokta kullan (ör. 1234.56), binlik ayırıcı kullanma.
 - fisNo: fişteki "FİŞ NO" değeri (yalnızca numara, baştaki sıfırlarla, ör. "0045"). Z NO, EKÜ NO, ETTN, onay/provizyon ya da işlem numarasını yazma. Fişte yoksa "".
 - vkn: fişi kesen firmanın vergi kimlik numarası (VKN, 10 hane; "VKN", "V.NO", "VERGİ NO" ya da vergi dairesi adının yanında) ya da şahıs işletmesiyse TC kimlik numarası (TCKN, 11 hane). Yalnızca rakamları yaz. Alıcının/müşterinin numarasını yazma. Fişte yoksa "".
-- eminOlunmayanlar (string dizisi): fişte silik, kesik, buruşuk ya da okunaksız olduğu için değerini tahmin ettiğin alanların adlarını yaz (${RECEIPT_FIELDS.join(', ')}). Net okuduğun alanları yazma; hepsinden eminsen boş dizi [] ver. Kategori fişte yazmadığı için yalnızca firmadan anlaşılamıyorsa ekle. Fişte hiç bulunmayan fisNo/vkn'yi ekleme.`;
+- eminOlunmayanlar (string dizisi): fişte silik, kesik, buruşuk ya da okunaksız olduğu için değerini tahmin ettiğin alanların adlarını yaz (${RECEIPT_FIELDS.join(', ')}). Net okuduğun alanları yazma; hepsinden eminsen boş dizi [] ver. Kategori fişte yazmadığı için yalnızca firmadan anlaşılamıyorsa ekle. Fişte hiç bulunmayan fisNo/vkn'yi ekleme.
+${KALEM_KURALLARI}`;
 }
 
 export const RECEIPT_USER_PROMPT = 'Bu POS fişini ya da faturayı oku ve kurallara uygun JSON döndür.';
@@ -47,8 +49,9 @@ export function receiptJsonSchema(categories: readonly Kategori[] = allCategorie
       fisNo: { type: 'string', description: 'FİŞ NO; yoksa boş' },
       vkn: { type: 'string', description: 'Satıcının VKN (10) ya da TCKN (11) rakamları; yoksa boş' },
       eminOlunmayanlar: { type: 'array', items: { type: 'string', enum: [...RECEIPT_FIELDS] } },
+      kalemler: KALEM_SEMASI,
     },
-    required: ['firmaAdi', 'tarih', 'toplamTutar', 'kdvYuzde1', 'kdvYuzde10', 'kdvYuzde20', 'kategori', 'fisNo', 'vkn', 'eminOlunmayanlar'],
+    required: ['firmaAdi', 'tarih', 'toplamTutar', 'kdvYuzde1', 'kdvYuzde10', 'kdvYuzde20', 'kategori', 'fisNo', 'vkn', 'eminOlunmayanlar', 'kalemler'],
     additionalProperties: false,
   } as const;
 }

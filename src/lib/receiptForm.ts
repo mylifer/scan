@@ -1,7 +1,7 @@
 import { amountToInput, normalizeTrDate, parseAmount, todayTr, trDateToIso } from './format';
 import { categoryLabel } from './categories';
 import { cleanFisNo, cleanNote, cleanTaxId, parseTags, tagsToInput, taxIdError, taxIdWarning } from './receiptExtras';
-import type { Kategori, ReceiptData, ReceiptField } from '../types/receipt';
+import type { FisKalemi, Kategori, ReceiptData, ReceiptField } from '../types/receipt';
 
 /** Formda tutarlar metin olarak tutulur ki kullanıcı "12,5" gibi ara değerler yazabilsin. */
 export interface ReceiptFormValues {
@@ -19,6 +19,8 @@ export interface ReceiptFormValues {
   etiketler: string;
   /** Yapay zekânın emin olamadığı alanlar; kullanıcı alanı değiştirince listeden çıkar */
   belirsiz?: ReceiptField[];
+  /** Okunan kalemler: formda düzenlenmez, kayda olduğu gibi taşınır */
+  kalemler?: FisKalemi[];
 }
 
 export function toFormValues(d: ReceiptData): ReceiptFormValues {
@@ -35,6 +37,7 @@ export function toFormValues(d: ReceiptData): ReceiptFormValues {
     notlar: d.notlar ?? '',
     etiketler: tagsToInput(d.etiketler),
     ...(d.eminOlunmayanlar?.length ? { belirsiz: [...d.eminOlunmayanlar] } : {}),
+    ...(d.kalemler ? { kalemler: d.kalemler } : {}),
   };
 }
 
@@ -83,6 +86,7 @@ export function fromFormValues(v: ReceiptFormValues): ReceiptData {
   if (vkn) data.vkn = vkn;
   if (notlar) data.notlar = notlar;
   if (etiketler.length) data.etiketler = etiketler;
+  if (v.kalemler) data.kalemler = v.kalemler;
   return data;
 }
 

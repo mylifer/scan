@@ -1,3 +1,4 @@
+import { kalemleriAyikla } from '../../../supabase/functions/_shared/kalemler';
 import { normalizeTrDate, parseAmount, todayTr } from '../../lib/format';
 import { allCategories, findCategory } from '../../lib/categories';
 import { cleanFisNo, cleanTaxId } from '../../lib/receiptExtras';
@@ -28,6 +29,8 @@ export function parseReceiptJson(raw: string, categories: readonly Kategori[] = 
   if (vkn.length === 10 || vkn.length === 11) data.vkn = vkn;
   const uncertain = uncertainFields(obj.eminOlunmayanlar);
   if (uncertain.length) data.eminOlunmayanlar = uncertain;
+  // Kalem alanı hiç yoksa (eski istem / başka sağlayıcı) okunmadı sayılır; geriye dönük okumaya kalır
+  if (Array.isArray(obj.kalemler)) data.kalemler = kalemleriAyikla(obj.kalemler);
   return data;
 }
 
