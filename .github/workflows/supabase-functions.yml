@@ -12,6 +12,9 @@
 #   QNB_USER, QNB_PASS, QNB_VKN  — QNB eSolutions portal kullanıcı kodu, şifresi, firmanın VKN'si
 #   QNB_ALLOWED_EMAILS           — faturaları görebilecek uygulama hesabının e-postası (virgülle birden çok)
 # Tanımlı değilse fonksiyon yine yayınlanır ama e-Faturalar ekranı "bilgiler eksik/yetki yok" der.
+#
+# kalem-doldur: eski fişlerin kalemlerini okur; 009 kurulumundaki zamanlayıcı (pg_cron) çağırır. Ek secret gerekmez
+# (Gemini anahtarını ve Supabase'in kendi hizmet anahtarını kullanır).
 # Supabase CLI sürümü sabittir (@latest değil): yeni ana sürümler komutları değiştirebiliyor
 # (3.0.0 --yes onayı istedi, 4.0 --project-ref'i kaldıracak). Yükseltirken burayı birlikte güncelleyin.
 name: Supabase fonksiyonunu yayınla
@@ -77,6 +80,8 @@ jobs:
         run: |
           npx --yes supabase@3.0.0 functions deploy analyze-receipt --yes --project-ref "$PROJECT_REF"
           npx --yes supabase@3.0.0 functions deploy qnb-efatura --yes --project-ref "$PROJECT_REF"
+          # Zamanlayıcı (pg_cron) oturumsuz çağırır; kimlik doğrulaması fonksiyonun içinde (gizli başlık ya da oturum)
+          npx --yes supabase@3.0.0 functions deploy kalem-doldur --no-verify-jwt --yes --project-ref "$PROJECT_REF"
       - name: Fonksiyon çalışıyor mu? (girişsiz istek reddedilmeli)
         # Yayındaysa giriş yapılmamış istek 401 alır; 404 fonksiyonun yayınlanmadığını gösterir
         run: |
@@ -89,5 +94,9 @@ jobs:
             -H 'apikey: sb_publishable_7gu66leZ4qgYJPcOpcsh7g_yss8NOyN' -H 'Content-Type: application/json' -d '{}')
           echo "qnb-efatura girişsiz istek: HTTP $CODE"
           [ "$CODE" = "401" ] || { echo "::error::qnb-efatura: beklenen 401, gelen $CODE"; exit 1; }
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://$PROJECT_REF.supabase.co/functions/v1/kalem-doldur" \
+            -H 'Content-Type: application/json' -H 'x-kalem-cron: yanlis' -d '{}')
+          echo "kalem-doldur yanlış anahtarla istek: HTTP $CODE"
+          [ "$CODE" = "401" ] || { echo "::error::kalem-doldur: beklenen 401, gelen $CODE"; exit 1; }
           npx --yes supabase@3.0.0 secrets list --project-ref "$PROJECT_REF" | grep -q GEMINI_API_KEY \
             || { echo "::error::Supabase'de GEMINI_API_KEY gizli değeri yok"; exit 1; }

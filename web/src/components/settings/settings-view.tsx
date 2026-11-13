@@ -3,6 +3,7 @@
 import {
   Archive,
   FileCode,
+  ListChecks,
   Laptop,
   LogOut,
   Moon,
@@ -20,6 +21,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { supabase } from "@/lib/supabase";
 import { BackupTab } from "./backup-tab";
 import { ErrorLogTab } from "./error-log-tab";
+import { KalemTab } from "./kalem-tab";
 import { TrashTab } from "./trash-tab";
 
 export function SettingsView() {
@@ -63,6 +65,11 @@ export function SettingsView() {
             <Tabs.Tab id="yedekleme" className="gap-2 whitespace-nowrap">
               <Archive className="size-4" />
               Yedekleme
+              <Tabs.Indicator />
+            </Tabs.Tab>
+            <Tabs.Tab id="kalemler" className="gap-2 whitespace-nowrap">
+              <ListChecks className="size-4" />
+              Fiş Kalemleri
               <Tabs.Indicator />
             </Tabs.Tab>
             <Tabs.Tab id="hatalar" className="gap-2 whitespace-nowrap">
@@ -179,6 +186,11 @@ export function SettingsView() {
         {/* Yedekleme Sekmesi */}
         <Tabs.Panel id="yedekleme">
           <BackupTab />
+        </Tabs.Panel>
+
+        {/* Fiş Kalemleri Sekmesi */}
+        <Tabs.Panel id="kalemler">
+          <KalemTab />
         </Tabs.Panel>
 
         {/* Hata Kayıtları Sekmesi */}
