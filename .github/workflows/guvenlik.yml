@@ -1,0 +1,38 @@
+# Bağımlılıklarda bilinen güvenlik açıkları (mobil uygulama ve web): kilit dosyaları değişince
+# ve haftada bir (yeni duyurulan açıklar için). Yüksek ya da kritik açık varsa kırmızı olur.
+name: Güvenlik
+
+on:
+  push:
+    branches: [claude/pos-receipt-scanner-app-tk3b0z]
+    paths:
+      - package-lock.json
+      - web/package-lock.json
+      - .github/workflows/guvenlik.yml
+  pull_request:
+    paths:
+      - package-lock.json
+      - web/package-lock.json
+      - .github/workflows/guvenlik.yml
+  schedule:
+    - cron: "41 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Mobil uygulama (npm audit)
+        run: npm audit --audit-level=high
+      - name: Web (npm audit)
+        if: ${{ !cancelled() }}
+        working-directory: web
+        run: npm audit --audit-level=high
