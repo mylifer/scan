@@ -7,8 +7,26 @@
  */
 const TR_OFFSET_HOURS = 3;
 
-export const SCHEDULE_HOURS = [3, 7, 10, 13] as const;
-export const RECOMMENDED_HOUR = 10;
+/**
+ * Gemini ücretsiz kotasının yenilendiği saat (Türkiye): Pasifik gece yarısı. ABD yaz saatinde 10:00, kışın 11:00.
+ * Saat dilimi bilgisi alınamazsa 10.
+ */
+export function quotaResetHourTr(now = new Date()): number {
+  try {
+    const la = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', hourCycle: 'h23' }).format(now));
+    if (!Number.isFinite(la)) return 10;
+    const offset = ((la - now.getUTCHours() + 24) % 24) - 24; // -7 (yaz) ya da -8 (kış)
+    return (TR_OFFSET_HOURS - offset) % 24;
+  } catch {
+    return 10;
+  }
+}
+
+/** Planlama seçenekleri; önerilen saat kotanın yenilendiği saattir (hem sakin hem hak dolu) */
+export function scheduleHours(now = new Date()): number[] {
+  return [3, 7, quotaResetHourTr(now), 13];
+}
+export const recommendedHour = (now = new Date()) => quotaResetHourTr(now);
 
 /** Şu andan sonraki ilk "saat:00" (Türkiye saati) anı. */
 export function nextRunAt(hourTr: number, now = new Date()): Date {
