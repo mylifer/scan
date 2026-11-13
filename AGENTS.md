@@ -50,7 +50,7 @@ cd web
 npm run dev        # Next.js development server
 npm run typecheck  # TypeScript check
 npm run lint       # ESLint check
-npm test           # Vitest unit tests (12 test files, 53 tests)
+npm test           # Vitest unit tests (13 test files, 56 tests)
 npm run build      # Static export build (out/)
 ```
 

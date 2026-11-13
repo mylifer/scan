@@ -16,6 +16,7 @@ Türkiye'deki POS fişlerini kamerayla okuyup gider ve KDV takibi yapan Expo (Re
 - **Face ID kilidi**, **ana ekran kısayolları** (simgeye basılı tutunca) ve **iPad** desteği (yeni TestFlight derlemesiyle)
 - **Fiş detayı:** Düzenleme, tam ekran yakınlaştırılabilir fotoğraf, paylaşma, mükerrer fiş ve şüpheli KDV uyarıları
 - **Dışa aktarma:** Excel (.xlsx; her fişin yanında fotoğrafı, tıklayınca kendi sayfasında tam boyutu; çok aylı dönemlerde "Aylar" sayfası) ve Muhasebe Paketi (Excel + tüm fotoğraflar, ZIP; akış olarak üretilir)
+- **Fiş kalemleri:** Ürün satırları fiş okunurken aynı istekte okunur (kota harcamaz) ve fiş detayında listelenir. Eski fişler, Gemini günlük kotası yenilenmeden önceki saatte o gün kullanılmayan kotayla sunucuda okunur (`009_receipt_items.sql`, `supabase/functions/kalem-doldur`); Ayarlar → Fiş Kalemleri'nde deneme yapılabilir
 - **KDV dengesi:** Ay ay kestiğim / düşebileceğim KDV; e-Faturasıyla aynı alışveriş olan fişler (geç gönderilenler dahil) iki kez sayılmaz
 - **Ayarlar:** Hesap, aylık bütçe (hesaba kaydedilir, web paneliyle ortak; `008_user_settings.sql`), KDV hatırlatıcısı (iPhone, her ayın 25'i), depolama kullanımı, kategoriler, yapay zekâ modeli, hata kayıtları (telefon ve web hataları birlikte), sürüm bilgisi
 
@@ -71,7 +72,7 @@ iş akışını **ref** kutusuna commit kodunu yazarak çalıştırın (ayrınt�
 2. **Authentication > Providers > Email** ayarının açık olduğundan emin olun.
    Kayıt olurken doğrulama e-postası beklemek istemiyorsanız "Confirm email" seçeneğini kapatabilirsiniz.
 3. **Project Settings > API** sayfasından Project URL ve Publishable key (ya da eski adıyla `anon` key) değerlerini alın.
-4. Sonraki kurulumlar (`002`–`008`) Actions → **"Veritabanı kurulumu"** iş akışıyla uygulanır (yalnız ekleme yapar,
+4. Sonraki kurulumlar (`002`–`009`) Actions → **"Veritabanı kurulumu"** iş akışıyla uygulanır (yalnız ekleme yapar,
    fişlere dokunmaz, tekrar çalıştırılabilir). Kurulmamış bir özellik varsa uygulama eski davranışla çalışmaya devam eder.
 
 ### 2. Ortam değişkenleri

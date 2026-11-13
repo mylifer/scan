@@ -1,6 +1,6 @@
 # SCAN PROJESİ — CLAUDE CODE DEVİR VE GELİŞTİRME YÖNERGESİ (HANDOVER)
 **Tarih:** 13 Kasım 2026 (ilk sürüm: 1 Kasım 2026)  
-**Güncel Sürüm:** 1.55.0 · Web 1.4.0  
+**Güncel Sürüm:** 1.56.0 · Web 1.5.0  
 **Ana (yayın) dalı:** `claude/pos-receipt-scanner-app-tk3b0z` — Claude Code oturumları kendi dallarında çalışır ve PR ile buraya birleştirir  
 **Canlı Web Yayını:** https://mylifer.github.io/scan/  
 
@@ -69,7 +69,7 @@ Claude Code'un bıraktığı **v1.48.0** sürümünden itibaren projede iki para
 - **1.53.2 · Web 1.0.27 (`c008823`):** KDV sayfaları kalıcı e-Fatura önbelleğiyle aşamalı açılıyor: önce fişler + kayıtlı sonuç (anında), güncel QNB arka planda.
 
 
-### Faz 4: HeroUI v3, Yerel Görünüm ve Doğruluk Düzeltmeleri (Web 1.1.0 – 1.55.0 · Web 1.4.0)
+### Faz 4: HeroUI v3, Yerel Görünüm ve Doğruluk Düzeltmeleri (Web 1.1.0 – 1.56.0 · Web 1.5.0)
 - **Web 1.1.0 (`953a831`):** Tüm web bileşenleri shadcn/ui'dan HeroUI v3'e taşındı; shadcn, Radix ve sonner kaldırıldı.
 - **Web 1.1.1 (`b07f633`):** HeroUI bileşenlerine verilen özel stiller (cam efekti, tablo başlık arka planı, buton gradyanları, `%2` satır çizgileri) kaldırıldı; bileşenler heroui.com'daki görünümüyle kullanılıyor.
 - **Web 1.2.x (`2e51bac`, `474d760`, `4f41a90`):** Yüzen kenar çubuğu (⌘K arama, ⌘B daraltma), kart/pencere içindeki alanlar `variant="secondary"`, vergi takvimi yeniden düzeni, tam ekran PDF önizleme.
@@ -80,6 +80,7 @@ Claude Code'un bıraktığı **v1.48.0** sürümünden itibaren projede iki para
   - *Devreden fişlerde çift KDV kapatıldı:* Hedef aydan eski tarihli (geç gönderilen) bir fiş, kendi ayının gelen e-Faturalarıyla da eşleştirilir (`devredenFisAylari`, `oncekiGelenleriGetir`, `kdvAyHesapla(..., oncekiGelen)`).
   - *Bütçe bulutta:* `user_settings` tablosu (008); telefon ve web aynı bütçeyi görür (`src/lib/budgetSync.ts`).
   - *Web hata kaydı:* Web paneli de yakalanmamış hataları ve sayfa hatalarını `app_errors`'a yazar (`reportError`, `ErrorReporter`).
+- **1.56.0 · Web 1.5.0:** Fiş kalemleri (009 `receipt_items`): yeni fişlerde tarama sırasında okunur; eski fişler `kalem-doldur` fonksiyonuyla kota sıfırlanmadan önceki saatte okunur; Ayarlar → Fiş Kalemleri'nde model denemesi; fiş detayında kalem listesi. Toplu taramada önerilen saat kotanın gerçek yenilenme saatini (yaz 10:00 / kış 11:00) izler.
 
 ---
 
@@ -91,7 +92,7 @@ scan/
 │   ├── app/                     # Expo Router dosya tabanlı rotaları
 │   ├── components/              # Mobil bileşenler
 │   ├── lib/                     # Ortak saf TypeScript yardımcıları ve algoritmaları
-│   └── __tests__/               # Kök testleri (Node native test runner, 252 test)
+│   └── __tests__/               # Kök testleri (Node native test runner, 262 test)
 ├── web/                         # YENİ Next.js 16 Masaüstü Web Uygulaması
 │   ├── src/
 │   │   ├── app/                 # Next.js 16 App Router
@@ -109,14 +110,15 @@ scan/
 │   │   │   ├── globals.css      # Tailwind v4 + `@import "@heroui/styles"`; yalnız turkuaz `--accent` ezilir
 │   │   │   └── layout.tsx       # Root layout, Geist font tanımları (latin-ext)
 │   │   ├── components/          # HeroUI tabanlı sayfa bileşenleri (components/ui yok)
-│   │   └── lib/                 # Web veri katmanı (12 test dosyası, 53 Vitest testi)
+│   │   └── lib/                 # Web veri katmanı (13 test dosyası, 56 Vitest testi)
 ├── supabase/
-│   ├── migrations/              # 001–008 SQL kurulumları (yalnız ekleme yapar, tekrar çalıştırılabilir)
-│   └── functions/               # analyze-receipt (Gemini), qnb-efatura (QNB SOAP + UBL KDV tamamlama)
+│   ├── migrations/              # 001–009 SQL kurulumları (yalnız ekleme yapar, tekrar çalıştırılabilir)
+│   └── functions/               # analyze-receipt (Gemini), qnb-efatura (QNB SOAP + UBL KDV tamamlama),
+│                                # kalem-doldur (eski fiş kalemleri), _shared/kalemler.ts (uygulamayla ortak)
 ├── .github/workflows/
 │   ├── deploy-web.yml           # Web uygulamasını GitHub Pages'e derleyip yayınlayan iş akışı
 │   ├── ios.yml                  # iOS: EAS Update / TestFlight derleme
-│   ├── db-migrate.yml           # Veritabanı kurulumlarını (en son 008) Supabase'e uygular
+│   ├── db-migrate.yml           # Veritabanı kurulumlarını (en son 009) Supabase'e uygular
 │   ├── supabase-functions.yml   # Supabase fonksiyonlarını yayınlar
 │   ├── e2e.yml / smoke-test.yml # Tarayıcı testleri (PR'larda)
 │   └── guvenlik.yml             # npm audit (kilit dosyası değişince + haftalık)
@@ -152,6 +154,13 @@ Claude Code olarak projede çalışırken aşağıdaki kurallara **mutlaka** uyu
 1. **Aylık bütçe (`src/lib/budgetSync.ts`, 008 `user_settings`):** Cihazda (mobil AsyncStorage, web localStorage) kullanıcıya özel kopya + bulut. Girişte ve ekran açıldıkça (dakikada en fazla bir) buluttan okunur; bulutta satır yoksa cihaz değeri yazılır. İnternetsiz değişiklik `budget:monthly:<uid>:pending` ile işaretlenir ve sonraki eşitlemede buluttakini ezer. Tablo yoksa (008 kurulmamışsa) eskisi gibi yalnız cihazda çalışır. Bulut erişimi `setBudgetRemote` ile verilir (mobil `useAuth`, web `AuthProvider`); `lib/budget.ts` Supabase'i doğrudan içe aktarmaz (testler için).
 2. **Hata kaydı (`app_errors`, 006):** Mobil `src/services/errorLog.ts`, web `web/src/lib/errorLog.ts` → `reportError`. Web'de `ErrorReporter` (kök layout) yakalanmamış hataları, `(app)/error.tsx` sayfa hatalarını yazar. İnternet hataları, eski sürüm parçası hataları (VersionGuard yeniler), tarayıcı eklentisi hataları, oturumsuz durumlar ve aynı sekmede tekrarlanan hata yazılmaz; sekme başına en fazla 30 kayıt. Kayıtlar Ayarlar → Hata Kayıtları'nda (mobil + web birlikte) görünür. Harici servis (Sentry vb.) yoktur.
 
+3. **Fiş kalemleri (009, `receipt_items`):**
+   - Kurallar, istem parçası ve şema tek yerde: `supabase/functions/_shared/kalemler.ts` (uygulama `src/lib/kalemler.ts` üzerinden kullanır; Deno'da da çalışsın diye başka dosya içe aktarmaz).
+   - **Yeni fişler:** Kalemler fiş okumasıyla **aynı istekte** okunur (kota harcamaz). `ReceiptData.kalemler` formdan geçerken `ReceiptFormValues.kalemler` ile taşınır (düzenlenmez); kayıttan sonra `kalemleriKaydet` yazar ve `kalem_durumu`'nu `okundu`/`yok` yapar. Bu adım hata fırlatmaz; yazılamazsa fiş geriye dönük okumaya kalır. `kalemler === undefined` elle giriş demektir.
+   - **Eski fişler:** `kalem-doldur` fonksiyonu (`--no-verify-jwt`; kimlik doğrulaması içeride). pg_cron 06:00–07:59 UTC arası 5 dakikada bir `x-kalem-cron` başlığıyla çağırır (gizli değer Vault'ta `kalem_cron_secret`, `kalem_cron_dogrula` ile doğrulanır). Fonksiyon yalnızca **Pasifik 23:00–23:55** (kota sıfırlanmadan önceki saat) çalışır, yalnızca Flash modelleri, model başına 12,5 sn aralık (dakikada 5), çağrı başına ~110 sn. 429/5xx'te fiş sıraya döner, model o çağrıda bırakılır. Fişler `isleniyor` ile kilitlenir (10 dk sonra yeniden alınır), 3 başarısız denemede `okunamadi`.
+   - **Deneme:** Oturumlu kullanıcı `{deneme: true, model, adet≤20}`; web Ayarlar → Fiş Kalemleri (`kalemDenemesiYap` istenen sayıya ulaşana kadar art arda çağırır). Kalite ölçüsü `kalemlerTutarli` (kalem toplamı fiş toplamının ±%1'i).
+   - Fişin tutar/KDV alanlarına **asla** dokunulmaz. Fotoğraf değişince `kalemleriSifirla` eski kalemleri siler; çöpten/yedekten geri yüklenen fişin kalemleri yoktur, `kalem_durumu` boş gelir ve yeniden okunur.
+
 ### D. Yeni Sürüm Koruması (Chunk 404)
 GitHub Pages özel header göndermediği için Next.js'in `deploymentId` sürüm uyumsuzluğu koruması çalışmaz. Yerine şunlar kullanılır, kaldırılmamalıdır:
 1. `deploy-web.yml` önceki yayınların `_next/static` parçalarını `actions/cache` ile saklar (30 günden eskiler budanır) ve yeni pakete ekler.
@@ -162,12 +171,12 @@ GitHub Pages özel header göndermediği için Next.js'in `deploymentId` sürüm
 Herhangi bir görevi tamamlamadan önce kök ve web dizinlerinde kalite kapılarını çalıştırınız:
 
 ```bash
-# 1. Kök testleri (Mobil & ortak kodlar - 252 test):
+# 1. Kök testleri (Mobil & ortak kodlar - 262 test):
 npm test -- --run
 npx expo lint
 npx tsc --noEmit
 
-# 2. Web uygulaması kontrolleri (53 test):
+# 2. Web uygulaması kontrolleri (56 test):
 cd web
 npm run typecheck
 npm run lint
