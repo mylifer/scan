@@ -210,6 +210,14 @@ export function isLoginFault(message: string): boolean {
   return /username\.pwd|pwd\.mismatch|kullan[ıi]c[ıi]\s*ad[ıi]|şifre|parola|password|authenticat|unauthori[sz]ed|kilitl|locked|yetkisiz/i.test(message);
 }
 
+/**
+ * QNB'nin kendi sunucu/veritabanı hatası mı (Hibernate, JDBC, SQL...)? Bunlar istekteki bir yanlıştan değil
+ * QNB tarafından kaynaklanır; çoğu geçicidir, bir kez daha denemeye değer.
+ */
+export function isServerFault(message: string): boolean {
+  return /hibernate|SQLGrammar|SQLException|JDBC|could not (?:execute|extract|open)|nested exception|ORA-\d+|deadlock|lock wait|NullPointerException|internal server error/i.test(message);
+}
+
 /** <return> (ya da verilen ad) öğelerinin yaprak alanlarını düz nesne olarak döndürür. */
 export function parseReturns(xml: string, tag = 'return'): Record<string, string>[] {
   const out: Record<string, string>[] = [];
