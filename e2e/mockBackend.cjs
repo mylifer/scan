@@ -98,6 +98,8 @@ async function installBackend(page, opts = {}) {
     const rest = path.match(/^\/rest\/v1\/(\w+)/);
     if (rest) {
       const t = rest[1];
+      // Bilinmeyen tablo (ör. 008/009 kurulumu yapılmamış): gerçek Supabase gibi PGRST205; uygulama eski davranışa düşer
+      if (!state.db[t]) return json(route, { code: 'PGRST205', message: `Could not find the table 'public.${t}' in the schema cache` }, 404);
       const single = (req.headers()['accept'] || '').includes('pgrst.object');
       if (m === 'GET') {
         // Mükerrer kontrolü (or=...) gerçek filtreyi taklit etmez; boş döner

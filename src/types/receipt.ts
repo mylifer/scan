@@ -1,3 +1,7 @@
+import type { FisKalemi } from '../../supabase/functions/_shared/kalemler';
+
+export type { FisKalemi };
+
 /**
  * Hazır kategoriler. Sıra, kategori seçicide ve yapay zekâ isteminde kullanılır; "diğer" hep sonda.
  * Kullanıcı bunlara kendi kategorilerini ekleyebilir (receipt_categories tablosu, bkz. lib/categories).
@@ -103,6 +107,11 @@ export interface ReceiptData {
   etiketler?: string[];
   /** Yapay zekânın fişte net okuyamadığı alanlar (yalnızca okuma sonucunda; kaydedilmez) */
   eminOlunmayanlar?: ReceiptField[];
+  /**
+   * Fişteki ürün/hizmet satırları (yalnızca yapay zekâ okumasında). undefined: okunmadı (elle giriş);
+   * []: okundu ama kalem yok. receipt_items tablosuna yazılır.
+   */
+  kalemler?: FisKalemi[];
 }
 
 /** Supabase'deki kayıt (receipts tablosu). */

@@ -1,8 +1,8 @@
 "use client";
 
 import { formatTL } from "@shared/lib/format";
-import { ayEkle, kdvAyHesapla, type KdvAy } from "@shared/lib/kdvAy";
-import { FIS_TIMEOUT_MS, kdvVerileriniGetir } from "@shared/lib/kdvYukle";
+import { ayEkle, devredenFisAylari, kdvAyHesapla, type KdvAy } from "@shared/lib/kdvAy";
+import { FIS_TIMEOUT_MS, kdvVerileriniGetir, oncekiGelenleriGetir } from "@shared/lib/kdvYukle";
 import { withTimeout } from "@shared/lib/retry";
 import type { ReceiptRecord } from "@shared/types/receipt";
 import {
@@ -23,6 +23,19 @@ import { PageHeader } from "@/components/layout/page-header";
 import { fetchDonemFaturalar, getMonthBounds, readPersistedDonem, type EFatura } from "@/lib/efatura";
 import { listReceiptsForKdv } from "@/lib/receipts";
 
+/** "2026-09" ayının bu aya göre offset'i (getMonthBounds / önbellek anahtarları offset ile çalışır) */
+function ayOffset(ay: string): number {
+  const simdi = getMonthBounds(0).baslangic.slice(0, 7);
+  const [y1, m1] = ay.split("-").map(Number);
+  const [y2, m2] = simdi.split("-").map(Number);
+  return (y1! - y2!) * 12 + (m1! - m2!);
+}
+
+/** Devreden fişlerin aylarının tarayıcıda kayıtlı gelen e-Faturaları */
+function kayitliOnceki(ay: string): EFatura[] | null {
+  return readPersistedDonem("gelen", ayOffset(ay))?.data.faturalar ?? null;
+}
+
 export function KdvView() {
   const [offset, setOffset] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -33,6 +46,8 @@ export function KdvView() {
     gelen: EFatura[];
     giden: EFatura[];
     fisler: ReceiptRecord[];
+    /** Devreden fişlerin kendi aylarındaki gelen e-Faturalar (yalnızca eşleştirme için) */
+    oncekiGelen: EFatura[];
     error: string | null;
     /** e-Faturalar QNB'den güncelleniyor ya da alınamadı; `at`: gösterilen kayıtlı sonucun zamanı */
     qnb: { durum: "yukleniyor" | "hata"; at: number | null; mesaj?: string } | null;
@@ -42,6 +57,7 @@ export function KdvView() {
     gelen: [],
     giden: [],
     fisler: [],
+    oncekiGelen: [],
     error: null,
     qnb: null,
   });
@@ -65,20 +81,29 @@ export function KdvView() {
     try {
       const fisler = await withTimeout(listReceiptsForKdv({ from: monthInfo.baslangic, to }), FIS_TIMEOUT_MS, "Fiş sorgusu");
       if (iptal()) return;
+      // Devreden fişler kendi aylarının e-Faturalarıyla eşleştirilir (aynı KDV iki kez indirilmesin)
+      const oncekiAylar = devredenFisAylari(fisler, monthInfo.baslangic.slice(0, 7));
       setState({
         key,
         loading: false,
         gelen: kGelen?.data.faturalar ?? [],
         giden: kGiden?.data.faturalar ?? [],
         fisler,
+        oncekiGelen: oncekiAylar.flatMap((m) => kayitliOnceki(m) ?? []),
         error: null,
         qnb: { durum: "yukleniyor", at: kayitliAt },
       });
-      const v = await kdvVerileriniGetir({
-        gelen: () => fetchDonemFaturalar("gelen", offset, force),
-        giden: () => fetchDonemFaturalar("giden", offset, force),
-        fisler: async () => fisler,
-      });
+      const [v, onceki] = await Promise.all([
+        kdvVerileriniGetir({
+          gelen: () => fetchDonemFaturalar("gelen", offset, force),
+          giden: () => fetchDonemFaturalar("giden", offset, force),
+          fisler: async () => fisler,
+        }),
+        oncekiGelenleriGetir(oncekiAylar, {
+          getir: (m) => fetchDonemFaturalar("gelen", ayOffset(m)),
+          kayitli: kayitliOnceki,
+        }),
+      ]);
       if (iptal()) return;
       const mesaj = v.qnbHatasi ? (v.qnbHatasi instanceof Error ? v.qnbHatasi.message : String(v.qnbHatasi)) : null;
       setState({
@@ -87,6 +112,7 @@ export function KdvView() {
         gelen: v.gelenOk ? v.gelen : (kGelen?.data.faturalar ?? []),
         giden: v.gidenOk ? v.giden : (kGiden?.data.faturalar ?? []),
         fisler,
+        oncekiGelen: onceki.faturalar,
         error: null,
         qnb: mesaj ? { durum: "hata", at: kayitliAt, mesaj } : null,
       });
@@ -98,7 +124,7 @@ export function KdvView() {
       if (iptal()) return;
       const msg = err instanceof Error ? err.message : "KDV verileri yüklenemedi.";
       toast.danger(msg);
-      setState({ key, loading: false, gelen: [], giden: [], fisler: [], error: msg, qnb: null });
+      setState({ key, loading: false, gelen: [], giden: [], fisler: [], oncekiGelen: [], error: msg, qnb: null });
     }
   }, [activeKey, monthInfo.baslangic, offset]);
 
@@ -125,8 +151,8 @@ export function KdvView() {
   // KDV hesaplaması
   const kdv = useMemo<KdvAy | null>(() => {
     if (state.key !== activeKey) return null;
-    return kdvAyHesapla(state.gelen, state.giden, state.fisler, undefined, monthInfo.baslangic.slice(0, 7));
-  }, [state.key, activeKey, state.gelen, state.giden, state.fisler, monthInfo.baslangic]);
+    return kdvAyHesapla(state.gelen, state.giden, state.fisler, undefined, monthInfo.baslangic.slice(0, 7), undefined, state.oncekiGelen);
+  }, [state.key, activeKey, state.gelen, state.giden, state.fisler, state.oncekiGelen, monthInfo.baslangic]);
 
   const isOdenecek = (kdv?.sonuc ?? 0) > 0;
   const isDevreden = (kdv?.sonuc ?? 0) < 0;

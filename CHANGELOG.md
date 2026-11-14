@@ -16,6 +16,20 @@ Her sürümün yanındaki **commit kodu**, o sürüme geri dönmek için kullan�
 
 ---
 
+## 1.56.0 · Web 1.5.0 — `069420e`
+- **Fiş kalemleri (mobil + web):** Fişteki ürün ve hizmet satırları (ad, miktar, birim fiyat, KDV oranı, tutar) artık okunuyor ve fiş detayında listeleniyor. Kalem toplamı fiş toplamını tutmuyorsa uyarı çıkıyor.
+  - **Yeni fişler:** Kalemler fiş okunurken aynı istekte okunuyor; Gemini kotasından ek bir hak harcanmıyor. Toplu onayda ve formda düzeltme yapılsa da kalemler kaybolmuyor.
+  - **Eski fişler:** Gemini günlük kotası yenilenmeden önceki saatte (Türkiye saatiyle kışın 10:00–10:55, yazın 09:00–09:55) o gün kullanılmayan kotayla, telefon kapalıyken bile sunucuda okunuyor. Yalnızca Flash modelleri kullanılıyor; gündüz taramalarınızın hakkına dokunulmuyor. Fişin tutar ve KDV bilgileri değişmiyor.
+  - **Deneme (web → Ayarlar → Fiş Kalemleri):** Eski fişlerden 5/10/20 tanesini seçtiğiniz modelle hemen okutup kaç tanesinin toplamla tutarlı çıktığını görebilirsiniz (Flash ile Flash Lite'ı karşılaştırmak için). Okunan/bekleyen/okunamayan fiş sayıları da burada.
+  - Kurulum: dal yayına birleşince "Veritabanı kurulumu" (009) ve "Supabase fonksiyonunu yayınla" iş akışları kendiliğinden çalışır; ek secret gerekmez.
+- **Toplu taramada önerilen saat düzeltildi (mobil):** Kota dolunca önerilen planlama saati artık kotanın gerçekten yenilendiği saat (kışın 11:00, yazın 10:00). Önceden kışın 10:00 öneriliyordu ve tarama kota yenilenmeden başlayabiliyordu.
+
+## 1.55.0 · Web 1.4.0 — `85d3362`
+- **KDV'de çift indirim kapatıldı (mobil + web):** Muhasebeciye geç gönderilen bir fiş (ör. Eylül fişi Kasım'da gönderildi → Ekim KDV'si) artık kendi ayının gelen e-Faturalarıyla da karşılaştırılıyor. Aynı alışverişin e-Faturası varsa fişin KDV'si ikinci kez düşülmüyor ve "e-Faturayla aynı alışveriş" notunda sayılıyor.
+- **Aylık bütçe hesabınızda (mobil + web):** Bütçe artık buluta kaydediliyor; telefonda girdiğiniz bütçe web panelinde de görünüyor, telefon değişince kaybolmuyor. İnternetsiz yapılan değişiklik bağlantı gelince kaydediliyor. Kurulum: Actions → "Veritabanı kurulumu" (008). Kurulum yapılana kadar bütçe eskisi gibi cihazda kalır.
+- **Web hataları da kaydediliyor:** Web panelindeki beklenmeyen hatalar Ayarlar → Hata Kayıtları'nda telefon hatalarıyla birlikte görünüyor.
+- **Belgeler:** Devir belgesi (CLAUDE_CODE_HANDOVER.md) ve README güncel duruma getirildi.
+
 ## 1.54.4 — `63b5831`
 - **Kaydırarak silme onay soruyor (mobil):** Fişi sola kaydırıp "Sil"e dokununca artık onay isteniyor; vazgeçerseniz fiş olduğu gibi kalıyor. Çöp kutusu kurulu değilse kalıcı silme uyarısı gösteriliyor.
 

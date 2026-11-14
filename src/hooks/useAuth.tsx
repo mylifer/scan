@@ -1,7 +1,8 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, type PropsWithChildren, useContext, useEffect, useState } from 'react';
 
-import { setBudgetOwner } from '../lib/budget';
+import { setBudgetOwner, setBudgetRemote } from '../lib/budget';
+import { supabaseButceUzak } from '../lib/budgetSync';
 import { clearCache } from '../lib/offlineCache';
 import { efaturaOnbellekleriniTemizle } from '../services/efatura/donemCache';
 import { initialAuthLink, supabase } from '../services/supabase/client';
@@ -15,6 +16,9 @@ interface AuthState {
   linkError: string | null;
   finishRecovery: () => void;
 }
+
+// Bütçe, kurulum (008) yapıldıysa web ile ortak buluttan eşitlenir
+setBudgetRemote(supabaseButceUzak(supabase));
 
 const AuthContext = createContext<AuthState>({ session: null, loading: true, recovering: false, linkError: null, finishRecovery: () => {} });
 

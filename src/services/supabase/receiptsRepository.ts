@@ -11,7 +11,7 @@ import { ayEkle, fisAyaAitMi, kdvFisFiltresi, simdikiIstanbulAyi } from '../../l
 import type { Kategori, ReceiptData, ReceiptRecord } from '../../types/receipt';
 import { trashCutoff } from '../../lib/trash';
 import { supabase } from './client';
-import { chunks, extraColumns, toRecord } from './receiptRows';
+import { chunks, extraColumns, kalemleriKaydet, kalemleriSifirla, toRecord } from './receiptRows';
 import { trashReady } from './schema';
 
 const TABLE = 'receipts';
@@ -61,7 +61,9 @@ export async function saveReceipt(data: ReceiptData, archiveUri?: string): Promi
     throw new Error(`Kayıt başarısız: ${error.message}`);
   }
   invalidateFirmCategories();
-  return { record: toRecord(record), imageWarning };
+  const saved = toRecord(record);
+  await kalemleriKaydet(supabase, saved.id, data.kalemler);
+  return { record: saved, imageWarning };
 }
 
 export async function currentUserId(): Promise<string> {
@@ -455,6 +457,8 @@ export async function attachReceiptImage(record: ReceiptRecord, archiveUri: stri
     throw new Error(`Fotoğraf eklenemedi: ${error.message}`);
   }
   if (record.image_path) await supabase.storage.from(RECEIPT_IMAGES_BUCKET).remove([record.image_path]);
+  // Yeni fotoğrafın kalemleri gece okuyucusu tarafından okunur
+  await kalemleriSifirla(supabase, record.id);
   return toRecord(row);
 }
 

@@ -48,3 +48,50 @@ export async function kdvVerileriniGetir<F, R>(kaynak: {
     qnbHatasi,
   };
 }
+
+/** Önceki ayların gelen e-Faturaları; eksikAylar: ne QNB'den ne de önbellekten alınabilen aylar */
+export interface OncekiGelen<F> {
+  faturalar: F[];
+  eksikAylar: string[];
+}
+
+/**
+ * Devreden fişlerin aylarının gelen e-Faturalarını getirir (bkz. devredenFisAylari). QNB'ye aynı anda en fazla
+ * `eszamanli` istek gider; bir ay alınamazsa (süre aşımı, hata) kayıtlı sonuç kullanılır, o da yoksa ay eksik sayılır.
+ * Hiçbir zaman hata fırlatmaz: eşleştirme yapılamazsa fişler eskisi gibi sayılır.
+ */
+export async function oncekiGelenleriGetir<F>(
+  aylar: string[],
+  kaynak: {
+    getir: (ay: string) => Promise<{ faturalar: F[] }>;
+    kayitli: (ay: string) => Promise<F[] | null> | F[] | null;
+    qnbMs?: number;
+    eszamanli?: number;
+  },
+): Promise<OncekiGelen<F>> {
+  const qnbMs = kaynak.qnbMs ?? QNB_TIMEOUT_MS;
+  const limit = Math.max(1, kaynak.eszamanli ?? 3);
+  const faturalar: F[] = [];
+  const eksikAylar: string[] = [];
+  for (let i = 0; i < aylar.length; i += limit) {
+    const parca = aylar.slice(i, i + limit);
+    const sonuclar = await Promise.all(
+      parca.map(async (ay) => {
+        try {
+          return (await withTimeout(kaynak.getir(ay), qnbMs, `QNB (${ay} gelen e-Faturalar)`)).faturalar;
+        } catch {
+          try {
+            return await kaynak.kayitli(ay);
+          } catch {
+            return null;
+          }
+        }
+      }),
+    );
+    sonuclar.forEach((s, j) => {
+      if (s) faturalar.push(...s);
+      else eksikAylar.push(parca[j]!);
+    });
+  }
+  return { faturalar, eksikAylar };
+}

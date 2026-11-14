@@ -17,7 +17,7 @@ import { useDrafts } from '../hooks/useDrafts';
 import { confirmDestructive, showActionSheet } from '../lib/actionSheet';
 import { showAlert } from '../lib/alert';
 import { haptics } from '../lib/haptics';
-import { formatRunAt, nextRunAt, RECOMMENDED_HOUR, SCHEDULE_HOURS } from '../lib/schedule';
+import { formatRunAt, nextRunAt, recommendedHour, scheduleHours } from '../lib/schedule';
 import { DRAFTS_SETUP_SQL } from '../lib/setupSql';
 import { type Theme, type as t, useTheme } from '../lib/theme';
 import { showToast } from '../lib/toast';
@@ -206,10 +206,10 @@ export default function BatchScreen() {
     showActionSheet({
       title: 'Ne zaman taransın?',
       message: 'Fiyatlar saate göre değişmez; önerilen saatte (ABD’de gece) sunucular genellikle daha sakindir.',
-      options: SCHEDULE_HOURS.map((h) => {
+      options: scheduleHours().map((h) => {
         const at = nextRunAt(h);
         return {
-          label: `${formatRunAt(at.toISOString())}${h === RECOMMENDED_HOUR ? '  (önerilen)' : ''}`,
+          label: `${formatRunAt(at.toISOString())}${h === recommendedHour() ? '  (önerilen)' : ''}`,
           onPress: async () => {
             try {
               await scheduleDrafts(

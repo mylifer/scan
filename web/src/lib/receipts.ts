@@ -1,7 +1,7 @@
 import { receiptImageName, round2, trDateToIso } from "@shared/lib/format";
 import { ayEkle, fisAyaAitMi, kdvFisFiltresi, simdikiIstanbulAyi } from "@shared/lib/kdvAy";
 import { setCustomCategories } from "@shared/lib/categories";
-import { chunks, extraColumns, toRecord } from "@shared/services/supabase/receiptRows";
+import { chunks, extraColumns, kalemleriKaydet, kalemleriSifirla, toRecord } from "@shared/services/supabase/receiptRows";
 import type { ReceiptData, ReceiptRecord } from "@shared/types/receipt";
 import { supabase } from "@/lib/supabase";
 
@@ -113,7 +113,9 @@ export async function createReceipt(data: ReceiptData, photo?: File | null): Pro
     if (imagePath) await supabase.storage.from(RECEIPT_IMAGES_BUCKET).remove([imagePath]);
     throw new Error(`Kayıt başarısız: ${error.message}`);
   }
-  return toRecord(row);
+  const record = toRecord(row);
+  await kalemleriKaydet(supabase, record.id, data.kalemler);
+  return record;
 }
 
 /** Fiş bilgilerini günceller; fotoğraf verilirse eskisinin yerine geçer. */
@@ -131,6 +133,11 @@ export async function updateReceipt(record: ReceiptRecord, data: ReceiptData, ph
     throw new Error(`Güncellenemedi: ${error.message}`);
   }
   if (imagePath && record.image_path) await supabase.storage.from(RECEIPT_IMAGES_BUCKET).remove([record.image_path]);
+  // Yeni fotoğraf yeniden okunduysa onun kalemleri yazılır; okunmadıysa eski kalemler silinip sıraya alınır
+  if (imagePath) {
+    await kalemleriSifirla(supabase, record.id);
+    await kalemleriKaydet(supabase, record.id, data.kalemler);
+  }
   return toRecord(row);
 }
 

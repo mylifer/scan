@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Switch, Text, View } from 'react-native';
 
 import { fromFormValues, ReceiptForm, type ReceiptFormValues, toFormValues, validateForm } from '../../components/ReceiptForm';
+import { ReceiptItems } from '../../components/ReceiptItems';
 import { ReceiptPhoto } from '../../components/ReceiptPhoto';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { HeaderTextButton } from '../../components/ui/HeaderButton';
@@ -331,6 +332,7 @@ export default function ReceiptDetailScreen() {
 
               <View style={{ flex: 1.4 }}>
                 <ReceiptForm values={values} onChange={setValues} />
+                <ReceiptItems receiptId={record.id} toplamTutar={record.toplam_tutar} />
               </View>
             </View>
           </View>
@@ -353,6 +355,7 @@ export default function ReceiptDetailScreen() {
         contentContainerStyle={{ paddingTop: 16, paddingBottom: 40 }}>
         {record.image_path && <ReceiptPhoto uri={imageUrl} />}
         <ReceiptForm values={values} onChange={setValues} />
+        <ReceiptItems receiptId={record.id} toplamTutar={record.toplam_tutar} />
         <ListSection
           footer={
             record.muhasebe_gonderildi_at

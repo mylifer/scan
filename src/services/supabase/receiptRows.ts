@@ -1,4 +1,5 @@
-import type { Kategori, ReceiptData, ReceiptRecord } from '../../types/receipt';
+import { kalemSatirlari, satirdanKalem } from '../../../supabase/functions/_shared/kalemler';
+import type { FisKalemi, Kategori, ReceiptData, ReceiptRecord } from '../../types/receipt';
 
 /*
  * receipts tablosu satır dönüşümleri: platformdan bağımsız saf TS
@@ -60,4 +61,66 @@ export function toRecord(row: Record<string, unknown>): ReceiptRecord {
     etiketler: Array.isArray(row.etiketler) ? row.etiketler.filter((t): t is string => typeof t === 'string') : [],
     muhasebe_gonderildi_at: typeof row.muhasebe_gonderildi_at === 'string' && row.muhasebe_gonderildi_at ? row.muhasebe_gonderildi_at : null,
   };
+}
+
+/** Kalem tablosu (009 kurulumu) */
+export const ITEMS_TABLE = 'receipt_items';
+
+/** Yalnızca kullanılan Supabase metodları; mobil ve web farklı supabase-js kopyası kullandığından gevşek tip */
+type Hata = { code?: string; message: string } | null;
+interface KalemSorgusu {
+  from(table: string): {
+    insert(rows: Record<string, unknown>[]): PromiseLike<{ error: Hata }>;
+    update(values: Record<string, unknown>): { eq(column: string, value: string): PromiseLike<{ error: Hata }> };
+    delete(): { eq(column: string, value: string): PromiseLike<{ error: Hata }> };
+    select(columns: string): {
+      eq(column: string, value: string): { order(column: string): PromiseLike<{ data: Record<string, unknown>[] | null; error: Hata }> };
+    };
+  };
+}
+/** Supabase istemcisi (derin tip karşılaştırması yapılmasın diye yalnızca `from` aranır) */
+export interface KalemIstemcisi {
+  from(table: string): unknown;
+}
+const sorgu = (c: KalemIstemcisi) => c as unknown as KalemSorgusu;
+
+/**
+ * Taramada okunan kalemleri yeni fişe yazar ve fişin kalem durumunu işaretler. Hiçbir zaman hata fırlatmaz:
+ * kurulum (009) yoksa ya da yazılamazsa fiş kalemsiz kalır ve fotoğrafı varsa geriye dönük okumaya girer.
+ * kalemler undefined ise (elle giriş) hiçbir şey yapılmaz.
+ */
+export async function kalemleriKaydet(client: KalemIstemcisi, receiptId: string, kalemler: FisKalemi[] | undefined): Promise<boolean> {
+  if (!kalemler) return false;
+  try {
+    const db = sorgu(client);
+    if (kalemler.length) {
+      const { error } = await db.from(ITEMS_TABLE).insert(kalemSatirlari(receiptId, kalemler, 'tarama'));
+      if (error) return false;
+    }
+    const { error } = await db.from('receipts').update({ kalem_durumu: kalemler.length ? 'okundu' : 'yok' }).eq('id', receiptId);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+/** Fişin kalemleri (sırasıyla); kurulum yoksa ya da okunamazsa boş dizi */
+export async function fisKalemleriniGetir(client: KalemIstemcisi, receiptId: string): Promise<FisKalemi[]> {
+  try {
+    const { data, error } = await sorgu(client).from(ITEMS_TABLE).select('*').eq('receipt_id', receiptId).order('sira');
+    return error || !data ? [] : data.map(satirdanKalem);
+  } catch {
+    return [];
+  }
+}
+
+/** Fotoğrafı değişen fişin kalemleri silinir ve yeniden okunmak üzere sıraya alınır */
+export async function kalemleriSifirla(client: KalemIstemcisi, receiptId: string): Promise<void> {
+  try {
+    const db = sorgu(client);
+    await db.from(ITEMS_TABLE).delete().eq('receipt_id', receiptId);
+    await db.from('receipts').update({ kalem_durumu: null, kalem_deneme: 0, kalem_model: null }).eq('id', receiptId);
+  } catch {
+    // Kurulum yoksa önemi yok
+  }
 }

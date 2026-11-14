@@ -2,11 +2,15 @@
 
 import type { Session } from "@supabase/supabase-js";
 import { createContext, useContext, useEffect, useState } from "react";
-import { setBudgetOwner } from "@/lib/budget";
+import { supabaseButceUzak } from "@shared/lib/budgetSync";
+import { setBudgetOwner, setBudgetRemote } from "@/lib/budget";
 import { clearEFaturaCaches, setEFaturaCacheOwner } from "@/lib/efatura";
 import { supabase } from "@/lib/supabase";
 
 type AuthState = { session: Session | null; loading: boolean };
+
+// Bütçe, kurulum (008) yapıldıysa telefonla ortak buluttan eşitlenir
+setBudgetRemote(supabaseButceUzak(supabase));
 
 const AuthContext = createContext<AuthState>({ session: null, loading: true });
 

@@ -24,3 +24,13 @@ describe('planlama (Türkiye saati)', () => {
     assert.equal(formatRunAt('2026-09-28T07:00:00Z', now), 'Yarın 10:00');
   });
 });
+
+describe('Kota yenilenme saati (Pasifik gece yarısı)', () => {
+  it('ABD yaz saatinde 10:00, kışın 11:00 (Türkiye)', async () => {
+    const { quotaResetHourTr, scheduleHours } = await import('../lib/schedule');
+    assert.equal(quotaResetHourTr(new Date('2026-07-15T12:00:00Z')), 10);
+    assert.equal(quotaResetHourTr(new Date('2026-11-13T12:00:00Z')), 11);
+    assert.equal(quotaResetHourTr(new Date('2026-01-10T23:30:00Z')), 11);
+    assert.deepEqual(scheduleHours(new Date('2026-11-13T12:00:00Z')), [3, 7, 11, 13]);
+  });
+});
