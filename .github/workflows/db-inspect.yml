@@ -1,6 +1,7 @@
 # Supabase veritabanının içeriğini YALNIZCA OKUYARAK listeler (tablolar, satır sayıları, fonksiyonlar,
 # tetikleyiciler, depolama alanları, Edge Function'lar). Hiçbir şeyi değiştirmez.
-# Sonuçlar uyarı notu olarak yazılır. Yalnızca bu dosya değişince ya da elle çalışır (çalıştırma: 2).
+# Sonuçlar uyarı notu olarak yazılır. Yalnızca bu dosya değişince ya da elle çalışır (çalıştırma: 3).
+# kalem_* notları: fiş kalemleri gece okuyucusunun (kalem-doldur) son çalışmaları ve fişlerin kalem durumu.
 name: Veritabanı envanteri
 
 on:
@@ -55,6 +56,11 @@ jobs:
             "schema_version": "select public.receipt_schema_version() as v",
             "sent_marks": "select count(*) filter (where muhasebe_gonderildi_at is not null) as gonderildi, count(*) as toplam, max(muhasebe_gonderildi_at) as son from public.receipts",
             "recent_errors": "select created_at, context, left(message, 200) as message, app_version, platform from public.app_errors order by created_at desc limit 15",
+            # Fiş kalemleri (009): gece okuyucusunun son çalışmaları, fonksiyon yanıtları, fişlerin kalem durumu
+            "kalem_cron_runs": "select start_time, status, left(return_message, 120) as mesaj from cron.job_run_details where jobid = (select jobid from cron.job where jobname = 'kalem-doldur') order by start_time desc limit 12",
+            "kalem_http": "select created, status_code, left(content, 400) as yanit, error_msg from net._http_response order by created desc limit 8",
+            "kalem_durum": "select coalesce(kalem_durumu, case when image_path is null then 'fotografsiz' else 'bekliyor' end) as durum, kalem_model, count(*) from public.receipts group by 1, 2 order by 1, 2",
+            "kalem_items": "select kaynak, count(*) as kalem, count(distinct receipt_id) as fis from public.receipt_items group by 1",
             "views_seq": f"select n.nspname||'.'||c.relname, c.relkind from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind in ('S') and n.nspname not in {SYS} order by 1",
           }
           for k, q in Q.items():
