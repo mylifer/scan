@@ -254,12 +254,25 @@ describe('giden portal e-Faturaları', () => {
   });
 });
 
+describe('QNB sunucu hatası', () => {
+  it('Hibernate/SQL hataları sunucu hatası, iş ve giriş hataları değil', async () => {
+    const { isServerFault } = await import('../../supabase/functions/qnb-efatura/soap');
+    assert.equal(
+      isServerFault('could not execute statement; SQL [n/a]; nested exception is org.hibernate.exception.SQLGrammarException: could not execute statement'),
+      true,
+    );
+    assert.equal(isServerFault('belgeVersiyon boş olamaz.'), false);
+    assert.equal(isServerFault('username.pwd.mismatch'), false);
+  });
+});
+
 describe('eksik alan mesajı', () => {
   it('QNB "X boş olamaz" mesajından alan adı', async () => {
     const { missingField } = await import('../../supabase/functions/qnb-efatura/soap');
     assert.equal(missingField('QNB hatası: belgeVersiyon boş olamaz.'), 'belgeVersiyon');
     assert.equal(missingField('QNB hatası: pageCount boş olamaz'), 'pageCount');
     assert.equal(missingField('QNB hatası: tarih aralığı çok uzun'), null);
+    assert.equal(missingField('QNB hatası (gidenBelgeleriListelePortal): belgeVersiyon boş olamaz.'), 'belgeVersiyon');
   });
 });
 

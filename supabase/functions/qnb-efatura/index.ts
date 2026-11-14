@@ -33,6 +33,7 @@ import {
   type EFatura,
   extractFile,
   isLoginFault,
+  isServerFault,
   listRequest,
   mergeLists,
   parseBase64Return,
@@ -114,36 +115,48 @@ function validRange(a: unknown, b: unknown): a is string {
 class LoginError extends Error {}
 /** QNB'nin iş hatası (parametre vb.) */
 class QnbError extends Error {}
+/** QNB'nin kendi sunucu/veritabanı hatası (isteğimizden bağımsız) */
+class QnbServerError extends QnbError {}
 
 async function soap(url: string, op: string, params: Record<string, string>, opts: { earsiv?: boolean; wrap?: boolean } = {}): Promise<string> {
   if (Date.now() < (loginBlockedUntil.get(url) ?? 0)) {
     throw new LoginError('QNB girişi az önce başarısız oldu. Hesap kilitlenmesin diye bir süre yeniden denenmiyor.');
   }
-  let xml: string;
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/xml; charset=utf-8', SOAPAction: '""' },
-      body: buildEnvelope(op, params, QNB_USER, QNB_PASS, opts),
-      signal: AbortSignal.timeout(60_000),
-    });
-    xml = await res.text();
-  } catch (e) {
-    throw new QnbError(`QNB'ye ulaşılamadı: ${e instanceof Error ? e.message : String(e)}`);
+  let fault: string | null = null;
+  // QNB'nin kendi sunucu hatası (ör. Hibernate SQLGrammarException) çoğu zaman geçici: bir kez daha denenir
+  for (let deneme = 0; deneme < 2; deneme++) {
+    if (deneme) await new Promise((r) => setTimeout(r, 1500));
+    let xml: string;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/xml; charset=utf-8', SOAPAction: '""' },
+        body: buildEnvelope(op, params, QNB_USER, QNB_PASS, opts),
+        signal: AbortSignal.timeout(60_000),
+      });
+      xml = await res.text();
+    } catch (e) {
+      throw new QnbError(`QNB'ye ulaşılamadı: ${e instanceof Error ? e.message : String(e)}`);
+    }
+    fault = parseFault(xml);
+    if (!fault) return xml;
+    if (isLoginFault(fault)) {
+      // Bloke hesapta doğru şifre de reddedilir; her deneme blokeyi uzatabilir
+      const bloke = /bloke|locked|kilit/i.test(fault);
+      loginBlockedUntil.set(url, Date.now() + (bloke ? BLOKE_COOLDOWN_MS : LOGIN_COOLDOWN_MS));
+      throw new LoginError(
+        bloke
+          ? `QNB hesabı bloke oldu (${fault}). QNB eSolutions portalından ya da destekten açtırın; açılana kadar tekrar denemeyin.`
+          : `QNB girişi başarısız: ${fault}`,
+      );
+    }
+    if (!isServerFault(fault)) break;
+    console.log(`QNB sunucu hatası (${op}, deneme ${deneme + 1}): ${fault}`);
   }
-  const fault = parseFault(xml);
-  if (!fault) return xml;
-  if (isLoginFault(fault)) {
-    // Bloke hesapta doğru şifre de reddedilir; her deneme blokeyi uzatabilir
-    const bloke = /bloke|locked|kilit/i.test(fault);
-    loginBlockedUntil.set(url, Date.now() + (bloke ? BLOKE_COOLDOWN_MS : LOGIN_COOLDOWN_MS));
-    throw new LoginError(
-      bloke
-        ? `QNB hesabı bloke oldu (${fault}). QNB eSolutions portalından ya da destekten açtırın; açılana kadar tekrar denemeyin.`
-        : `QNB girişi başarısız: ${fault}`,
-    );
+  if (isServerFault(fault!)) {
+    throw new QnbServerError(`QNB sunucusunda iç hata oluştu (${op}). Bu QNB tarafında bir sorun; biraz sonra tekrar deneyin. Ayrıntı: ${fault!.slice(0, 300)}`);
   }
-  throw new QnbError(`QNB hatası: ${fault}`);
+  throw new QnbError(`QNB hatası (${op}): ${fault}`);
 }
 
 const compact = (s: string) => s.replace(/-/g, '');
@@ -530,8 +543,20 @@ const donemde = (baslangic: string, bitis: string) => (f: EFatura) => !f.tarih |
  */
 async function listele(yon: Yon, baslangic: string, bitis: string) {
   const { op, params } = listRequest(yon, QNB_VKN, compact(baslangic), compact(bitis));
-  const [liste, qnb] = await Promise.all([soap(QNB_URL, op, params).then((x) => parseList(x, yon)), qnbSayisi(yon, baslangic, bitis)]);
   const uyarilar: string[] = [];
+  // Ana liste QNB sunucu hatasıyla düşerse ay tamamen kaybolmasın: ek taramalarla devam edilir
+  const ana: { hata?: QnbServerError } = {};
+  const [liste, qnb] = await Promise.all([
+    soap(QNB_URL, op, params)
+      .then((x) => parseList(x, yon))
+      .catch((e) => {
+        if (!(e instanceof QnbServerError)) throw e;
+        ana.hata = e;
+        return [] as EFatura[];
+      }),
+    qnbSayisi(yon, baslangic, bitis),
+  ]);
+  if (ana.hata) uyarilar.push(`${ana.hata.message} Liste yedek sorgularla dolduruldu; eksik olabilir.`);
   const notlar: string[] = [];
   let efatura = liste;
   let earsiv: Awaited<ReturnType<typeof earsivList>> = { list: [] };
@@ -553,7 +578,7 @@ async function listele(yon: Yon, baslangic: string, bitis: string) {
       efatura = mergeLists(efatura, tarama.list).filter((f) => !f.taslak);
       notlar.push(`Ek tarama — ${tarama.notlar.join(' · ')}`);
     }
-  } else if (qnb !== null && efatura.length < qnb) {
+  } else if ((qnb !== null && efatura.length < qnb) || (ana.hata && qnb === null)) {
     const tarama = await gelenTarama(baslangic, bitis);
     efatura = mergeLists(efatura, tarama.list);
     notlar.push(`Ek tarama — ${tarama.not}`);
@@ -568,6 +593,8 @@ async function listele(yon: Yon, baslangic: string, bitis: string) {
     const eksik = qnb - efatura.length - taslak;
     uyarilar.push(`QNB bu dönemde ${qnb} ${yon} e-Fatura sayıyor, listede ${efatura.length}${taslak ? ` (+${taslak} gönderilmemiş taslak)` : ''} var. Eksik ${eksik} fatura bulunamadı.`);
   }
+  // Hiçbir yoldan fatura bulunamadıysa boş liste "fatura yok" gibi görünmesin
+  if (ana.hata && !efatura.length && !earsiv.list.length && qnb !== 0) throw ana.hata;
   console.log(`${yon} ${baslangic}..${bitis}: qnb=${qnb} liste=${efatura.length} taslak=${taslak} ${notlar.join(' | ')}`);
   return {
     faturalar: mergeLists(efatura, earsiv.list),
