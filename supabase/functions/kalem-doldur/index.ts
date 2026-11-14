@@ -23,10 +23,15 @@ const LITE = 'gemini-3.5-flash-lite';
 const IZINLI = new Set([...FLASH, LITE]);
 /** Dakikalık istek sınırına (Flash 5, Lite 15) göre aynı modele iki istek arası */
 const ARALIK_MS: Record<string, number> = { 'gemini-2.5-flash': 12_500, 'gemini-3.6-flash': 12_500, [LITE]: 4_100 };
-/** Bir çağrıda çalışma süresi (fonksiyon sınırı 150 sn; son isteğe pay bırakılır) */
-const BUTCE_MS = 110_000;
-/** Bir isteğin süresi için ayrılan pay */
-const ISTEK_PAYI_MS = 25_000;
+/**
+ * Bir çağrının süresi: fonksiyonun (ve zamanlayıcının) sınırı 150 sn. Yeni bir fiş ancak bu bütçeden bir
+ * isteğin en uzun süresi (Gemini sınırı + fotoğraf/veritabanı payı) kadar önce başlatılır.
+ */
+const BUTCE_MS = 130_000;
+/** Gemini isteğinin süre sınırı; aşılırsa fiş sıraya döner (ilk gece bir istek 150 sn sınırını aşmıştı) */
+const GEMINI_SURE_MS = 40_000;
+/** Bir fişin toplam süresi için ayrılan pay */
+const ISTEK_PAYI_MS = GEMINI_SURE_MS + 10_000;
 const MAX_DENEME = 3;
 const MAX_DENEME_ADET = 20;
 /** Yarıda kalan (fonksiyon süresi dolan) "isleniyor" kayıtları bu süreden sonra yeniden alınır */
@@ -146,7 +151,7 @@ function base64(bytes: Uint8Array): string {
 
 async function fotograf(path: string): Promise<string> {
   const yol = path.split('/').map(encodeURIComponent).join('/');
-  const res = await rest(`/storage/v1/object/${BUCKET}/${yol}`);
+  const res = await rest(`/storage/v1/object/${BUCKET}/${yol}`, { signal: AbortSignal.timeout(15_000) });
   if (!res.ok) throw new Error(`Fotoğraf indirilemedi: ${res.status}`);
   return base64(new Uint8Array(await res.arrayBuffer()));
 }
@@ -162,7 +167,17 @@ const SEMA = { type: 'object', properties: { kalemler: KALEM_SEMASI }, required:
 type GeminiSonuc = { text: string } | { status: number; message: string };
 
 async function oku(model: string, image: string): Promise<GeminiSonuc> {
+  try {
+    return await okuIstek(model, image);
+  } catch (e) {
+    // Süre aşımı ya da bağlantı hatası: geçici sayılır (fiş sıraya döner, deneme hakkı yanmaz)
+    return { status: 504, message: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+async function okuIstek(model: string, image: string): Promise<GeminiSonuc> {
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    signal: AbortSignal.timeout(GEMINI_SURE_MS),
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
     body: JSON.stringify({
