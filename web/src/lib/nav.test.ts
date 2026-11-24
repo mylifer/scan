@@ -8,7 +8,8 @@ describe("nav", () => {
     expect(titleForPath("/vergi-takvimi")).toBe("Vergi Takvimi");
     expect(titleForPath("/")).toBe("Fişler");
   });
-  it("8 menü öğesi var", () => expect(NAV_ITEMS).toHaveLength(8));
+  it("9 menü öğesi var", () => expect(NAV_ITEMS).toHaveLength(9));
+  it("fatura kes sayfası", () => expect(titleForPath("/fatura-kes/")).toBe("Fatura Kes"));
 });
 
 describe("@shared", () => {
