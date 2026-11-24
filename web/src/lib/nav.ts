@@ -1,6 +1,7 @@
 import {
   CalendarClock,
   Building2,
+  FilePlus,
   FileText,
   Percent,
   PiggyBank,
@@ -15,6 +16,7 @@ export type NavItem = { href: string; title: string; icon: LucideIcon };
 export const NAV_ITEMS: NavItem[] = [
   { href: "/fisler", title: "Fişler", icon: Receipt },
   { href: "/efaturalar", title: "e-Faturalar", icon: FileText },
+  { href: "/fatura-kes", title: "Fatura Kes", icon: FilePlus },
   { href: "/kdv", title: "KDV", icon: Percent },
   { href: "/vergi-takvimi", title: "Vergi Takvimi", icon: CalendarClock },
   { href: "/firmalar", title: "Firmalar", icon: Building2 },
